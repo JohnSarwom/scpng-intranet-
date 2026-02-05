@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Tabs,
   TabsContent,
@@ -181,6 +182,7 @@ interface KRAsTabProps {
   onDeleteKra: (kraId: string | number) => Promise<void>;
   onSaveKpi: (kpi: Partial<Kpi>) => Promise<void>;
   onDeleteKpi: (kpiId: string | number) => Promise<void>;
+  strategicObjectives?: { id: string | number; title: string; deliverables?: string[] }[];
 }
 
 export const KRAsTab: React.FC<KRAsTabProps> = ({
@@ -198,7 +200,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   onSaveKra,
   onDeleteKra,
   onSaveKpi,
-  onDeleteKpi
+  onDeleteKpi,
+  strategicObjectives = []
 }) => {
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
@@ -224,7 +227,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     division: '',
     unit: '',
     owner: '',
-    parentGoalId: ''
+    owner: '',
+    parentGoalId: '',
+    linkedDeliverable: ''
   });
   const [isOwnerPopoverOpen, setIsOwnerPopoverOpen] = useState(false);
 
@@ -611,7 +616,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       division: objective.division,
       unit: objective.unit,
       owner: objective.owner,
-      parentGoalId: objective.parentGoalId?.toString() || ''
+      owner: objective.owner,
+      parentGoalId: objective.parentGoalId?.toString() || '',
+      linkedDeliverable: objective.linkedDeliverable || ''
     });
     setIsObjectiveModalOpen(true);
   };
@@ -622,7 +629,10 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     setNewObjectiveData({
       unit: '',
       owner: '',
-      parentGoalId: ''
+      unit: '',
+      owner: '',
+      parentGoalId: '',
+      linkedDeliverable: ''
     });
   };
 
@@ -636,9 +646,16 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
         if (details) {
           updated.unit = details.department || updated.unit;
           updated.division = details.divisionName || updated.division;
+          updated.division = details.divisionName || updated.division;
           updated.ownerEmail = details.email;
         }
       }
+
+      // Reset linked deliverable if parent goal changes
+      if (field === 'parentGoalId') {
+        updated.linkedDeliverable = '';
+      }
+
       return updated;
     });
   };
@@ -664,7 +681,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       division: newObjectiveData.division,
       unit: newObjectiveData.unit,
       owner: newObjectiveData.owner,
-      parentGoalId: newObjectiveData.parentGoalId || null
+      owner: newObjectiveData.owner,
+      parentGoalId: newObjectiveData.parentGoalId || null,
+      linkedDeliverable: newObjectiveData.linkedDeliverable || null
     };
 
     console.log('[handleSaveObjective] Attempting to save objective via parent props:', objectivePayload);
@@ -936,9 +955,10 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[15%]">Objective Name</TableHead>
-                        <TableHead className="w-[15%]">Goal Type</TableHead>
-                        <TableHead className="w-[15%]">Strategic Alignment</TableHead>
+                        <TableHead className="w-[20%]">Strategic Alignment</TableHead>
+                        <TableHead className="w-[20%]">Key Deliverable</TableHead>
+                        <TableHead className="w-[20%]">Objective Name</TableHead>
+                        <TableHead className="w-[10%]">Goal Type</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right w-[10%]">Actions</TableHead>
                       </TableRow>
@@ -946,13 +966,35 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     <TableBody>
                       {objectivesData.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={3} className="h-24 text-center">
+                          <TableCell colSpan={6} className="h-24 text-center">
                             No Objectives defined yet. Use the "Add Objective" button.
                           </TableCell>
                         </TableRow>
                       ) : (
                         objectivesData.map((objective) => (
                           <TableRow key={objective.id}>
+                            <TableCell>
+                              {(() => {
+                                // Try to resolve title from prop or lookup
+                                const title = objective.parentGoalTitle ||
+                                  (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
+
+                                return title ? (
+                                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                    {title}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground text-[10px] italic">Direct/Board</span>
+                                );
+                              })()}
+                            </TableCell>
+                            <TableCell>
+                              {objective.linkedDeliverable ? (
+                                <span className="text-sm font-medium">{objective.linkedDeliverable}</span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">-</span>
+                              )}
+                            </TableCell>
                             <TableCell className="font-medium">{objective.title}</TableCell>
                             <TableCell>
                               <Badge
@@ -961,15 +1003,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                               >
                                 {objective.goalType || 'Unit'}
                               </Badge>
-                            </TableCell>
-                            <TableCell>
-                              {objective.parentGoalTitle ? (
-                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                                  {objective.parentGoalTitle}
-                                </Badge>
-                              ) : (
-                                <span className="text-muted-foreground text-[10px] italic">Direct/Board</span>
-                              )}
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">{objective.description || '-'}</TableCell>
                             <TableCell className="text-right">
@@ -1018,14 +1051,88 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
         />
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
               <DialogTitle>{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
               <DialogDescription>
                 {editingObjective ? 'Update the objective details.' : 'Define a new objective for KRAs.'}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-1">
+            <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2">
+              {/* Strategic Alignment */}
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right whitespace-nowrap">Strategic Alignment</Label>
+                <div className="col-span-3">
+                  <Select
+                    value={newObjectiveData.parentGoalId?.toString() || 'none'}
+                    onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Align with Strategic Objective..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Standalone (No Alignment)</SelectItem>
+                      {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
+                        .map(obj => (
+                          <SelectItem key={obj.id} value={obj.id.toString()}>
+                            {obj.title}
+                          </SelectItem>
+                        ))
+                      }
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Link this unit objective to a high-level Board/Strategic objective.
+                  </p>
+                </div>
+              </div>
+
+              {/* Key Deliverables (Executions) Radio Group */}
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label className="text-right whitespace-nowrap pt-2">
+                  Key Deliverable<br />
+                  <span className="text-[10px] text-muted-foreground font-normal">(Execution)</span>
+                </Label>
+                <div className="col-span-3">
+                  {(() => {
+                    if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
+                      return (
+                        <div className="p-3 rounded-md border border-dashed text-sm text-muted-foreground bg-muted/30">
+                          Please select a <strong>Strategic Alignment</strong> above to see linked Executions/Deliverables.
+                        </div>
+                      );
+                    }
+
+                    const parentParams = (strategicObjectives.length > 0 ? strategicObjectives : objectivesData).find(o => o.id.toString() === newObjectiveData.parentGoalId);
+                    const deliverables = parentParams?.deliverables || [];
+
+                    if (deliverables.length === 0) {
+                      return <p className="text-sm text-muted-foreground pt-2 text-amber-600">No key deliverables found for the selected objective.</p>;
+                    }
+
+                    return (
+                      <RadioGroup
+                        value={newObjectiveData.linkedDeliverable || ''}
+                        onValueChange={(val) => handleObjectiveFormChange('linkedDeliverable', val)}
+                        className="flex flex-col space-y-2 mt-2"
+                      >
+                        {deliverables.map((del, idx) => (
+                          <div key={idx} className="flex items-center space-x-2">
+                            <RadioGroupItem value={del} id={`del-${idx}`} />
+                            <Label htmlFor={`del-${idx}`} className="font-normal cursor-pointer">
+                              {del}
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    );
+                  })()}
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Select the specific Execution/Deliverable this unit objective contributes to.
+                  </p>
+                </div>
+              </div>
+
               {/* Row 1: Title & Year */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="objective-name" className="text-right">Name</Label>
@@ -1176,34 +1283,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               </div>
 
 
-              {/* Strategic Alignment */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right whitespace-nowrap">Strategic Alignment</Label>
-                <div className="col-span-3">
-                  <Select
-                    value={newObjectiveData.parentGoalId?.toString() || 'none'}
-                    onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Align with Strategic Objective..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Standalone (No Alignment)</SelectItem>
-                      {objectivesData
-                        .map(obj => (
-                          <SelectItem key={obj.id} value={obj.id.toString()}>
-                            {obj.title}
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Link this unit objective to a high-level Board/Strategic objective.
-                  </p>
-                </div>
-              </div>
-
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="objective-description" className="text-right pt-2">
                   Description
@@ -1213,7 +1292,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   value={newObjectiveData.description || ''}
                   onChange={(e) => handleObjectiveFormChange('description', e.target.value)}
                   className="col-span-3"
-                  rows={3}
+                  rows={5}
                 />
               </div>
             </div>

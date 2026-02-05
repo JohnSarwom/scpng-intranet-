@@ -289,6 +289,7 @@ export interface Objective {
   icon?: string;
   isFeatured?: boolean;
   deliverables?: string[];
+  linkedDeliverable?: string;
 }
 
 export type KraStatus = 'on-track' | 'at-risk' | 'off-track' | 'completed' | 'pending';

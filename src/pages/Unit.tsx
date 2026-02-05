@@ -63,6 +63,7 @@ import {
   useSharePointTasks,
   useSharePointObjectives
 } from '@/hooks/useSharePointOps';
+import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 
 import { OrganizationUnit, Objective, Kra, Kpi, KRA, Task } from '@/types';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
@@ -202,10 +203,22 @@ const Unit = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
 
+
   const objectivesState = useSharePointObjectives(targetDepartment, getScopeForComponent('Objectives', 'Division'), userContext);
   const objectivesData = objectivesState.data;
   const objectivesLoading = objectivesState.loading;
   const objectivesError = objectivesState.error;
+
+  // Fetch Strategy Data for Dropdown
+  const { strategyData } = useStrategySharePoint();
+  const strategicObjectives = useMemo(() => {
+    return (strategyData.objectives || []).map(obj => ({
+      id: obj.id,
+      title: obj.title,
+      description: obj.description,
+      deliverables: (obj as any).goals || [] // Map goals to deliverables
+    }));
+  }, [strategyData.objectives]);
 
   // --- Wrapper for refreshing all data ---
   const handleRefreshAllData = useCallback(() => {
@@ -645,6 +658,7 @@ const Unit = () => {
               onDeleteKra={handleDeleteKra}
               onSaveKpi={handleSaveKpi}
               onDeleteKpi={handleDeleteKpi}
+              strategicObjectives={strategicObjectives}
             />
           </TabsContent>
 

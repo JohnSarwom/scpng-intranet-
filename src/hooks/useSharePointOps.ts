@@ -26,6 +26,8 @@ const useOpsService = () => {
 
 // --- Hooks ---
 
+import { mockStrategyData } from '@/mockData/strategyData';
+
 export function useSharePointObjectives(department?: string, scope: FilterScope = 'Division', context?: UserContext) {
     const getService = useOpsService();
 
@@ -36,11 +38,44 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
                 const service = await getService();
                 // We re-use getObjectives but type cast for now if needed or rely on service typing
                 const data = await service.getObjectives(scope, context);
+
+                // Fallback to mock data if no objectives found (e.g. connection issue or empty list)
+                // This ensures the "Strategic Objectives" dropdown is always populated for demo/dev purposes
+                if (!data || data.length === 0) {
+                    console.warn('⚠️ [useSharePointOps] No objectives found. Falling back to mock UNIT objectives.');
+                    // Fallback to unitObjectives for the Unit view
+                    const mockObjectives: any[] = (mockStrategyData.unitObjectives || []).map((obj: any) => ({
+                        id: obj.id,
+                        title: obj.title,
+                        description: obj.description,
+                        goalType: 'Unit',
+                        status: obj.status,
+                        progress: obj.progress,
+                        deliverables: obj.deliverables || [], // Unit objectives usually have deliverables direct
+                        owner: obj.owner,
+                        icon: obj.icon
+                    }));
+                    return mockObjectives;
+                }
+
                 console.log('✅ [useSharePointOps] Loaded Objectives:', data.length);
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch Objectives', err);
-                return [];
+
+                // Also fallback on error
+                // Also fallback on error to unit objectives
+                return (mockStrategyData.unitObjectives || []).map((obj: any) => ({
+                    id: obj.id,
+                    title: obj.title,
+                    description: obj.description,
+                    goalType: 'Unit',
+                    status: obj.status,
+                    progress: obj.progress,
+                    deliverables: obj.deliverables || [],
+                    owner: obj.owner,
+                    icon: obj.icon
+                })) as unknown as Objective[];
             }
         }
     });
@@ -270,6 +305,7 @@ export function useSharePointProjects(department?: string, scope: FilterScope = 
 
 export function useSharePointTasks(department?: string, scope: FilterScope = 'Unit', context?: UserContext) {
     const getService = useOpsService();
+    const { toast } = useToast();
 
     const query = useQuery({
         queryKey: ['sharePoint', 'tasks', department, scope, context?.division, context?.unit, context?.email, context?.role],
@@ -290,9 +326,45 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
         data: (query.data || []) as unknown as Task[],
         loading: query.isLoading,
         error: query.error as Error | null,
-        add: async () => { },
-        update: async () => { },
-        remove: async () => { },
+        add: async (item: Partial<Task>) => {
+            try {
+                const service = await getService();
+                await service.addTask(item, department);
+                query.refetch();
+                toast({ title: "Success", description: "Task added successfully" });
+                return true;
+            } catch (error: any) {
+                console.error('Failed to add Task', error);
+                toast({ title: "Error", description: error.message || "Failed to add Task", variant: "destructive" });
+                throw error;
+            }
+        },
+        update: async (id: string, item: Partial<Task>) => {
+            try {
+                const service = await getService();
+                await service.updateTask(id, item);
+                query.refetch();
+                toast({ title: "Success", description: "Task updated successfully" });
+                return true;
+            } catch (error: any) {
+                console.error('Failed to update Task', error);
+                toast({ title: "Error", description: error.message || "Failed to update Task", variant: "destructive" });
+                throw error;
+            }
+        },
+        remove: async (id: string) => {
+            try {
+                const service = await getService();
+                await service.deleteTask(id);
+                query.refetch();
+                toast({ title: "Success", description: "Task deleted successfully" });
+                return true;
+            } catch (error: any) {
+                console.error('Failed to delete Task', error);
+                toast({ title: "Error", description: error.message || "Failed to delete Task", variant: "destructive" });
+                throw error;
+            }
+        },
         refresh: query.refetch
     };
 }

@@ -4,6 +4,7 @@
  */
 
 import { Client } from '@microsoft/microsoft-graph-client';
+import { mockStrategyData } from '../mockData/strategyData';
 
 export class SharePointListSetupService {
     private client: Client;
@@ -196,6 +197,22 @@ export class SharePointListSetupService {
                     {
                         name: 'Owner',
                         personOrGroup: {}
+                    },
+                    {
+                        name: 'Icon',
+                        text: {}
+                    },
+                    {
+                        name: 'IsFeatured',
+                        boolean: {}
+                    },
+                    {
+                        name: 'Deliverables',
+                        text: { allowMultipleLines: true }
+                    },
+                    {
+                        name: 'LinkedDeliverable',
+                        text: {}
                     }
                 ],
                 list: {
@@ -206,6 +223,99 @@ export class SharePointListSetupService {
         // Add lookup columns (need to be added after list creation)
         await this.addLookupColumn(list.id, 'ParentPillarId', pillarsListId, 'Title');
         await this.addLookupColumn(list.id, 'ParentGoalId', list.id, 'Title'); // Self-referencing
+
+        return list;
+    }
+
+    /**
+     * Helper to create a generic list with common properties
+     */
+    private async createList(displayName: string, description: string, columns: any[], template: string = 'genericList') {
+        const check = await this.client.api(`/sites/${this.siteId}/lists`).filter(`displayName eq '${displayName}'`).get();
+        if (check.value && check.value.length > 0) return check.value[0];
+
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: displayName,
+                description: description,
+                columns: columns,
+                list: { template: template }
+            });
+        return list;
+    }
+
+    private async createUnitObjectivesList(strategicObjectivesListId: string) {
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Unit_Objectives',
+                description: 'Unit specific operational objectives',
+                columns: [
+                    {
+                        name: 'Description',
+                        text: { allowMultipleLines: true }
+                    },
+                    {
+                        name: 'GoalType',
+                        choice: {
+                            choices: ['Org', 'Division', 'Unit', 'Individual']
+                        }
+                    },
+                    {
+                        name: 'Division',
+                        text: {}
+                    },
+                    {
+                        name: 'Unit',
+                        text: {}
+                    },
+                    {
+                        name: 'Progress',
+                        number: { minimum: 0, maximum: 100 }
+                    },
+                    {
+                        name: 'Status',
+                        choice: {
+                            choices: ['On Track', 'At Risk', 'Behind', 'Completed', 'Needs Attention', 'Not Started', 'In Progress', 'Deferred', 'Cancelled']
+                        }
+                    },
+                    {
+                        name: 'Icon',
+                        text: {}
+                    },
+                    {
+                        name: 'Owner',
+                        text: {}
+                    },
+                    {
+                        name: 'Year',
+                        text: {}
+                    },
+                    {
+                        name: 'StartDate',
+                        dateTime: { format: 'dateOnly' }
+                    },
+                    {
+                        name: 'EndDate',
+                        dateTime: { format: 'dateOnly' }
+                    },
+                    {
+                        name: 'Deliverables',
+                        text: { allowMultipleLines: true }
+                    },
+                    {
+                        name: 'LinkedDeliverable',
+                        text: {}
+                    }
+                ],
+                list: { template: 'genericList' }
+            });
+
+        // Add lookup to Strategic Objectives (Parent Goal)
+        if (strategicObjectivesListId) {
+            await this.addLookupColumn(list.id, 'ParentGoalId', strategicObjectivesListId, 'Title');
+        }
 
         return list;
     }
@@ -406,6 +516,43 @@ export class SharePointListSetupService {
     /**
      * Delete all Strategy System lists
      */
+    async deleteStrategyLists(): Promise<{ success: boolean; message: string }> {
+        const listNames = [
+            'Strategy_Config',
+            'Strategic_Pillars',
+            'Strategic_Objectives',
+            'Performance_KRAs',
+            'Performance_KPIs',
+            'Operations_Projects',
+            'Operations_Tasks',
+            'Operations_Risks',
+            'System_View_Settings',
+            'Organizational_Documents',
+            'Market_Companies',
+            'Market_PriceHistory',
+            'Market_Settings'
+        ];
+        try {
+            for (const name of listNames) {
+                try {
+                    const response = await this.client
+                        .api(`/sites/${this.siteId}/lists`)
+                        .filter(`displayName eq '${name}'`)
+                        .select('id')
+                        .get();
+                    if (response.value && response.value.length > 0) {
+                        await this.client
+                            .api(`/sites/${this.siteId}/lists/${response.value[0].id}`)
+                            .delete();
+                        console.log(`✅ [Setup] Deleted list: ${name}`);
+                    }
+                } catch (err) { console.warn(`Failed delete ${name}`, err); }
+            }
+            return { success: true, message: 'Strategy lists deleted' };
+        } catch (error: any) {
+            return { success: false, message: error.message };
+        }
+    }
 
     /**
      * Check if lists already exist
@@ -715,6 +862,7 @@ export class SharePointListSetupService {
                     { name: 'AssignedTo', personOrGroup: {} },
                     { name: 'Department', text: {} },
                     { name: 'DueDate', dateTime: {} },
+                    { name: 'StartDate', dateTime: {} },
                     { name: 'Status', choice: { choices: ['Todo', 'In Progress', 'Review', 'Done'] } },
                     { name: 'Priority', choice: { choices: ['Low', 'Medium', 'High', 'Urgent'] } },
                     { name: 'Description', text: { allowMultipleLines: true } },
@@ -1279,44 +1427,80 @@ export class SharePointListSetupService {
         return history;
     }
 
+    public async deleteStrategyHubEngine() {
+        const lists = [
+            'Strategy_Config', 'Strategic_Pillars', 'Strategic_Objectives',
+            'Unit_Objectives', 'Divisional_Alignment', 'Strategy_Milestones', 'Strategy_Risks'
+        ];
+
+        let results = [];
+        for (const listName of lists) {
+            try {
+                const list = await this.client.api(`/sites/${this.siteId}/lists`).filter(`displayName eq '${listName}'`).get();
+                if (list.value && list.value.length > 0) {
+                    await this.client.api(`/sites/${this.siteId}/lists/${list.value[0].id}`).delete();
+                    results.push(`Deleted ${listName}`);
+                }
+            } catch (e) {
+                console.warn(`Could not delete ${listName}`, e);
+            }
+        }
+        return { success: true, details: results };
+    }
+
     /**
      * Create EVERYTHING for the Strategy Hub (Design Schema)
      * One-click creation and seeding from Strategy Hub Mock Data
      */
     async setupStrategyHubEngine(): Promise<{ success: boolean; message: string; details: any }> {
-        console.log('🚀 [StrategyHub] Starting Complete Setup...');
+        console.log('🚀 [StrategyHub] Starting Engine Setup (Full Reset)...');
         const results: any = {};
 
         try {
+            // Optional: Delete existing lists for a clean setup
+            await this.deleteStrategyHubEngine();
+
             // 1. Config
-            console.log('📝 [StrategyHub] 1/6 Strategy_Config...');
-            results.config = await this.createStrategyConfigList();
-            await this.seedStrategyHubConfig(results.config.id);
+            console.log('📝 [StrategyHub] 1/7 Strategy_Config...');
+            const configList = await this.createStrategyConfigList();
+            await this.seedStrategyHubConfig(configList.id);
+            results.config = 'Created & Seeded';
 
             // 2. Pillars
-            console.log('📝 [StrategyHub] 2/6 Strategic_Pillars...');
-            results.pillars = await this.createStrategicPillarsList();
-            await this.seedStrategyHubPillars(results.pillars.id);
+            console.log('📝 [StrategyHub] 2/7 Strategic_Pillars...');
+            const pillarsList = await this.createStrategicPillarsList();
+            await this.seedStrategyHubPillars(pillarsList.id);
+            results.pillars = 'Created & Seeded';
 
-            // 3. Objectives
-            console.log('📝 [StrategyHub] 3/6 Strategic_Objectives...');
-            results.objectives = await this.createStrategicObjectivesList(results.pillars ? results.pillars.id : undefined);
-            const objectiveMap = await this.seedStrategyHubObjectives(results.objectives.id);
+            // 3. Objectives (Dependent on Pillars)
+            console.log('📝 [StrategyHub] 3/7 Strategic_Objectives...');
+            const objList = await this.createStrategicObjectivesList(pillarsList.id);
+            const objMap = await this.seedStrategyHubObjectives(objList.id);
+            results.objectives = 'Created & Seeded';
 
-            // 4. Alignment
-            console.log('📝 [StrategyHub] 4/6 Divisional_Alignment...');
-            results.alignment = await this.createDivisionalAlignmentList(results.objectives.id);
-            await this.seedStrategyHubAlignment(results.alignment.id, objectiveMap);
+            // 4. Unit Objectives (Dependent on Strategic Objectives)
+            console.log('📝 [StrategyHub] 4/7 Unit_Objectives...');
+            const unitObjList = await this.createUnitObjectivesList(objList.id);
+            await this.seedStrategyHubUnitObjectives(unitObjList.id);
+            results.unitObjectives = 'Created & Seeded';
 
-            // 5. Milestones
-            console.log('📝 [StrategyHub] 5/6 Strategy_Milestones...');
-            results.milestones = await this.createStrategyMilestonesList();
-            await this.seedStrategyHubMilestones(results.milestones.id);
+            // 5. Alignment (Dependent on Objectives)
+            console.log('📝 [StrategyHub] 5/7 Divisional_Alignment...');
+            const alignList = await this.createDivisionalAlignmentList(objList.id);
+            await this.seedStrategyHubAlignment(alignList.id, objMap);
+            results.alignment = 'Created & Seeded';
 
-            // 6. Risks
-            console.log('📝 [StrategyHub] 6/6 Strategy_Risks...');
-            results.risks = await this.createStrategyRisksList();
-            await this.seedStrategyHubRisks(results.risks.id);
+            // 6. Milestones
+            console.log('📝 [StrategyHub] 6/7 Strategy_Milestones...');
+            const mileList = await this.createStrategyMilestonesList();
+            await this.seedStrategyHubMilestones(mileList.id);
+            results.milestones = 'Created & Seeded';
+
+            // 7. Risks
+            console.log('📝 [StrategyHub] 7/7 Strategy_Risks...');
+            const riskList = await this.createStrategyRisksList();
+            await this.seedStrategyHubRisks(riskList.id);
+            results.risks = 'Created & Seeded';
 
             return {
                 success: true,
@@ -1330,42 +1514,136 @@ export class SharePointListSetupService {
         }
     }
 
+    /**
+     * Setup ONLY Strategic Objectives (Standalone)
+     */
+    async setupStrategicObjectivesStandalone(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [StrategyHub] Setting up Strategic Objectives only...');
+        try {
+            // we need pillars list ID for the lookup
+            let pillarsListId = '';
+            const pillarsCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Strategic_Pillars'").get();
+
+            if (pillarsCheck.value && pillarsCheck.value.length > 0) {
+                pillarsListId = pillarsCheck.value[0].id;
+            } else {
+                console.warn('⚠️ Strategic_Pillars list not found. Creating lookup will fail or we must create it.');
+                // Option: Create pillars list if missing, or just proceed without lookup? 
+                // The createStrategicObjectivesList method REQUIRES pillarsListId for the lookup column.
+                // Let's create it if missing to be safe, or error.
+                // For a "separate function", it implies independence, but the schema has dependencies.
+                // I will try to create the Pillars list structure (empty) just to satisfy the lookup if needed, 
+                // OR just pass a dummy ID which might fail the lookup creation but succeed the list creation.
+                // Better approach: Warn user.
+                // But to fulfill "create me one function", I'll try to find it.
+                // If not found, I will create the Pillars list first (schema only).
+                console.log('⚠️ Pillars list missing, creating it for dependency...');
+                const pList = await this.createStrategicPillarsList();
+                pillarsListId = pList.id;
+            }
+
+            const list = await this.createStrategicObjectivesList(pillarsListId);
+            await this.seedStrategyHubObjectives(list.id);
+
+            return {
+                success: true,
+                message: 'Strategic Objectives list created and seeded!',
+                details: list
+            };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
     private async seedStrategyHubConfig(listId: string) {
+        const { organization } = mockStrategyData;
         const items = [
-            { fields: { Title: 'Mission', Value: 'To promote and maintain a secure capital market that is fair for and accessible to all stakeholders while supporting capital formation through innovative market development.' } },
-            { fields: { Title: 'Vision', Value: 'To ensure Port Moresby becomes the Financial Capital of the Blue Pacific by 2040.' } },
-            { fields: { Title: 'ExecutiveSummary', Value: 'The SCPNG Strategy Hub 2025–2030 outlines our path to modernizing PNG\'s capital markets through regulation, development, and international cooperation.' } }
+            { fields: { Title: 'Mission', Value: organization.mission } },
+            { fields: { Title: 'Vision', Value: organization.vision } },
+            { fields: { Title: 'ExecutiveSummary', Value: organization.executiveSummary || '' } }
         ];
-        for (const item of items) await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+
+        // Also add values if needed, though they are usually in a separate structure or JSON
+        // For compliance with previous structure, we might want to add Values as a single JSON item if that's how it was consumed
+        if (organization.values) {
+            items.push({ fields: { Title: 'Values', Value: JSON.stringify(organization.values) } });
+        }
+
+        for (const item of items) {
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+        }
     }
 
     private async seedStrategyHubPillars(listId: string) {
-        const pillars = [
-            { fields: { Title: 'Protect', Description: 'Safeguarding investors from scams and market manipulation.', IconName: 'Shield', SortOrder: 1 } },
-            { fields: { Title: 'Develop', Description: 'Encouraging new capital formation and innovative market products.', IconName: 'TrendingUp', SortOrder: 2 } },
-            { fields: { Title: 'Regulate', Description: 'Ensuring all market participants follow the rule of law.', IconName: 'Award', SortOrder: 3 } },
-            { fields: { Title: 'Mitigate', Description: 'Reducing systemic risks within the PNG financial landscape.', IconName: 'Zap', SortOrder: 4 } }
-        ];
+        const pillars = mockStrategyData.pillars.map(p => ({
+            fields: {
+                Title: p.title,
+                Description: p.description,
+                IconName: p.icon,
+                SortOrder: p.sortOrder,
+                Progress: p.progress,
+                Status: p.status
+            }
+        }));
+
         for (const p of pillars) await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(p);
     }
 
 
     private async seedStrategyHubObjectives(listId: string) {
-        const objectives = [
-            { fields: { Title: "Expand Markets & Connectivity", Description: "Enhance PNGX infrastructure and market accessibility.", Progress: 45, Icon: "TrendingUp", Status: "On Track", Deliverables: "PNGX Systems, Market Clean Up, Broker Expansion" } },
-            { fields: { Title: "Regulatory Framework Reform", Description: "Modernize the legal environment to ensure fair markets.", Progress: 30, Icon: "ShieldCheck", Status: "On Track", Deliverables: "Legislative Updates, Thematic Green Bonds, New Codes" } },
-            { fields: { Title: "Administrative Fundamentals", Description: "Strengthen internal governance and identity.", Progress: 60, Icon: "Building2", Status: "On Track", Deliverables: "Board Appointment, Strategic Planning, Policy Finalization" } },
-            { fields: { Title: "Investor Education", Description: "Empower the public via awareness.", Progress: 25, Icon: "GraduationCap", Status: "Needs Attention", Deliverables: "Digital Reach, Investor Bootcamps, Regional Workshops" } },
-            { fields: { Title: "National & International Cooperation", Description: "Solidify global standing and partners.", Progress: 40, Icon: "Globe", Status: "On Track", Deliverables: "IOSCO MMOU, Global Partnerships, IPA MOAs" } },
-            { fields: { Title: "Centurion Enterprise System", Description: "Digitizing regulatory functions.", Progress: 15, Icon: "Rocket", Status: "On Track", Deliverables: "Licensing Module, Additional Core Modules", IsFeatured: true } }
-        ];
-
+        const objectives = mockStrategyData.objectives || [];
         const map: Record<string, string> = {};
+
         for (const obj of objectives) {
-            const created = await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(obj);
-            map[obj.fields.Title] = created.id;
+            const item = {
+                fields: {
+                    Title: obj.title,
+                    Description: obj.description,
+                    Progress: obj.progress,
+                    Icon: obj.icon,
+                    Status: obj.status === 'at-risk' ? 'Needs Attention' : 'On Track', // Map 'at-risk' simply if needed, or keep 1:1 if list choices match
+                    Deliverables: obj.deliverables ? obj.deliverables.join(', ') : '',
+                    IsFeatured: obj.isFeatured || false
+                }
+            };
+            const created = await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+            map[obj.title] = created.id;
         }
         return map;
+    }
+
+    private async seedStrategyHubUnitObjectives(listId: string) {
+        const objectives = mockStrategyData.unitObjectives || [];
+
+        for (const obj of objectives) {
+            // Infer Division/Unit for better testing visibility
+            let division = 'General';
+            let unit = 'General';
+
+            if (obj.owner?.includes('IT')) { division = 'IT Division'; unit = 'IT Unit'; }
+            else if (obj.owner?.includes('HR')) { division = 'HR Division'; unit = 'Recruitment'; }
+            else if (obj.owner?.includes('Audit')) { division = 'Executive Division'; unit = 'Internal Audit'; }
+            else if (obj.owner?.includes('Licensing')) { division = 'Operations Division'; unit = 'Licensing'; }
+
+            const item = {
+                fields: {
+                    Title: obj.title,
+                    Description: obj.description,
+                    GoalType: 'Unit',
+                    Division: division,
+                    Unit: unit,
+                    Year: '2025',
+                    StartDate: new Date('2025-01-01').toISOString(),
+                    EndDate: new Date('2025-12-31').toISOString(),
+                    Progress: obj.progress,
+                    Icon: obj.icon,
+                    Status: obj.status === 'at-risk' ? 'Needs Attention' : (obj.status === 'on-track' ? 'On Track' : 'Not Started'),
+                    Owner: obj.owner || 'Unit Lead',
+                    Deliverables: obj.deliverables ? obj.deliverables.join(', ') : ''
+                }
+            };
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+        }
     }
 
     private async createDivisionalAlignmentList(objectiveListId: string) {
@@ -1388,16 +1666,23 @@ export class SharePointListSetupService {
     }
 
     private async seedStrategyHubAlignment(listId: string, objectiveMap: Record<string, string>) {
-        const divisions = [
-            { fields: { Title: "Legal Services Division (LSD)", Director: "Director Legal Services", Icon: "ShieldCheck", ContributionWeight: 25, KRAs: "Pass amendments, IOSCO MMOU, Legal protocols", AlignedObjectiveLookupId: parseInt(objectiveMap["Regulatory Framework Reform"]) } },
-            { fields: { Title: "LISD Division", Director: "Director LIS", Icon: "Zap", ContributionWeight: 35, KRAs: "Centurion Deployment, Unit Trust Codes, Broker licensing", AlignedObjectiveLookupId: parseInt(objectiveMap["Expand Markets & Connectivity"]) } },
-            { fields: { Title: "Research & Publication (RPD)", Director: "Director R&P", Icon: "GraduationCap", ContributionWeight: 15, KRAs: "Digital Awareness, Investor Workshops, Roadmap events", AlignedObjectiveLookupId: parseInt(objectiveMap["Investor Education"]) } },
-            { fields: { Title: "Corporate Services Division (CSD)", Director: "Director Corporate Services", Icon: "Building2", ContributionWeight: 20, KRAs: "Policy guides, IT Modernization, HR Framework", AlignedObjectiveLookupId: parseInt(objectiveMap["Administrative Fundamentals"]) } },
-            { fields: { Title: "Internal Audit Unit", Director: "Manager Audit", Icon: "Shield", ContributionWeight: 10, KRAs: "Strategic Plan 2030, Audit frameworks, Risk monitoring", AlignedObjectiveLookupId: parseInt(objectiveMap["National & International Cooperation"]) } }
-        ];
+        const alignments = mockStrategyData.alignments || [];
+        for (const align of alignments) {
+            // Find objective ID from the map using the title or ID if available. 
+            // The map uses Title as key from the previous step.
+            const objId = objectiveMap[align.alignedObjectiveTitle || ''] || objectiveMap[align.alignedObjectiveId] || null;
 
-        for (const div of divisions) {
-            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(div);
+            const item = {
+                fields: {
+                    Title: align.name,
+                    Director: align.director,
+                    Icon: align.icon,
+                    ContributionWeight: align.contributionWeight,
+                    KRAs: align.kras ? align.kras.join(', ') : '',
+                    AlignedObjectiveLookupId: objId ? parseInt(objId) : undefined
+                }
+            };
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
         }
     }
 
@@ -1418,12 +1703,19 @@ export class SharePointListSetupService {
     }
 
     private async seedStrategyHubMilestones(listId: string) {
-        const milestones = [
-            { fields: { Title: "Internal Policy Finalization", Context: "CSD Operations", MilestoneDate: "2025-05-15", Status: "On-Track", ColorHex: "#0066cc" } },
-            { fields: { Title: "Strategic Plan 2025–2030", Context: "Executive Board", MilestoneDate: "2025-09-01", Status: "Planning", ColorHex: "#7c3aed" } },
-            { fields: { Title: "Centurion Licensing Module", Context: "LISD Digitalization", MilestoneDate: "2026-01-10", Status: "Upcoming", ColorHex: "#d97706" } }
-        ];
-        for (const m of milestones) await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(m);
+        const milestones = mockStrategyData.milestones || [];
+        for (const m of milestones) {
+            const item = {
+                fields: {
+                    Title: m.title,
+                    Context: m.context,
+                    MilestoneDate: m.date,
+                    Status: m.status,
+                    ColorHex: m.color
+                }
+            };
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+        }
     }
 
     private async createStrategyRisksList() {
@@ -1441,31 +1733,20 @@ export class SharePointListSetupService {
     }
 
     private async seedStrategyHubRisks(listId: string) {
-        const risks = [
-            { fields: { Title: "Legislative Delay", ImpactLevel: "High", Context: "Parliamentary backlog may delay SC Act amendments." } },
-            { fields: { Title: "Resource Constraints", ImpactLevel: "Medium", Context: "Limited specialized headcount for IOSCO compliance." } },
-            { fields: { Title: "Cyber Security Threat", ImpactLevel: "Critical", Context: "Digital transformation increases attack surface on market data." } }
-        ];
-        for (const r of risks) await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(r);
-    }
-
-    /**
-     * Delete Strategy Hub Design Lists
-     */
-    async deleteStrategyHubEngine(): Promise<{ success: boolean; message: string }> {
-        const listNames = ['Strategy_Config', 'Strategic_Pillars', 'Strategic_Goals', 'Strategic_Objectives', 'Divisional_Alignment', 'Strategy_Milestones', 'Strategy_Risks'];
-        try {
-            for (const name of listNames) {
-                const response = await this.client.api(`/sites/${this.siteId}/lists`).filter(`displayName eq '${name}'`).select('id').get();
-                if (response.value && response.value.length > 0) {
-                    await this.client.api(`/sites/${this.siteId}/lists/${response.value[0].id}`).delete();
+        const risks = mockStrategyData.risks || [];
+        for (const r of risks) {
+            const item = {
+                fields: {
+                    Title: r.title,
+                    ImpactLevel: r.impact, // Ensure casing matches choices (Low, Medium, High, Critical)
+                    Context: r.context
                 }
-            }
-            return { success: true, message: 'Strategy Hub Engine cleaned up.' };
-        } catch (error: any) {
-            return { success: false, message: error.message };
+            };
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
         }
     }
+
+
 }
 
 // ==========================================

@@ -580,6 +580,36 @@ const TestGround = () => {
                                         <Trash2 className="h-4 w-4 mr-2" />
                                         Reset Strategy Engine
                                     </Button>
+
+                                    <Separator className="my-2" />
+
+                                    <Button
+                                        variant="secondary"
+                                        onClick={async () => {
+                                            setIsSettingUpStrategyHub(true);
+                                            try {
+                                                toast({ title: "🚀 Deploying Objectives", description: "Creating Strategic Objectives list..." });
+                                                const graphClient = await getGraphClient(msalInstance);
+                                                const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+                                                const setupService = new SharePointListSetupService(graphClient, site.id);
+                                                // Call standalone method
+                                                const result = await setupService.setupStrategicObjectivesStandalone();
+                                                if (result.success) {
+                                                    toast({ title: "✅ Objectives Deployed", description: "Strategic Objectives list created with full cards data." });
+                                                } else {
+                                                    throw new Error(result.message);
+                                                }
+                                            } catch (error: any) {
+                                                toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+                                            } finally {
+                                                setIsSettingUpStrategyHub(false);
+                                            }
+                                        }}
+                                        className="w-full font-semibold"
+                                    >
+                                        <ListChecks className="h-4 w-4 mr-2" />
+                                        Deploy Objectives Only
+                                    </Button>
                                 </div>
                             </div>
                         </div>

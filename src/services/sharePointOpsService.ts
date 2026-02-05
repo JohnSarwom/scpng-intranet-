@@ -16,7 +16,7 @@ const OPS_CONFIG = {
         PROJECTS: 'Operations_Projects',
         TASKS: 'Operations_Tasks',
         RISKS: 'Operations_Risks',
-        OBJECTIVES: 'Strategic_Objectives',
+        OBJECTIVES: 'Unit_Objectives',
         SETTINGS: 'System_View_Settings'
     }
 };
@@ -54,13 +54,20 @@ export class SharePointOpsService {
             .select('id,displayName')
             .get();
 
-        const targetLists = Object.values(OPS_CONFIG.LISTS);
+        const normalize = (s: string) => s.toLowerCase().replace(/[\s_-]/g, '');
+
+        // Create a map of Normalized Config Name -> Config Key
+        const configMap: Record<string, string> = {};
+        Object.entries(OPS_CONFIG.LISTS).forEach(([key, value]) => {
+            configMap[normalize(value)] = key;
+        });
+
         lists.value.forEach((list: any) => {
-            if (targetLists.includes(list.displayName)) {
-                const key = Object.keys(OPS_CONFIG.LISTS).find(
-                    k => OPS_CONFIG.LISTS[k as keyof typeof OPS_CONFIG.LISTS] === list.displayName
-                );
-                if (key) this.listIds[key] = list.id;
+            const listNorm = normalize(list.displayName);
+            if (configMap[listNorm]) {
+                const key = configMap[listNorm];
+                this.listIds[key] = list.id;
+                console.log(`✅ [SharePointOpsService] Resolved List: ${key} -> ${list.id} (${list.displayName})`);
             }
         });
     }
@@ -68,7 +75,10 @@ export class SharePointOpsService {
     // --- Fetch Methods ---
 
     async getObjectives(scope: FilterScope = 'Division', context?: UserContext): Promise<Objective[]> {
-        if (!this.listIds['OBJECTIVES']) return [];
+        if (!this.listIds['OBJECTIVES']) {
+            console.warn('⚠️ [SP Ops] Objectives list not found via Graph API.');
+            return [];
+        }
 
         try {
             // Fetch all to avoid indexing issues with OData filters
@@ -88,8 +98,15 @@ export class SharePointOpsService {
                     const type = f.GoalType;
                     const isFeatured = f.IsFeatured === true || f.IsFeatured === 1 || f.IsFeatured === "1";
 
+                    // Robust check for Organizational/Strategic objectives
+                    // Check for 'Org', 'Strategic', or empty type (often implies top level)
+                    const isOrgLevel = !type ||
+                        type.toLowerCase() === 'org' ||
+                        type.toLowerCase() === 'strategic' ||
+                        type.toLowerCase() === 'board';
+
                     // ALWAYS include 'Org', null types (strategic fallback), or featured objectives for alignment lookups
-                    if (type === 'Org' || !type || isFeatured) return true;
+                    if (isOrgLevel || isFeatured) return true;
 
                     // Then apply scope-specific filtering
                     if (scope === 'Division' && context?.division) {
@@ -128,7 +145,8 @@ export class SharePointOpsService {
                 ParentGoalIdLookupId: objective.parentGoalId,
                 Icon: objective.icon,
                 IsFeatured: objective.isFeatured,
-                Deliverables: objective.deliverables?.join(', ')
+                Deliverables: objective.deliverables?.join(', '),
+                LinkedDeliverable: objective.linkedDeliverable
             }
         };
 
@@ -162,6 +180,7 @@ export class SharePointOpsService {
         if (objective.icon !== undefined) fields.Icon = objective.icon;
         if (objective.isFeatured !== undefined) fields.IsFeatured = objective.isFeatured;
         if (objective.deliverables !== undefined) fields.Deliverables = objective.deliverables?.join(', ');
+        if (objective.linkedDeliverable !== undefined) fields.LinkedDeliverable = objective.linkedDeliverable;
 
         const payload = { fields };
 
@@ -284,6 +303,82 @@ export class SharePointOpsService {
 
         const response = await query.get();
         return response.value.map((item: any) => this.mapTask(item));
+    }
+
+    async addTask(task: Partial<Task>, department?: string): Promise<Task> {
+        if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+
+        const payload: any = {
+            fields: {
+                Title: task.title,
+                Description: task.description,
+                Status: this.mapStatusForSharePoint(task.status),
+                Priority: this.mapPriorityForSharePoint(task.priority),
+                DueDate: task.dueDate ? new Date(task.dueDate).toISOString() : null,
+                StartDate: task.startDate ? new Date(task.startDate).toISOString() : null,
+                Department: department || task.unit_id || 'General',
+                SubtasksJSON: JSON.stringify(task.subtasks || []),
+                Tags: (task.tags || []).join(','),
+                // Lookups
+                RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
+                RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
+                RelatedProjectLookupId: task.projectId ? Number(task.projectId) : null
+                // Note: AssignedTo is a Person field and difficult to set via simple write without user lookup
+            }
+        };
+
+        console.log('📝 [SP Ops] Adding Task:', payload);
+        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
+        return this.mapTask(response);
+    }
+
+    async updateTask(id: string, task: Partial<Task>): Promise<Task> {
+        if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+
+        const fields: any = {};
+        if (task.title !== undefined) fields.Title = task.title;
+        if (task.description !== undefined) fields.Description = task.description;
+        if (task.status !== undefined) fields.Status = this.mapStatusForSharePoint(task.status);
+        if (task.priority !== undefined) fields.Priority = this.mapPriorityForSharePoint(task.priority);
+        if (task.dueDate !== undefined) fields.DueDate = task.dueDate ? new Date(task.dueDate).toISOString() : null;
+        if (task.startDate !== undefined) fields.StartDate = task.startDate ? new Date(task.startDate).toISOString() : null;
+        if (task.unit_id !== undefined) fields.Department = task.unit_id;
+        if (task.subtasks !== undefined) fields.SubtasksJSON = JSON.stringify(task.subtasks);
+        if (task.tags !== undefined) fields.Tags = (task.tags || []).join(',');
+
+        // Lookups
+        if (task.kra_id !== undefined) fields.RelatedKRALookupId = task.kra_id ? Number(task.kra_id) : null;
+        if (task.kpi_id !== undefined) fields.RelatedKPILookupId = task.kpi_id ? Number(task.kpi_id) : null;
+        if (task.projectId !== undefined) fields.RelatedProjectLookupId = task.projectId ? Number(task.projectId) : null;
+
+        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}/fields`).patch(fields);
+        return this.mapTask({ ...response, id });
+    }
+
+    async deleteTask(id: string): Promise<void> {
+        if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).delete();
+    }
+
+    // Helpers for mapping
+    private mapStatusForSharePoint(status?: string): string {
+        switch (status) {
+            case 'todo': return 'Todo';
+            case 'in-progress': return 'In Progress';
+            case 'review': return 'Review';
+            case 'done': return 'Done';
+            default: return 'Todo';
+        }
+    }
+
+    private mapPriorityForSharePoint(priority?: string): string {
+        switch (priority) {
+            case 'low': return 'Low';
+            case 'medium': return 'Medium';
+            case 'high': return 'High';
+            case 'urgent': return 'Urgent';
+            default: return 'Medium';
+        }
     }
 
     async getRisks(scope: FilterScope = 'Division', context?: UserContext): Promise<Risk[]> {
@@ -476,6 +571,7 @@ export class SharePointOpsService {
             icon: f.Icon,
             isFeatured: f.IsFeatured === true || f.IsFeatured === 1 || f.IsFeatured === "1",
             deliverables: f.Deliverables ? f.Deliverables.split(',').map((s: string) => s.trim()) : [],
+            linkedDeliverable: f.LinkedDeliverable
         };
     }
 
