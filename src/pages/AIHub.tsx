@@ -301,7 +301,7 @@ const AIHub = () => {
 
   // Handle auto-start search from query parameters
   useEffect(() => {
-    if (isAuthLoading || msalInProgress !== 'none' || isConfigLoading || isInitialSearchHandled || !apiKey || !apiEndpoint) {
+    if (isAuthLoading || msalInProgress !== 'none' || isConfigLoading || isInitialSearchHandled || !apiKey) {
       return;
     }
 
@@ -1072,7 +1072,7 @@ const AIHub = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className={cn("flex-1", isFullScreenInstance && "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-intranet-primary focus:border-intranet-primary h-12 text-base")}
-              disabled={isSendingChatMessage || uiIsActuallyLoading || (!apiKey || !apiEndpoint)}
+              disabled={isSendingChatMessage || uiIsActuallyLoading || !apiKey}
             />
             <Button
               type="submit"
@@ -1080,14 +1080,14 @@ const AIHub = () => {
                 "bg-intranet-primary hover:bg-intranet-secondary",
                 isFullScreenInstance && "h-12 w-12 rounded-full p-0"
               )}
-              disabled={isSendingChatMessage || !query.trim() || uiIsActuallyLoading || (!apiKey || !apiEndpoint)}
+              disabled={isSendingChatMessage || !query.trim() || uiIsActuallyLoading || !apiKey}
             >
               {isSendingChatMessage ? <Loader2 className="h-5 w-5" /> : <Send size={isFullScreenInstance ? 20 : 18} />}
             </Button>
           </form>
-          {(!apiKey || !apiEndpoint) && !uiIsActuallyLoading && !isFullScreenInstance && (
+          {!apiKey && !uiIsActuallyLoading && !isFullScreenInstance && (
             <p className="text-xs text-red-500 mt-2">
-              AI Assistant is not fully configured. Admins: please set API Key and Endpoint in the 'AI Configuration' section.
+              AI Assistant is not fully configured. Admins: please set API Key in the 'AI Configuration' section.
             </p>
           )}
         </CardContent>

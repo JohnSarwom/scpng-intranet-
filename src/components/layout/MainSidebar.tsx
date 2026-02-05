@@ -80,7 +80,7 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ closeMobileSidebar, handleSig
     { icon: TrendingUp, path: '/market-data', label: 'Market Data', resource: 'market_data' },
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
     { icon: FormInput, path: '/forms', label: 'Forms', resource: 'forms' },
-    { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: 'ai' },
+    { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: null },
     { icon: GalleryHorizontal, path: '/gallery', label: 'Gallery', resource: 'gallery' },
     { icon: Users, path: '/contacts', label: 'Contacts', resource: 'contacts' },
     { icon: Target, path: '/unit', label: 'Unit', resource: 'units' }, // Updated to match system resource key

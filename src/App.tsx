@@ -164,10 +164,11 @@ const AppRoutes = () => {
         </RoleProtectedRoute>
       } />
 
+      {/* Adjusted to allow full access to all authenticated users */}
       <Route path="/ai-hub" element={
-        <RoleProtectedRoute requiredPermissions={[{ resource: 'ai', action: 'access' }]}>
+        <ProtectedRoute>
           <AIHub />
-        </RoleProtectedRoute>
+        </ProtectedRoute>
       } />
 
       <Route path="/unit" element={
