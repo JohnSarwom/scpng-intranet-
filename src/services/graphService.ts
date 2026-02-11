@@ -1,5 +1,6 @@
 import { Client } from '@microsoft/microsoft-graph-client';
 import { IPublicClientApplication, InteractionStatus, InteractionRequiredAuthError, AccountInfo } from '@azure/msal-browser';
+import { Logger } from '@/utils/logger';
 
 /**
  * Acquires an access token for Microsoft Graph.
@@ -21,6 +22,7 @@ export const getAccessToken = async (msalInstance: IPublicClientApplication): Pr
       msalInstance.setActiveAccount(allAccounts[0]);
     } else {
       console.error('   ❌ No accounts found!');
+      console.error('   ❌ No accounts found!'); // Keep console.error for errors
       throw new Error('No MSAL accounts found. Please log in.');
     }
   }
@@ -31,24 +33,24 @@ export const getAccessToken = async (msalInstance: IPublicClientApplication): Pr
 
   const activeAccount = msalInstance.getActiveAccount();
   if (!activeAccount) {
-    console.error('   ❌ No active account after check');
+    console.error('   ❌ No active account after check'); // Keep console.error for errors
     throw new Error('No active MSAL account found.');
   }
 
   const scopes = ['Sites.ReadWrite.All', 'Files.ReadWrite.All', 'User.Read.All'];
-  console.log('   📋 Requesting scopes:', scopes.join(', '));
+  Logger.debug('   📋 Requesting scopes:', scopes.join(', '));
 
   try {
-    console.log('   🔄 Attempting silent token acquisition...');
+    Logger.debug('   🔄 Attempting silent token acquisition...');
     const response = await msalInstance.acquireTokenSilent({
       scopes,
       account: activeAccount,
     });
-    console.log('   ✅ Token acquired silently');
+    Logger.debug('   ✅ Token acquired silently');
     return response.accessToken;
   } catch (e) {
     if (e instanceof InteractionRequiredAuthError) {
-      console.log('   ⚠️  Silent acquisition failed, showing popup...');
+      Logger.debug('   ⚠️  Silent acquisition failed, showing popup...');
       const response = await msalInstance.acquireTokenPopup({ scopes });
       console.log('   ✅ Token acquired via popup');
       return response.accessToken;
@@ -58,31 +60,52 @@ export const getAccessToken = async (msalInstance: IPublicClientApplication): Pr
   }
 };
 
+// Singleton instance
+let graphClientInstance: Client | null = null;
+
 /**
  * Initializes and returns a Microsoft Graph client instance.
+ * Uses a Singleton pattern to reuse the client.
  * @param msalInstance The MSAL public client application instance.
  * @returns A promise that resolves to the Graph client instance, or null if initialization fails.
  */
 export const getGraphClient = async (msalInstance: IPublicClientApplication): Promise<Client | null> => {
+  if (graphClientInstance) {
+    // console.log('🔄 [getGraphClient] Returning existing singleton instance');
+    return graphClientInstance;
+  }
+
   try {
-    console.log('🌐 [getGraphClient] Initializing Microsoft Graph client...');
+    console.log('🌐 [getGraphClient] Initializing NEW Microsoft Graph client...');
 
-    const accessToken = await getAccessToken(msalInstance);
-    console.log('   ✅ Access token obtained (length:', accessToken?.length, 'chars)');
-
+    // Initialize with a dynamic authProvider that fetches the token on each request
     const client = Client.init({
-      authProvider: (done) => {
-        done(null, accessToken);
+      authProvider: async (done) => {
+        try {
+          // Fetch a fresh token for every request to handle expiry automatically
+          const accessToken = await getAccessToken(msalInstance);
+          done(null, accessToken);
+        } catch (error) {
+          console.error('❌ [GraphClient] AuthProvider failed to get token:', error);
+          done(error as Error, null);
+        }
       },
     });
 
-    console.log('   ✅ Graph client initialized successfully');
+    // Test the token/connection once before returning (optional but good for debugging)
+    // We can skip the strict check to be faster, or do a quick internal check.
+    // For now, let's just assume if init worked, it's good. 
+    // We can trigger a token fetch to verify auth if needed, but getAccessToken inside provider will do it on first call.
+
+    // To be safe and compatible with previous behavior that logged the token status:
+    await getAccessToken(msalInstance);
+
+    graphClientInstance = client;
+    console.log('   ✅ Graph client initialized successfully (Singleton Created)');
     return client;
   } catch (e: any) {
     console.error('❌ [getGraphClient] Failed to initialize Microsoft Graph client');
     console.error('   Error:', e);
-    console.error('   Message:', e.message);
-    console.error('   Stack:', e.stack);
     // Optionally, use a logging service or toast notification here
     return null;
   }

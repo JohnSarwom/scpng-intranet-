@@ -28,8 +28,10 @@ interface AddDocumentModalProps {
     description: string;
     tags?: string;
     file?: File | null;
+    url?: string | null;
     category: string;
     subCategory?: string | null;
+    type: 'file' | 'link';
   }) => void;
   initialCategory?: string;
   availableCategories: string[];
@@ -44,10 +46,12 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   availableCategories = [],
   subCategoryMap = {},
 }) => {
+  const [mode, setMode] = useState<'file' | 'link'>('file');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [externalUrl, setExternalUrl] = useState('');
   const [fileError, setFileError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
@@ -60,11 +64,13 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       const currentInitialCategory = initialCategory || (availableCategories.length > 0 ? availableCategories[0] : '');
       setSelectedCategory(currentInitialCategory);
       setSelectedSubCategory(null);
+      setMode('file');
     } else {
       setTitle('');
       setDescription('');
       setTags('');
       setSelectedFile(null);
+      setExternalUrl('');
       setFileError(null);
       setSelectedSubCategory(null);
     }
@@ -90,8 +96,12 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       alert('Title is required.');
       return;
     }
-    if (!selectedFile) {
+    if (mode === 'file' && !selectedFile) {
       setFileError('Please select a file to share.');
+      return;
+    }
+    if (mode === 'link' && !externalUrl.trim()) {
+      alert('Please provide an external URL.');
       return;
     }
     if (!selectedCategory) {
@@ -102,9 +112,11 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       title,
       description,
       tags,
-      file: selectedFile,
+      file: mode === 'file' ? selectedFile : null,
+      url: mode === 'link' ? externalUrl : null,
       category: selectedCategory,
-      subCategory: selectedSubCategory
+      subCategory: selectedSubCategory,
+      type: mode
     });
   };
 
@@ -118,6 +130,28 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label className="text-right">Mode</Label>
+            <div className="col-span-3 flex gap-4">
+              <Button
+                type="button"
+                variant={mode === 'file' ? 'default' : 'outline'}
+                onClick={() => setMode('file')}
+                className="flex-1"
+              >
+                File Upload
+              </Button>
+              <Button
+                type="button"
+                variant={mode === 'link' ? 'default' : 'outline'}
+                onClick={() => setMode('link')}
+                className="flex-1"
+              >
+                External Link
+              </Button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="category" className="text-right">
               Category*
@@ -173,6 +207,44 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               required
             />
           </div>
+
+          {mode === 'link' ? (
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="url" className="text-right">
+                URL*
+              </Label>
+              <Input
+                id="url"
+                value={externalUrl}
+                onChange={(e) => setExternalUrl(e.target.value)}
+                className="col-span-3"
+                placeholder="https://example.com/document"
+                required
+              />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="file" className="text-right">
+                  File*
+                </Label>
+                <Input
+                  id="file"
+                  type="file"
+                  onChange={handleFileChange}
+                  className="col-span-3"
+                />
+              </div>
+              {fileError && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <div className="col-start-2 col-span-3 text-sm text-red-600">
+                    {fileError}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="description" className="text-right">
               Description
@@ -197,24 +269,6 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               placeholder="e.g., report, Q3, finance (comma-separated)"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="file" className="text-right">
-              File*
-            </Label>
-            <Input
-              id="file"
-              type="file"
-              onChange={handleFileChange}
-              className="col-span-3"
-            />
-          </div>
-          {fileError && (
-            <div className="grid grid-cols-4 items-center gap-4">
-              <div className="col-start-2 col-span-3 text-sm text-red-600">
-                {fileError}
-              </div>
-            </div>
-          )}
         </div>
         <DialogFooter>
           <DialogClose asChild>
@@ -225,9 +279,9 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
           <Button
             type="button"
             onClick={handleShareClick}
-            disabled={!title.trim() || !selectedFile || !selectedCategory}
+            disabled={!title.trim() || (mode === 'file' && !selectedFile) || (mode === 'link' && !externalUrl.trim()) || !selectedCategory}
           >
-            Share Document
+            {mode === 'file' ? 'Share Document' : 'Add Link'}
           </Button>
         </DialogFooter>
       </DialogContent>

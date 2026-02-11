@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import { useSupabaseAuth } from './useSupabaseAuth';
 import { toast } from 'sonner';
 import { useMsal } from '@azure/msal-react';
@@ -321,11 +321,14 @@ export const useMicrosoftGraph = () => {
   }, [isAuthenticated, msalInstance, client]);
 
   // Auto-initialize client
-  if (isAuthenticated && !client && msalInstance) {
-    initializeClient();
-  }
+  useEffect(() => {
+    if (isAuthenticated && !client && msalInstance) {
+      initializeClient();
+    }
+  }, [isAuthenticated, client, msalInstance, initializeClient]);
 
-  return {
+
+  return useMemo(() => ({
     isLoading,
     lastError,
     getOneDriveDocuments: getOneDriveRootDocuments,
@@ -336,5 +339,15 @@ export const useMicrosoftGraph = () => {
     isAuthenticated, // Add authentication status
     getClient,
     getAppSetting,
-  };
+  }), [
+    isLoading,
+    lastError,
+    getOneDriveRootDocuments,
+    uploadFileToSharePointLibrary,
+    uploadBinaryFileToSharePoint,
+    client,
+    isAuthenticated,
+    getClient,
+    getAppSetting
+  ]);
 };

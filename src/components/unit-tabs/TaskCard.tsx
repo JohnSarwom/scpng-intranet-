@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ export interface TaskCardProps {
   title: string;
   description?: string;
   assignee?: StaffMember;
+  assignees?: StaffMember[] | { name: string; avatarUrl?: string; id?: string | number }[]; // Support multiple assignees
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   startDate?: Date | null;
   endDate?: string | null;
@@ -36,6 +38,7 @@ export interface TaskCardProps {
   onPriorityChange?: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange?: (id: string, assignee: StaffMember) => void;
   onStatusChange?: (id: string, status: string) => void;
+  availableAssignees?: StaffMember[];
 }
 
 const priorityColors = {
@@ -64,6 +67,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   title,
   description,
   assignee,
+  assignees,
   priority = 'medium',
   startDate,
   endDate,
@@ -81,33 +85,41 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onComplete,
   onPriorityChange,
   onAssigneeChange,
-  onStatusChange
+  // We might want a new handler for multiple assignees in the future, 
+  // but for now we'll stick to single assignee change or let the parent handle it via edit dialog
+  onStatusChange,
+  availableAssignees = []
 }) => {
   // State for editable dropdowns
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  
+
   // Refs for dropdowns
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
   const assigneeDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
-  
-  // Sample assignees for dropdown
-  const availableAssignees: StaffMember[] = []; // This will be populated from props later
+
+  // Init local state from props, but allow instant toggle
+  const [isCompletedOptimistic, setIsCompletedOptimistic] = useState(completed);
+
+  // Sync state if prop changes (e.g. initial load or external update)
+  useEffect(() => {
+    setIsCompletedOptimistic(completed);
+  }, [completed]);
 
   // Check if due date is passed (checking endDate if available)
   const isDueDatePassed = React.useMemo(() => {
     const dateToCheck = endDate ? new Date(endDate) : startDate;
     if (!dateToCheck) return false;
-    
+
     try {
       const date = new Date(dateToCheck);
       if (!isValid(date)) return false;
-      
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       return isBefore(date, today) && !completed;
     } catch (error) {
       console.error("Error parsing date:", error);
@@ -140,7 +152,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setShowPriorityDropdown(false);
     setShowStatusDropdown(false);
   };
-  
+
   // --- Define handleStatusClick BEFORE usage ---
   const handleStatusClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -164,7 +176,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
     setShowStatusDropdown(false);
   };
-  
+
   // Handle changing assignee
   const handleChangeAssignee = (newAssignee: StaffMember) => {
     if (onAssigneeChange) {
@@ -186,11 +198,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setShowStatusDropdown(false);
       }
     };
-    
+
     if (showPriorityDropdown || showAssigneeDropdown || showStatusDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
     }
-    
+
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -198,8 +210,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
+    // Optimistic update
+    const newValue = !isCompletedOptimistic;
+    setIsCompletedOptimistic(newValue);
+
     if (onComplete) {
-      onComplete(id, !completed);
+      onComplete(id, newValue);
     }
   };
 
@@ -213,27 +229,45 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="complete-button h-5 w-5 p-0 flex-shrink-0 mt-0.5 text-muted-foreground hover:text-primary" 
+              <Button
+                variant="ghost"
+                size="icon"
+                className="complete-button h-5 w-5 p-0 flex-shrink-0 mt-0.5 text-muted-foreground hover:text-primary"
                 onClick={handleToggleComplete}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable="false"
               >
-                {completed ? 
-                  <CheckCircle className="h-4 w-4 text-green-600" /> : 
-                  <Circle className="h-4 w-4" />
-                }
+                <AnimatePresence mode="wait" initial={false}>
+                  {isCompletedOptimistic ?
+                    <motion.div
+                      key="check"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    >
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    </motion.div> :
+                    <motion.div
+                      key="circle"
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Circle className="h-4 w-4" />
+                    </motion.div>
+                  }
+                </AnimatePresence>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{completed ? 'Mark as incomplete' : 'Mark as complete'}</p>
+              <p>{isCompletedOptimistic ? 'Mark as incomplete' : 'Mark as complete'}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
-      <div className={cn("text-sm font-medium leading-tight flex-grow mr-1", completed && "line-through text-muted-foreground")}>{title}</div>
+      <div className={cn("text-sm font-medium leading-tight flex-grow mr-1", isCompletedOptimistic && "line-through text-muted-foreground")}>{title}</div>
     </div>
   );
 
@@ -241,12 +275,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const headerActions = (
     <>
       {onEdit && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 p-0 edit-button text-muted-foreground hover:text-foreground" 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 edit-button text-muted-foreground hover:text-foreground"
           onClick={(e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
             onEdit();
           }}
           onPointerDown={(e) => {
@@ -256,16 +290,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
           title="Edit Task"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-            <path d="m15 5 4 4"/>
+            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            <path d="m15 5 4 4" />
           </svg>
         </Button>
       )}
       {onDelete && (
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 p-0 delete-button text-muted-foreground hover:text-red-600" 
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 delete-button text-muted-foreground hover:text-red-600"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -278,11 +312,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
           title="Delete Task"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3.5 w-3.5">
-            <path d="M3 6h18"/>
-            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-            <line x1="10" x2="10" y1="11" y2="17"/>
-            <line x1="14" x2="14" y1="11" y2="17"/>
+            <path d="M3 6h18" />
+            <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+            <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+            <line x1="10" x2="10" y1="11" y2="17" />
+            <line x1="14" x2="14" y1="11" y2="17" />
           </svg>
         </Button>
       )}
@@ -308,8 +342,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer", statusColor, "hover:opacity-80 transition-opacity")}
                   onClick={handleStatusClick}
                   onPointerDown={(e) => e.stopPropagation()}
@@ -322,11 +356,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          
+
           {showStatusDropdown && (
             <div className="absolute z-10 mt-1 min-w-[120px] bg-background border rounded shadow-lg py-1">
               {Object.keys(statusLabels).map(key => (
-                <Button 
+                <Button
                   key={key}
                   variant="ghost"
                   size="sm"
@@ -340,17 +374,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
       )}
-      
+
       {/* Priority Badge/Dropdown */}
       {priority && (
         <div className="relative inline-block" ref={priorityDropdownRef}>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn(
-                    "px-1.5 py-0.5 text-xs font-normal border cursor-pointer", 
+                    "px-1.5 py-0.5 text-xs font-normal border cursor-pointer",
                     priorityColors[priority],
                     "hover:opacity-80 transition-opacity"
                   )}
@@ -382,31 +416,31 @@ const TaskCard: React.FC<TaskCardProps> = ({
           )}
         </div>
       )}
-      
+
       {/* Due Date Display - Now displays range */}
       {startDate && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div 
-                  className={cn(
-                    "text-xs flex items-center text-muted-foreground", 
-                    isDueDatePassed && "text-red-600 dark:text-red-500 font-semibold"
-                  )}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  <CalendarDays className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
-                  <span>
-                    {startDate ? format(new Date(startDate), 'MMM d') : ''}
-                    {endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Date Range: {startDate ? format(new Date(startDate), 'MMM d') : ''}{endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div
+                className={cn(
+                  "text-xs flex items-center text-muted-foreground",
+                  isDueDatePassed && "text-red-600 dark:text-red-500 font-semibold"
+                )}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                <CalendarDays className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <span>
+                  {startDate ? format(new Date(startDate), 'MMM d') : ''}
+                  {endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Date Range: {startDate ? format(new Date(startDate), 'MMM d') : ''}{endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
 
       {commentsCount > 0 && (
@@ -446,35 +480,71 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
-      
+
       <div className="flex-grow"></div>
-      
+
       {/* Assignee dropdown */}
       <div className="relative" ref={assigneeDropdownRef}>
-        <div onClick={handleAssigneeClick} className="cursor-pointer">
-          {assignee ? (
-            <Avatar className="h-6 w-6">
-              <AvatarFallback className="text-xs">{assignee.name.charAt(0)}</AvatarFallback>
-            </Avatar>
+        <div onClick={handleAssigneeClick} className="cursor-pointer flex items-center">
+          {assignees && assignees.length > 0 ? (
+            <div className="flex -space-x-2 overflow-hidden">
+              {assignees.slice(0, 3).map((person, index) => (
+                <TooltipProvider key={index}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background">
+                        <AvatarImage src={person.avatarUrl} alt={person.name} />
+                        <AvatarFallback className="text-xs font-medium">
+                          {person.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{person.name}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              ))}
+              {assignees.length > 3 && (
+                <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-xs font-medium border-2 border-background">
+                  +{assignees.length - 3}
+                </div>
+              )}
+            </div>
+          ) : assignee ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs font-medium">
+                      {assignee.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{assignee.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           ) : (
-            <div className="h-6 w-6 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
-              <User className="h-3 w-3 text-gray-400" />
+            <div className="h-8 w-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+              <User className="h-4 w-4 text-gray-400" />
             </div>
           )}
         </div>
-        
+
         {showAssigneeDropdown && onAssigneeChange && (
           <div className="fixed inset-0 z-[100]" onClick={() => setShowAssigneeDropdown(false)}>
-            <div 
+            <div
               className="absolute z-[101] bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1 min-w-[160px] max-h-[180px] overflow-y-auto"
-              style={{ 
+              style={{
                 right: assigneeDropdownRef.current ? (window.innerWidth - assigneeDropdownRef.current.getBoundingClientRect().right) + 'px' : '0px',
                 top: (assigneeDropdownRef.current?.getBoundingClientRect().bottom + 5) + 'px'
               }}
               onClick={e => e.stopPropagation()}
             >
               {availableAssignees.map(person => (
-                <button 
+                <button
                   key={person.id}
                   className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
                   onClick={(e) => {
@@ -488,8 +558,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   {person.name}
                 </button>
               ))}
-              
-              <button 
+
+              <button
                 className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-gray-500"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -520,7 +590,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
       isDragOverlay={isDragOverlay}
       cardClassName={cn(
         isDueDatePassed && "border-red-500 dark:border-red-600",
-        completed && "opacity-80 bg-gray-50 dark:bg-gray-800/50",
+        isCompletedOptimistic && "opacity-80 bg-gray-50 dark:bg-gray-800/50",
         className
       )}
     />

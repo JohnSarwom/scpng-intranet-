@@ -417,9 +417,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Reports</h2>
+        <div className="space-y-0.5">
+          <h2 className="text-2xl font-bold">Reports</h2>
+          <p className="text-muted-foreground">Generate and view performance reports.</p>
+        </div>
       </div>
 
       <Tabs defaultValue="generate" value={selectedReportTab} onValueChange={setSelectedReportTab}>

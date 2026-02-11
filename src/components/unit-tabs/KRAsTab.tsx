@@ -183,6 +183,7 @@ interface KRAsTabProps {
   onSaveKpi: (kpi: Partial<Kpi>) => Promise<void>;
   onDeleteKpi: (kpiId: string | number) => Promise<void>;
   strategicObjectives?: { id: string | number; title: string; deliverables?: string[] }[];
+  canEdit?: boolean;
 }
 
 export const KRAsTab: React.FC<KRAsTabProps> = ({
@@ -201,7 +202,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   onDeleteKra,
   onSaveKpi,
   onDeleteKpi,
-  strategicObjectives = []
+  strategicObjectives = [],
+  canEdit = false
 }) => {
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
@@ -494,6 +496,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       unit_id: formData.unitId || null, // Map from unit select (now storing ID)
       description: formData.comments || null, // Map description FROM comments textarea
       ownerId: formData.responsibleId || formData.ownerId || null, // Map owner if present
+      assignees: formData.assignees || [], // Map assignees
     };
 
     if (isEditing) {
@@ -756,12 +759,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                 Track performance, manage objectives, and view timelines.
               </CardDescription>
             </div>
-            <Button
-              className="flex items-center gap-2"
-              onClick={handleAddButtonClick}
-            >
-              <Plus className="h-4 w-4" /> {addButtonLabel}
-            </Button>
+            {canEdit && (
+              <Button
+                className="flex items-center gap-2"
+                onClick={handleAddButtonClick}
+              >
+                <Plus className="h-4 w-4" /> {addButtonLabel}
+              </Button>
+            )}
           </CardHeader>
 
           <CardContent>
@@ -888,57 +893,61 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                               </TableCell>
                               <TableCell className="align-top text-right sticky right-0 bg-card border-l px-2 py-1 whitespace-nowrap align-middle">
                                 <div className="flex justify-end items-center space-x-1">
-                                  {kpi && kpi.id && kpi.name !== '-' && (
-                                    <TooltipProvider delayDuration={100}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="p-1 h-auto"
-                                            onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
-                                            aria-label="Edit KPI"
-                                          >
-                                            <Edit className="h-4 w-4" />
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="z-[100]">Edit KPI</TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  )}
-                                  <TooltipProvider delayDuration={100}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="p-1 h-auto mr-1"
-                                          onClick={() => handleOpenEditKraModal(row.originalKra)}
-                                          aria-label="Edit KRA"
-                                        >
-                                          <Edit className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="z-[100]">Edit KRA (and its KPIs)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                  {canEdit && (
+                                    <>
+                                      {kpi && kpi.id && kpi.name !== '-' && (
+                                        <TooltipProvider delayDuration={100}>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="p-1 h-auto"
+                                                onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
+                                                aria-label="Edit KPI"
+                                              >
+                                                <Edit className="h-4 w-4" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="z-[100]">Edit KPI</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      <TooltipProvider delayDuration={100}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="p-1 h-auto mr-1"
+                                              onClick={() => handleOpenEditKraModal(row.originalKra)}
+                                              aria-label="Edit KRA"
+                                            >
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent className="z-[100]">Edit KRA (and its KPIs)</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
 
-                                  <TooltipProvider delayDuration={100}>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="p-1 h-auto text-destructive hover:text-destructive"
-                                          onClick={() => handleDeleteKra(row.originalKra.id)}
-                                          aria-label="Delete KRA"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
+                                      <TooltipProvider delayDuration={100}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="p-1 h-auto text-destructive hover:text-destructive"
+                                              onClick={() => handleDeleteKra(row.originalKra.id)}
+                                              aria-label="Delete KRA"
+                                            >
+                                              <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    </>
+                                  )}
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -957,7 +966,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                       <TableRow>
                         <TableHead className="w-[20%]">Strategic Alignment</TableHead>
                         <TableHead className="w-[20%]">Key Deliverable</TableHead>
-                        <TableHead className="w-[20%]">Objective Name</TableHead>
+                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
                         <TableHead className="w-[10%]">Goal Type</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="text-right w-[10%]">Actions</TableHead>
@@ -995,7 +1004,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                 <span className="text-muted-foreground text-xs">-</span>
                               )}
                             </TableCell>
-                            <TableCell className="font-medium">{objective.title}</TableCell>
+                            <TableCell className="font-bold">{objective.title}</TableCell>
                             <TableCell>
                               <Badge
                                 variant={objective.goalType === 'Org' ? 'default' : 'secondary'}
@@ -1006,12 +1015,16 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                             </TableCell>
                             <TableCell className="text-sm text-muted-foreground">{objective.description || '-'}</TableCell>
                             <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditObjectiveModal(objective)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteObjective(objective.id)}>
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {canEdit && (
+                                <>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditObjectiveModal(objective)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteObjective(objective.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
                             </TableCell>
                           </TableRow>
                         ))

@@ -34,10 +34,14 @@ import {
   Mail,
   Phone,
   Clock,
-  UserCog
+  UserCog,
+  Eye,
+  RotateCcw,
+  Layout
 } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useGraphProfile } from '@/hooks/useGraphProfile';
+import { useTaskGroupPreferences } from '@/hooks/useTaskGroupPreferences';
 
 const Settings = () => {
   const { session, isSyncingSession } = useSupabaseAuth(); // Destructure isSyncingSession
@@ -45,6 +49,7 @@ const Settings = () => {
   const { profile: graphProfile } = useGraphProfile();
   const account = accounts[0];
   const userLoading = inProgress !== "none";
+  const { preferences, restoreGroup, resetGroupName, loading: preferencesLoading } = useTaskGroupPreferences();
   const [userRole, setUserRole] = useState(null);
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -218,6 +223,10 @@ const Settings = () => {
               <TabsTrigger value="security" className="flex items-center gap-1">
                 <Shield className="h-4 w-4" />
                 <span>Security</span>
+              </TabsTrigger>
+              <TabsTrigger value="task-groups" className="flex items-center gap-1">
+                <Layout className="h-4 w-4" />
+                <span>Task Groups</span>
               </TabsTrigger>
             </TabsList>
 
@@ -713,6 +722,77 @@ const Settings = () => {
                     Save Changes
                   </Button>
                 </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="task-groups">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Task Group Settings</CardTitle>
+                  <CardDescription>
+                    Manage your task board groups preferences
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {preferencesLoading ? (
+                    <div>Loading preferences...</div>
+                  ) : (
+                    <>
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Hidden Default Groups</h3>
+                        {preferences.hiddenGroups.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No groups are hidden.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {preferences.hiddenGroups.map(groupId => {
+                              const groupName = groupId === 'todo' ? 'TO DO' :
+                                groupId === 'in-progress' ? 'IN PROGRESS' :
+                                  groupId === 'review' ? 'REVIEW' :
+                                    groupId === 'done' ? 'DONE' : groupId;
+                              return (
+                                <div key={groupId} className="flex items-center justify-between p-3 border rounded-md">
+                                  <span className="font-medium">{groupName}</span>
+                                  <Button size="sm" variant="outline" onClick={() => restoreGroup(groupId)}>
+                                    <Eye className="mr-2 h-4 w-4" /> Restore
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                        <h3 className="text-sm font-medium mb-2">Renamed Groups</h3>
+                        {Object.keys(preferences.renamedGroups).length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No groups have been renamed.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {Object.entries(preferences.renamedGroups).map(([groupId, newTitle]) => {
+                              const originalName = groupId === 'todo' ? 'TO DO' :
+                                groupId === 'in-progress' ? 'IN PROGRESS' :
+                                  groupId === 'review' ? 'REVIEW' :
+                                    groupId === 'done' ? 'DONE' : groupId;
+                              return (
+                                <div key={groupId} className="flex items-center justify-between p-3 border rounded-md">
+                                  <div>
+                                    <div className="font-medium">{newTitle}</div>
+                                    <div className="text-xs text-muted-foreground">Original: {originalName}</div>
+                                  </div>
+                                  <Button size="sm" variant="outline" onClick={() => resetGroupName(groupId)}>
+                                    <RotateCcw className="mr-2 h-4 w-4" /> Reset Name
+                                  </Button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
               </Card>
             </TabsContent>
 

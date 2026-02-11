@@ -39,6 +39,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
@@ -63,7 +74,10 @@ const HRProfiles: React.FC = () => {
     fetchEmployees,
     fetchEmployeeProfile,
     fetchStatistics,
+    deleteAllData,
   } = useHRService();
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Load employees on mount
   useEffect(() => {
@@ -294,10 +308,16 @@ const HRProfiles: React.FC = () => {
           </div>
           <div className="flex gap-2">
             {hasPermission('hr_profiles', 'write') && (
-              <Button variant="outline" onClick={() => setShowImporter(true)}>
-                <Upload className="h-4 w-4 mr-2" />
-                Import Data
-              </Button>
+              <>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)} disabled={isLoading}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete All Data
+                </Button>
+                <Button variant="outline" onClick={() => setShowImporter(true)}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Data
+                </Button>
+              </>
             )}
             <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
@@ -492,6 +512,32 @@ const HRProfiles: React.FC = () => {
           <HRDataImporter />
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete ALL employee records,
+              leave requests, documents, and other HR data from SharePoint.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={async () => {
+                await deleteAllData();
+                setShowDeleteConfirm(false);
+                loadEmployees();
+                loadStatistics();
+              }}
+            >
+              Delete All Data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageLayout>
   );
 };

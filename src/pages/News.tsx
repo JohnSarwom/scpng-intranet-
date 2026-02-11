@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import CustomTabs from '@/components/custom/Tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import { supabase, logger } from '@/lib/supabaseClient'; // Ensure this path is correct
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'; // Still useful for other auth-dependent logic
@@ -673,11 +673,6 @@ const News = () => {
     );
   };
 
-  const tabs = newsCategories.map(category => ({
-    label: category,
-    content: renderNewsCards(category)
-  }));
-
   return (
     <PageLayout>
       <div className="mb-6">
@@ -693,9 +688,21 @@ const News = () => {
         <p className="text-gray-500 mt-2">Stay updated with the latest organizational news and unit announcements</p>
       </div>
 
-      <div className="relative mb-4">
-        <CustomTabs tabs={tabs} defaultTab="News Dashboard" />
-      </div>
+      <Tabs defaultValue="News Dashboard" className="w-full">
+        <TabsList>
+          {newsCategories.map(category => (
+            <TabsTrigger key={category} value={category}>
+              {category}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {newsCategories.map(category => (
+          <TabsContent key={category} value={category} className="mt-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+            {renderNewsCards(category)}
+          </TabsContent>
+        ))}
+      </Tabs>
 
       {/* Recent Updates removed as it is now part of the dashboard */}
 

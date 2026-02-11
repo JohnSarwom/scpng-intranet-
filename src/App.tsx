@@ -20,7 +20,7 @@ import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import Documents from "./pages/Documents";
 import Contacts from "./pages/Contacts";
-import Organization from "./pages/Organization";
+
 import Strategy from "./pages/Strategy";
 import HRProfiles from "./pages/HRProfiles";
 import Unit from "./pages/Unit";
@@ -177,11 +177,7 @@ const AppRoutes = () => {
         </RoleProtectedRoute>
       } />
 
-      <Route path="/organization" element={
-        <RoleProtectedRoute requiredPermissions={[{ resource: 'organization', action: 'read' }]}>
-          <Organization />
-        </RoleProtectedRoute>
-      } />
+
 
       <Route path="/strategy" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'strategy', action: 'read' }]}>

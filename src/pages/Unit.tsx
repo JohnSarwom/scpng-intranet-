@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Skeleton } from "@/components/ui/skeleton";
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -22,6 +23,7 @@ import {
   Kanban,
   List
 } from 'lucide-react';
+import { Logger } from '@/utils/logger';
 import { toast } from '@/components/ui/use-toast';
 import KRATimeline from '@/components/KRATimeline';
 import {
@@ -45,6 +47,7 @@ import KRAInsightsTab from '@/components/KRAInsightsTab';
 
 // Import unit-tabs components
 import { KRAsTab } from '@/components/unit-tabs/KRAsTab';
+import { useTaskGroupPreferences } from '@/hooks/useTaskGroupPreferences'; // Import preference hook
 
 // Import modal components
 import DailyLogModal from '@/components/unit-tabs/modals/DailyLogModal';
@@ -65,7 +68,7 @@ import {
 } from '@/hooks/useSharePointOps';
 import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 
-import { OrganizationUnit, Objective, Kra, Kpi, KRA, Task } from '@/types';
+import { OrganizationUnit, Objective, Kra, Kpi, KRA, KPI, Task } from '@/types';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
 import { StaffMember } from '@/types/staff';
 
@@ -75,7 +78,7 @@ import { useGraphProfile } from '@/hooks/useGraphProfile';
 
 // Import tab components
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
-import { TasksTab } from '@/components/unit-tabs/TasksTab';
+import { TasksTab, initialBuckets, Bucket } from '@/components/unit-tabs/TasksTab';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
 import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
@@ -202,6 +205,7 @@ const Unit = () => {
   const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
+  const [taskBuckets, setTaskBuckets] = useState<Bucket[]>(initialBuckets);
 
 
   const objectivesState = useSharePointObjectives(targetDepartment, getScopeForComponent('Objectives', 'Division'), userContext);
@@ -220,6 +224,15 @@ const Unit = () => {
     }));
   }, [strategyData.objectives]);
 
+  // --- Permission Logic ---
+  // Only Managers and Admins can Add/Edit/Delete KRAs and KPIs
+  const canEditStrategy = useMemo(() => {
+    const role = roleUser?.role_name?.toLowerCase();
+    const isAdmin = roleUser?.is_admin || role === 'super_admin' || role === 'admin';
+    const isManager = role === 'manager';
+    return isAdmin || isManager;
+  }, [roleUser]);
+
   // --- Wrapper for refreshing all data ---
   const handleRefreshAllData = useCallback(() => {
     objectivesState.refresh();
@@ -231,6 +244,10 @@ const Unit = () => {
 
   // --- Modified Objective Handlers (Moved Down) ---
   const handleSaveObjective = useCallback(async (objective: Objective) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can edit Objectives.", variant: "destructive" });
+      return;
+    }
     try {
       if (objective.id) {
         await objectivesState.update(String(objective.id), objective);
@@ -242,9 +259,13 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to save objective", variant: "destructive" });
       throw e;
     }
-  }, [objectivesState]);
+  }, [objectivesState, canEditStrategy]);
 
   const handleDeleteObjective = useCallback(async (objectiveId: string | number) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can delete Objectives.", variant: "destructive" });
+      return;
+    }
     try {
       await objectivesState.remove(String(objectiveId));
       toast({ title: "Success", description: "Objective deleted from SharePoint." });
@@ -252,15 +273,21 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to delete objective", variant: "destructive" });
       throw e;
     }
-  }, [objectivesState]);
+  }, [objectivesState, canEditStrategy]);
 
-  const handleSaveKra = useCallback(async (kra: Partial<Kra>) => {
+  const handleSaveKra = useCallback(async (kra: Partial<KRA> | Partial<Kra>) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can edit KRAs.", variant: "destructive" });
+      throw new Error("Permission Denied");
+    }
     try {
       let result;
-      if (kra.id) {
-        result = await kraState.update(String(kra.id), kra);
+      // Cast to any to bypass string/number id mismatch and different status unions
+      const kraData = kra as any;
+      if (kraData.id) {
+        result = await kraState.update(String(kraData.id), kraData);
       } else {
-        result = await kraState.add(kra);
+        result = await kraState.add(kraData);
       }
       toast({ title: "Success", description: "KRA saved to SharePoint." });
       return result;
@@ -268,9 +295,13 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to save KRA", variant: "destructive" });
       throw e;
     }
-  }, [kraState]);
+  }, [kraState, canEditStrategy]);
 
   const handleDeleteKra = useCallback(async (kraId: string | number) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can delete KRAs.", variant: "destructive" });
+      return;
+    }
     try {
       await kraState.remove(String(kraId));
       toast({ title: "Success", description: "KRA deleted from SharePoint." });
@@ -278,9 +309,13 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to delete KRA", variant: "destructive" });
       throw e;
     }
-  }, [kraState]);
+  }, [kraState, canEditStrategy]);
 
   const handleSaveKpi = useCallback(async (kpi: Partial<Kpi>) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can edit KPIs.", variant: "destructive" });
+      return;
+    }
     try {
       // Logic to distinguish add/update: check if it has a real ID (SharePoint IDs are usually integers as strings)
       // If it's a new temporary item, it won't have a numeric ID from SP yet.
@@ -297,9 +332,13 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to save KPI", variant: "destructive" });
       throw e;
     }
-  }, [kpiState]);
+  }, [kpiState, canEditStrategy]);
 
   const handleDeleteKpi = useCallback(async (kpiId: string | number) => {
+    if (!canEditStrategy) {
+      toast({ title: "Permission Denied", description: "Only Managers can delete KPIs.", variant: "destructive" });
+      return;
+    }
     try {
       await kpiState.remove(String(kpiId));
       toast({ title: "Success", description: "KPI deleted from SharePoint." });
@@ -307,7 +346,7 @@ const Unit = () => {
       toast({ title: "Error", description: e.message || "Failed to delete KPI", variant: "destructive" });
       throw e;
     }
-  }, [kpiState]);
+  }, [kpiState, canEditStrategy]);
 
   // Create/Task Handlers
   const handleCreateTask = () => {
@@ -319,10 +358,10 @@ const Unit = () => {
     if (editingTask) {
       // Safe to ignore id mismatch for now as we deal with mocked writes
       // @ts-ignore
-      taskState.update(editingTask.id, taskData);
+      taskState.update(editingTask.id, { ...taskData, unit_id: userContext.unit });
     } else {
       // @ts-ignore
-      taskState.add(taskData as Omit<Task, 'id'>);
+      taskState.add({ ...taskData, unit_id: userContext.unit } as Omit<Task, 'id'>);
     }
     setIsDialogOpen(false);
   };
@@ -448,9 +487,29 @@ const Unit = () => {
     });
   }, [kraState.data, kpiState.data]);
 
+  // --- Combine KRAs and KPIs for Overview ---
   const combinedKrasForOverview = useMemo(() => {
+    const kpis = kpiState.data || [];
+    const kpisByKraId = kpis.reduce((acc, kpi) => {
+      const kraId = kpi.kra_id;
+      if (kraId) {
+        if (!acc[kraId]) {
+          acc[kraId] = [];
+        }
+        acc[kraId].push(kpi);
+      }
+      return acc;
+    }, {} as Record<string | number, Kpi[]>);
+
     return (kraState.data || []).map((kra): KRA => {
       const objective = objectivesData.find(o => String(o.id) === String(kra.objective_id));
+      const kraKpis = kpisByKraId[kra.id] || [];
+
+      // Map KraStatus to KRA status
+      let mappedStatus: 'open' | 'in-progress' | 'closed' = 'open';
+      if (kra.status === 'completed') mappedStatus = 'closed';
+      else if (kra.status === 'on-track' || kra.status === 'at-risk' || kra.status === 'off-track') mappedStatus = 'in-progress';
+
       return {
         id: kra.id.toString(),
         name: kra.title,
@@ -460,9 +519,17 @@ const Unit = () => {
         responsible: kra.owner?.name ?? 'N/A',
         startDate: kra.startDate ? new Date(kra.startDate) : new Date(),
         endDate: kra.targetDate ? new Date(kra.targetDate) : new Date(),
-        progress: 0, // Default value
-        status: 'open', // Default value
-        kpis: [], // Default value
+        progress: (kra as any).progress || 0,
+        status: mappedStatus,
+        kpis: kraKpis.map(k => ({
+          ...k,
+          id: k.id.toString(),
+          date: k.startDate ? new Date(k.startDate) : new Date(),
+          notes: k.comments || '',
+          target: k.target.toString(),
+          actual: k.actual?.toString() || '0',
+          status: (k.status === 'on-track' || k.status === 'at-risk' || k.status === 'behind' || k.status === 'completed') ? k.status : 'on-track',
+        })) as unknown as KPI[], // Cast to KPI[] as strict mapping might still miss fields
         createdAt: kra.createdAt ?? new Date().toISOString(),
         updatedAt: kra.updatedAt ?? new Date().toISOString(),
         title: kra.title,
@@ -470,18 +537,177 @@ const Unit = () => {
         unit: kra.unit,
         unitId: kra.unitId,
         targetDate: kra.targetDate,
-        unitKpis: [],
+        unitKpis: kraKpis,
         owner: kra.owner,
         ownerId: kra.ownerId,
         unitObjectives: kra.unitObjectives,
       };
     });
-  }, [kraState.data, objectivesData]);
+  }, [kraState.data, objectivesData, kpiState.data]);
 
   // Determine if data loading is complete
   const isDataLoading = objectivesLoading || taskState.loading || projectState.loading || kraState.loading || kpiState.loading;
   // Determine if there was an error
   const hasDataLoadingError = objectivesError || taskState.error || projectState.error || kraState.error || kpiState.error;
+
+  // Sync Custom Groups from SharePoint Projects & Handle Orphans
+  // Optimized with useMemo to prevent excessive re-calculations
+  const calculatedBuckets = useMemo(() => {
+    if (!projectState.data) return initialBuckets;
+
+    const customGroups: Bucket[] = projectState.data
+      .filter(p => {
+        if (!p.isCustomGroup) return false;
+
+        // Personal Custom Group Logic:
+        // 1. Creator always sees it
+        const isCreator = p.authorEmail?.toLowerCase() === userContext.email?.toLowerCase();
+        // 2. Admins see everything
+        const isAdmin = userContext.role === 'admin' || userContext.role === 'super_admin';
+        // 3. Assignees of tasks in this group see it
+        const hasAssignedTask = taskState.data?.some(t =>
+          t.projectId === String(p.id) &&
+          (t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase() ||
+            t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()))
+        );
+
+        if (isCreator || isAdmin || hasAssignedTask) {
+          return true;
+        }
+
+        return false;
+      })
+      .map(p => ({
+        id: p.id,
+        title: p.name,
+        isCustom: true
+      }));
+
+    // Combine initial buckets with loaded custom groups
+    const uniqueBuckets = [...initialBuckets];
+    customGroups.forEach(g => {
+      if (!uniqueBuckets.find(b => b.id === g.id)) {
+        uniqueBuckets.push(g);
+      }
+    });
+
+    // 🚨 VIRTUAL BUCKET LOGIC: "Shared Tasks"
+    // Identify tasks that:
+    // 1. Are visible to the user (filtered by useSharePointTasks)
+    // 2. Have a projectId that matches NO visible bucket
+    // 3. Are from a different unit (cross-unit assignment)
+    // 4. Are assigned to user but have no project (fallback)
+    const allBucketIds = new Set(uniqueBuckets.map(b => b.id));
+
+    // Logger.debug(`🔍 [Virtual Bucket Debug] Checking ${taskState.data?.length || 0} tasks for orphans. User: ${userContext.email}, Unit: ${userContext.unit}`);
+
+    const orphanedTasks = taskState.data?.filter(t => {
+      // Orphan condition 1: Has projectId but bucket is missing
+      const hasOrphanedProject = t.projectId && !allBucketIds.has(t.projectId) && t.projectId !== 'undefined';
+
+      // Orphan condition 2: From another unit (cross-unit assignment)
+      const isCrossUnit = t.unit_id && t.unit_id !== userContext.unit;
+
+      // Orphan condition 3: Assigned to user but no matching project (fallback)
+      const isAssignedOrphan = !t.projectId &&
+        (t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()) ||
+          t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase());
+
+      const isOrphaned = hasOrphanedProject || isCrossUnit || isAssignedOrphan;
+
+      // if (isOrphaned) {
+      //   Logger.debug(
+      //     `🔍 [Orphaned Task] "${t.title}" | ` +
+      //     `u: "${t.unit_id}" vs "${userContext.unit}" | ` +
+      //     `p: "${t.projectId}"`
+      //   );
+      // }
+
+      return isOrphaned;
+    }) || [];
+
+    if (orphanedTasks.length > 0) {
+      // Logger.info(`📦 [Virtual Bucket] Adding 'Shared Projects' bucket (${orphanedTasks.length} tasks)`);
+      uniqueBuckets.push({
+        id: 'shared-tasks-virtual', // Special ID
+        title: 'Shared Projects',
+        isCustom: true,
+      });
+    }
+
+    return uniqueBuckets;
+  }, [projectState.data, taskState.data, userContext.email, userContext.unit, userContext.role]);
+
+  // Only update state if buckets actually changed to avoid re-render loops
+  useEffect(() => {
+    const isDifferent = calculatedBuckets.length !== taskBuckets.length ||
+      calculatedBuckets.some((b, i) => b.id !== taskBuckets[i].id || b.title !== taskBuckets[i].title);
+
+    if (isDifferent) {
+      // console.log('🔄 [Unit] Updating task buckets state');
+      setTaskBuckets(calculatedBuckets);
+    }
+  }, [calculatedBuckets, taskBuckets]);
+
+  // User Preferences for Task Groups
+  const {
+    preferences,
+    loading: preferencesLoading,
+    hideGroup,
+    renameGroup
+  } = useTaskGroupPreferences();
+
+  const handleRenameGroup = async (groupId: string, newTitle: string) => {
+    // Check if it matches an initial bucket or custom group
+    const group = taskBuckets.find(b => b.id === groupId);
+    if (group) {
+      await renameGroup(groupId, newTitle);
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    const isDefault = initialBuckets.some(b => b.id === groupId);
+    if (isDefault) {
+      // Default groups are only hidden, not deleted from SP
+      await hideGroup(groupId);
+      toast({
+        title: "Group Hidden",
+        description: "Default groups are hidden from your view but not deleted permanently."
+      });
+    } else {
+      // Custom groups - try to delete proper
+      if (projectState.remove) {
+        try {
+          await projectState.remove(groupId);
+        } catch (e) {
+          // If delete failed, or effectively if we want to support hiding custom groups too, we could hide
+          // But usually custom groups should be fully deletable
+          console.error("Failed to delete custom group", e);
+        }
+      }
+    }
+  };
+
+
+  // Apply preferences to buckets
+  const visibleBuckets = useMemo(() => {
+    // If loading and NO preferences (new user/empty cache), return empty to trigger loading UI
+    if (preferencesLoading && (!preferences || (Object.keys(preferences.renamedGroups).length === 0 && preferences.hiddenGroups.length === 0))) {
+      return [];
+    }
+
+    let filtered = taskBuckets.filter(b => !preferences.hiddenGroups.includes(b.id));
+
+    // Apply renames
+    filtered = filtered.map(b => {
+      if (preferences.renamedGroups[b.id]) {
+        return { ...b, title: preferences.renamedGroups[b.id] };
+      }
+      return b;
+    });
+
+    return filtered;
+  }, [taskBuckets, preferences, preferencesLoading]);
 
   // Main content rendering
   return (
@@ -609,19 +835,55 @@ const Unit = () => {
 
           {/* Tasks/Daily Operations Tab */}
           <TabsContent value="tasks" className="space-y-6">
-            <TasksTab
-              tasks={taskState.data.filter(task => task.title.toLowerCase().includes(searchQuery.toLowerCase()))}
-              addTask={taskState.add}
-              editTask={taskState.update}
-              deleteTask={taskState.remove}
-              error={taskState.error}
-              onRetry={taskState.refresh}
-              staffMembers={staffMembers}
-              objectives={objectivesData}
-              setEditingTask={setEditingTask}
-              setIsDialogOpen={setIsDialogOpen}
-              viewMode={viewMode}
-            />
+            {visibleBuckets.length === 0 && preferencesLoading ? (
+              <div className="flex gap-4 overflow-x-auto pb-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="min-w-[300px] flex-shrink-0 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                    <Skeleton className="h-[120px] w-full rounded-lg" />
+                    <Skeleton className="h-[120px] w-full rounded-lg" />
+                    <Skeleton className="h-[120px] w-full rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <TasksTab
+                tasks={taskState.data || []}
+                addTask={taskState.add}
+                editTask={taskState.update}
+                deleteTask={taskState.remove}
+                // groups={projectState.data || []} // We will just use buckets prop for now to abstract this
+                buckets={visibleBuckets}
+                setBuckets={setTaskBuckets} // Note: explicit setting might conflict with our derived visibleBuckets if TasksTab modifies it directly. Ideally TasksTab calls onAddGroup/onDeleteGroup
+                // For now, TasksTab manages its own local state too, but we are passing controlled buckets.
+                // We need to ensure TasksTab respects these prop buckets over its state if provided.
+
+                // Pass custom handlers
+                deleteCustomGroup={handleDeleteGroup}
+                addCustomGroup={projectState.add}
+
+                // We need to pass the rename handler down. 
+                // Need to check if TasksTab accepts onRenameGroup prop or if we need to modify it further.
+                // We already added onRenameGroup to BoardLane, but TasksTab needs to expose it or handle it.
+                // Wait, TasksTab defines `const BoardLane` internally using props passed to BoardLane.
+                // We need to inject the rename handler into TasksTab. 
+                // Actually, looking at TasksTab signature, it doesn't accept onRenameGroup.
+                // We need to add it there first. 
+
+                staffMembers={staffMembers}
+                objectives={objectivesData} // Pass objectives for mapping if needed
+
+                // Modal state
+                setEditingTask={setEditingTask}
+                setIsDialogOpen={setIsDialogOpen}
+                onRenameGroup={handleRenameGroup}
+                viewMode={viewMode}
+                currentUnit={userContext?.unit}
+              />
+            )}
           </TabsContent>
 
           {/* Projects Tab */}
@@ -659,6 +921,7 @@ const Unit = () => {
               onSaveKpi={handleSaveKpi}
               onDeleteKpi={handleDeleteKpi}
               strategicObjectives={strategicObjectives}
+              canEdit={canEditStrategy}
             />
           </TabsContent>
 
@@ -679,7 +942,7 @@ const Unit = () => {
         onSubmit={handleTaskSubmit}
         initialData={editingTask}
         staffMembers={staffMembers}
-        buckets={[]}
+        buckets={visibleBuckets}
         kras={combinedKrasForTabs}
         kpis={kpiState.data}
       />

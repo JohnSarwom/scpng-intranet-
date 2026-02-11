@@ -352,12 +352,34 @@ export const useHRService = () => {
     }
   });
 
+  /**
+   * Delete ALL data Mutation
+   */
+  const deleteAllDataMutation = useMutation({
+    mutationFn: async () => {
+      const service = await getService();
+      return service.deleteAllData();
+    },
+    onSuccess: () => {
+      toast.success('All HR data has been permanently deleted');
+      // Invalidate all queries
+      queryClient.invalidateQueries({ queryKey: ['hr'] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      const errorMsg = `Failed to delete data: ${msg}`;
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  });
+
   // Combine loading states
   const isAnyLoading = isLoading ||
     createEmployeeMutation.isPending ||
     updateEmployeeMutation.isPending ||
     submitLeaveRequestMutation.isPending ||
-    createLeaveBalanceMutation.isPending;
+    createLeaveBalanceMutation.isPending ||
+    deleteAllDataMutation.isPending;
 
   return {
     // Always true as we lazy load the service singleton
@@ -379,6 +401,8 @@ export const useHRService = () => {
       createLeaveBalanceMutation.mutateAsync({ employeeId, leaveType, entitlement, year }),
     // Statistics
     fetchStatistics,
+    // Admin
+    deleteAllData: deleteAllDataMutation.mutateAsync,
     // Debug
     inspectListColumns: useCallback(async (listName: string) => {
       const service = await getService();

@@ -76,6 +76,7 @@ export interface Task {
   status: 'todo' | 'in-progress' | 'review' | 'done';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   assignee: string;
+  assignees?: User[]; // Enhanced multiple assignees
   dueDate: string;
   assignedTo?: string;
   startDate?: Date;
@@ -90,6 +91,12 @@ export interface Task {
   recurrence?: string;
   tags?: string[];
   subtasks?: { id: string; text: string; completed: boolean }[];
+  createdAt?: string;
+  completedAt?: string;
+  completionDate?: string; // New field for accurate tracking
+  createdBy?: string;        // Creator's display name
+  createdByEmail?: string;   // Creator's email (primary field for filtering)
+  authorEmail?: string;      // Alias for backward compatibility
 }
 
 export interface Project {
@@ -107,6 +114,8 @@ export interface Project {
   tasks: Task[];
   checklist?: ChecklistItem[];
   unit_id?: string;
+  isCustomGroup?: boolean;
+  authorEmail?: string;
 }
 
 export interface UserAsset {
@@ -332,6 +341,7 @@ export interface Kra {
   createdAt?: string;
   updatedAt?: string;
   unitObjectives?: { title: string } | null;
+  assignees?: User[];
 }
 
 export interface IAnnouncement {

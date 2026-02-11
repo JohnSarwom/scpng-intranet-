@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import DonutChart from '@/components/organization/DonutChart';
+import { TrafficLightCard } from '@/components/dashboard/TrafficLightCard';
 
 const UILibrary = () => {
     const { toast } = useToast();
@@ -542,6 +543,21 @@ const UILibrary = () => {
                                         <Button variant="secondary" className="w-full bg-white/20 hover:bg-white/30 border-0">Frosted Button</Button>
                                     </CardFooter>
                                 </Card>
+                            </div>
+
+                            {/* Traffic Light Card */}
+                            <div className="space-y-2">
+                                <Label className="text-muted-foreground text-xs uppercase tracking-wider">Performance Pulse Card</Label>
+                                <TrafficLightCard
+                                    category="Operational Health"
+                                    status="good"
+                                    score={92}
+                                    trend="up"
+                                    items={[
+                                        { label: "Task Velocity", value: "18/week", status: "good" },
+                                        { label: "Overdue Items", value: "2", status: "good" },
+                                    ]}
+                                />
                             </div>
                         </div>
                     </TabsContent>

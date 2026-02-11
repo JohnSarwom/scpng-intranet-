@@ -1,7 +1,7 @@
 @font-face {
   font-family: 'LED Sled Straight';
   src: url('/fonts/LEDSledStraight.woff2') format('woff2'),
-       url('/fonts/LEDSledStraight.ttf') format('truetype');
+    url('/fonts/LEDSledStraight.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -111,7 +111,7 @@
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 0 0% 83%;
-    
+
     --sidebar-background: 0 0% 15%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 350 80% 25%;
@@ -134,10 +134,12 @@
 }
 
 @layer components {
+
   /* Added option to persist animation state */
   .animate-fade-in {
     animation: fadeIn 0.6s ease-in-out;
-    animation-fill-mode: both; /* This ensures the final state is preserved */
+    animation-fill-mode: both;
+    /* This ensures the final state is preserved */
   }
 
   .animate-slide-in {
@@ -151,7 +153,7 @@
   .icon-hover-effect {
     @apply transition-all duration-300 hover:scale-110 hover:rotate-3;
   }
-  
+
   .gradient-primary {
     @apply bg-gradient-to-br from-intranet-primary to-intranet-secondary;
   }
@@ -163,24 +165,24 @@
   .table-row-hover {
     @apply transition-colors duration-200 hover:bg-accent/50;
   }
-  
+
   .pulse-animation {
     animation: pulse 2s infinite;
   }
-  
+
   .float-animation {
     animation: float 6s ease-in-out infinite;
   }
-  
+
   .badge-pulse {
     animation: badgePulse 1.5s ease-in-out infinite;
   }
-  
+
   .shine-effect {
     position: relative;
     overflow: hidden;
   }
-  
+
   .shine-effect::after {
     content: '';
     position: absolute;
@@ -188,12 +190,10 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-      to right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.05) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
+    background: linear-gradient(to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.05) 50%,
+        rgba(255, 255, 255, 0) 100%);
     transform: rotate(30deg);
     animation: shine 6s infinite linear;
   }
@@ -204,6 +204,7 @@
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -215,6 +216,7 @@
     transform: translateX(-20px);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -226,10 +228,12 @@
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.05);
     opacity: 0.8;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -240,9 +244,11 @@
   0% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-6px);
   }
+
   100% {
     transform: translateY(0px);
   }
@@ -252,9 +258,11 @@
   0% {
     box-shadow: 0 0 0 0 rgba(131, 0, 42, 0.4);
   }
+
   70% {
     box-shadow: 0 0 0 5px rgba(131, 0, 42, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(131, 0, 42, 0);
   }
@@ -264,6 +272,7 @@
   from {
     transform: translateX(-100%) rotate(30deg);
   }
+
   to {
     transform: translateX(100%) rotate(30deg);
   }
@@ -282,28 +291,41 @@
 /* AI Chat Typing Animation */
 .ai-cursor {
   display: inline-block;
-  background-color: currentColor; /* Or a specific color e.g., #333 */
+  background-color: currentColor;
+  /* Or a specific color e.g., #333 */
   width: 8px;
-  height: 1em; /* Adjust to match your text's line-height */
+  height: 1em;
+  /* Adjust to match your text's line-height */
   margin-left: 2px;
-  vertical-align: text-bottom; /* Adjust as needed: baseline, middle, etc. */
+  vertical-align: text-bottom;
+  /* Adjust as needed: baseline, middle, etc. */
   animation: blink 1s infinite;
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Sidebar Scrollbar Styles - Hidden but functional */
 .sidebar-scrollable {
-  scrollbar-width: none; /* For Firefox - hides scrollbar but keeps functionality */
-  -ms-overflow-style: none; /* For Internet Explorer and Edge */
+  scrollbar-width: none;
+  /* For Firefox - hides scrollbar but keeps functionality */
+  -ms-overflow-style: none;
+  /* For Internet Explorer and Edge */
 }
 
 /* Hide scrollbar for Webkit browsers (Chrome, Safari) but keep scrolling */
 .sidebar-scrollable::-webkit-scrollbar {
-  display: none; /* Hides the scrollbar completely */
+  display: none;
+  /* Hides the scrollbar completely */
 }
 
 /* Hover-visible Scrollbar Styles */
@@ -322,11 +344,13 @@
 }
 
 .scrollbar-thin:hover::-webkit-scrollbar-thumb {
-  background: #9ca3af; /* gray-400 */
+  background: #9ca3af;
+  /* gray-400 */
 }
 
 .scrollbar-thin:hover::-webkit-scrollbar-thumb:hover {
-  background: #6b7280; /* gray-500 */
+  background: #6b7280;
+  /* gray-500 */
 }
 
 /* Firefox scrollbar */

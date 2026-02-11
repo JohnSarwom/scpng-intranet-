@@ -59,17 +59,8 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ closeMobileSidebar, handleSig
     return userPermissions[resource] && userPermissions[resource].length > 0;
   };
 
-  useEffect(() => {
-    // After component mounts, set isFirstRender to false
-    // This will prevent animations from restarting on route changes
-    if (isFirstRender) {
-      const timer = setTimeout(() => {
-        setIsFirstRender(false);
-      }, 1000); // Allow enough time for initial animations
-
-      return () => clearTimeout(timer);
-    }
-  }, [isFirstRender]);
+  // Removed isFirstRender animation logic to prevent infinite loops causing "Maximum update depth exceeded"
+  // The subtle animation is not worth the stability risk with Radix UI components entirely.
 
   // Define all navigation items with their required permissions
   const allNavItems = [
@@ -87,7 +78,7 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ closeMobileSidebar, handleSig
     { icon: BarChart, path: '/reports', label: 'Reports', resource: 'reports' },
     // { icon: Calendar, path: '/calendar', label: 'Calendar', resource: 'Calendar' },
     { icon: Package, path: '/asset-management', label: 'Assets', resource: 'assets' },
-    { icon: Users, path: '/organization', label: 'Organization', resource: 'organization' },
+
     { icon: Users, path: '/hr-profiles', label: 'HR Profiles', resource: 'hr' },
     { icon: Ticket, path: '/tickets', label: 'Tickets', resource: 'tickets' },
     { icon: FileText, path: '/licensing-registry', label: 'Licensing', resource: 'licenses' },

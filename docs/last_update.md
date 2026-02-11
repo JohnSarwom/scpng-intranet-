@@ -3566,3 +3566,42 @@ Wait ~30-60 seconds
 Check SharePoint for the 3 new lists
 The documentation is saved in your artifacts directory and includes everything you need to know about using and troubleshooting the setup button!
 
+
+2026-02-10
+# Critical Fixes & Stability Improvements (Zero Projects, Graph Optimization, Logging)
+
+## 1. Resolved "Zero Projects" Loading Issue
+**Problem:** A server-side `Department` filter in `sharePointOpsService.ts` was incorrectly filtering out projects for users, causing zero projects to load. This led to tasks being misclassified as orphaned.
+**Fix:** Removed the server-side `Department` filter in `getProjects`. Now it fetches all projects (similar to `getTasks`), allowing client-side logic to handle visibility correctly.
+**Impact:** Projects now load correctly for all users. Tasks are correctly associated with their projects.
+
+## 2. Optimized Orphaned Task Detection
+**Problem:** The logic for detecting orphaned tasks in `Unit.tsx` was running on every render, causing performance issues and excessive console logging.
+**Fix:**
+- Implemented `useMemo` to cache task bucket calculations.
+- Added dependency checks to prevent re-calculations unless data actually changes.
+- Introduced `useEffect` with equality checks to update state only when necessary.
+**Impact:** Significant reduction in re-renders and elimination of console spam. The "Shared Projects" virtual bucket now works efficiently.
+
+## 3. Microsoft Graph Client Optimization
+**Problem:** The Graph Client was being initialized multiple times, leading to potential memory leaks and token management issues.
+**Fix:**
+- Implemented a **Singleton pattern** for `GraphClient` in `graphService.ts`.
+- Updated `authProvider` to fetch fresh tokens dynamically for every request.
+**Impact:** Stable authentication, reduced network overhead, and prevention of token expiry errors during long sessions.
+
+## 4. Robust Logging System
+**Problem:** The application was cluttered with `console.log` statements, making debugging difficult in production.
+**Fix:**
+- Created a `Logger` utility (`src/utils/logger.ts`) supporting `DEBUG`, `INFO`, `WARN`, `ERROR` levels.
+- Replaced direct `console.log` calls with structured `Logger` methods.
+- Configured logging to be verbose in development but clean in production.
+**Impact:** A significantly cleaner browser console and better developer experience.
+
+## 5. Type Safety Improvements
+**Problem:** Inconsistent types in `TasksTab.tsx` and `Unit.tsx` (e.g., `Bucket` interface).
+**Fix:**
+- Updated `Bucket` interface to include optional `isCustom?: boolean`.
+- Typed `initialBuckets` explicitly.
+- Fixed `avatarUrl` access safety for mixed `User` | `StaffMember` types.
+**Impact:** resolved build errors and improved type safety.

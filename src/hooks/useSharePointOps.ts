@@ -37,7 +37,7 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
             try {
                 const service = await getService();
                 // We re-use getObjectives but type cast for now if needed or rely on service typing
-                const data = await service.getObjectives(scope, context);
+                let data = await service.getObjectives(scope, context);
 
                 // Fallback to mock data if no objectives found (e.g. connection issue or empty list)
                 // This ensures the "Strategic Objectives" dropdown is always populated for demo/dev purposes
@@ -59,6 +59,27 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
                 }
 
                 console.log('✅ [useSharePointOps] Loaded Objectives:', data.length);
+
+                // 🔒 INDIVIDUAL FILTERING: Staff members only see objectives they own
+                const isStaff = context?.role === 'staff_member';
+                const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
+
+                if (isStaff && !isAdmin && context?.email) {
+                    data = data.filter(obj => {
+                        // Filter by owner name or email
+                        const ownerMatch = obj.owner?.toLowerCase() === context.name?.toLowerCase() ||
+                            obj.ownerEmail?.toLowerCase() === context.email.toLowerCase();
+
+                        if (ownerMatch) {
+                            console.log(`✅ [Individual Filter] Staff ${context.email} sees Objective: ${obj.title}`);
+                        } else {
+                            console.log(`⛔ [Individual Filter] Hiding Objective: "${obj.title}" | Owner: "${obj.owner}/${obj.ownerEmail}" vs User: "${context.name}/${context.email}"`);
+                        }
+                        return ownerMatch;
+                    });
+                    console.log(`🔒 [Individual Filter] Filtered Objectives for staff ${context.email}: ${data.length} items`);
+                }
+
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch Objectives', err);
@@ -143,13 +164,42 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
 
                 // Merge KPIs into their parent KRAs
                 // This ensures unitKpis is populated, which the UI relies on
-                const krasWithKpis = kras.map(kra => {
+                let krasWithKpis = kras.map(kra => {
                     const kraKpis = kpis.filter(kpi => String(kpi.kra_id) === String(kra.id));
                     return {
                         ...kra,
                         unitKpis: kraKpis
                     };
                 });
+
+                // 🔒 INDIVIDUAL FILTERING: Staff members only see their assigned KRAs
+                // Managers (role_name='manager') and Admins see all division/unit KRAs
+                const isStaff = context?.role === 'staff_member';
+                // Check if user is manager or admin to BYPASS filtering
+                const isManagerOrAdmin = context?.role === 'manager' || context?.role === 'admin' || context?.role === 'super_admin';
+
+                if (isStaff && !isManagerOrAdmin && context?.email) {
+                    krasWithKpis = krasWithKpis.filter(kra => {
+                        // Filter by owner email or owner ID
+                        const isOwner = kra.owner?.email?.toLowerCase() === context.email.toLowerCase() ||
+                            String(kra.ownerId) === String(context.email);
+
+                        // Also check if user is in the assignees list
+                        const isAssigned = kra.assignees?.some(a => a.email?.toLowerCase() === context.email.toLowerCase());
+
+                        const shouldShow = isOwner || isAssigned;
+
+                        if (shouldShow) {
+                            console.log(`✅ [Individual Filter] Staff ${context.email} sees KRA: ${kra.title} (Owner: ${isOwner}, Assigned: ${isAssigned})`);
+                        } else {
+                            // console.log(`⛔ [Individual Filter] Hiding KRA: "${kra.title}" | Owner: "${kra.owner?.name}" vs User: "${context.name}"`);
+                        }
+                        return shouldShow;
+                    });
+                    console.log(`🔒 [Individual Filter] Filtered KRAs for staff ${context.email}: ${krasWithKpis.length} items`);
+                }
+
+                console.log(`✅ [useSharePointOps] Loaded ${krasWithKpis.length} KRAs for ${context?.division}/${context?.unit}`);
 
                 return krasWithKpis;
             } catch (err) {
@@ -213,12 +263,34 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
     const { toast } = useToast();
 
     const query = useQuery({
-        queryKey: ['sharePoint', 'kpis', department, context?.role],
+        queryKey: ['sharePoint', 'kpis', department, context?.email, context?.role],
         queryFn: async () => {
             try {
                 const service = await getService();
-                const data = await service.getKPIs(department);
+                let data = await service.getKPIs(department);
                 console.log('✅ [useSharePointOps] Loaded KPIs:', data.length);
+
+                // 🔒 INDIVIDUAL FILTERING: Staff members only see KPIs they're assigned to
+                const isStaff = context?.role === 'staff_member';
+                const isManagerOrAdmin = context?.role === 'manager' || context?.role === 'admin' || context?.role === 'super_admin';
+
+                if (isStaff && !isManagerOrAdmin && context?.email) {
+                    data = data.filter(kpi => {
+                        // Check if user is in assignees array
+                        const isAssigned = kpi.assignees?.some(assignee =>
+                            assignee.email?.toLowerCase() === context.email.toLowerCase()
+                        );
+
+                        if (isAssigned) {
+                            console.log(`✅ [Individual Filter] Staff ${context.email} sees KPI: ${kpi.name}`);
+                        }
+                        return isAssigned;
+                    });
+                    console.log(`🔒 [Individual Filter] Filtered KPIs for staff ${context.email}: ${data.length} items`);
+                }
+
+                console.log(`✅ [useSharePointOps] Loaded ${data.length} KPIs for context`);
+
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch KPIs', err);
@@ -296,9 +368,31 @@ export function useSharePointProjects(department?: string, scope: FilterScope = 
         data: (query.data || []) as unknown as Project[],
         loading: query.isLoading,
         error: query.error as Error | null,
-        add: async () => { },
-        update: async () => { },
-        remove: async () => { },
+        add: async (item: Partial<Project>) => {
+            try {
+                const service = await getService();
+                const newProject = await service.addProject(item);
+                query.refetch();
+                // Don't show toast for custom groups to avoid noise? Or show it?
+                // Let's keep it clean
+                return newProject;
+            } catch (error: any) {
+                console.error('Failed to add project', error);
+                throw error;
+            }
+        },
+        update: async () => { }, // Projects update not needed for this feature yet
+        remove: async (id: string) => {
+            try {
+                const service = await getService();
+                await service.deleteProject(id);
+                query.refetch();
+                return true;
+            } catch (error: any) {
+                console.error('Failed to delete project', error);
+                throw error;
+            }
+        },
         refresh: query.refetch
     };
 }
@@ -312,8 +406,38 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
         queryFn: async () => {
             try {
                 const service = await getService();
-                const data = await service.getTasks(scope, context);
+                // DEBUG: Check columns once to verify 'Assignees' field
+                // DEBUG: Check columns once to verify 'Assignees' field
+                await service.debugListColumns('Operations_Tasks');
+                await service.debugListColumns('Performance_KRAs');
+
+                let data = await service.getTasks(scope, context);
                 console.log('✅ [useSharePointOps] Loaded Tasks:', data.length);
+
+                // 🔒 ROLE-AGNOSTIC FILTERING: Users only see tasks they created OR are assigned to
+                const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
+
+                if (!isAdmin && context?.email) {
+                    data = data.filter(task => {
+                        const userEmail = context.email!.toLowerCase();
+
+                        // Check 1: Is user the creator?
+                        const isCreator = task.createdByEmail?.toLowerCase() === userEmail ||
+                            task.authorEmail?.toLowerCase() === userEmail;
+
+                        // Check 2: Is user an assignee?
+                        const isAssigned = task.assignees?.some(a => a.email?.toLowerCase() === userEmail);
+
+                        const canView = isCreator || isAssigned;
+
+                        if (canView) {
+                            // console.log(`✅ [Visibility] ${context.email} sees Task: "${task.title}" (Creator: ${isCreator}, Assigned: ${isAssigned})`);
+                        }
+                        return canView;
+                    });
+                    console.log(`🔒 [Visibility] Filtered Tasks for ${context.email}: ${data.length} items (Admin: ${isAdmin})`);
+                }
+
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch Tasks', err);

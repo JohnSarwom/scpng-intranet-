@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -23,11 +23,11 @@ interface ProjectsTabProps {
   objectives?: Objective[];
 }
 
-export const ProjectsTab: React.FC<ProjectsTabProps> = ({ 
-  projects, 
-  addProject, 
-  editProject, 
-  deleteProject, 
+export const ProjectsTab: React.FC<ProjectsTabProps> = ({
+  projects,
+  addProject,
+  editProject,
+  deleteProject,
   staffMembers,
   objectives
 }) => {
@@ -118,8 +118,11 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Projects</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-0.5">
+            <CardTitle>Projects</CardTitle>
+            <CardDescription>Manage unit projects, risks, and timelines.</CardDescription>
+          </div>
           <Button variant="outline" onClick={handleOpenAddModal}>
             <Plus className="h-4 w-4 mr-2" />
             Add Project
@@ -138,7 +141,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="[&_tr:last-child]:border-b">
               {projects.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
@@ -191,10 +194,10 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             setShowAddModal(false);
           }}
           staffMembers={staffMembers}
-          // objectives={objectives} // Pass if needed
+        // objectives={objectives} // Pass if needed
         />
       )}
-      
+
       {showEditModal && selectedProject && (
         <EditProjectModal
           open={showEditModal}
@@ -205,10 +208,10 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
             editProject(selectedProject.id, updatedProject);
           }}
           staffMembers={staffMembers}
-          // objectives={objectives} // Pass if needed
+        // objectives={objectives} // Pass if needed
         />
       )}
-      
+
       {showDeleteModal && selectedProject && (
         <DeleteModal
           open={showDeleteModal}

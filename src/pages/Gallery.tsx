@@ -606,7 +606,7 @@ const Gallery = () => {
             key={year}
             value={year}
             ref={el => tabsContentRef.current.set(year, el)}
-            className="space-y-8"
+            className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6"
           >
             {galleryData[year].map((event) => (
               <div key={event.id} className="space-y-4">

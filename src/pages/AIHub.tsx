@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare, Bot, Lightbulb, FileText, Search, Send, Upload, Loader2, Settings, Maximize, Minimize,
-  ClipboardCopy, Check, Trash2, Link as LinkIcon, ExternalLink, BookOpen
+  ClipboardCopy, Check, Trash2, Link as LinkIcon, ExternalLink, BookOpen, Square
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -187,6 +187,7 @@ const AIHub = () => {
   const [modelName, setModelName] = useState('gemini-2.0-flash');
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -416,8 +417,43 @@ const AIHub = () => {
     setIsTesting(false);
   };
 
+  const handleStopGeneration = (e?: React.MouseEvent | React.FormEvent) => {
+    e?.preventDefault();
+
+    // 1. Abort any ongoing fetch request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+
+    // 2. Stop any ongoing typing effect
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
+    // 3. Mark the last AI message as finished typing (if it exists)
+    setChatMessages(prev => {
+      const last = prev[prev.length - 1];
+      if (last && last.sender === 'ai' && last.isTyping) {
+        return prev.map(msg => msg.id === last.id ? { ...msg, isTyping: false } : msg);
+      }
+      return prev;
+    });
+
+    setIsSendingChatMessage(false);
+  };
+
+  const isAiTyping = chatMessages.length > 0 && chatMessages[chatMessages.length - 1].sender === 'ai' && chatMessages[chatMessages.length - 1].isTyping;
+
   const handleSendChatMessage = async (e?: React.FormEvent, manualMessage?: string) => {
     e?.preventDefault();
+
+    if (isSendingChatMessage || isAiTyping) {
+      handleStopGeneration();
+      return;
+    }
+
     const messageToSend = manualMessage || query.trim(); // Use manual message if provided, else use query state
     if (!messageToSend) return;
 
@@ -430,6 +466,40 @@ const AIHub = () => {
     setChatMessages(prevMessages => [...prevMessages, newUserMessage]);
     setQuery('');
     setIsSendingChatMessage(true);
+
+    // Query Validation Logic
+    const normalizedMsg = messageToSend.trim().toLowerCase();
+    const isTestMessage = ['test', 'hello', 'hi', 'testing', 'hey'].includes(normalizedMsg);
+    const isTooShort = normalizedMsg.length < 4 && !isTestMessage; // Allow "CMA" or "SCA" if they were 3 chars? Acts are usually 3-4 chars like CMA, CDA. Let's stick to < 4 for now, but "CMA" is 3. 
+    // Actually, "Act" is 3. Maybe just stick to the specific test words and length < 3 for others?
+    // The plan said < 5. "CMA" is 3. "SCA" is 3. "Pengo" is 5.
+    // Use specific check for common test words, and generally short queries that aren't likely abbreviations.
+    // "tax" is 3. "law" is 3.
+    // Let's stick to the plan but maybe be careful with 3-letter acronyms.
+    // If I use < 3, "hi" matches. "no" matches.
+    // Let's use the list for checking mainly.
+    // Refined logic:
+
+    if (isTestMessage || (normalizedMsg.length < 3 && !['cma', 'cda', 'sca', 'sa'].includes(normalizedMsg))) {
+      const responseText = isTestMessage
+        ? "Hello! I am ready to assist you. Please ask a specific question about the SCPNG Acts or intranet."
+        : "I noticed your query is quite short. Could you please provide more context or ask a complete question so I can help you better?";
+
+      const validationResponse: ChatMessage = {
+        id: uuidv4(),
+        sender: 'ai',
+        text: responseText,
+        fullText: responseText,
+        isTyping: false, // immediate
+        timestamp: new Date()
+      };
+
+      setTimeout(() => {
+        setChatMessages(prev => [...prev, validationResponse]);
+        setIsSendingChatMessage(false);
+      }, 600);
+      return;
+    }
 
     // Prioritize environment variable, then settings state
     const effectiveApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
@@ -492,12 +562,17 @@ const AIHub = () => {
       const targetModel = modelName || 'gemini-1.5-flash';
       let apiUrl = `https://generativelanguage.googleapis.com/v1/models/${targetModel}:generateContent?key=${cleanApiKey}`;
 
+      // Create new AbortController for this request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestBody),
+        signal: controller.signal
       });
 
       if (!response.ok) {
@@ -533,6 +608,11 @@ const AIHub = () => {
         throw new Error('Chat response format not recognized or content missing.');
       }
     } catch (error: any) {
+      if (error.name === 'AbortError') {
+        // User stopped the generation
+        setIsSendingChatMessage(false);
+        return;
+      }
       logger.error('[AIHub Chat] AI Request failed:', error);
       const aiErrorMessage: ChatMessage = {
         id: uuidv4(),
@@ -542,6 +622,8 @@ const AIHub = () => {
         timestamp: new Date(),
       };
       setChatMessages(prevMessages => [...prevMessages, aiErrorMessage]);
+    } finally {
+      abortControllerRef.current = null;
     }
 
     setIsSendingChatMessage(false);
@@ -1072,17 +1154,19 @@ const AIHub = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className={cn("flex-1", isFullScreenInstance && "bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-600 focus:ring-intranet-primary focus:border-intranet-primary h-12 text-base")}
-              disabled={isSendingChatMessage || uiIsActuallyLoading || !apiKey}
+              disabled={(isSendingChatMessage || isAiTyping) || uiIsActuallyLoading || !apiKey}
             />
             <Button
               type="submit"
               className={cn(
-                "bg-intranet-primary hover:bg-intranet-secondary",
+                (isSendingChatMessage || isAiTyping)
+                  ? "bg-red-500 hover:bg-red-600"
+                  : "bg-intranet-primary hover:bg-intranet-secondary",
                 isFullScreenInstance && "h-12 w-12 rounded-full p-0"
               )}
-              disabled={isSendingChatMessage || !query.trim() || uiIsActuallyLoading || !apiKey}
+              disabled={(!query.trim() && !isSendingChatMessage && !isAiTyping) || uiIsActuallyLoading || !apiKey}
             >
-              {isSendingChatMessage ? <Loader2 className="h-5 w-5" /> : <Send size={isFullScreenInstance ? 20 : 18} />}
+              {(isSendingChatMessage || isAiTyping) ? <Square className="h-4 w-4 fill-current" /> : <Send size={isFullScreenInstance ? 20 : 18} />}
             </Button>
           </form>
           {!apiKey && !uiIsActuallyLoading && !isFullScreenInstance && (
@@ -1100,10 +1184,6 @@ const AIHub = () => {
       {!isChatFullScreen && (
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">AI Knowledge Hub</h1>
-          <div className="flex flex-col md:flex-row gap-4 items-center mt-2 mb-4">
-            <Input placeholder="Search across organizational knowledge... (feature coming soon)" className="flex-1" disabled />
-            <p className="text-gray-500 text-sm whitespace-nowrap">Access AI-powered insights and search across organizational knowledge</p>
-          </div>
         </div>
       )}
 

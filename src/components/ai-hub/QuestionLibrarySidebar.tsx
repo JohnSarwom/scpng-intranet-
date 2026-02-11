@@ -53,6 +53,7 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
     const [categories, setCategories] = useState<Category[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+    const [openCategoryId, setOpenCategoryId] = useState<string | undefined>(undefined);
 
     const activeLibrary = LIBRARIES.find(l => l.id === activeLibraryId) || LIBRARIES[0];
 
@@ -163,7 +164,13 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
                         <span className="text-xs text-muted-foreground">Loading questions...</span>
                     </div>
                 ) : filteredCategories.length > 0 ? (
-                    <Accordion type="single" collapsible className="space-y-3">
+                    <Accordion
+                        type="single"
+                        collapsible
+                        className="space-y-3"
+                        value={openCategoryId}
+                        onValueChange={setOpenCategoryId}
+                    >
                         {filteredCategories.map((category) => (
                             <AccordionItem
                                 key={category.id}
@@ -178,7 +185,7 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
                                             </Badge>
                                             <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Topic</span>
                                         </div>
-                                        <h3 className="text-sm font-semibold truncate text-foreground group-hover:text-intranet-primary">
+                                        <h3 className={`text-sm font-semibold text-foreground group-hover:text-intranet-primary ${openCategoryId === category.id ? 'whitespace-normal' : 'truncate'}`}>
                                             {category.title}
                                         </h3>
                                     </div>

@@ -29,6 +29,9 @@ import {
 } from "lucide-react";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
+import { generateAllMockData, StaffMember } from '@/data/mockPerformanceDataGenerator';
+import { mockStrategyData } from '@/mockData/strategyData';
+import { Kra, Kpi, Task } from '@/types';
 
 const TestGround = () => {
     const { toast } = useToast();
@@ -224,6 +227,67 @@ const TestGround = () => {
         }
     };
 
+    const [isEnsuringAssignees, setIsEnsuringAssignees] = useState(false);
+    const [isEnsuringCompletionDate, setIsEnsuringCompletionDate] = useState(false);
+
+    const handleEnsureAssigneesColumn = async () => {
+        setIsEnsuringAssignees(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🛠️ Fixing Schema", description: "Ensuring 'Assignees' column exists on Operations_Tasks..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+
+            const result = await setupService.ensureAssigneesColumn();
+
+            if (result.success) {
+                toast({ title: "✅ Success", description: result.message });
+                setSetupResult({ success: true, message: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('Fix failed:', error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+            setSetupResult({ success: false, message: error.message, error });
+        } finally {
+            setIsEnsuringAssignees(false);
+        }
+    };
+
+    const handleEnsureCompletionColumn = async () => {
+        setIsEnsuringCompletionDate(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🛠️ Fixing Schema", description: "Ensuring 'CompletionDate' column exists on Operations_Tasks..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+
+            const result = await setupService.ensureTaskColumns();
+
+            if (result.success) {
+                toast({ title: "✅ Success", description: result.message });
+                setSetupResult({ success: true, message: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('Fix failed:', error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+            setSetupResult({ success: false, message: error.message, error });
+        } finally {
+            setIsEnsuringCompletionDate(false);
+        }
+    };
+
     const [isSettingUpMarket, setIsSettingUpMarket] = useState(false);
     const [isSettingUpDocs, setIsSettingUpDocs] = useState(false);
     const [isDeletingHistory, setIsDeletingHistory] = useState(false);
@@ -412,6 +476,35 @@ const TestGround = () => {
         }
     };
 
+    const handleEnsureDocsList = async () => {
+        setIsSettingUpDocs(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🛠️ Checking Schema", description: "Ensuring 'Organizational_Documents' library exists..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+
+            const result = await setupService.ensureSharedDocsColumns();
+
+            if (result.success) {
+                toast({ title: "✅ Success", description: result.message });
+                setSetupResult({ success: true, message: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('Repair failed:', error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+            setSetupResult({ success: false, message: error.message, error });
+        } finally {
+            setIsSettingUpDocs(false);
+        }
+    };
+
     const handleDeleteDocs = async () => {
         if (!confirm('Are you sure you want to delete the Organizational Documents library? This cannot be undone!')) {
             return;
@@ -447,6 +540,206 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpDocs(false);
+        }
+    };
+
+    // ==========================================
+    // MOCK DATA GENERATION & UPLOAD
+    // ==========================================
+    const [mockData, setMockData] = useState<{ kras: Kra[], kpis: Kpi[], tasks: Task[] } | null>(null);
+    const [isGeneratingMock, setIsGeneratingMock] = useState(false);
+    const [isUploadingMock, setIsUploadingMock] = useState(false);
+    const [mockUploadStatus, setMockUploadStatus] = useState<string>('');
+
+    const handleGenerateMockData = async () => {
+        setIsGeneratingMock(true);
+        try {
+            // 1. Fetch Users
+            toast({ title: "👥 Fetching Users...", description: "Getting up to 10 active users..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('No Graph Client');
+
+            const users = await graphClient.api('/users')
+                .select('id,displayName,jobTitle,department,officeLocation,mail')
+                .filter("accountEnabled eq true")
+                .top(999)
+                .get();
+
+            const staffMembers: StaffMember[] = users.value
+                .filter((u: any) => u.mail)
+                .slice(0, 10)
+                .map((u: any) => ({
+                    id: u.id,
+                    displayName: u.displayName,
+                    jobTitle: u.jobTitle || 'Staff',
+                    department: u.department || 'General',
+                    officeLocation: u.officeLocation || 'HQ',
+                    mail: u.mail,
+                    divisionId: 'DIV-001'
+                }));
+
+            console.log(`✅ [Mock Generator] Fetched ${staffMembers.length} valid users for generation.`);
+            if (staffMembers.length > 0) {
+                console.log(`ℹ️ [Mock Generator] Example user for data: ${staffMembers[0].mail}`);
+            }
+
+            if (staffMembers.length === 0) throw new Error('No users found in tenant');
+
+            // 2. Prepare Strategies
+            const strategies = mockStrategyData.objectives.map((o: any, i: number) => ({
+                id: i + 1,
+                title: o.title,
+                description: o.description,
+                deliverables: o.deliverables
+            }));
+
+            // 3. Generate
+            const data = generateAllMockData(staffMembers, strategies);
+            setMockData(data);
+
+            toast({
+                title: "✅ Data Generated",
+                description: `Created ${data.kras.length} KRAs, ${data.kpis.length} KPIs, ${data.tasks.length} Tasks for ${staffMembers.length} users.`
+            });
+
+        } catch (error: any) {
+            toast({ title: "❌ Generation Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsGeneratingMock(false);
+        }
+    };
+
+    const handleGenerateForUser = async () => {
+        setIsGeneratingMock(true);
+        try {
+            // 1. Specific Target User
+            const targetEmail = 'jsarwom@scpng.gov.pg';
+            toast({ title: "🎯 Targeting User", description: `Generating data specifically for ${targetEmail}...` });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('No Graph Client');
+
+            // 2. Debug: Log Site Info to console to verify we are writing to the right place
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .select('id,webUrl,displayName')
+                .get();
+            console.log('🔍 [Debug] Target Site:', site);
+            console.log('   ID:', site.id);
+            console.log('   URL:', site.webUrl);
+
+            // 3. Create mock staff member object directly (skipping tenant fetch to be sure)
+            const staffMembers: StaffMember[] = [{
+                id: 'active-user-id',
+                displayName: 'John Sarwom',
+                jobTitle: 'IT Manager',
+                department: 'IT Division',
+                officeLocation: 'HQ',
+                mail: targetEmail,
+                divisionId: 'DIV-001'
+            }];
+
+            console.log(`✅ [Mock Generator] Targeting single user: ${targetEmail}`);
+
+            // 4. Prepare Strategies
+            const strategies = mockStrategyData.objectives.map((o: any, i: number) => ({
+                id: i + 1,
+                title: o.title,
+                description: o.description,
+                deliverables: o.deliverables
+            }));
+
+            // 5. Generate
+            const data = generateAllMockData(staffMembers, strategies);
+            setMockData(data);
+
+            toast({
+                title: "✅ Generated. Starting Upload...",
+                description: `Created ${data.kras.length} KRAs. Uploading automatically...`
+            });
+
+            // 6. Auto-Upload for Debugging convenience
+            setIsUploadingMock(true);
+            const service = new SharePointListSetupService(graphClient, site.id);
+            setMockUploadStatus('Fetching User Map...');
+            const userMap = await service.getSiteUserMap();
+
+            setMockUploadStatus(`Uploading ${data.kras.length} KRAs...`);
+            await service.uploadMockKRAs(data.kras, userMap);
+
+            setMockUploadStatus(`Uploading ${data.kpis.length} KPIs...`);
+            await service.uploadMockKPIs(data.kpis, userMap);
+
+            setMockUploadStatus(`Uploading ${data.tasks.length} Tasks...`);
+            await service.uploadMockTasks(data.tasks, userMap);
+
+            setMockUploadStatus('Done!');
+            toast({ title: "✅ Full Upload Complete", description: "Check SharePoint Lists now." });
+            setMockData(null);
+
+        } catch (error: any) {
+            console.error(error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsGeneratingMock(false);
+            setIsUploadingMock(false);
+        }
+    };
+
+    const handleUploadMockData = async () => {
+        if (!mockData) return;
+        setIsUploadingMock(true);
+        setMockUploadStatus('Initializing...');
+
+        try {
+            const graphClient = await getGraphClient(msalInstance);
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const service = new SharePointListSetupService(graphClient, site.id);
+
+            // 1. Get User Map
+            setMockUploadStatus('Fetching User Map...');
+            const userMap = await service.getSiteUserMap();
+
+            // 2. Upload KRAs
+            setMockUploadStatus(`Uploading ${mockData.kras.length} KRAs...`);
+            await service.uploadMockKRAs(mockData.kras, userMap);
+
+            // 3. Upload KPIs
+            setMockUploadStatus(`Uploading ${mockData.kpis.length} KPIs...`);
+            await service.uploadMockKPIs(mockData.kpis, userMap);
+
+            // 4. Upload Tasks
+            setMockUploadStatus(`Uploading ${mockData.tasks.length} Tasks...`);
+            await service.uploadMockTasks(mockData.tasks, userMap);
+
+            setMockUploadStatus('Done!');
+            toast({ title: "✅ Upload Complete", description: "All mock data uploaded successfully." });
+            setMockData(null); // Clear after upload
+
+        } catch (error: any) {
+            console.error(error);
+            toast({ title: "❌ Upload Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsUploadingMock(false);
+            setMockUploadStatus('');
+        }
+    };
+
+    const handleClearMockData = async () => {
+        if (!confirm('Are you sure? This will delete ALL mock KRAs, KPIs, and Tasks!')) return;
+        setIsUploadingMock(true);
+        setMockUploadStatus('Clearing data...');
+        try {
+            const graphClient = await getGraphClient(msalInstance);
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const service = new SharePointListSetupService(graphClient, site.id);
+            await service.clearMockPerformanceData();
+            toast({ title: "🗑️ Data Cleared", description: "Mock data removed." });
+        } catch (error: any) {
+            toast({ title: "❌ Error", description: error.message, variant: "destructive" });
+        } finally {
+            setIsUploadingMock(false);
+            setMockUploadStatus('');
         }
     };
 
@@ -807,6 +1100,79 @@ const TestGround = () => {
                             </Button>
 
                             <Button
+                                onClick={handleEnsureAssigneesColumn}
+                                disabled={isEnsuringAssignees}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-emerald-600/50 text-emerald-700 hover:bg-emerald-50"
+                            >
+                                {isEnsuringAssignees ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                                        Fixing Schema...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-4 w-4 text-emerald-600" />
+                                        Fix Schema: Add 'Assignees' Column
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleEnsureCompletionColumn}
+                                disabled={isEnsuringCompletionDate}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-emerald-600/50 text-emerald-700 hover:bg-emerald-50"
+                            >
+                                {isEnsuringCompletionDate ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                                        Fixing Schema...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ListChecks className="h-4 w-4 text-emerald-600" />
+                                        Fix Schema: Add 'CompletionDate' Column
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={async () => {
+                                    setIsEnsuringCompletionDate(true);
+                                    try {
+                                        toast({ title: "🌱 Seeding Data", description: "Backpopulating completion dates..." });
+                                        const graphClient = await getGraphClient(msalInstance);
+                                        if (!graphClient) throw new Error("Failed to get Graph client"); // Safety check
+                                        const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+                                        const setupService = new SharePointListSetupService(graphClient, site.id);
+
+                                        const result = await setupService.seedRandomCompletionDates();
+                                        toast({ title: "✅ Completed", description: result.message });
+                                    } catch (e: any) {
+                                        toast({ title: "❌ Error", description: e.message, variant: "destructive" });
+                                    } finally {
+                                        setIsEnsuringCompletionDate(false);
+                                    }
+                                }}
+                                disabled={isEnsuringCompletionDate}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-amber-500/50 text-amber-700 hover:bg-amber-50"
+                            >
+                                {isEnsuringCompletionDate ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+                                        Seeding...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-4 w-4 text-amber-600" />
+                                        Populate Random Completion Dates
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
                                 onClick={async () => {
                                     if (!confirm('Are you sure you want to delete all Operations lists?')) return;
 
@@ -837,6 +1203,95 @@ const TestGround = () => {
                             >
                                 <AlertCircle className="h-5 w-5" />
                                 Reset / Delete Operations Lists
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Mock Data Generation Card */}
+                <Card className="border-2 border-amber-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Database className="h-5 w-5 text-amber-600" />
+                            Mock Performance Data (Individual Filtering)
+                        </CardTitle>
+                        <CardDescription>
+                            Generate and upload realistic KRAs, KPIs, and Tasks for staff members to test filtering.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <ListChecks className="h-4 w-4" />
+                                Process:
+                            </h4>
+                            <ul className="space-y-2 ml-6 text-sm">
+                                <li>1. Fetch up to 10 users from Tenant</li>
+                                <li>2. Generate ~30 items per user (10 KRA, 10 KPI, 10 Task)</li>
+                                <li>3. Link items to Strategic Objectives and each other</li>
+                                <li>4. Upload to SharePoint with correct Lookups</li>
+                            </ul>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            {!mockData ? (
+                                <>
+                                    <Button
+                                        onClick={handleGenerateMockData}
+                                        disabled={isGeneratingMock || isUploadingMock}
+                                        className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                                        size="lg"
+                                    >
+                                        {isGeneratingMock ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating...</>
+                                        ) : (
+                                            <><TestTube className="h-4 w-4 mr-2" /> Generate Mock Data (10 Users)</>
+                                        )}
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleGenerateForUser}
+                                        disabled={isGeneratingMock || isUploadingMock}
+                                        className="w-full bg-blue-100/10 text-blue-600 hover:bg-blue-100/20 border-blue-600 border"
+                                        size="lg"
+                                    >
+                                        {isGeneratingMock ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Generating...</>
+                                        ) : (
+                                            <><CheckCircle className="h-4 w-4 mr-2" /> Generate for jsarwom@scpng.gov.pg</>
+                                        )}
+                                    </Button>
+                                </>
+                            ) : (
+                                <div className="space-y-4 border p-4 rounded-lg bg-slate-50 dark:bg-slate-900">
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-green-600">
+                                            Ready to Upload: {mockData.kras.length + mockData.kpis.length + mockData.tasks.length} items
+                                        </span>
+                                        <Button variant="ghost" size="sm" onClick={() => setMockData(null)}>Cancel</Button>
+                                    </div>
+                                    <Button
+                                        onClick={handleUploadMockData}
+                                        disabled={isUploadingMock}
+                                        className="w-full bg-green-600 hover:bg-green-700"
+                                        size="lg"
+                                    >
+                                        {isUploadingMock ? (
+                                            <><Loader2 className="h-4 w-4 animate-spin mr-2" /> {mockUploadStatus}</>
+                                        ) : (
+                                            <><Rocket className="h-4 w-4 mr-2" /> Upload to SharePoint</>
+                                        )}
+                                    </Button>
+                                </div>
+                            )}
+
+                            <Button
+                                onClick={handleClearMockData}
+                                disabled={isUploadingMock}
+                                variant="outline"
+                                className="w-full text-red-500 border-red-200 hover:bg-red-50"
+                            >
+                                <Trash2 className="h-4 w-4 mr-2" /> Clear All Mock Performance Data
                             </Button>
                         </div>
                     </CardContent>
@@ -942,6 +1397,25 @@ const TestGround = () => {
                                     <>
                                         <Settings className="mr-2 h-4 w-4" />
                                         Create Documents Library
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleEnsureDocsList}
+                                disabled={isSettingUpLists || isSettingUpOps || isSettingUpMarket || isSettingUpDocs}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-purple-600/50 text-purple-700 hover:bg-purple-50"
+                            >
+                                {isSettingUpDocs ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                                        Ensuring Library...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-4 w-4 text-purple-600" />
+                                        Ensure Organizational Documents List
                                     </>
                                 )}
                             </Button>

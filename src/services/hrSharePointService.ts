@@ -801,6 +801,97 @@ export class HRSharePointService {
 
   /**
    * ==========================================
+   * ADMIN OPERATIONS
+   * ==========================================
+   */
+
+  /**
+   * Delete ALL data from all HR lists
+   * WARNING: This is destructive and cannot be undone
+   */
+  async deleteAllData(): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      console.log('⚠️ STARTING DELETE ALL DATA OPERATION');
+
+      // 1. Get all list IDs
+      if (this.listIds.size === 0) {
+        await this.loadListIds();
+      }
+
+      // 2. Iterate through all lists
+      for (const [listKey, listName] of Object.entries(LISTS)) {
+        console.log(`🗑️ Processing list: ${listName}`);
+
+        try {
+          const listId = this.getListId(listName);
+
+          // Get all items from the list (just needed fields to keep it light)
+          let items: any[] = [];
+          let hasMore = true;
+          let nextLink: string | undefined = undefined;
+
+          // Fetch all items with pagination
+          while (hasMore) {
+            let request: any;
+
+            if (nextLink) {
+              request = this.client.api(nextLink);
+            } else {
+              request = this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                .select('id')
+                .top(1000); // 999 is max, safe 1000
+            }
+
+            const response = await request.get();
+            items = [...items, ...response.value];
+
+            if (response['@odata.nextLink']) {
+              nextLink = response['@odata.nextLink'];
+            } else {
+              hasMore = false;
+            }
+          }
+
+          console.log(`   Found ${items.length} items to delete in ${listName}`);
+
+          // Delete items in chunks to avoid rate limiting
+          // Note: Graph API batching would be better but simple iteration is safer to implement quickly
+          // defined chunk size
+          const chunkSize = 10;
+          for (let i = 0; i < items.length; i += chunkSize) {
+            const chunk = items.slice(i, i + chunkSize);
+            await Promise.all(
+              chunk.map(item =>
+                this.client
+                  .api(`/sites/${this.siteId}/lists/${listId}/items/${item.id}`)
+                  .delete()
+                  .catch(e => console.error(`Failed to delete item ${item.id} from ${listName}`, e))
+              )
+            );
+            console.log(`   Deleted chunk ${Math.floor(i / chunkSize) + 1}/${Math.ceil(items.length / chunkSize)}`);
+          }
+
+          console.log(`✅ Cleared list: ${listName}`);
+
+        } catch (error) {
+          console.error(`❌ Error clearing list ${listName}:`, error);
+          // Continue with other lists even if one fails
+        }
+      }
+
+      console.log('✅ DELETE ALL DATA COMPLETE');
+    } catch (error) {
+      console.error('❌ Fatal error in deleteAllData:', error);
+      throw error;
+    }
+  }
+
+
+  /**
+   * ==========================================
    * AUDIT LOGGING
    * ==========================================
    */
