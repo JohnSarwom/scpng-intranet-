@@ -1,18 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { Kra, Kpi, Objective } from '@/types/kpi';
+import { AlertTriangle, AlertCircle } from 'lucide-react';
 
 interface KRATimelineTabProps {
   kras: Kra[];
   objectives: Objective[];
+  viewMode: 'quarters' | 'months' | 'weeks';
+  onViewModeChange: (mode: 'quarters' | 'months' | 'weeks') => void;
 }
 
-const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => {
-  const [currentViewMode, setCurrentViewMode] = useState<'quarters' | 'months' | 'weeks'>('quarters');
+const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewMode, onViewModeChange }) => {
+  // const [currentViewMode, setCurrentViewMode] = useState<'quarters' | 'months' | 'weeks'>('quarters'); // Removed local state
+  const currentViewMode = viewMode; // Use prop instead
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to current week
+  useEffect(() => {
+    if (currentViewMode === 'weeks' && scrollContainerRef.current) {
+      // Estimate current week
+      const now = new Date();
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const days = Math.floor((now.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000));
+      const currentWeek = Math.ceil((days + 1) / 7);
+
+      const scrollWidth = scrollContainerRef.current.scrollWidth;
+      const viewportWidth = scrollContainerRef.current.clientWidth;
+
+      // Calculate target position (approximate center of timeline)
+      const targetScroll = (currentWeek / 52) * scrollWidth;
+
+      scrollContainerRef.current.scrollTo({
+        left: Math.max(0, targetScroll - (viewportWidth / 2)),
+        behavior: 'smooth'
+      });
+    }
+  }, [currentViewMode]);
 
   // --- Preprocessing for Grouping --- 
   const firstObjectiveMap = new Map<string | number, string>();
@@ -74,7 +101,12 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
     const duration = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
     const width = (duration / totalDays) * 100;
     const startPosition = calculatePosition(startDate);
-    return Math.max(0, Math.min(100 - startPosition, width));
+
+    // Ensure minimum visual width (approx 4px on standard screens)
+    // 100% / 1200px (min width) * 4px = ~0.33%
+    const minWidthPercent = 0.5;
+
+    return Math.max(minWidthPercent, Math.min(100 - startPosition, width));
   };
 
   const getKraProgress = (kpis: Kpi[]): number => {
@@ -141,59 +173,40 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
 
   const getKpiStatusColorClass = (status: Kpi['status']): string => {
     switch (status) {
-      case 'completed': return "bg-blue-500";
-      case 'on-track': return "bg-green-500";
-      case 'in-progress': return "bg-green-400";
-      case 'at-risk': return "bg-amber-500";
-      case 'on-hold': return "bg-gray-400";
-      case 'not-started': return "bg-gray-200";
-      case 'behind': return "bg-red-500";
-      default: return "bg-gray-300";
+      case 'completed': return "bg-blue-500 text-white";
+      case 'on-track': return "bg-green-500 text-white";
+      case 'in-progress': return "bg-green-200 text-emerald-950 border border-green-300"; // Improved Contrast (Light Green -> Dark Text, added border)
+      case 'at-risk': return "bg-amber-300 text-amber-950 border border-amber-400"; // Improved Contrast (Yellow/Amber -> Dark Text, added border)
+      case 'on-hold': return "bg-gray-400 text-white";
+      case 'not-started': return "bg-gray-200 text-gray-700 border border-gray-300";
+      case 'behind': return "bg-red-500 text-white";
+      default: return "bg-gray-300 text-gray-800";
     }
   };
 
+  const getStatusTextColor = (status: Kpi['status']): string => {
+    switch (status) {
+      case 'in-progress':
+      case 'at-risk':
+      case 'not-started':
+        return 'text-gray-900 font-semibold';
+      default:
+        return 'text-white font-medium';
+    }
+  };
+
+  const isCritical = (status: Kpi['status']) => {
+    return status === 'behind' || status === 'at-risk';
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {/* <img src="/images/scpng-logo.png" alt="SCPNG Logo" className="h-10 w-auto" /> */}
-            <CardTitle>Key Result Areas Timeline</CardTitle>
-          </div>
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <Button
-              variant={currentViewMode === 'quarters' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentViewMode('quarters')}
-              className="px-4"
-            >
-              Quarterly
-            </Button>
-            <Button
-              variant={currentViewMode === 'months' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentViewMode('months')}
-              className="px-4"
-            >
-              Monthly
-            </Button>
-            <Button
-              variant={currentViewMode === 'weeks' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setCurrentViewMode('weeks')}
-              className="px-4"
-            >
-              Weekly
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="mb-6 overflow-x-auto">
-          <div className="timeline-view min-w-[1200px]">
-            <div className="flex border-b border-gray-200 pb-2 sticky top-0 bg-background z-10">
-              <div className="w-48 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0">Objective</div>
-              <div className="w-64 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0">KRA Details</div>
+    <Card className="h-full flex flex-col">
+      <CardContent className="flex-1 min-h-0 overflow-hidden p-0 max-h-[800px]"> {/* Added max-height for sticky to work if parent doesn't constrain */}
+        <div className="overflow-auto h-[700px] border rounded-md" ref={scrollContainerRef}>
+          <div className="timeline-view min-w-[1200px] relative">
+            <div className="flex border-b border-gray-200 pb-2 sticky top-0 bg-background z-40 shadow-sm">
+              <div className="w-48 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-0 bg-background z-50 border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</div>
+              <div className="w-64 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-[12rem] bg-background z-50 border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA Details</div>
               <div className="flex-1 flex">
                 {currentViewMode === 'quarters' && quarters.map(quarter => (
                   <div key={quarter} className="flex-1 text-center text-sm font-medium text-gray-700">
@@ -221,25 +234,25 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
               </div>
             </div>
 
-            <div className="relative">
-              {/* Vertical Grid Lines - Apply dashed style */}
-              <div className="absolute top-0 left-[calc(12rem+16rem)] right-0 h-full flex pointer-events-none">
+            <div className="relative isolate">
+              {/* Vertical Grid Lines -  Use a container matching the scroll height */}
+              <div className="absolute top-0 left-[calc(12rem+16rem)] right-0 bottom-0 pointer-events-none z-0 flex">
                 {currentViewMode === 'quarters' && quarters.map((_, i) => (
                   <div
                     key={i}
-                    className={`flex-1 border-r border-dashed border-gray-100 ${i < 3 ? 'border-r' : 'border-r-0'}`}
+                    className={`flex-1 border-r border-dashed border-gray-200 ${i < 3 ? 'border-r' : 'border-r-0'}`}
                   />
                 ))}
                 {currentViewMode === 'months' && months.map((_, i) => (
                   <div
                     key={i}
-                    className={`flex-1 border-r border-dashed border-gray-200 ${i < 11 ? 'border-r' : 'border-r-0'}`}
+                    className={`flex-1 border-r border-dashed border-gray-300 ${i < 11 ? 'border-r' : 'border-r-0'}`}
                   />
                 ))}
                 {currentViewMode === 'weeks' && weeks.map((_, i) => (
                   <div
                     key={i}
-                    className={`border-r border-dashed border-gray-100 ${i < 51 ? 'border-r' : 'border-r-0'}`}
+                    className={`border-r border-dashed border-gray-200 ${i < 51 ? 'border-r' : 'border-r-0'}`}
                     style={{
                       width: '1.92%'
                     }}
@@ -247,11 +260,8 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                 ))}
               </div>
 
-              <div className="relative z-0">
+              <div className="relative z-10">
                 {kras.map((kra, kraIndex) => {
-                  const kraStartDate = parseDate(kra.start_date || kra.startDate);
-                  const kraTargetDate = parseDate(kra.target_date || kra.targetDate);
-                  const kraProgress = getKraProgress(kra.unitKpis || []);
                   const kpisExist = kra.unitKpis && kra.unitKpis.length > 0;
 
                   // --- Grouping Checks ---
@@ -267,11 +277,11 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                   // --- End Grouping Checks ---
 
                   return (
-                    <div key={kra.id} className="flex items-stretch hover:bg-gray-50/50 relative">
-                      {/* Objective Column - Add border-r, conditional border-b */}
-                      <div className={`w-48 px-4 py-3 shrink-0 flex flex-col border-r border-gray-200 ${isFirstForObjective ? 'border-t border-gray-200' : ''} ${isLastForObjective ? 'border-b border-gray-200' : ''}`}>
+                    <div key={kra.id} className="flex items-stretch hover:bg-gray-50/50 relative group">
+                      {/* Objective Column - Sticky */}
+                      <div className={`w-48 px-4 py-3 shrink-0 flex flex-col border-r border-gray-200 sticky left-0 bg-background z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isFirstForObjective ? 'border-t border-gray-200' : ''} ${isLastForObjective ? 'border-b border-gray-200' : ''}`}>
                         {isFirstForObjective && (
-                          <span className="font-medium text-gray-900 block truncate text-sm mb-1">
+                          <span className="font-medium text-gray-900 block truncate text-sm mb-1" title={objectives.find(o => String(o.id) === String(kra.objective_id))?.title}>
                             {(() => {
                               // Find objective in the objectives array
                               const objective = objectives.find(o => String(o.id) === String(kra.objective_id));
@@ -283,11 +293,12 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                         {/* Use a div with margin for spacing */}
                         <div className="mt-auto"></div>
                       </div>
-                      {/* KRA Details Column - Re-add conditional border-b */}
-                      <div className={`w-64 px-4 py-3 shrink-0 border-r border-gray-200 flex flex-col ${isFirstForKraTitle ? 'border-t border-gray-200' : ''} ${isLastForKraTitle ? 'border-b border-gray-200' : ''}`}>
+
+                      {/* KRA Details Column - Sticky */}
+                      <div className={`w-64 px-4 py-3 shrink-0 border-r border-gray-200 flex flex-col sticky left-[12rem] bg-background z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isFirstForKraTitle ? 'border-t border-gray-200' : ''} ${isLastForKraTitle ? 'border-b border-gray-200' : ''}`}>
                         {isFirstForKraTitle && (
                           <>
-                            <div className="text-sm font-medium text-gray-900 block truncate">{kra.title}</div>
+                            <div className="text-sm font-medium text-gray-900 block truncate" title={kra.title}>{kra.title}</div>
                             <div className="text-xs text-muted-foreground block truncate mt-0.5">{kra.unit || 'N/A'}</div>
                             {/* Display calculated date range */}
                             {kraDateRange && (
@@ -300,13 +311,14 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                         {/* Use a div with margin for spacing */}
                         <div className="mt-auto"></div>
                       </div>
+
                       {/* Timeline Bars Column */}
                       <div
                         className={`flex-1 relative border-b border-gray-200 ${isFirstForObjective || isFirstForKraTitle ? 'border-t border-gray-200' : ''}`}
-                        style={{ minHeight: kpisExist ? `${(kra.unitKpis.length * 2) + 1.5}rem` : '4rem' }}
+                        style={{ minHeight: kpisExist ? `${(kra.unitKpis.length * 2.5) + 1.5}rem` : '4rem' }}
                       >
-                        {/* Container for KPI Bars - ensure z-index is not needed if background removed */}
-                        <div className={`relative ${kpisExist ? 'py-3 h-full' : 'h-full'}`}> {/* Removed z-10 */}
+                        {/* Container for KPI Bars */}
+                        <div className={`relative ${kpisExist ? 'py-3 h-full' : 'h-full'}`}>
                           {kra.unitKpis && kra.unitKpis.map((kpi, kpiIndex) => {
                             const kpiStartDate = parseDate(kpi.start_date || kpi.startDate);
                             const kpiTargetDate = parseDate(kpi.target_date || kpi.targetDate);
@@ -314,13 +326,9 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                             const kpiWidth = calculateWidth(kpiStartDate, kpiTargetDate);
                             const kpiColorClass = getKpiStatusColorClass(kpi.status);
                             const kpiProgress = getKpiProgress(kpi);
+                            const isTruncated = kpiWidth < 12; // Threshold for truncating text
 
-                            // Log values for debugging
-                            console.log(`[Timeline KPI Debug] KRA: ${kra.title}, KPI: ${kpi.name}, Start: ${kpi.start_date || kpi.startDate}, ParsedStart: ${kpiStartDate}, Target: ${kpi.target_date || kpi.targetDate}, ParsedTarget: ${kpiTargetDate}, Width: ${kpiWidth}`);
-
-                            if (!kpiStartDate || !kpiTargetDate || kpiWidth <= 0) {
-                              // Log why it's not rendering
-                              console.log(`  -> KPI bar skipped (Invalid Dates or Zero Width)`);
+                            if (!kpiStartDate || !kpiTargetDate) {
                               return <React.Fragment key={kpi.id || `kpi-${kraIndex}-${kpiIndex}-frag`}></React.Fragment>;
                             }
 
@@ -329,20 +337,44 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                                 <TooltipTrigger asChild>
                                   {/* Outer div: Positions the bar */}
                                   <div
-                                    className={`absolute h-5 rounded-full bg-gray-200 shadow-sm overflow-hidden`}
+                                    className={`absolute h-6 rounded-md shadow-sm flex items-center transition-all hover:scale-105 hover:z-20 cursor-pointer ${kpiColorClass}`}
                                     style={{
                                       left: `${kpiStartPosition}%`,
                                       width: `${kpiWidth}%`,
-                                      top: `${0.75 + kpiIndex * 2}rem`,
+                                      top: `${0.75 + kpiIndex * 2.5}rem`,
+                                      // Ensure min width via CSS as overlap fallback
+                                      minWidth: '12px'
                                     }}
                                   >
-                                    {/* Inner div: Shows progress */}
+                                    {/* Progress Bar (Overlay) */}
                                     <div
-                                      className={`absolute top-0 left-0 h-full rounded-full ${kpiColorClass} transition-all duration-300`}
+                                      className="absolute top-0 left-0 h-full rounded-l-md bg-black/10"
                                       style={{ width: `${kpiProgress}%` }}
                                     />
-                                    {/* KPI Name Label */}
-                                    <span className="absolute inset-0 flex items-center text-[11px] text-white font-medium px-2 truncate z-10">
+
+                                    {/* KPI Name Label - Conditional Positioning */}
+                                    <span
+                                      className={`absolute items-center px-2 truncate block w-full whitespace-nowrap text-[11px] ${getStatusTextColor(kpi.status)}`}
+                                      style={{
+                                        // If bar is too small, move text outside to the right
+                                        ...(isTruncated ? {
+                                          left: '100%',
+                                          marginLeft: '4px',
+                                          color: '#374151', // Dark Gray for outside text
+                                          textShadow: 'none',
+                                          overflow: 'visible',
+                                          width: 'auto'
+                                        } : {
+                                          inset: 0,
+                                          display: 'flex',
+                                        })
+                                      }}
+                                    >
+                                      {/* Alert Icon for Critical Items */}
+                                      {isCritical(kpi.status) && (
+                                        <AlertCircle className={`h-3 w-3 mr-1 flex-shrink-0 ${isTruncated ? 'text-red-500' : 'text-inherit'}`} />
+                                      )}
+
                                       {kpi.name}
                                     </span>
                                   </div>
@@ -354,8 +386,18 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                                     <p className="text-xs text-muted-foreground">
                                       {kpi.start_date || kpi.startDate ? new Date(kpi.start_date || kpi.startDate).toLocaleDateString() : '?'} - {kpi.target_date || kpi.targetDate ? new Date(kpi.target_date || kpi.targetDate).toLocaleDateString() : '?'}
                                     </p>
-                                    <p className="text-xs">Status: {kpi.status}</p>
-                                    <p className="text-xs">Progress: {kpiProgress}%</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${kpi.status === 'completed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        kpi.status === 'on-track' ? 'bg-green-50 text-green-700 border-green-200' :
+                                          kpi.status === 'in-progress' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                                            kpi.status === 'at-risk' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                              kpi.status === 'behind' ? 'bg-red-50 text-red-700 border-red-200' :
+                                                'bg-gray-50 text-gray-700 border-gray-200'
+                                        }`}>
+                                        {kpi.status}
+                                      </span>
+                                      <span className="text-xs">Progress: {kpiProgress}%</span>
+                                    </div>
                                     {kpi.target !== undefined && <p className="text-xs">Target: {kpi.target}</p>}
                                     {kpi.actual !== undefined && <p className="text-xs">Actual: {kpi.actual}</p>}
                                   </TooltipContent>
@@ -364,9 +406,9 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
                             );
                           })}
                         </div>
-                        {/* "No KPIs" message (positioned separately) - ensure z-index is not needed if background removed */}
+                        {/* "No KPIs" message */}
                         {!kpisExist && (
-                          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground px-4 text-center"> {/* Removed z-10 */}
+                          <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground px-4 text-center">
                             No KPIs defined for this KRA.
                           </div>
                         )}
@@ -382,20 +424,24 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives }) => 
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-sm text-gray-500">
+        <div className="flex justify-between items-center text-sm text-gray-500 pt-4 px-4 bg-background border-t border-gray-100 z-50">
           <div>{new Date().getFullYear()} Fiscal Year</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span>On Track (75-100%)</span>
+              <span>On Track</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-amber-500" />
-              <span>At Risk (50-74%)</span>
+              <div className="w-3 h-3 rounded-full bg-green-200 border border-green-300" />
+              <span>In Progress</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded-full bg-amber-300 border border-amber-400" />
+              <span>At Risk</span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span>Behind (&lt;50%)</span>
+              <span>Behind</span>
             </div>
           </div>
         </div>

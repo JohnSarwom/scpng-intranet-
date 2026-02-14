@@ -44,7 +44,7 @@ export const calculateTaskTrends = (tasks: Task[], monthsBack: number = 6): Task
 
         // Completed Count
         // Use completedAt if available, otherwise if status is done/completed use modified date (proxy)
-        if (task.status === 'done' || (task.tags && task.tags.includes('completed'))) {
+        if (task.status === 'done' || task.status === 'completed' || (task.tags && task.tags.includes('completed'))) {
             const completedDateStr = task.completedAt || (task as any).updatedAt || (task as any).modifiedAt;
             // Note: Types might not have updatedAt mapped at top level yet, but we are checking runtime or if mapped
             // Usage of 'createdAt' for completed time is fallback if nothing else, but inaccurate.
@@ -91,7 +91,7 @@ export const calculateTrafficLightMetrics = (
     // Score: % of Tasks that are NOT Overdue
     // Status: > 80 Good, > 60 Warning, < 60 Critical
 
-    const openTasks = tasks.filter(t => t.status !== 'done' && t.status !== 'review'); // Active tasks
+    const openTasks = tasks.filter(t => t.status !== 'done' && t.status !== 'completed' && t.status !== 'review'); // Active tasks
     // Mock check for overdue since we need date logic. 
     // Real logic: Date.parse(dueDate) < Date.now()
     const overdueTasks = openTasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date());

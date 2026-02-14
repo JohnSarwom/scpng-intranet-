@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import ContactDetailsModal from '@/components/contacts/ContactDetailsModal';
+import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
 
 const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +25,8 @@ const Contacts = () => {
   const [selectedContact, setSelectedContact] = useState<MicrosoftContact | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { toast } = useToast();
+  // const { isInitialized: photosInitialized } = useEmployeePhotos(); // Removed duplicate
+  const [photoUrls, setPhotoUrls] = useState<Map<string, { profileUrl?: string; modalUrl?: string }>>(new Map());
 
   const handleCopyAll = () => {
     if (allContacts.length === 0) {
@@ -85,6 +88,33 @@ const Contacts = () => {
       setAllContacts(validContacts);
     }
   }, [contacts]);
+
+  // Fetch employee photos from SharePoint
+  // Fetch employee photos from SharePoint
+  const { getPhotosForEmails, isInitialized: photosInitialized } = useEmployeePhotos();
+
+  useEffect(() => {
+    const fetchPhotos = async () => {
+      if (allContacts.length > 0 && photosInitialized) {
+        // Extract all emails
+        const emails = allContacts
+          .map(c => c.emailAddresses?.[0]?.address || c.mail)
+          .filter((email): email is string => !!email);
+
+        if (emails.length === 0) return;
+
+        try {
+          // Batch fetch photos
+          const photoMap = await getPhotosForEmails(emails);
+          setPhotoUrls(photoMap);
+        } catch (error) {
+          console.error("Failed to batch fetch photos:", error);
+        }
+      }
+    };
+
+    fetchPhotos();
+  }, [allContacts, photosInitialized, getPhotosForEmails]);
 
   // Filter by division, search term, and other filters
   const filteredContacts = allContacts.filter(contact => {
@@ -171,80 +201,86 @@ const Contacts = () => {
     .map(contact => contact.companyName)
     .filter((company): company is string => !!company))];
 
-  const renderContactCard = (contact: MicrosoftContact, index: number) => (
-    <Card key={contact.id} className="overflow-hidden animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
-      <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary"></div>
-      <CardContent className="p-6 pt-0 relative">
-        <div className="flex justify-center">
-          <img
-            src={`https://api.dicebear.com/7.x/initials/svg?seed=${contact.displayName}&backgroundColor=600018`}
-            alt={contact.displayName}
-            className="w-20 h-20 rounded-full border-4 border-background -mt-10 shadow-md"
-          />
-        </div>
+  const renderContactCard = (contact: MicrosoftContact, index: number) => {
+    const email = contact.emailAddresses?.[0]?.address || contact.mail;
+    const photos = email ? photoUrls.get(email) : null;
+    const photoUrl = photos?.profileUrl;
 
-        <div className="text-center mt-2">
-          <h3 className="font-bold">{contact.displayName}</h3>
-          <p className="text-sm text-muted-foreground">{contact.jobTitle || 'No position specified'}</p>
-          {contact.department && (
-            <span className="inline-block px-3 py-1 bg-secondary text-secondary-foreground text-xs rounded-full mt-1">
-              {contact.department}
-            </span>
-          )}
-          {contact.companyName && (
-            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
-              <Building className="h-3 w-3 mr-1" />
-              {contact.companyName}
-            </div>
-          )}
-          {/* Show division badge for admins */}
-          {isAdmin && (contact as any).divisionId && (
-            <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
-              <Shield className="h-3 w-3 mr-1" />
-              {(contact as any).divisionId.replace(/-/g, ' ')}
-            </div>
-          )}
-        </div>
+    return (
+      <Card key={contact.id} className="overflow-hidden animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
+        <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary"></div>
+        <CardContent className="p-6 pt-0 relative">
+          <div className="flex justify-center">
+            <img
+              src={photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.displayName}&backgroundColor=600018`}
+              alt={contact.displayName}
+              className="w-20 h-20 rounded-full border-4 border-background -mt-10 shadow-md object-cover"
+            />
+          </div>
 
-        <div className="mt-4 space-y-2">
-          {contact.emailAddresses?.[0] && (
-            <div className="flex items-center text-sm">
-              <Mail className="h-4 w-4 mr-2 text-intranet-primary" />
-              <span className="truncate">{contact.emailAddresses[0].address}</span>
-            </div>
-          )}
+          <div className="text-center mt-2">
+            <h3 className="font-bold">{contact.displayName}</h3>
+            <p className="text-sm text-muted-foreground">{contact.jobTitle || 'No position specified'}</p>
+            {contact.department && (
+              <span className="inline-block px-3 py-1 bg-secondary text-secondary-foreground text-xs rounded-full mt-1">
+                {contact.department}
+              </span>
+            )}
+            {contact.companyName && (
+              <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
+                <Building className="h-3 w-3 mr-1" />
+                {contact.companyName}
+              </div>
+            )}
+            {/* Show division badge for admins */}
+            {isAdmin && (contact as any).divisionId && (
+              <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
+                <Shield className="h-3 w-3 mr-1" />
+                {(contact as any).divisionId.replace(/-/g, ' ')}
+              </div>
+            )}
+          </div>
 
-          {(contact.businessPhones?.[0] || contact.mobilePhone) && (
-            <div className="flex items-center text-sm">
-              <Phone className="h-4 w-4 mr-2 text-intranet-primary" />
-              <span>{contact.businessPhones?.[0] || contact.mobilePhone}</span>
-            </div>
-          )}
+          <div className="mt-4 space-y-2">
+            {contact.emailAddresses?.[0] && (
+              <div className="flex items-center text-sm">
+                <Mail className="h-4 w-4 mr-2 text-intranet-primary" />
+                <span className="truncate">{contact.emailAddresses[0].address}</span>
+              </div>
+            )}
 
-          {contact.officeLocation && (
-            <div className="flex items-center text-sm">
-              <MapPin className="h-4 w-4 mr-2 text-intranet-primary" />
-              <span>{contact.officeLocation}</span>
-            </div>
-          )}
-        </div>
+            {(contact.businessPhones?.[0] || contact.mobilePhone) && (
+              <div className="flex items-center text-sm">
+                <Phone className="h-4 w-4 mr-2 text-intranet-primary" />
+                <span>{contact.businessPhones?.[0] || contact.mobilePhone}</span>
+              </div>
+            )}
 
-        <div className="mt-4 flex justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full icon-hover-effect"
-            onClick={() => {
-              setSelectedContact(contact);
-              setIsModalOpen(true);
-            }}
-          >
-            View Profile
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+            {contact.officeLocation && (
+              <div className="flex items-center text-sm">
+                <MapPin className="h-4 w-4 mr-2 text-intranet-primary" />
+                <span>{contact.officeLocation}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full icon-hover-effect"
+              onClick={() => {
+                setSelectedContact(contact);
+                setIsModalOpen(true);
+              }}
+            >
+              View Profile
+            </Button>
+          </div>
+        </CardContent>
+      </Card >
+    );
+  };
 
   const renderContactsGrid = (contactsToRender: MicrosoftContact[]) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -601,6 +637,8 @@ const Contacts = () => {
         contact={selectedContact}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        photoUrl={selectedContact?.emailAddresses?.[0]?.address ? photoUrls.get(selectedContact.emailAddresses[0].address)?.profileUrl : undefined}
+        modalPhotoUrl={selectedContact?.emailAddresses?.[0]?.address ? photoUrls.get(selectedContact.emailAddresses[0].address)?.modalUrl : undefined}
       />
     </PageLayout>
   );

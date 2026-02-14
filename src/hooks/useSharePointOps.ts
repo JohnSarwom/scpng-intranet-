@@ -443,7 +443,9 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
                 console.error('❌ [useSharePointOps] Failed to fetch Tasks', err);
                 return [];
             }
-        }
+        },
+        // Use placeholderData to keep previous data while fetching new data to prevent flicker
+        placeholderData: (previousData) => previousData,
     });
 
     return {
@@ -463,12 +465,14 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
                 throw error;
             }
         },
-        update: async (id: string, item: Partial<Task>) => {
+        update: async (id: string, item: Partial<Task>, options?: { suppressToast?: boolean }) => {
             try {
                 const service = await getService();
                 await service.updateTask(id, item);
                 query.refetch();
-                toast({ title: "Success", description: "Task updated successfully" });
+                if (!options?.suppressToast) {
+                    toast({ title: "Success", description: "Task updated successfully" });
+                }
                 return true;
             } catch (error: any) {
                 console.error('Failed to update Task', error);
@@ -481,11 +485,11 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
                 const service = await getService();
                 await service.deleteTask(id);
                 query.refetch();
-                toast({ title: "Success", description: "Task deleted successfully" });
+                // Toast is now handled by TasksTab with undo functionality
                 return true;
             } catch (error: any) {
                 console.error('Failed to delete Task', error);
-                toast({ title: "Error", description: error.message || "Failed to delete Task", variant: "destructive" });
+                // Keep error toast for debugging, but TasksTab will show user-friendly rollback message
                 throw error;
             }
         },

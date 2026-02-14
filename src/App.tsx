@@ -45,6 +45,7 @@ import Apps from './pages/Apps';
 import TestGround from './pages/TestGround';
 import { EmployeesProvider } from '@/contexts/EmployeesContext';
 import { SlideshowProvider } from '@/contexts/SlideshowContext';
+import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
 
 // MSAL Imports
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
@@ -217,6 +218,12 @@ const AppRoutes = () => {
       <Route path="/licensing-registry" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'licenses', action: 'read' }]}>
           <LicensingRegistry />
+        </RoleProtectedRoute>
+      } />
+
+      <Route path="/regulatory-intelligence" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'regulatory', action: 'read' }]}>
+          <RegulatoryIntelligence />
         </RoleProtectedRoute>
       } />
 

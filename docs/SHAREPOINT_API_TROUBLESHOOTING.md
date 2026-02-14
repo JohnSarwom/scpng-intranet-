@@ -77,3 +77,22 @@ Upload fails with a `400 Bad Request` error, often citing invalid fields.
 | **Create Item** | `/items` | `{ fields: { ... } }` | Returns full item + custom fields. |
 | **Update Item** | `/items/{id}` | `{ fields: { ... } }` | Returns full item. Use this over `/fields` endpoint. |
 | **Delete Item** | `/items/{id}` | N/A | Returns 204 No Content. |
+
+---
+
+## 4. "Operations_Projects list not found" Error
+
+### 🔴 The Issue
+When attempting to reset operations data via `createOperationsLists`, the process fails with:
+`Error: Operations_Projects list not found`
+
+### 🔍 Root Cause
+The `createOperationsLists` method was designed as a monolithic setup script. It checks if *any* list in the sequence (e.g., Performance_KRAs) exists, and if so, it aborts the *entire* process to prevent accidental overwrites. 
+If `Operations_Projects` was deleted but `Performance_KRAs` remained, the function would exit before recreating `Operations_Projects`.
+
+### ✅ The Fix
+Use the **"Reset & Seed Projects List"** button in **Test Ground**.
+This uses the dedicated `recreateProjectsListOnly()` method which:
+1.  Verifies dependencies (`Performance_KRAs`).
+2.  Deletes `Operations_Projects` (if exists).
+3.  Recreates *just* `Operations_Projects` with the correct schema.

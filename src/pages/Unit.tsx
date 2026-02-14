@@ -50,7 +50,7 @@ import { KRAsTab } from '@/components/unit-tabs/KRAsTab';
 import { useTaskGroupPreferences } from '@/hooks/useTaskGroupPreferences'; // Import preference hook
 
 // Import modal components
-import DailyLogModal from '@/components/unit-tabs/modals/DailyLogModal';
+
 import AddTaskModal from '@/components/unit-tabs/modals/AddTaskModal';
 import EditTaskModal from '@/components/unit-tabs/modals/EditTaskModal';
 import DeleteModal from '@/components/unit-tabs/modals/DeleteModal';
@@ -78,11 +78,14 @@ import { useGraphProfile } from '@/hooks/useGraphProfile';
 
 // Import tab components
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
-import { TasksTab, initialBuckets, Bucket } from '@/components/unit-tabs/TasksTab';
+import { TasksTab, Bucket } from '@/components/unit-tabs/TasksTab';
+import { GroupTemplateDialog } from '@/components/unit-tabs/GroupTemplateDialog';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
 import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
 
+// Import skeleton
+import { KRADataGridSkeleton } from '@/components/skeletons/KRADataGridSkeleton';
 
 import { SharePointListSetupService } from '@/services/sharePointListSetupService';
 import { getGraphClient } from '@/services/graphService';
@@ -202,10 +205,11 @@ const Unit = () => {
   const [kraSectionTab, setKraSectionTab] = useState<string>("kpis"); // Renamed from kraSectionTab
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isDailyLogOpen, setIsDailyLogOpen] = useState(false);
+
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
-  const [taskBuckets, setTaskBuckets] = useState<Bucket[]>(initialBuckets);
+  const [taskBuckets, setTaskBuckets] = useState<Bucket[]>([]);
+
 
 
   const objectivesState = useSharePointObjectives(targetDepartment, getScopeForComponent('Objectives', 'Division'), userContext);
@@ -365,6 +369,8 @@ const Unit = () => {
     }
     setIsDialogOpen(false);
   };
+
+
 
   // SharePoint List Setup Handler
   const handleSetupStrategyLists = async () => {
@@ -553,8 +559,9 @@ const Unit = () => {
   // Sync Custom Groups from SharePoint Projects & Handle Orphans
   // Optimized with useMemo to prevent excessive re-calculations
   const calculatedBuckets = useMemo(() => {
-    if (!projectState.data) return initialBuckets;
+    if (!projectState.data) return [];
 
+    // 1. Get custom groups (user-created)
     const customGroups: Bucket[] = projectState.data
       .filter(p => {
         if (!p.isCustomGroup) return false;
@@ -578,20 +585,19 @@ const Unit = () => {
         return false;
       })
       .map(p => ({
-        id: p.id,
+        id: String(p.id),
         title: p.name,
-        isCustom: true
+        isCustom: true,
+        order: p.order || 9999 // Default order if missing
       }));
 
-    // Combine initial buckets with loaded custom groups
-    const uniqueBuckets = [...initialBuckets];
-    customGroups.forEach(g => {
-      if (!uniqueBuckets.find(b => b.id === g.id)) {
-        uniqueBuckets.push(g);
-      }
-    });
+    // Sort by order
+    customGroups.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-    // 🚨 VIRTUAL BUCKET LOGIC: "Shared Tasks"
+    // No initial buckets anymore - start with custom groups
+    const uniqueBuckets = [...customGroups];
+
+    // 2. Add "Shared Projects" virtual bucket logic
     // Identify tasks that:
     // 1. Are visible to the user (filtered by useSharePointTasks)
     // 2. Have a projectId that matches NO visible bucket
@@ -615,14 +621,6 @@ const Unit = () => {
 
       const isOrphaned = hasOrphanedProject || isCrossUnit || isAssignedOrphan;
 
-      // if (isOrphaned) {
-      //   Logger.debug(
-      //     `🔍 [Orphaned Task] "${t.title}" | ` +
-      //     `u: "${t.unit_id}" vs "${userContext.unit}" | ` +
-      //     `p: "${t.projectId}"`
-      //   );
-      // }
-
       return isOrphaned;
     }) || [];
 
@@ -632,6 +630,26 @@ const Unit = () => {
         id: 'shared-tasks-virtual', // Special ID
         title: 'Shared Projects',
         isCustom: true,
+      });
+    }
+
+    // 3. Add "Uncategorized" virtual bucket logic
+    // For tasks that have NO project ID and are NOT in the Shared bucket
+    // (i.e., tasks belonging to this unit but without a group)
+    const uncategorizedTasks = taskState.data?.filter(t =>
+      !t.projectId &&
+      (!t.unit_id || t.unit_id === userContext.unit) &&
+      // Exclude if it was already caught by "Shared Projects" (though logic above separates them, double check)
+      !(t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()) && !t.projectId)
+    ) || [];
+
+    const hasUncategorized = taskState.data?.some(t => !t.projectId && t.status !== 'done');
+
+    if (hasUncategorized) {
+      uniqueBuckets.push({
+        id: 'uncategorized-virtual',
+        title: 'Uncategorized',
+        isCustom: true
       });
     }
 
@@ -666,24 +684,15 @@ const Unit = () => {
   };
 
   const handleDeleteGroup = async (groupId: string) => {
-    const isDefault = initialBuckets.some(b => b.id === groupId);
-    if (isDefault) {
-      // Default groups are only hidden, not deleted from SP
-      await hideGroup(groupId);
-      toast({
-        title: "Group Hidden",
-        description: "Default groups are hidden from your view but not deleted permanently."
-      });
-    } else {
-      // Custom groups - try to delete proper
-      if (projectState.remove) {
-        try {
-          await projectState.remove(groupId);
-        } catch (e) {
-          // If delete failed, or effectively if we want to support hiding custom groups too, we could hide
-          // But usually custom groups should be fully deletable
-          console.error("Failed to delete custom group", e);
-        }
+    // Custom groups - try to delete proper
+    if (projectState.remove) {
+      try {
+        await projectState.remove(groupId);
+        // Toast handled by mutation typically, but adding one here for feedback
+        toast({ title: "Group Deleted", description: "The task group has been removed." });
+      } catch (e) {
+        console.error("Failed to delete custom group", e);
+        toast({ title: "Error", description: "Failed to delete group", variant: "destructive" });
       }
     }
   };
@@ -744,9 +753,6 @@ const Unit = () => {
         </div>
       )}
 
-      {isDataLoading && (
-        <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Unit & Strategy Data...</div>
-      )}
       {hasDataLoadingError && (
         <Card className="mb-6 bg-destructive/10 border-destructive">
           <CardHeader>
@@ -765,12 +771,11 @@ const Unit = () => {
         </Card>
       )}
 
-      {!isDataLoading && !hasDataLoadingError && (
+      {!hasDataLoadingError && (
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-
               <TabsTrigger value="tasks">Tasks/Daily Operations</TabsTrigger>
               <TabsTrigger value="kras-objectives">KRAs & Objectives</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -778,24 +783,6 @@ const Unit = () => {
             </TabsList>
 
             <div className="flex items-center gap-4">
-              {/* User Context Badge for Verification */}
-              <div className="flex items-center gap-3 px-3 py-1.5 bg-muted/50 border rounded-md text-sm text-muted-foreground whitespace-nowrap">
-                <div className="flex items-center gap-1.5">
-                  <UserIcon className="h-3.5 w-3.5" />
-                  <span className="font-medium text-foreground">{userContext.name || 'Guest'}</span>
-                </div>
-                <div className="h-3 w-px bg-border" />
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">Div</Badge>
-                  <span>{userContext.division}</span>
-                </div>
-                <div className="h-3 w-px bg-border" />
-                <div className="flex items-center gap-1.5">
-                  <Badge variant="outline" className="h-5 px-1.5 text-[10px] font-normal">Unit</Badge>
-                  <span>{userContext.unit}</span>
-                </div>
-              </div>
-
               {activeTab === 'tasks' && (
                 <div className="flex items-center gap-4">
                   <Input
@@ -805,13 +792,10 @@ const Unit = () => {
                     className="max-w-[200px]"
                   />
                   <div className="flex items-center gap-2">
-                    {/* Task view buttons shortened for space */}
                     <Button variant={viewMode === 'board' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('board')} title="Board View"><Kanban className="h-4 w-4" /></Button>
                     <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('list')} title="List View"><List className="h-4 w-4" /></Button>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setIsDailyLogOpen(true)}>
-                    <Clock className="mr-2 h-3.5 w-3.5" /> Check-in
-                  </Button>
+
                   <Button size="sm" onClick={handleCreateTask}>
                     <Plus className="mr-2 h-3.5 w-3.5" /> Task
                   </Button>
@@ -822,74 +806,64 @@ const Unit = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-8">
-            <OverviewTab
-              projects={projectState.data}
-              tasks={taskState.data}
-              // kras={combinedKrasForOverview} // Pass raw KRAs for debugging
-              kras={combinedKrasForOverview} // Pass the combined data structure
-              objectives={objectivesData}
-            />
-          </TabsContent>
-
-
-
-          {/* Tasks/Daily Operations Tab */}
-          <TabsContent value="tasks" className="space-y-6">
-            {visibleBuckets.length === 0 && preferencesLoading ? (
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="min-w-[300px] flex-shrink-0 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Skeleton className="h-6 w-32" />
-                      <Skeleton className="h-8 w-8 rounded-full" />
-                    </div>
-                    <Skeleton className="h-[120px] w-full rounded-lg" />
-                    <Skeleton className="h-[120px] w-full rounded-lg" />
-                    <Skeleton className="h-[120px] w-full rounded-lg" />
-                  </div>
-                ))}
-              </div>
+            {isDataLoading ? (
+              <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Overview...</div>
             ) : (
-              <TasksTab
-                tasks={taskState.data || []}
-                addTask={taskState.add}
-                editTask={taskState.update}
-                deleteTask={taskState.remove}
-                // groups={projectState.data || []} // We will just use buckets prop for now to abstract this
+              <OverviewTab
+                projects={projectState.data}
+                tasks={taskState.data}
                 buckets={visibleBuckets}
-                setBuckets={setTaskBuckets} // Note: explicit setting might conflict with our derived visibleBuckets if TasksTab modifies it directly. Ideally TasksTab calls onAddGroup/onDeleteGroup
-                // For now, TasksTab manages its own local state too, but we are passing controlled buckets.
-                // We need to ensure TasksTab respects these prop buckets over its state if provided.
-
-                // Pass custom handlers
-                deleteCustomGroup={handleDeleteGroup}
-                addCustomGroup={projectState.add}
-
-                // We need to pass the rename handler down. 
-                // Need to check if TasksTab accepts onRenameGroup prop or if we need to modify it further.
-                // We already added onRenameGroup to BoardLane, but TasksTab needs to expose it or handle it.
-                // Wait, TasksTab defines `const BoardLane` internally using props passed to BoardLane.
-                // We need to inject the rename handler into TasksTab. 
-                // Actually, looking at TasksTab signature, it doesn't accept onRenameGroup.
-                // We need to add it there first. 
-
-                staffMembers={staffMembers}
-                objectives={objectivesData} // Pass objectives for mapping if needed
-
-                // Modal state
-                setEditingTask={setEditingTask}
-                setIsDialogOpen={setIsDialogOpen}
-                onRenameGroup={handleRenameGroup}
-                viewMode={viewMode}
-                currentUnit={userContext?.unit}
+                kras={combinedKrasForOverview}
+                objectives={objectivesData}
               />
             )}
+          </TabsContent>
+
+          {/* Tasks/Daily Operations Tab */}
+          <TabsContent value="tasks" className="h-[calc(100vh-200px)]">
+            <div className="flex flex-col gap-4 h-full">
+
+              {visibleBuckets.length === 0 && preferencesLoading ? (
+                <div className="flex gap-4 overflow-x-auto pb-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="min-w-[300px] flex-shrink-0 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-6 w-32" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                      </div>
+                      <Skeleton className="h-[120px] w-full rounded-lg" />
+                      <Skeleton className="h-[120px] w-full rounded-lg" />
+                      <Skeleton className="h-[120px] w-full rounded-lg" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <TasksTab
+                  tasks={taskState.data || []}
+                  addTask={taskState.add}
+                  editTask={taskState.update}
+                  deleteTask={taskState.remove}
+                  buckets={visibleBuckets}
+                  setBuckets={setTaskBuckets}
+                  deleteCustomGroup={handleDeleteGroup}
+                  addCustomGroup={projectState.add}
+                  staffMembers={staffMembers}
+                  objectives={objectivesData}
+                  setEditingTask={setEditingTask}
+                  setIsDialogOpen={setIsDialogOpen}
+                  onRenameGroup={handleRenameGroup}
+                  viewMode={viewMode}
+                  currentUnit={userContext?.unit}
+                />
+              )}
+            </div>
           </TabsContent>
 
           {/* Projects Tab */}
           <TabsContent value="projects" className="space-y-6">
             <ProjectsTab
               projects={projectState.data}
+              tasks={taskState.data}
               addProject={projectState.add}
               editProject={projectState.update}
               deleteProject={projectState.remove}
@@ -900,29 +874,31 @@ const Unit = () => {
             />
           </TabsContent>
 
-
-
           {/* KRAs & Objectives Tab */}
-          <TabsContent value="kras-objectives" className="space-y-6">
-            <KRAsTab
-              kras={combinedKrasForTabs}
-              tasks={taskState.data}
-              objectivesData={objectivesData}
-              onSaveObjective={handleSaveObjective}
-              onDeleteObjective={handleDeleteObjective}
-              units={derivedUnits}
-              staffMembers={staffMembers}
-              onDataRefresh={handleRefreshAllData}
-              activeTab={kraSectionTab}
-              onTabChange={setKraSectionTab}
-              userContext={userContext}
-              onSaveKra={handleSaveKra}
-              onDeleteKra={handleDeleteKra}
-              onSaveKpi={handleSaveKpi}
-              onDeleteKpi={handleDeleteKpi}
-              strategicObjectives={strategicObjectives}
-              canEdit={canEditStrategy}
-            />
+          <TabsContent value="kras-objectives" className="mt-0 p-0 block">
+            {isDataLoading ? (
+              <KRADataGridSkeleton />
+            ) : (
+              <KRAsTab
+                kras={combinedKrasForTabs}
+                tasks={taskState.data}
+                objectivesData={objectivesData}
+                onSaveObjective={handleSaveObjective}
+                onDeleteObjective={handleDeleteObjective}
+                units={derivedUnits}
+                staffMembers={staffMembers}
+                onDataRefresh={handleRefreshAllData}
+                activeTab={kraSectionTab}
+                onTabChange={setKraSectionTab}
+                userContext={userContext}
+                onSaveKra={handleSaveKra}
+                onDeleteKra={handleDeleteKra}
+                onSaveKpi={handleSaveKpi}
+                onDeleteKpi={handleDeleteKpi}
+                strategicObjectives={strategicObjectives}
+                canEdit={canEditStrategy}
+              />
+            )}
           </TabsContent>
 
           {/* Reports Tab */}
@@ -947,10 +923,7 @@ const Unit = () => {
         kpis={kpiState.data}
       />
 
-      <DailyLogModal
-        isOpen={isDailyLogOpen}
-        onClose={() => setIsDailyLogOpen(false)}
-      />
+
     </PageLayout>
   );
 };

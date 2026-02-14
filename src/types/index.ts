@@ -73,7 +73,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done';
+  status: 'todo' | 'in-progress' | 'review' | 'done' | 'not-started' | 'on-track' | 'on-hold' | 'behind' | 'completed';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   assignee: string;
   assignees?: User[]; // Enhanced multiple assignees
@@ -110,12 +110,14 @@ export interface Project {
   budget: number;
   budgetSpent: number;
   progress: number;
+  assignees?: User[];
   risks: Risk[];
   tasks: Task[];
   checklist?: ChecklistItem[];
   unit_id?: string;
   isCustomGroup?: boolean;
   authorEmail?: string;
+  order?: number;
 }
 
 export interface UserAsset {

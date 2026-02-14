@@ -1,5 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
 import { Kra, Kpi, User } from '@/types/kpi';
 import {
   BarChart,
@@ -14,8 +16,8 @@ import {
   Cell,
   ResponsiveContainer,
   LabelList,
-  LineChart,
-  Line
+  AreaChart,
+  Area
 } from 'recharts';
 import { useTheme } from "next-themes";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
@@ -23,6 +25,8 @@ import { Badge } from '@/components/ui/badge';
 
 interface KRAInsightsTabProps {
   kras: Kra[];
+  viewScope: 'my' | 'department' | 'organization';
+  onScopeChange: (scope: 'my' | 'department' | 'organization') => void;
 }
 
 const getKraProgress = (kpis: Kpi[]): number => {
@@ -46,9 +50,9 @@ const getKraStatus = (kpis: Kpi[]): string => {
 };
 
 const themeColors = {
-  primary: '#400010',
-  secondary: '#600018',
-  accent: '#E11D48',
+  primary: '#83002A',
+  secondary: '#5C001E',
+  accent: '#ff6b6b',
   neutral: '#64748b',
   background: '#ffffff',
   foreground: '#0f172a'
@@ -65,78 +69,63 @@ const statusColors: Record<string, string> = {
   'Behind': '#ef4444',
 };
 
-export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
+export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope, onScopeChange }) => {
   const validKras = Array.isArray(kras) ? kras : [];
   const { theme } = useTheme();
   const { user } = useSupabaseAuth();
 
-  console.log('[KRAInsightsTab] User:', JSON.stringify(user, null, 2));
-  console.log('[KRAInsightsTab] Received kras data:', JSON.stringify(validKras, null, 2));
+  // Computed Data based on Scope
+  const { activeKras, activeKpis, scopeLabel } = React.useMemo(() => {
+    let krasResult = validKras;
+    let kpisResult = validKras.flatMap(k => k.unitKpis || []);
+    let label = 'Organization';
 
-  const userOwnedKras = React.useMemo(() => {
-    if (!user?.id) {
-      console.log('[KRAInsightsTab] No user ID found for KRA filtering.');
-      return [];
-    }
-    console.log(`[KRAInsightsTab] Filtering KRAs for owner ID: ${user.id}`);
-    const filtered = validKras.filter(kra => {
-      return kra.ownerId === user.id;
-    });
-    console.log('[KRAInsightsTab] Filtered userOwnedKras:', filtered);
-    return filtered;
-  }, [validKras, user?.id]);
-
-  const userAssignedKpis = React.useMemo(() => {
-    if (!user?.id) {
-      console.log('[KRAInsightsTab] No user ID found for KPI filtering.');
-      return [];
-    }
-    console.log(`[KRAInsightsTab] Filtering KPIs for assignee ID: ${user.id}`);
-    const assignedKpis = validKras.flatMap(kra => kra.unitKpis || [])
-      .filter(kpi => {
-        const isAssigned = Array.isArray(kpi.assignees) && kpi.assignees.some(assignee => assignee?.email === user.email);
-        return isAssigned;
-      });
-    console.log('[KRAInsightsTab] Filtered userAssignedKpis:', assignedKpis);
-    return assignedKpis;
-  }, [validKras, user?.id, user?.email]);
-
-  // Get user's department's KRAs
-  const departmentKras = React.useMemo(() => {
-    if (!user?.user_metadata?.unitName) {
-      return [];
+    if (viewScope === 'my' && user) {
+      krasResult = validKras.filter(k => k.ownerId === user.id);
+      // For KPIs, filtering by assignment
+      kpisResult = validKras.flatMap(k => k.unitKpis || [])
+        .filter(kpi => kpi.assignees?.some(a => a.email === user.email));
+      label = 'My';
+    } else if (viewScope === 'department' && user?.user_metadata?.unitName) {
+      krasResult = validKras.filter(k => k.unit === user.user_metadata.unitName);
+      kpisResult = krasResult.flatMap(k => k.unitKpis || []);
+      label = 'Department';
     }
 
-    const departmentName = user.user_metadata.unitName;
-    return validKras.filter(kra => kra.unit === departmentName);
-  }, [validKras, user?.user_metadata?.unitName]);
+    return { activeKras: krasResult, activeKpis: kpisResult, scopeLabel: label };
+  }, [viewScope, validKras, user]);
 
-  const userKraStatusData = React.useMemo(() => {
+  const kraStatusData = React.useMemo(() => {
     const statusCounts: Record<string, number> = {};
-    userOwnedKras.forEach(kra => {
+    activeKras.forEach(kra => {
       const status = getKraStatus(kra.unitKpis || []);
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
-    console.log('[KRAInsightsTab] Calculated userKraStatusData:', statusCounts);
     return Object.entries(statusCounts)
       .map(([name, value]) => ({ name, value }))
       .filter(d => d.value > 0);
-  }, [userOwnedKras]);
+  }, [activeKras]);
 
-  const userKpiStatusData = React.useMemo(() => {
+  // Calculate generic completion (Completed / Total)
+  const kraCompletionRate = React.useMemo(() => {
+    if (activeKras.length === 0) return 0;
+    const completed = activeKras.filter(kra => getKraStatus(kra.unitKpis || []) === 'Completed').length;
+    return Math.round((completed / activeKras.length) * 100);
+  }, [activeKras]);
+
+  const kpiStatusData = React.useMemo(() => {
     const statusCounts: Record<string, number> = {};
-    userAssignedKpis.forEach(kpi => {
+    activeKpis.forEach(kpi => {
       if (kpi?.status) {
         statusCounts[kpi.status] = (statusCounts[kpi.status] || 0) + 1;
       }
     });
-    console.log('[KRAInsightsTab] Calculated userKpiStatusData:', statusCounts);
     return Object.entries(statusCounts)
       .map(([name, value]) => ({ name, value }))
       .filter(d => d.value > 0);
-  }, [userAssignedKpis]);
+  }, [activeKpis]);
 
-  // Create trend data - completion by month
+  // Completion Trend (Last 6 Months)
   const completionTrendData = React.useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const currentMonth = new Date().getMonth();
@@ -147,13 +136,11 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
       return months[monthIndex];
     }).reverse();
 
-    // Create baseline data with 0 completions for each month
+    // Create baseline data
     const baseData = relevantMonths.map(month => ({ month, completed: 0, total: 0 }));
 
-    // Count KPIs and completed KPIs by month
-    const allKpis = validKras.flatMap(kra => kra.unitKpis || []);
-
-    allKpis.forEach(kpi => {
+    // Count KPIs using the *active scope* (or all if that's preferred for trends, but scope is consistent)
+    activeKpis.forEach(kpi => {
       if (kpi.target_date || kpi.targetDate) {
         const date = new Date(kpi.target_date || kpi.targetDate || '');
         if (!isNaN(date.getTime())) {
@@ -170,18 +157,17 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
       }
     });
 
-    // Calculate completion percentage
     return baseData.map(item => ({
       ...item,
       percentage: item.total === 0 ? 0 : Math.round((item.completed / item.total) * 100)
     }));
-  }, [validKras]);
+  }, [activeKpis]);
 
   // KPI distribution by objective
   const kpisByObjective = React.useMemo(() => {
     const objectiveMap: Record<string, { total: number, completed: number, name: string }> = {};
 
-    validKras.forEach(kra => {
+    activeKras.forEach(kra => {
       const objectiveId = kra.objective_id?.toString() || 'unknown';
       const objectiveName = kra.unitObjectives?.title || 'Unknown Objective';
 
@@ -203,12 +189,12 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
         percentage: Math.round((obj.completed / obj.total) * 100)
       }))
       .sort((a, b) => b.total - a.total)
-      .slice(0, 5); // Top 5 objectives by KPI count
-  }, [validKras]);
+      .slice(0, 5); // Top 5 objectives
+  }, [activeKras]);
 
-  // Get priority KPIs that need attention
+  // Priority KPIs (At Risk / Behind)
   const priorityKpis = React.useMemo(() => {
-    return userAssignedKpis
+    return activeKpis
       .filter(kpi => kpi.status === 'at-risk' || kpi.status === 'behind')
       .map(kpi => {
         // Find parent KRA for context
@@ -222,8 +208,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
           objective: parentKra?.unitObjectives?.title || 'Unknown Objective'
         };
       })
-      .slice(0, 3); // Top 3 priority KPIs
-  }, [userAssignedKpis, validKras]);
+      .slice(0, 3);
+  }, [activeKpis, validKras]);
 
   const CustomTooltip = ({ active, payload, label, unit }: any) => {
     if (active && payload && payload.length) {
@@ -242,32 +228,43 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
 
   return (
     <div className="space-y-6 mt-4">
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Your KRA Status Overview</CardTitle>
-            <CardDescription>Status distribution of KRAs you own</CardDescription>
+            <CardTitle>{scopeLabel} KRA Status Overview</CardTitle>
+            <CardDescription>Status distribution of KRAs ({scopeLabel.toLowerCase()})</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {userKraStatusData.length > 0 ? (
+              {kraStatusData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Tooltip content={<CustomTooltip />} />
                     <Pie
-                      data={userKraStatusData}
+                      data={kraStatusData}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={110}
-                      paddingAngle={2}
+                      innerRadius={80}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      cornerRadius={10}
                       dataKey="value"
                       labelLine={false}
+                      stroke="none"
                     >
-                      {userKraStatusData.map((entry) => (
-                        <Cell key={`cell-kra-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} stroke={themeColors.background} />
+                      {kraStatusData.map((entry) => (
+                        <Cell key={`cell-kra-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
                       ))}
                     </Pie>
+                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                      <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold" fill={themeColors.foreground}>
+                        {kraCompletionRate}%
+                      </tspan>
+                      <tspan x="50%" dy="1.5em" fontSize="12" fill={themeColors.neutral}>
+                        Completed
+                      </tspan>
+                    </text>
                     <Legend
                       verticalAlign="bottom"
                       height={36}
@@ -277,7 +274,14 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">You do not own any KRAs.</div>
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
+                  <p className="text-muted-foreground">No KRAs found in {scopeLabel} view.</p>
+                  {viewScope === 'my' && (
+                    <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
+                      View Organization Stats
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
@@ -285,17 +289,17 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Your Assigned KPI Status</CardTitle>
-            <CardDescription>Status distribution of KPIs assigned to you</CardDescription>
+            <CardTitle>{scopeLabel} KPI Status</CardTitle>
+            <CardDescription>Status distribution of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
-              {userKpiStatusData.length > 0 ? (
+              {kpiStatusData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     layout="vertical"
-                    data={userKpiStatusData}
-                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    data={kpiStatusData}
+                    margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                     barGap={4}
                     barSize={12}
                   >
@@ -303,15 +307,23 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                     <XAxis type="number" allowDecimals={false} stroke={themeColors.neutral} fontSize={12} />
                     <YAxis type="category" dataKey="name" width={80} stroke={themeColors.neutral} fontSize={12} axisLine={false} tickLine={false} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey="value" name="KPIs" radius={[0, 4, 4, 0]}>
-                      {userKpiStatusData.map((entry) => (
+                    <Bar dataKey="value" name="KPIs" radius={[0, 8, 8, 0]}>
+                      {kpiStatusData.map((entry) => (
                         <Cell key={`cell-kpi-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
                       ))}
+                      <LabelList dataKey="value" position="right" fontSize={11} fill={themeColors.foreground} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">No KPIs assigned to you.</div>
+                <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
+                  <p className="text-muted-foreground">No KPIs found in {scopeLabel} view.</p>
+                  {viewScope === 'my' && (
+                    <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
+                      View Organization Stats
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           </CardContent>
@@ -320,35 +332,42 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
 
       {/* New insights section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Completion Trend Chart */}
+        {/* Completion Trend Chart - UPDATED */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Completion Trend</CardTitle>
-            <CardDescription>KPI completion rate over last 6 months</CardDescription>
+            <CardTitle>{scopeLabel} Completion Rate (6 Months)</CardTitle>
+            <CardDescription>Average KPI completion rate over the last 6 months</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               {completionTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
+                  <AreaChart
                     data={completionTrendData}
                     margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis domain={[0, 100]} />
+                    <defs>
+                      <linearGradient id="colorPercentage" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={themeColors.accent} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={themeColors.accent} stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip unit="%" />} />
                     <Legend />
-                    <Line
+                    <Area
                       type="monotone"
                       dataKey="percentage"
                       name="Completion %"
-                      stroke={themeColors.primary}
-                      strokeWidth={2}
-                      dot={{ r: 5 }}
-                      activeDot={{ r: 8 }}
+                      stroke={themeColors.accent}
+                      fillOpacity={1}
+                      fill="url(#colorPercentage)"
+                      strokeWidth={3}
+                      activeDot={{ r: 6, strokeWidth: 0 }}
                     />
-                  </LineChart>
+                  </AreaChart>
                 </ResponsiveContainer>
               ) : (
                 <div className="flex items-center justify-center h-full text-muted-foreground">No trend data available.</div>
@@ -357,11 +376,11 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
           </CardContent>
         </Card>
 
-        {/* KPI Distribution by Objective */}
+        {/* KPI Distribution by Objective - UPDATED with Labels */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle>KPI Distribution by Objective</CardTitle>
-            <CardDescription>Top objectives by number of KPIs</CardDescription>
+            <CardDescription>Top objectives by number of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -371,20 +390,25 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                     data={kpisByObjective}
                     margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="name"
                       angle={-45}
                       textAnchor="end"
                       height={60}
                       interval={0}
-                      fontSize={11}
+                      fontSize={10}
+                      tickLine={false}
                     />
-                    <YAxis />
+                    <YAxis tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend />
-                    <Bar dataKey="total" name="Total KPIs" fill={themeColors.neutral} />
-                    <Bar dataKey="completed" name="Completed" fill={themeColors.primary} />
+                    <Bar dataKey="total" name="Total KPIs" fill={themeColors.neutral} radius={[8, 8, 8, 8]}>
+                      <LabelList dataKey="total" position="top" fontSize={11} fill={themeColors.foreground} />
+                    </Bar>
+                    <Bar dataKey="completed" name="Completed" fill={themeColors.primary} radius={[8, 8, 8, 8]}>
+                      <LabelList dataKey="completed" position="top" fontSize={11} fill={themeColors.foreground} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -399,7 +423,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
       <Card>
         <CardHeader className="pb-2">
           <CardTitle>Priority KPIs Needing Attention</CardTitle>
-          <CardDescription>KPIs assigned to you that are at risk or behind</CardDescription>
+          <CardDescription>KPIs ({scopeLabel.toLowerCase()}) that are at risk or behind</CardDescription>
         </CardHeader>
         <CardContent>
           {priorityKpis.length > 0 ? (

@@ -62,6 +62,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import moment from 'moment';
 import { useEmployeeLookup } from '@/hooks/useEmployeeLookup';
 import DatePicker from '@/components/DatePicker';
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { Check, Loader2, ChevronsUpDown } from 'lucide-react';
 import {
   Command,
@@ -207,7 +208,32 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 }) => {
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
+  const { user } = useSupabaseAuth();
   const [isKpiModalOpen, setIsKpiModalOpen] = useState(false);
+  const [viewScope, setViewScope] = useState<'my' | 'department' | 'organization'>('my');
+
+  // Smart default: Fallback logic for Scope
+  React.useEffect(() => {
+    if (!user) return;
+    const validKras = Array.isArray(kras) ? kras : [];
+    const hasPersonalKras = validKras.some(k => k.ownerId === user.id);
+    const hasAssignedKpis = validKras.flatMap(k => k.unitKpis || [])
+      .some(k => k.assignees?.some(a => a.email === user.email));
+
+    if (!hasPersonalKras && !hasAssignedKpis) {
+      if (user.user_metadata?.unitName) {
+        setViewScope('department');
+      } else {
+        setViewScope('organization');
+      }
+    } else {
+      setViewScope('my');
+    }
+  }, [kras, user?.id]);
+
+  const [timelineViewMode, setTimelineViewMode] = useState<'quarters' | 'months' | 'weeks'>('quarters');
+
+
   const [editingKra, setEditingKra] = useState<Kra | undefined>(undefined);
   const [editingKpiDetails, setEditingKpiDetails] = useState<{ kraId: string; kpi: Kpi } | undefined>(undefined);
   const [kraToDelete, setKraToDelete] = useState<Kra | null>(null);
@@ -228,7 +254,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     goalType: 'Division',
     division: '',
     unit: '',
-    owner: '',
     owner: '',
     parentGoalId: '',
     linkedDeliverable: ''
@@ -619,7 +644,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       division: objective.division,
       unit: objective.unit,
       owner: objective.owner,
-      owner: objective.owner,
       parentGoalId: objective.parentGoalId?.toString() || '',
       linkedDeliverable: objective.linkedDeliverable || ''
     });
@@ -630,8 +654,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     setIsObjectiveModalOpen(false);
     setEditingObjective(undefined);
     setNewObjectiveData({
-      unit: '',
-      owner: '',
       unit: '',
       owner: '',
       parentGoalId: '',
@@ -683,7 +705,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       goalType: newObjectiveData.goalType,
       division: newObjectiveData.division,
       unit: newObjectiveData.unit,
-      owner: newObjectiveData.owner,
       owner: newObjectiveData.owner,
       parentGoalId: newObjectiveData.parentGoalId || null,
       linkedDeliverable: newObjectiveData.linkedDeliverable || null
@@ -750,592 +771,642 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="space-y-0.5">
-              <CardTitle>KRAs / KPIs / Objectives</CardTitle>
-              <CardDescription>
-                Track performance, manage objectives, and view timelines.
-              </CardDescription>
-            </div>
-            {canEdit && (
-              <Button
-                className="flex items-center gap-2"
-                onClick={handleAddButtonClick}
-              >
-                <Plus className="h-4 w-4" /> {addButtonLabel}
-              </Button>
-            )}
-          </CardHeader>
+      <Card className="mt-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-0.5">
+            <CardTitle>KRAs / KPIs / Objectives</CardTitle>
+            <CardDescription>
+              Track performance, manage objectives, and view timelines.
+            </CardDescription>
+          </div>
+          {canEdit && (
+            <Button
+              className="flex items-center gap-2"
+              onClick={handleAddButtonClick}
+            >
+              <Plus className="h-4 w-4" /> {addButtonLabel}
+            </Button>
+          )}
+        </CardHeader>
 
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-              <TabsList className="mb-4">
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+            <div className="flex justify-between items-center mb-4">
+              <TabsList>
                 <TabsTrigger value="kpis">KRA/KPIs</TabsTrigger>
                 <TabsTrigger value="objectives">Objectives</TabsTrigger>
                 <TabsTrigger value="timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="insights">Insights</TabsTrigger>
               </TabsList>
 
-
-              <TabsContent value="kpis">
-                <div className="overflow-x-auto border rounded-md">
-                  <Table className="min-w-full table-fixed md:table-auto">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 z-30 bg-background border-r">Objective</TableHead>
-                        <TableHead className="w-[200px] min-w-[200px] sticky left-[150px] z-30 bg-background border-r">KRA</TableHead>
-                        <TableHead className="w-[20%] min-w-[200px]">KPI</TableHead>
-                        <TableHead className="min-w-[100px]">Start Date</TableHead>
-                        <TableHead className="min-w-[100px]">Target Date</TableHead>
-                        <TableHead className="min-w-[80px]">Quarter</TableHead>
-                        <TableHead className="min-w-[80px]">Target</TableHead>
-                        <TableHead className="min-w-[80px]">Actual</TableHead>
-                        <TableHead className="min-w-[100px]">Status</TableHead>
-                        <TableHead className="min-w-[100px]">Cost</TableHead>
-                        <TableHead className="min-w-[120px]">Assignees</TableHead>
-                        <TableHead className="min-w-[150px]">Comments</TableHead>
-                        <TableHead>Linked Tasks</TableHead>
-                        <TableHead className="text-right min-w-[100px] sticky right-0 bg-background border-l z-30">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {processedRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={13} className="h-24 text-center">
-                            No KPIs found matching the current filters.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        processedRows.map((row, rowIndex) => {
-                          const {
-                            kpi,
-                            originalKra,
-                            isFirstRowOfObjective,
-                            objectiveRowSpan,
-                            objectiveName,
-                            isFirstRowOfKraTitleGroup,
-                            kraTitleRowSpan,
-                            kraTitle
-                          } = row;
-                          const targetQuarter = getQuarter(kpi?.target_date || kpi?.targetDate);
-                          const isFirstKpiOfOriginalKra = (originalKra as any).unitKpis?.[0]?.id === kpi.id || (!kpi.id && !(originalKra as any).unitKpis?.length);
-
-                          const linkedTasks = tasks.filter(
-                            (task) => task.kpi_id === kpi.id?.toString()
-                          );
-
-                          return (
-                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`}>
-                              {isFirstRowOfObjective && (
-                                <TableCell className="align-top border-r text-sm font-medium sticky left-0 z-20 bg-card" rowSpan={objectiveRowSpan}>
-                                  {objectiveName}
-                                </TableCell>
-                              )}
-                              {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r sticky left-[150px] z-20 bg-card" rowSpan={kraTitleRowSpan}>
-                                  {kraTitle}
-                                </TableCell>
-                              )}
-                              {/* KPI Cells */}
-                              <TableCell className="align-top text-sm">{kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground">-</span>}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
-                              <TableCell className="align-top text-sm">{targetQuarter}</TableCell>
-                              <TableCell className="align-top text-sm">{kpi?.target ?? '-'}</TableCell>
-                              <TableCell className="align-top text-sm">{kpi?.actual ?? '-'}</TableCell>
-                              <TableCell className="align-top whitespace-nowrap">
-                                {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap">{formatCurrency(kpi?.costAssociated)}</TableCell>
-                              <TableCell className="align-top">
-                                {kpi?.assignees && kpi.assignees.length > 0 ? (
-                                  <div className="flex -space-x-2 overflow-hidden">
-                                    {(kpi.assignees as any[]).map((assignee: any, index: number) => (
-                                      <Tooltip key={assignee.id || `assignee-${index}`}>
-                                        <TooltipTrigger asChild>
-                                          <Avatar className="h-6 w-6 border-2 border-background">
-                                            <AvatarImage src={assignee.avatarUrl} />
-                                            <AvatarFallback>{assignee.initials || assignee.name?.substring(0, 2) || '?'}</AvatarFallback>
-                                          </Avatar>
-                                        </TooltipTrigger>
-                                        <TooltipContent><p>{assignee.name || 'Unknown Assignee'}</p></TooltipContent>
-                                      </Tooltip>
-                                    ))}
-                                  </div>
-                                ) : <span className="text-muted-foreground">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top text-xs text-muted-foreground">{kpi?.comments || '-'}</TableCell>
-                              <TableCell className="align-top">
-                                {linkedTasks.length > 0 ? (
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <Button variant="outline" size="sm" className="h-auto py-1 px-2">
-                                        {linkedTasks.length} {linkedTasks.length === 1 ? 'Task' : 'Tasks'}
-                                        <ChevronDown className="h-3 w-3 ml-1" />
-                                      </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-2">
-                                      <div className="space-y-1">
-                                        <p className="font-semibold text-sm mb-1">Linked Tasks</p>
-                                        {linkedTasks.map(task => (
-                                          <div key={task.id} className="text-xs p-1.5 bg-muted/50 rounded-sm">
-                                            {task.title}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </PopoverContent>
-                                  </Popover>
-                                ) : (
-                                  <span className="text-muted-foreground text-xs">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="align-top text-right sticky right-0 bg-card border-l px-2 py-1 whitespace-nowrap align-middle">
-                                <div className="flex justify-end items-center space-x-1">
-                                  {canEdit && (
-                                    <>
-                                      {kpi && kpi.id && kpi.name !== '-' && (
-                                        <TooltipProvider delayDuration={100}>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="p-1 h-auto"
-                                                onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
-                                                aria-label="Edit KPI"
-                                              >
-                                                <Edit className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="z-[100]">Edit KPI</TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      )}
-                                      <TooltipProvider delayDuration={100}>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="p-1 h-auto mr-1"
-                                              onClick={() => handleOpenEditKraModal(row.originalKra)}
-                                              aria-label="Edit KRA"
-                                            >
-                                              <Edit className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent className="z-[100]">Edit KRA (and its KPIs)</TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-
-                                      <TooltipProvider delayDuration={100}>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="p-1 h-auto text-destructive hover:text-destructive"
-                                              onClick={() => handleDeleteKra(row.originalKra.id)}
-                                              aria-label="Delete KRA"
-                                            >
-                                              <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    </>
-                                  )}
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
+              {activeTab === 'timeline' && (
+                <div className="flex bg-muted/50 rounded-lg p-1 ml-auto mr-4">
+                  <Button
+                    variant={timelineViewMode === 'quarters' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setTimelineViewMode('quarters')}
+                    className="px-3 h-7 text-xs"
+                  >
+                    Quarterly
+                  </Button>
+                  <Button
+                    variant={timelineViewMode === 'months' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setTimelineViewMode('months')}
+                    className="px-3 h-7 text-xs"
+                  >
+                    Monthly
+                  </Button>
+                  <Button
+                    variant={timelineViewMode === 'weeks' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setTimelineViewMode('weeks')}
+                    className="px-3 h-7 text-xs"
+                  >
+                    Weekly
+                  </Button>
                 </div>
-              </TabsContent>
+              )}
 
-              <TabsContent value="objectives">
-                <div className="overflow-auto border rounded-md">
-                  <Table>
-                    <TableHeader>
+              {activeTab === 'insights' && (
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground mr-2">View Scope:</span>
+                  <Select
+                    value={viewScope}
+                    onValueChange={(val: 'my' | 'department' | 'organization') => setViewScope(val)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select Scope" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="my">My Data</SelectItem>
+                      <SelectItem value="department">Department</SelectItem>
+                      <SelectItem value="organization">Organization</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+
+            <TabsContent value="kpis">
+              <div className="overflow-auto border rounded-md h-[calc(100vh-220px)] relative">
+                <table className="w-full caption-bottom text-sm min-w-full table-fixed md:table-auto">
+                  <TableHeader className="sticky top-0 z-50 bg-background border-b-2">
+                    <TableRow>
+                      <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-50 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
+                      <TableHead className="w-[200px] min-w-[200px] sticky left-[150px] top-0 z-50 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
+                      <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-background">KPI</TableHead>
+                      <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Start Date</TableHead>
+                      <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Target Date</TableHead>
+                      <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background">Quarter</TableHead>
+                      <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background text-right">Target</TableHead>
+                      <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background text-right">Actual</TableHead>
+                      <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Status</TableHead>
+                      <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background text-right">Cost</TableHead>
+                      <TableHead className="min-w-[120px] sticky top-0 z-40 bg-background">Assignees</TableHead>
+                      <TableHead className="min-w-[150px] sticky top-0 z-40 bg-background">Comments</TableHead>
+                      <TableHead className="sticky top-0 z-40 bg-background">Linked Tasks</TableHead>
+                      <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-background border-l z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {processedRows.length === 0 ? (
                       <TableRow>
-                        <TableHead className="w-[20%]">Strategic Alignment</TableHead>
-                        <TableHead className="w-[20%]">Key Deliverable</TableHead>
-                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
-                        <TableHead className="w-[10%]">Goal Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right w-[10%]">Actions</TableHead>
+                        <TableCell colSpan={13} className="h-24 text-center">
+                          No KPIs found matching the current filters.
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {objectivesData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
-                            No Objectives defined yet. Use the "Add Objective" button.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        objectivesData.map((objective) => (
-                          <TableRow key={objective.id}>
-                            <TableCell>
-                              {(() => {
-                                // Try to resolve title from prop or lookup
-                                const title = objective.parentGoalTitle ||
-                                  (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
+                    ) : (
+                      processedRows.map((row, rowIndex) => {
+                        const {
+                          kpi,
+                          originalKra,
+                          isFirstRowOfObjective,
+                          objectiveRowSpan,
+                          objectiveName,
+                          isFirstRowOfKraTitleGroup,
+                          kraTitleRowSpan,
+                          kraTitle
+                        } = row;
+                        const targetQuarter = getQuarter(kpi?.target_date || kpi?.targetDate);
+                        const isFirstKpiOfOriginalKra = (originalKra as any).unitKpis?.[0]?.id === kpi.id || (!kpi.id && !(originalKra as any).unitKpis?.length);
 
-                                return title ? (
-                                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
-                                    {title}
-                                  </Badge>
-                                ) : (
-                                  <span className="text-muted-foreground text-[10px] italic">Direct/Board</span>
-                                );
-                              })()}
+                        const linkedTasks = tasks.filter(
+                          (task) => task.kpi_id === kpi.id?.toString()
+                        );
+
+                        return (
+                          <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`}>
+                            {isFirstRowOfObjective && (
+                              <TableCell className="align-top border-r text-sm font-medium sticky left-0 z-30 bg-card shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={objectiveRowSpan}>
+                                {objectiveName}
+                              </TableCell>
+                            )}
+                            {isFirstRowOfKraTitleGroup && (
+                              <TableCell className="align-top border-r sticky left-[150px] z-30 bg-card shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={kraTitleRowSpan}>
+                                {kraTitle}
+                              </TableCell>
+                            )}
+                            {/* KPI Cells */}
+                            <TableCell className="align-top text-sm">{kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground">-</span>}</TableCell>
+                            <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
+                            <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
+                            <TableCell className="align-top text-sm">{targetQuarter}</TableCell>
+                            <TableCell className="align-top text-sm text-right font-mono tabular-nums">{kpi?.target ?? '-'}</TableCell>
+                            <TableCell className="align-top text-sm text-right font-mono tabular-nums">{kpi?.actual ?? '-'}</TableCell>
+                            <TableCell className="align-top whitespace-nowrap">
+                              {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground">-</span>}
                             </TableCell>
-                            <TableCell>
-                              {objective.linkedDeliverable ? (
-                                <span className="text-sm font-medium">{objective.linkedDeliverable}</span>
+                            <TableCell className="align-top text-sm whitespace-nowrap text-right font-mono tabular-nums">{formatCurrency(kpi?.costAssociated)}</TableCell>
+                            <TableCell className="align-top">
+                              {kpi?.assignees && kpi.assignees.length > 0 ? (
+                                <div className="flex -space-x-2 overflow-hidden">
+                                  {(kpi.assignees as any[]).map((assignee: any, index: number) => (
+                                    <Tooltip key={assignee.id || `assignee-${index}`}>
+                                      <TooltipTrigger asChild>
+                                        <Avatar className="h-6 w-6 border-2 border-background">
+                                          <AvatarImage src={assignee.avatarUrl} />
+                                          <AvatarFallback>{assignee.initials || assignee.name?.substring(0, 2) || '?'}</AvatarFallback>
+                                        </Avatar>
+                                      </TooltipTrigger>
+                                      <TooltipContent><p>{assignee.name || 'Unknown Assignee'}</p></TooltipContent>
+                                    </Tooltip>
+                                  ))}
+                                </div>
+                              ) : <span className="text-muted-foreground">-</span>}
+                            </TableCell>
+                            <TableCell className="align-top text-xs text-muted-foreground">{kpi?.comments || '-'}</TableCell>
+                            <TableCell className="align-top">
+                              {linkedTasks.length > 0 ? (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" size="sm" className="h-auto py-1 px-2">
+                                      {linkedTasks.length} {linkedTasks.length === 1 ? 'Task' : 'Tasks'}
+                                      <ChevronDown className="h-3 w-3 ml-1" />
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-2">
+                                    <div className="space-y-1">
+                                      <p className="font-semibold text-sm mb-1">Linked Tasks</p>
+                                      {linkedTasks.map(task => (
+                                        <div key={task.id} className="text-xs p-1.5 bg-muted/50 rounded-sm">
+                                          {task.title}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
                               ) : (
                                 <span className="text-muted-foreground text-xs">-</span>
                               )}
                             </TableCell>
-                            <TableCell className="font-bold">{objective.title}</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={objective.goalType === 'Org' ? 'default' : 'secondary'}
-                                className={objective.goalType === 'Org' ? 'bg-intranet-primary' : ''}
-                              >
-                                {objective.goalType || 'Unit'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{objective.description || '-'}</TableCell>
-                            <TableCell className="text-right">
-                              {canEdit && (
-                                <>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditObjectiveModal(objective)}>
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteObjective(objective.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              )}
+                            <TableCell className="align-top text-right sticky right-0 bg-card border-l px-2 py-1 whitespace-nowrap align-middle">
+                              <div className="flex justify-end items-center space-x-1">
+                                {canEdit && (
+                                  <>
+                                    {kpi && kpi.id && kpi.name !== '-' && (
+                                      <TooltipProvider delayDuration={100}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="p-1 h-auto"
+                                              onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
+                                              aria-label="Edit KPI"
+                                            >
+                                              <Edit className="h-4 w-4" />
+                                            </Button>
+                                          </TooltipTrigger>
+                                          <TooltipContent className="z-[100]">Edit KPI</TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    )}
+                                    <TooltipProvider delayDuration={100}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="p-1 h-auto mr-1"
+                                            onClick={() => handleOpenEditKraModal(row.originalKra)}
+                                            aria-label="Edit KRA"
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[100]">Edit KRA (and its KPIs)</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+
+                                    <TooltipProvider delayDuration={100}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="p-1 h-auto text-destructive hover:text-destructive"
+                                            onClick={() => handleDeleteKra(row.originalKra.id)}
+                                            aria-label="Delete KRA"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </>
+                                )}
+                              </div>
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="timeline">
-                <div>
-                  <KRATimelineTab
-                    kras={kras}
-                    objectives={objectivesData}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="insights">
-                <KRAInsightsTab kras={kras} />
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-
-        <KpiModal
-          isOpen={isKpiModalOpen}
-          onClose={handleCloseKpiModal}
-          kraData={editingKra}
-          onSubmit={handleKpiFormSubmit}
-          staffMembers={staffMembers}
-          objectives={objectivesData}
-          units={units}
-          existingKraTitles={existingKraTitles}
-          userContext={userContext}
-          editingKpi={editingKpiDetails}
-        />
-
-        <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
-          <DialogContent className="sm:max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
-              <DialogDescription>
-                {editingObjective ? 'Update the objective details.' : 'Define a new objective for KRAs.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2">
-              {/* Strategic Alignment */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right whitespace-nowrap">Strategic Alignment</Label>
-                <div className="col-span-3">
-                  <Select
-                    value={newObjectiveData.parentGoalId?.toString() || 'none'}
-                    onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Align with Strategic Objective..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Standalone (No Alignment)</SelectItem>
-                      {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
-                        .map(obj => (
-                          <SelectItem key={obj.id} value={obj.id.toString()}>
-                            {obj.title}
-                          </SelectItem>
-                        ))
-                      }
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Link this unit objective to a high-level Board/Strategic objective.
-                  </p>
-                </div>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </table>
               </div>
+            </TabsContent>
 
-              {/* Key Deliverables (Executions) Radio Group */}
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right whitespace-nowrap pt-2">
-                  Key Deliverable<br />
-                  <span className="text-[10px] text-muted-foreground font-normal">(Execution)</span>
-                </Label>
-                <div className="col-span-3">
-                  {(() => {
-                    if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
-                      return (
-                        <div className="p-3 rounded-md border border-dashed text-sm text-muted-foreground bg-muted/30">
-                          Please select a <strong>Strategic Alignment</strong> above to see linked Executions/Deliverables.
-                        </div>
-                      );
+            <TabsContent value="objectives">
+              <div className="overflow-auto border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[20%]">Strategic Alignment</TableHead>
+                      <TableHead className="w-[20%]">Key Deliverable</TableHead>
+                      <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
+                      <TableHead className="w-[10%]">Goal Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead className="text-right w-[10%]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {objectivesData.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="h-24 text-center">
+                          No Objectives defined yet. Use the "Add Objective" button.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      objectivesData.map((objective) => (
+                        <TableRow key={objective.id}>
+                          <TableCell>
+                            {(() => {
+                              // Try to resolve title from prop or lookup
+                              const title = objective.parentGoalTitle ||
+                                (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
+
+                              return title ? (
+                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                  {title}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground text-[10px] italic">Direct/Board</span>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell>
+                            {objective.linkedDeliverable ? (
+                              <span className="text-sm font-medium">{objective.linkedDeliverable}</span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-bold">{objective.title}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={objective.goalType === 'Org' ? 'default' : 'secondary'}
+                              className={objective.goalType === 'Org' ? 'bg-intranet-primary' : ''}
+                            >
+                              {objective.goalType || 'Unit'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{objective.description || '-'}</TableCell>
+                          <TableCell className="text-right">
+                            {canEdit && (
+                              <>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditObjectiveModal(objective)}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteObjective(objective.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="timeline">
+              <div>
+                <KRATimelineTab
+                  kras={kras}
+                  objectives={objectivesData}
+                  viewMode={timelineViewMode}
+                  onViewModeChange={setTimelineViewMode}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="insights">
+              <KRAInsightsTab kras={kras} viewScope={viewScope} onScopeChange={setViewScope} />
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      <KpiModal
+        isOpen={isKpiModalOpen}
+        onClose={handleCloseKpiModal}
+        kraData={editingKra}
+        onSubmit={handleKpiFormSubmit}
+        staffMembers={staffMembers}
+        objectives={objectivesData}
+        units={units}
+        existingKraTitles={existingKraTitles}
+        userContext={userContext}
+        editingKpi={editingKpiDetails}
+      />
+
+      <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
+            <DialogDescription>
+              {editingObjective ? 'Update the objective details.' : 'Define a new objective for KRAs.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2">
+            {/* Strategic Alignment */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right whitespace-nowrap">Strategic Alignment</Label>
+              <div className="col-span-3">
+                <Select
+                  value={newObjectiveData.parentGoalId?.toString() || 'none'}
+                  onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Align with Strategic Objective..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Standalone (No Alignment)</SelectItem>
+                    {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
+                      .map(obj => (
+                        <SelectItem key={obj.id} value={obj.id.toString()}>
+                          {obj.title}
+                        </SelectItem>
+                      ))
                     }
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Link this unit objective to a high-level Board/Strategic objective.
+                </p>
+              </div>
+            </div>
 
-                    const parentParams = (strategicObjectives.length > 0 ? strategicObjectives : objectivesData).find(o => o.id.toString() === newObjectiveData.parentGoalId);
-                    const deliverables = parentParams?.deliverables || [];
-
-                    if (deliverables.length === 0) {
-                      return <p className="text-sm text-muted-foreground pt-2 text-amber-600">No key deliverables found for the selected objective.</p>;
-                    }
-
+            {/* Key Deliverables (Executions) Radio Group */}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label className="text-right whitespace-nowrap pt-2">
+                Key Deliverable<br />
+                <span className="text-[10px] text-muted-foreground font-normal">(Execution)</span>
+              </Label>
+              <div className="col-span-3">
+                {(() => {
+                  if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
                     return (
-                      <RadioGroup
-                        value={newObjectiveData.linkedDeliverable || ''}
-                        onValueChange={(val) => handleObjectiveFormChange('linkedDeliverable', val)}
-                        className="flex flex-col space-y-2 mt-2"
-                      >
-                        {deliverables.map((del, idx) => (
-                          <div key={idx} className="flex items-center space-x-2">
-                            <RadioGroupItem value={del} id={`del-${idx}`} />
-                            <Label htmlFor={`del-${idx}`} className="font-normal cursor-pointer">
-                              {del}
-                            </Label>
-                          </div>
-                        ))}
-                      </RadioGroup>
+                      <div className="p-3 rounded-md border border-dashed text-sm text-muted-foreground bg-muted/30">
+                        Please select a <strong>Strategic Alignment</strong> above to see linked Executions/Deliverables.
+                      </div>
                     );
-                  })()}
-                  <p className="text-[10px] text-muted-foreground mt-2">
-                    Select the specific Execution/Deliverable this unit objective contributes to.
-                  </p>
-                </div>
-              </div>
+                  }
 
-              {/* Row 1: Title & Year */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="objective-name" className="text-right">Name</Label>
-                <Input
-                  id="objective-name"
-                  value={newObjectiveData.title || ''}
-                  onChange={(e) => handleObjectiveFormChange('title', e.target.value)}
-                  className="col-span-3"
-                  required
-                />
-              </div>
+                  const parentParams = (strategicObjectives.length > 0 ? strategicObjectives : objectivesData).find(o => o.id.toString() === newObjectiveData.parentGoalId);
+                  const deliverables = parentParams?.deliverables || [];
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="objective-year" className="text-right">Year</Label>
-                <Input
-                  id="objective-year"
-                  value={newObjectiveData.year || ''}
-                  onChange={(e) => handleObjectiveFormChange('year', e.target.value)}
-                  className="col-span-3"
-                  placeholder="e.g. 2024"
-                />
-              </div>
+                  if (deliverables.length === 0) {
+                    return <p className="text-sm text-muted-foreground pt-2 text-amber-600">No key deliverables found for the selected objective.</p>;
+                  }
 
-              {/* Row 2: Owner Selection */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Owner</Label>
-                <div className="col-span-3">
-                  <Popover open={isOwnerPopoverOpen} onOpenChange={setIsOwnerPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={isOwnerPopoverOpen}
-                        className="w-full justify-between"
-                      >
-                        {newObjectiveData.owner || "Select Owner..."}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0">
-                      <Command>
-                        <CommandInput placeholder="Search employee..." />
-                        <CommandList>
-                          <CommandEmpty>No employee found.</CommandEmpty>
-                          <CommandGroup>
-                            {!isLoadingEmployees && employees && employees.map((employee: any) => (
-                              <CommandItem
-                                key={employee.id}
-                                value={employee.displayName}
-                                onSelect={(currentValue) => {
-                                  handleObjectiveFormChange('owner', currentValue);
-                                  setIsOwnerPopoverOpen(false);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    newObjectiveData.owner === employee.displayName ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {employee.displayName}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                  return (
+                    <RadioGroup
+                      value={newObjectiveData.linkedDeliverable || ''}
+                      onValueChange={(val) => handleObjectiveFormChange('linkedDeliverable', val)}
+                      className="flex flex-col space-y-2 mt-2"
+                    >
+                      {deliverables.map((del, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <RadioGroupItem value={del} id={`del-${idx}`} />
+                          <Label htmlFor={`del-${idx}`} className="font-normal cursor-pointer">
+                            {del}
+                          </Label>
+                        </div>
+                      ))}
+                    </RadioGroup>
+                  );
+                })()}
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  Select the specific Execution/Deliverable this unit objective contributes to.
+                </p>
               </div>
+            </div>
 
-              {/* Row 3: Division & Unit (Auto-filled) */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Division</Label>
-                <Input
-                  value={newObjectiveData.division || ''}
-                  readOnly
-                  className="col-span-3 bg-muted"
-                  placeholder="Auto-filled based on Owner"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Unit</Label>
-                <Input
-                  value={newObjectiveData.unit || ''}
-                  readOnly
-                  className="col-span-3 bg-muted"
-                  placeholder="Auto-filled based on Owner"
-                />
-              </div>
+            {/* Row 1: Title & Year */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="objective-name" className="text-right">Name</Label>
+              <Input
+                id="objective-name"
+                value={newObjectiveData.title || ''}
+                onChange={(e) => handleObjectiveFormChange('title', e.target.value)}
+                className="col-span-3"
+                required
+              />
+            </div>
 
-              {/* Row 4: Status & Progress */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Status</Label>
-                <Select
-                  value={newObjectiveData.status}
-                  onValueChange={(val) => handleObjectiveFormChange('status', val)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Deferred">Deferred</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="objective-year" className="text-right">Year</Label>
+              <Input
+                id="objective-year"
+                value={newObjectiveData.year || ''}
+                onChange={(e) => handleObjectiveFormChange('year', e.target.value)}
+                className="col-span-3"
+                placeholder="e.g. 2024"
+              />
+            </div>
 
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Goal Type</Label>
-                <Select
-                  value={newObjectiveData.goalType}
-                  onValueChange={(val) => handleObjectiveFormChange('goalType', val)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Goal Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Org">Org (Board/Strategic)</SelectItem>
-                    <SelectItem value="Division">Division</SelectItem>
-                    <SelectItem value="Unit">Unit</SelectItem>
-                    <SelectItem value="Individual">Individual</SelectItem>
-                  </SelectContent>
-                </Select>
+            {/* Row 2: Owner Selection */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Owner</Label>
+              <div className="col-span-3">
+                <Popover open={isOwnerPopoverOpen} onOpenChange={setIsOwnerPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isOwnerPopoverOpen}
+                      className="w-full justify-between"
+                    >
+                      {newObjectiveData.owner || "Select Owner..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[300px] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search employee..." />
+                      <CommandList>
+                        <CommandEmpty>No employee found.</CommandEmpty>
+                        <CommandGroup>
+                          {!isLoadingEmployees && employees && employees.map((employee: any) => (
+                            <CommandItem
+                              key={employee.id}
+                              value={employee.displayName}
+                              onSelect={(currentValue) => {
+                                handleObjectiveFormChange('owner', currentValue);
+                                setIsOwnerPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  newObjectiveData.owner === employee.displayName ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {employee.displayName}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
+            </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Start Date</Label>
-                <div className="col-span-3">
-                  <DatePicker
-                    date={newObjectiveData.startDate ? new Date(newObjectiveData.startDate) : undefined}
-                    setDate={(date) => handleObjectiveFormChange('startDate', date)}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">End Date</Label>
-                <div className="col-span-3">
-                  <DatePicker
-                    date={newObjectiveData.endDate ? new Date(newObjectiveData.endDate) : undefined}
-                    setDate={(date) => handleObjectiveFormChange('endDate', date)}
-                  />
-                </div>
-              </div>
+            {/* Row 3: Division & Unit (Auto-filled) */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Division</Label>
+              <Input
+                value={newObjectiveData.division || ''}
+                readOnly
+                className="col-span-3 bg-muted"
+                placeholder="Auto-filled based on Owner"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Unit</Label>
+              <Input
+                value={newObjectiveData.unit || ''}
+                readOnly
+                className="col-span-3 bg-muted"
+                placeholder="Auto-filled based on Owner"
+              />
+            </div>
 
+            {/* Row 4: Status & Progress */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <Select
+                value={newObjectiveData.status}
+                onValueChange={(val) => handleObjectiveFormChange('status', val)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Not Started">Not Started</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Deferred">Deferred</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="objective-description" className="text-right pt-2">
-                  Description
-                </Label>
-                <Textarea
-                  id="objective-description"
-                  value={newObjectiveData.description || ''}
-                  onChange={(e) => handleObjectiveFormChange('description', e.target.value)}
-                  className="col-span-3"
-                  rows={5}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Goal Type</Label>
+              <Select
+                value={newObjectiveData.goalType}
+                onValueChange={(val) => handleObjectiveFormChange('goalType', val)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select Goal Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Org">Org (Board/Strategic)</SelectItem>
+                  <SelectItem value="Division">Division</SelectItem>
+                  <SelectItem value="Unit">Unit</SelectItem>
+                  <SelectItem value="Individual">Individual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Dates */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Start Date</Label>
+              <div className="col-span-3">
+                <DatePicker
+                  date={newObjectiveData.startDate ? new Date(newObjectiveData.startDate) : undefined}
+                  setDate={(date) => handleObjectiveFormChange('startDate', date)}
                 />
               </div>
             </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="button" onClick={handleSaveObjective}>Save Objective</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">End Date</Label>
+              <div className="col-span-3">
+                <DatePicker
+                  date={newObjectiveData.endDate ? new Date(newObjectiveData.endDate) : undefined}
+                  setDate={(date) => handleObjectiveFormChange('endDate', date)}
+                />
+              </div>
+            </div>
 
-        <AlertDialog open={kraToDelete !== null} onOpenChange={(open) => !open && setKraToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the Key Result
-                Area <strong>"{kraToDelete?.title}"</strong> and all of its associated KPIs.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setKraToDelete(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteKra} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                Continue
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="objective-description" className="text-right pt-2">
+                Description
+              </Label>
+              <Textarea
+                id="objective-description"
+                value={newObjectiveData.description || ''}
+                onChange={(e) => handleObjectiveFormChange('description', e.target.value)}
+                className="col-span-3"
+                rows={5}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="button" onClick={handleSaveObjective}>Save Objective</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={kraToDelete !== null} onOpenChange={(open) => !open && setKraToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the Key Result
+              Area <strong>"{kraToDelete?.title}"</strong> and all of its associated KPIs.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setKraToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteKra} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
   );
 };

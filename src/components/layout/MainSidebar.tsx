@@ -23,7 +23,8 @@ import {
   TestTube,
   Grid3x3,
   BookOpen,
-  Palette
+  Palette,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -82,6 +83,7 @@ const MainSidebar: React.FC<MainSidebarProps> = ({ closeMobileSidebar, handleSig
     { icon: Users, path: '/hr-profiles', label: 'HR Profiles', resource: 'hr' },
     { icon: Ticket, path: '/tickets', label: 'Tickets', resource: 'tickets' },
     { icon: FileText, path: '/licensing-registry', label: 'Licensing', resource: 'licenses' },
+    { icon: Shield, path: '/regulatory-intelligence', label: 'Regulatory', resource: 'regulatory' },
   ];
 
   // Filter nav items based on permissions

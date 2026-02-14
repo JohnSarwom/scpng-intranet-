@@ -53,7 +53,6 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
     { value: 'not-started', label: 'Not Started' },
     { value: 'on-track', label: 'On Track' },
     { value: 'in-progress', label: 'In Progress' },
-    { value: 'at-risk', label: 'At Risk' },
     { value: 'on-hold', label: 'On Hold' },
     { value: 'completed', label: 'Completed' },
     { value: 'behind', label: 'Behind' },

@@ -359,6 +359,59 @@
   scrollbar-color: transparent transparent;
 }
 
-.scrollbar-thin:hover {
-  scrollbar-color: #9ca3af transparent;
+
+/* Kanban Board Custom Scrollbar (Updated to match KRA table light style) */
+.kanban-scrollbar {
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  /* Firefox: thumb track */
+}
+
+.kanban-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  /* Thinner height for horizontal scrollbar */
+  width: 8px;
+  /* Thinner width for vertical scrollbar */
+}
+
+.kanban-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  /* Transparent track for cleaner look */
+  border-radius: 4px;
+}
+
+.kanban-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  /* Lighter thumb */
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.kanban-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
+  /* Slightly darker on hover */
+}
+
+.kanban-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.dark .kanban-scrollbar {
+  scrollbar-color: #94a3b8 rgba(255, 255, 255, 0.1);
+}
+
+.dark .kanban-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .kanban-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #94a3b8;
+  /* slate-400 */
+}
+
+.dark .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #cbd5e1;
+  /* slate-300 */
 }

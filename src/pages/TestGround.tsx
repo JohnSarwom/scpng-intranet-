@@ -25,7 +25,9 @@ import {
     Rocket,
     TestTube,
     Info,
-    List
+    List,
+    FolderKanban,
+    Users
 } from "lucide-react";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
@@ -743,6 +745,94 @@ const TestGround = () => {
         }
     };
 
+    const [isSeedingProjects, setIsSeedingProjects] = useState(false);
+
+    const handleResetAndSeedProjects = async () => {
+        if (!confirm('WARNING: This will DELETE the existing Projects list and all its data! Continue?')) return;
+        setIsSeedingProjects(true);
+        setSetupResult(null);
+
+        try {
+            toast({ title: "🚀 Resetting Projects", description: "Deleting and recreating list..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+
+            // 1. Recreate List (Handles deletion and creation safely)
+            toast({ title: "🏗️ Recreating List", description: "Applying new schema (Text Manager, JSON Assignees)..." });
+            const recreateResult = await setupService.recreateProjectsListOnly();
+
+            if (!recreateResult.success) {
+                throw new Error(recreateResult.message);
+            }
+
+            // 2. Seed Data
+            toast({ title: "🌱 Seeding Data", description: "Injecting mock projects..." });
+            const result = await setupService.seedProjectsData();
+
+            if (result.success) {
+                toast({ title: "✅ Success!", description: result.message });
+                setSetupResult({ success: true, message: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+
+        } catch (error: any) {
+            console.error('Project Reset Failed:', error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+            setSetupResult({ success: false, message: error.message, error });
+        } finally {
+            setIsSeedingProjects(false);
+        }
+    };
+
+    const [isSettingUpProfiles, setIsSettingUpProfiles] = useState(false);
+
+    const handleSetupEmployeeProfiles = async () => {
+        setIsSettingUpProfiles(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Creating Employee Profiles List",
+                description: "Setting up list and populating data...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.createEmployeeProfilesList();
+
+            if (result.success) {
+                toast({
+                    title: "✅ Success!",
+                    description: result.message,
+                });
+                setSetupResult(result);
+            } else {
+                throw new Error(result.message);
+            }
+
+        } catch (error: any) {
+            console.error('❌ Setup failed:', error);
+            toast({
+                title: "❌ Setup Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+            setSetupResult({ success: false, message: error.message });
+        } finally {
+            setIsSettingUpProfiles(false);
+        }
+    };
+
     return (
         <PageLayout>
             <div className="space-y-6">
@@ -1294,6 +1384,83 @@ const TestGround = () => {
                                 <Trash2 className="h-4 w-4 mr-2" /> Clear All Mock Performance Data
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Projects Management Card */}
+                <Card className="border-2 border-indigo-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <FolderKanban className="h-5 w-5 text-indigo-600" />
+                            Projects Management Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Specialized tools for the Projects list (Schema updates & Mock Data)
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <ListChecks className="h-4 w-4" />
+                                Actions:
+                            </h4>
+                            <ul className="space-y-2 ml-6 text-sm">
+                                <li>
+                                    <span className="font-bold text-indigo-600">Reset & Seed:</span> Deletes 'Operations_Projects', recreates it with new schema (Manager as Text, Assignees as JSON), and seeds 24 mock projects.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <Button
+                            onClick={handleResetAndSeedProjects}
+                            disabled={isSeedingProjects || isSettingUpLists || isSettingUpOps}
+                            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                            size="lg"
+                        >
+                            {isSeedingProjects ? (
+                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Resetting & Seeding...</>
+                            ) : (
+                                <><Rocket className="h-4 w-4 mr-2" /> Reset & Seed Projects List</>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Employee Profiles Setup */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-intranet-primary" />
+                            Employee Profiles Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Create SharePoint list for employee profile images.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="text-sm space-y-2 mb-4 p-3 bg-muted rounded-md">
+                            <div className="flex items-center gap-2">
+                                <List className="h-4 w-4 text-blue-500" />
+                                <span>Creates: <strong>Employee_Profiles</strong></span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Database className="h-4 w-4 text-green-500" />
+                                <span>Adds columns: ProfilePhoto, ModalPhoto</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-purple-500" />
+                                <span>Populates: 22 Users</span>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={handleSetupEmployeeProfiles}
+                            disabled={isSettingUpProfiles}
+                            className="w-full bg-intranet-primary hover:bg-intranet-secondary"
+                        >
+                            {isSettingUpProfiles ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+                            Deploy Employee Profiles List
+                        </Button>
                     </CardContent>
                 </Card>
 

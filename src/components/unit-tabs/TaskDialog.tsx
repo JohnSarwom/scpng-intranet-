@@ -61,10 +61,12 @@ interface TaskDialogProps {
 }
 
 const DEFAULT_STATUSES = [
-  { id: 'todo', name: 'TO DO' },
-  { id: 'in-progress', name: 'IN PROGRESS' },
-  { id: 'review', name: 'REVIEW' },
-  { id: 'done', name: 'DONE' }
+  { id: 'not-started', name: 'Not Started' },
+  { id: 'on-track', name: 'On Track' },
+  { id: 'in-progress', name: 'In Progress' },
+  { id: 'on-hold', name: 'On Hold' },
+  { id: 'completed', name: 'Completed' },
+  { id: 'behind', name: 'Behind' }
 ];
 
 const DEFAULT_BUCKETS = [
@@ -323,6 +325,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   onChange={(e) => setTitle(e.target.value)}
                   className="py-3 px-4 rounded-lg"
                   required
+                  autoFocus
                 />
               </div>
               <div className="sm:col-span-2 space-y-1">

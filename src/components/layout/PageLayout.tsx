@@ -19,8 +19,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useGraphProfile } from '@/hooks/useGraphProfile';
 import { useSlideshow } from '@/contexts/SlideshowContext';
+
 import { Switch } from '@/components/ui/switch';
+import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -37,11 +40,36 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
   const navigate = useNavigate();
   const location = useLocation();
   const { isAdmin, user: roleUser, loading: roleLoading } = useRoleBasedAuth();
+  const { profile: graphProfile, loading: graphLoading } = useGraphProfile();
   const { isSlideshowVisible, toggleSlideshow, isNewsTickerVisible, toggleNewsTicker, isTradingViewVisible, toggleTradingView } = useSlideshow();
+
   const isHomePage = location.pathname === '/';
+
+  // Fetch current user's photo
+  const { getPhotoUrl } = useEmployeePhotos();
+  const [userPhotoUrl, setUserPhotoUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchUserPhoto = async () => {
+      if (account?.username) {
+        const url = await getPhotoUrl(account.username);
+        if (url) setUserPhotoUrl(url);
+      }
+    };
+    fetchUserPhoto();
+  }, [account, getPhotoUrl]);
 
   // Removed the special case for asset management page to maintain consistent layout
   // const isFullPageAssetManagement = location.pathname === '/asset-management' && isAdmin;
+
+  // Derive Display Values
+  const displayDivision = graphProfile?.officeLocation || roleUser?.division_name;
+  const displayUnit = graphProfile?.department || roleUser?.unit_name;
+
+  useEffect(() => {
+    // console.log("PageLayout roleUser:", roleUser);
+    // console.log("PageLayout roleLoading:", roleLoading);
+  }, [roleUser, roleLoading]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -147,8 +175,8 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-white/10 p-0">
-                    <Avatar className="h-9 w-9">
-                      <AvatarImage src={undefined} alt={account?.name || "User"} />
+                    <Avatar className="h-9 w-9 border border-white/20">
+                      <AvatarImage src={userPhotoUrl} alt={account?.name || "User"} className="object-cover" />
                       <AvatarFallback className="bg-intranet-accent text-white">
                         {userLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : getInitials(account?.name, account?.username)}
                       </AvatarFallback>
@@ -164,6 +192,16 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
                       <p className="text-xs leading-none text-muted-foreground">
                         {userLoading ? "..." : account?.username}
                       </p>
+                      {!roleLoading && !graphLoading && displayDivision && (
+                        <p className="text-xs leading-none text-muted-foreground pt-1">
+                          Div: {displayDivision}
+                        </p>
+                      )}
+                      {!roleLoading && !graphLoading && displayUnit && (
+                        <p className="text-xs leading-none text-muted-foreground">
+                          Unit: {displayUnit}
+                        </p>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />

@@ -117,7 +117,7 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
                 </div>
             )}
 
-            <Popover open={open} onOpenChange={setOpen}>
+            <Popover open={open} onOpenChange={setOpen} modal={true}>
                 <PopoverTrigger asChild>
                     <Button
                         variant="outline"
@@ -141,7 +141,7 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
                 <PopoverContent className="w-[300px] p-0" align="start">
                     <Command>
                         <CommandInput placeholder="Search staff..." />
-                        <CommandList>
+                        <CommandList className="max-h-[300px] overflow-y-auto">
                             <CommandEmpty>No staff found.</CommandEmpty>
                             <CommandGroup>
                                 {!isInitialized || isLoading ? (

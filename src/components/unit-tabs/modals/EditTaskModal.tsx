@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +34,11 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 }) => {
   const loading = false;
   const currentUserDepartment = staffMembers?.[0]?.department || 'Unknown';
-  
-  const [editedTask, setEditedTask] = useState<Task>({...task});
+
+  const [editedTask, setEditedTask] = useState<Task>({ ...task });
 
   useEffect(() => {
-    setEditedTask({...task});
+    setEditedTask({ ...task });
   }, [task]);
 
   const handleUpdateTask = () => {
@@ -50,26 +50,26 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
       });
       return;
     }
-    
+
     // Format dates properly
     const taskToSave = {
       ...editedTask,
       // Ensure dueDate is a string
-      dueDate: typeof editedTask.dueDate === 'string' 
-        ? editedTask.dueDate 
+      dueDate: typeof editedTask.dueDate === 'string'
+        ? editedTask.dueDate
         : (editedTask.dueDate as Date)?.toISOString?.()?.split('T')[0] || null,
-      
+
       // Ensure startDate is a proper date object or null
-      startDate: editedTask.startDate instanceof Date 
-        ? editedTask.startDate 
-        : typeof editedTask.startDate === 'string' && editedTask.startDate 
-          ? new Date(editedTask.startDate) 
+      startDate: editedTask.startDate instanceof Date
+        ? editedTask.startDate
+        : typeof editedTask.startDate === 'string' && editedTask.startDate
+          ? new Date(editedTask.startDate)
           : null
     };
-    
+
     onSave(taskToSave);
     onOpenChange(false);
-    
+
     toast({
       title: "Task Updated",
       description: "The task has been successfully updated",
@@ -85,25 +85,25 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             Update the task details below
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="overflow-y-auto flex-grow pr-2 -mr-2">
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="task-title">Title</Label>
-              <Input 
-                id="task-title" 
-                placeholder="Task Title" 
-                value={editedTask.title || ''} 
-                onChange={(e) => setEditedTask({...editedTask, title: e.target.value})}
+              <Input
+                id="task-title"
+                placeholder="Task Title"
+                value={editedTask.title || ''}
+                onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="task-description">Description</Label>
-              <Textarea 
-                id="task-description" 
-                placeholder="Task Description" 
-                value={editedTask.description || ''} 
-                onChange={(e) => setEditedTask({...editedTask, description: e.target.value})}
+              <Textarea
+                id="task-description"
+                placeholder="Task Description"
+                value={editedTask.description || ''}
+                onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -111,9 +111,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 <Label htmlFor="task-assignee">
                   Assignee {currentUserDepartment && <span className="text-sm text-muted-foreground">({currentUserDepartment})</span>}
                 </Label>
-                <Select 
+                <Select
                   value={editedTask.assignee || ''}
-                  onValueChange={(value) => setEditedTask({...editedTask, assignee: value})}
+                  onValueChange={(value) => setEditedTask({ ...editedTask, assignee: value })}
                 >
                   <SelectTrigger id="task-assignee" className={loading ? "opacity-50" : ""}>
                     <SelectValue placeholder="Select assignee" />
@@ -135,20 +135,22 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-status">Status</Label>
-                <Select 
+                <Select
                   value={editedTask.status || 'todo'}
-                  onValueChange={(value: 'todo' | 'in-progress' | 'review' | 'done') => 
-                    setEditedTask({...editedTask, status: value})
+                  onValueChange={(value: 'todo' | 'in-progress' | 'review' | 'done' | 'not-started' | 'on-track' | 'on-hold' | 'behind' | 'completed') =>
+                    setEditedTask({ ...editedTask, status: value })
                   }
                 >
                   <SelectTrigger id="task-status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todo">To Do</SelectItem>
+                    <SelectItem value="not-started">Not Started</SelectItem>
+                    <SelectItem value="on-track">On Track</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="on-hold">On Hold</SelectItem>
+                    <SelectItem value="behind">Behind</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -156,10 +158,10 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-priority">Priority</Label>
-                <Select 
+                <Select
                   value={editedTask.priority || 'medium'}
-                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => 
-                    setEditedTask({...editedTask, priority: value})
+                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') =>
+                    setEditedTask({ ...editedTask, priority: value })
                   }
                 >
                   <SelectTrigger id="task-priority">
@@ -176,8 +178,8 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-percentage">Completion Percentage</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    id="task-percentage" 
+                  <Input
+                    id="task-percentage"
                     type="number"
                     min="0"
                     max="100"
@@ -189,7 +191,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                       } else if (value > 100) {
                         value = 100;
                       }
-                      setEditedTask({...editedTask, completionPercentage: value});
+                      setEditedTask({ ...editedTask, completionPercentage: value });
                     }}
                   />
                   <span>%</span>
@@ -199,33 +201,33 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-start-date">Start Date</Label>
-                <Input 
-                  id="task-start-date" 
+                <Input
+                  id="task-start-date"
                   type="date"
-                  value={editedTask.startDate instanceof Date ? editedTask.startDate.toISOString().split('T')[0] : ''} 
-                  onChange={(e) => setEditedTask({...editedTask, startDate: new Date(e.target.value)})}
+                  value={editedTask.startDate instanceof Date ? editedTask.startDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setEditedTask({ ...editedTask, startDate: new Date(e.target.value) })}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-due-date">Due Date</Label>
-                <Input 
-                  id="task-due-date" 
+                <Input
+                  id="task-due-date"
                   type="date"
-                  value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate : ''} 
-                  onChange={(e) => setEditedTask({...editedTask, dueDate: e.target.value})}
+                  value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate : ''}
+                  onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
                 />
               </div>
             </div>
-            
+
             <div className="border-t pt-4 mt-2">
-              <ChecklistSection 
+              <ChecklistSection
                 items={editedTask.checklist || []}
-                onChange={(items) => setEditedTask({...editedTask, checklist: items})}
+                onChange={(items) => setEditedTask({ ...editedTask, checklist: items })}
               />
             </div>
           </div>
         </div>
-        
+
         <DialogFooter className="flex-shrink-0 pt-4 border-t mt-auto">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleUpdateTask}>Save Changes</Button>

@@ -26,6 +26,8 @@ import { Objective, Task, Project, KRA } from '@/types';
 import { TaskCompletionDonut } from '@/components/dashboard/TaskCompletionDonut';
 import LocalStorageFallbackNotice from '@/components/setup-wizard/components/LocalStorageFallbackNotice';
 
+import { Bucket } from '@/components/unit-tabs/TasksTab';
+
 interface OverviewTabSetupProps {
   showSetupWizard: boolean;
   setShowSetupWizard: (show: boolean) => void;
@@ -37,9 +39,10 @@ interface OverviewTabProps {
   kras: KRA[];
   setupState?: FullSetupWizardState;
   objectives?: Objective[];
+  buckets?: Bucket[]; // New prop for buckets
 }
 
-// Add a new component for the OneDrive switch dialog
+// ... (SwitchToOneDriveDialog component remains unchanged)
 const SwitchToOneDriveDialog = ({ isOpen, onClose, onSwitch }) => {
   const [folderName, setFolderName] = useState('Unit Dashboard');
 
@@ -90,82 +93,114 @@ const SwitchToOneDriveDialog = ({ isOpen, onClose, onSwitch }) => {
   );
 };
 
-
-
 export const OverviewTab: React.FC<OverviewTabProps> = ({
   projects,
   tasks,
   kras,
-  setupState
+  setupState,
+  buckets = [] // Default to empty array
 }) => {
   const [selectedInsight, setSelectedInsight] = useState('overview');
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
   const { strategyData } = useStrategySharePoint();
   const objectives = strategyData?.objectives || [];
 
-  const completedTasks = tasks.filter(task => task.status?.toLowerCase() === 'done' || task.status?.toLowerCase() === 'completed').length;
-  const inProgressTasks = tasks.filter(task => task.status?.toLowerCase() === 'in-progress' || task.status?.toLowerCase() === 'in progress').length;
-  const todoTasks = tasks.filter(task => task.status?.toLowerCase() === 'todo' || task.status?.toLowerCase() === 'not started').length;
-  const reviewTasks = tasks.filter(task => task.status?.toLowerCase() === 'review').length;
-
   const activeProjects = projects.filter(project => project.status === 'in-progress').length;
   const completedProjects = projects.filter(project => project.status === 'completed').length;
   const plannedProjects = projects.filter(project => project.status === 'planned').length;
   const onHoldProjects = projects.filter(project => project.status === 'on-hold').length;
 
+
   // --- Calculate Task Group Statistics ---
-  // 1. Get all buckets (Default Statuses + Custom Groups from Projects)
-  const initialBuckets = [
-    { id: 'todo', title: 'TO DO' },
-    { id: 'in-progress', title: 'IN PROGRESS' },
-    { id: 'review', title: 'REVIEW' },
-    { id: 'done', title: 'DONE' }
-  ];
+  // Use passed buckets (which include virtual ones and renames) 
+  // If not provided, fall back to basic status buckets (less accurate for custom groups)
 
-  const customBuckets = projects
-    .filter(p => p.isCustomGroup)
-    .map(p => ({ id: String(p.id), title: p.name }));
-
-  const allBuckets = [...initialBuckets, ...customBuckets];
+  // No fallback to defaults anymore - only use custom groups
+  const activeBuckets = buckets.length > 0
+    ? buckets
+    : projects.filter(p => p.isCustomGroup).map(p => ({ id: String(p.id), title: p.name, isCustom: true }));
 
   // 2. Count tasks per bucket
-  const taskCountsByBucket = allBuckets.reduce((acc, bucket) => {
+  const taskCountsByBucket = activeBuckets.reduce((acc, bucket) => {
     acc[bucket.id] = 0;
     return acc;
   }, {} as Record<string, number>);
 
+  // Track tasks for "Task Completion" chart consistency (Standard Statuses)
+  const taskStatusCounts = {
+    todo: 0,
+    inProgress: 0,
+    review: 0,
+    done: 0
+  };
+
   tasks.forEach(task => {
-    // Logic must match TasksTab distribution logic
-    if (task.projectId) {
-      // If task belongs to a group (Project), count it there
-      if (taskCountsByBucket[task.projectId] !== undefined) {
-        taskCountsByBucket[task.projectId]++;
-        return;
+    // A. BUCKET COUNTING (For Task Groups List)
+    // -----------------------------------------
+    let matchedBucket = false;
+
+    // Logic 1: Check if task belongs to a specific project bucket (Project ID match)
+    if (task.projectId && taskCountsByBucket[task.projectId] !== undefined) {
+      taskCountsByBucket[task.projectId]++;
+      matchedBucket = true;
+    }
+
+    if (!matchedBucket) {
+      // Logic 2: Check for Virtual Buckets (e.g. Shared Tasks)
+      // If we have 'shared-tasks-virtual' bucket, and the task has a project ID that we didn't find above,
+      // it likely belongs there (orphaned project task).
+      // Or if it's a cross-unit task.
+      const isSharedBucketAvailable = taskCountsByBucket['shared-tasks-virtual'] !== undefined;
+
+      // Simple heuristic for Overview: If it has a project ID but didn't match a bucket above, and we have shared bucket -> put it there.
+      if (isSharedBucketAvailable && task.projectId && task.projectId !== 'undefined') {
+        taskCountsByBucket['shared-tasks-virtual']++;
+        matchedBucket = true; // Counted in shared
       }
     }
 
-    // Fallback to Status
-    const status = task.status?.toLowerCase().trim() || 'todo';
-    let targetBucket = 'todo';
+    if (!matchedBucket) {
+      // Logic 3: Fallback to Status Mapping
+      const status = task.status?.toLowerCase().trim() || 'todo';
+      let targetBucketId = 'todo';
 
-    if (status === 'todo' || status === 'not started' || status === 'open' || status === 'to do') targetBucket = 'todo';
-    else if (status === 'in-progress' || status === 'in progress' || status === 'doing' || status === 'active') targetBucket = 'in-progress';
-    else if (status === 'review' || status === 'in review' || status === 'under review') targetBucket = 'review';
-    else if (status === 'done' || status === 'completed' || status === 'closed' || status === 'complete') targetBucket = 'done';
-    else if (taskCountsByBucket[status] !== undefined) targetBucket = status;
+      if (['todo', 'not started', 'open', 'to do'].includes(status)) targetBucketId = 'todo';
+      else if (['in-progress', 'in progress', 'doing', 'active'].includes(status)) targetBucketId = 'in-progress';
+      else if (['review', 'in review', 'under review'].includes(status)) targetBucketId = 'review';
+      else if (['done', 'completed', 'closed', 'complete'].includes(status)) targetBucketId = 'done';
+      else if (taskCountsByBucket[status] !== undefined) targetBucketId = status;
 
-    if (taskCountsByBucket[targetBucket] !== undefined) {
-      taskCountsByBucket[targetBucket]++;
+      if (taskCountsByBucket[targetBucketId] !== undefined) {
+        taskCountsByBucket[targetBucketId]++;
+      }
+    }
+
+    // B. STATUS COUNTING (For Task Completion Chart)
+    // ----------------------------------------------
+    // Count ALL tasks by status regardless of bucket to show full picture
+    const status = task.status?.toLowerCase().trim() || '';
+
+    if (['todo', 'not started', 'open', 'to do'].includes(status)) taskStatusCounts.todo++;
+    else if (['in-progress', 'in progress', 'doing', 'active'].includes(status)) taskStatusCounts.inProgress++;
+    else if (['review', 'in review', 'under review'].includes(status)) taskStatusCounts.review++;
+    else if (['done', 'completed', 'closed', 'complete'].includes(status)) taskStatusCounts.done++;
+    else {
+      // Default fallback for unknown status -> To Do (matches generic logic)
+      taskStatusCounts.todo++;
     }
   });
 
-  // 3. Format data for the chart
-  // Filter out empty buckets if too many? User said "put them... into the KPI card".
-  // Let's show all non-empty or just significant ones.
-  const taskGroupData = allBuckets.map((bucket, index) => ({
+  const todoTasks = taskStatusCounts.todo;
+  const inProgressTasks = taskStatusCounts.inProgress;
+  const reviewTasks = taskStatusCounts.review;
+  const completedTasks = taskStatusCounts.done;
+
+  // 3. Format data for the task groups chart
+  const taskGroupData = activeBuckets.map((bucket, index) => ({
     name: bucket.title,
     value: taskCountsByBucket[bucket.id] || 0,
-    color: index < 4 ? ['#94a3b8', '#fbbf24', '#f59e0b', '#34d399'][index] : '#3b82f6' // Default colors for first 4, blue for others
+    // Use bucket color if available, else default cycle
+    color: index < 4 ? ['#94a3b8', '#fbbf24', '#f59e0b', '#34d399'][index] : '#3b82f6'
   }));
 
 

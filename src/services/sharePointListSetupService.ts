@@ -8,6 +8,9 @@ import { mockStrategyData } from '../mockData/strategyData';
 import { Kra, Kpi, Task } from '@/types';
 import { mapKraToSharePoint, mapKpiToSharePoint, mapTaskToSharePoint } from '@/utils/mockDataMapper';
 
+import { mockProjects } from '@/mockData/projects';
+import { initialEmployeeData } from '@/data/employeeData';
+
 export class SharePointListSetupService {
     private client: Client;
     private siteId: string;
@@ -783,6 +786,46 @@ export class SharePointListSetupService {
         }
     }
 
+    async recreateProjectsListOnly(): Promise<{ success: boolean; message: string }> {
+        console.log('🔄 [Setup] Recreating Operations_Projects list only...');
+        try {
+            // 1. Get Dependency: Performance_KRAs ID
+            const krasList = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .filter("displayName eq 'Performance_KRAs'")
+                .select('id')
+                .get();
+
+            if (!krasList.value || krasList.value.length === 0) {
+                throw new Error('Performance_KRAs list not found. Cannot create Projects list without it.');
+            }
+            const krasListId = krasList.value[0].id;
+
+            // 2. Delete existing Operations_Projects if it exists
+            const projListCheck = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .filter("displayName eq 'Operations_Projects'")
+                .select('id')
+                .get();
+
+            if (projListCheck.value && projListCheck.value.length > 0) {
+                console.log(`🗑️ [Setup] Deleting existing Operations_Projects list (${projListCheck.value[0].id})...`);
+                await this.client.api(`/sites/${this.siteId}/lists/${projListCheck.value[0].id}`).delete();
+            }
+
+            // 3. Create List
+            console.log('📝 [Setup] Creating Operations_Projects...');
+            await this.createProjectsList(krasListId);
+            console.log('✅ [Setup] Operations_Projects created');
+
+            return { success: true, message: 'Operations_Projects list recreated successfully.' };
+
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to recreate Projects list:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
     /**
      * Create Organizational Documents List Setup (Dedicated)
      */
@@ -956,14 +999,16 @@ export class SharePointListSetupService {
             .post({
                 displayName: 'Operations_Projects',
                 columns: [
-                    { name: 'Manager', personOrGroup: {} },
+                    { name: 'Manager', text: {} },
+                    { name: 'Assignees', text: { allowMultipleLines: true } },
                     { name: 'Department', text: {} },
                     { name: 'Description', text: { allowMultipleLines: true } },
-                    { name: 'Status', choice: { choices: ['Planned', 'In Progress', 'Completed'] } },
+                    { name: 'Status', choice: { choices: ['Planned', 'In Progress', 'Completed', 'On Hold'] } },
                     { name: 'StartDate', dateTime: { format: 'dateOnly' } },
                     { name: 'EndDate', dateTime: { format: 'dateOnly' } },
                     { name: 'Budget', currency: { locale: 'en-AU' } },
                     { name: 'BudgetSpent', currency: { locale: 'en-AU' } },
+                    { name: 'Progress', number: { minimum: 0, maximum: 100 } },
                     { name: 'RisksJSON', text: { allowMultipleLines: true } }
                 ],
                 list: { template: 'genericList' }
@@ -2357,6 +2402,114 @@ export class SharePointListSetupService {
         }
     }
 
+    async seedProjectsData(): Promise<{ success: boolean; message: string }> {
+        try {
+            console.log('🌱 [Seeding] Starting Projects seeding...');
+            const listCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Operations_Projects'").select('id').get();
+            if (!listCheck.value || listCheck.value.length === 0) {
+                return { success: false, message: 'Operations_Projects list not found' };
+            }
+            const listId = listCheck.value[0].id;
+
+            let count = 0;
+            for (const project of mockProjects) {
+                const payload = {
+                    fields: {
+                        Title: project.name,
+                        Description: project.description,
+                        Status: project.status === 'in-progress' ? 'In Progress' :
+                            project.status === 'completed' ? 'Completed' :
+                                project.status === 'on-hold' ? 'On Hold' : 'Planned',
+                        StartDate: project.startDate ? new Date(project.startDate).toISOString() : null,
+                        EndDate: project.endDate ? new Date(project.endDate).toISOString() : null,
+                        Budget: project.budget,
+                        BudgetSpent: project.budgetSpent,
+                        Progress: project.progress,
+                        Manager: project.manager || 'Unassigned', // Text field now
+                        Assignees: project.assignees ? JSON.stringify(project.assignees) : '[]',
+                        Department: project.unit_id || 'General',
+                        RisksJSON: '[]'
+                    }
+                };
+
+                await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(payload);
+                count++;
+            }
+
+            return { success: true, message: `Successfully seeded ${count} projects` };
+        } catch (error: any) {
+            console.error('Failed to seed projects:', error);
+            return { success: false, message: error.message };
+        }
+    }
+    async createEmployeeProfilesList(): Promise<{ success: boolean; message: string }> {
+        console.log('🚀 [Setup] Creating Employee_Profiles list...');
+        try {
+            // Check if list exists
+            const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Employee_Profiles'").get();
+            if (check.value && check.value.length > 0) {
+                return { success: false, message: 'Employee_Profiles list already exists' };
+            }
+
+            // Create list
+            const list = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .post({
+                    displayName: 'Employee_Profiles',
+                    description: 'Employee profile images and metadata',
+                    columns: [
+                        {
+                            name: 'ProfilePhoto',
+                            thumbnail: {}
+                        },
+                        {
+                            name: 'ModalPhoto',
+                            thumbnail: {}
+                        },
+                        {
+                            name: 'Designation',
+                            text: {}
+                        },
+                        {
+                            name: 'Department',
+                            text: {}
+                        }
+                    ],
+                    list: { template: 'genericList' }
+                });
+
+            console.log('✅ [Setup] Employee_Profiles list created');
+
+            // Populate list
+            await this.populateEmployeeProfiles(list.id);
+
+            return { success: true, message: 'Employee_Profiles list created and populated' };
+
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to create Employee_Profiles list:', error);
+            return { success: false, message: error.message };
+        }
+    }
+
+    private async populateEmployeeProfiles(listId: string) {
+        console.log('📝 [Setup] Populating Employee_Profiles...');
+        try {
+            for (const employee of initialEmployeeData) {
+                await this.client
+                    .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                    .post({
+                        fields: {
+                            Title: employee.mail, // Email as Title for lookup
+                            Designation: employee.jobTitle,
+                            Department: employee.department
+                        }
+                    });
+            }
+            console.log(`✅ [Setup] Populated ${initialEmployeeData.length} employee records`);
+        } catch (error) {
+            console.error('⚠️ [Setup] Failed to populate employee data:', error);
+        }
+    }
 }
 
 // ==========================================

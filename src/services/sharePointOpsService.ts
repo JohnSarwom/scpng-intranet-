@@ -914,6 +914,8 @@ export class SharePointOpsService {
                 Budget: project.budget || 0,
                 BudgetSpent: project.budgetSpent || 0,
                 RisksJSON: JSON.stringify(project.risks || []),
+                Manager: project.manager,
+                Assignees: project.assignees ? JSON.stringify(project.assignees) : undefined,
             }
         };
 
@@ -939,7 +941,7 @@ export class SharePointOpsService {
             status: (f.Status?.toLowerCase() as any) || 'planned',
             startDate: f.StartDate ? new Date(f.StartDate) : new Date(),
             endDate: f.EndDate ? new Date(f.EndDate) : new Date(),
-            manager: f.ManagerLookupId || 'Unassigned',
+            manager: f.Manager || 'Unassigned',
             budget: f.Budget || 0,
             budgetSpent: f.BudgetSpent || 0,
             progress: 0,
@@ -947,7 +949,8 @@ export class SharePointOpsService {
             tasks: [],
             unit_id: f.Department,
             isCustomGroup: isCustomGroup,
-            authorEmail: item.createdBy?.user?.email || item.lastModifiedBy?.user?.email
+            authorEmail: item.createdBy?.user?.email || item.lastModifiedBy?.user?.email,
+            assignees: this.parseAssignees(f.Assignees)
             // Removed kra_id as it does not exist on Project type
         };
     }
