@@ -1,8 +1,12 @@
 import React from 'react';
 
-const LocalStorageFallbackNotice: React.FC = () => {
+interface LocalStorageFallbackNoticeProps {
+  onSwitch?: () => void;
+}
+
+const LocalStorageFallbackNotice: React.FC<LocalStorageFallbackNoticeProps> = ({ onSwitch }) => {
   return (
-    <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+    <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6 flex justify-between items-center">
       <div className="flex">
         <div className="flex-shrink-0">
           <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -16,6 +20,14 @@ const LocalStorageFallbackNotice: React.FC = () => {
           </p>
         </div>
       </div>
+      {onSwitch && (
+        <button
+          onClick={onSwitch}
+          className="text-sm font-medium text-blue-700 hover:text-blue-900 underline ml-4 whitespace-nowrap"
+        >
+          Switch to OneDrive
+        </button>
+      )}
     </div>
   );
 };

@@ -29,6 +29,7 @@ interface KraFormSectionProps {
   units?: { id: string | number; name: string }[]; // Now expects { id: "Dept Name", name: "Dept Name" }
   existingKraTitles?: string[]; // Add prop for existing titles
   isAddingNew: boolean; // Add prop to know if we are adding a new KRA
+  container?: HTMLElement | null;
 }
 
 // Simple MultiSelectChip component placeholder for Assignees
@@ -44,6 +45,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
   units = [], // Receives derived department list
   existingKraTitles = [], // Accept prop
   isAddingNew, // Destructure the new prop
+  container,
 }) => {
 
   const { user } = useSupabaseAuth(); // Corrected auth hook usage
@@ -100,7 +102,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" container={container}>
             <Command
               // Filter based on typed value, but allow typing new values
               filter={(value, search) => {
@@ -158,7 +160,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             <SelectTrigger id="kra-objective">
               <SelectValue placeholder="Select an objective" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent container={container}>
               {objectives.length > 0 ? (
                 objectives.map((obj) => (
                   <SelectItem key={obj.id} value={obj.id.toString()}>{obj.title}</SelectItem>
@@ -202,6 +204,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             }}
             mode="single"
             placeholder="Select Owner..."
+            container={container}
           />
         </div>
 
@@ -218,7 +221,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             <SelectTrigger id="kra-unit">
               <SelectValue placeholder="Select a unit/department" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent container={container}>
               {(() => {
                 // Combine existing units with the current value if it's unique
                 const currentUnit = formData.unit;
@@ -263,6 +266,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           }}
           mode="multiple"
           placeholder="Select Assignees..."
+          container={container}
         />
       </div>
 

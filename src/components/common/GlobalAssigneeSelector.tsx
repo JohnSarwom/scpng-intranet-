@@ -48,6 +48,22 @@ interface GlobalAssigneeSelectorProps {
      * Class name for the trigger button
      */
     className?: string;
+
+    /**
+     * Optional custom trigger element
+     */
+    children?: React.ReactNode;
+
+    /**
+     * Whether to hide the selected badges list (useful when children provide the visualization)
+     * @default false
+     */
+    hideSelectedBadges?: boolean;
+
+    /**
+     * Optional container to render the popover in (useful for full-screen mode)
+     */
+    container?: HTMLElement | null;
 }
 
 export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
@@ -55,7 +71,10 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
     onChange,
     mode = 'single',
     placeholder = "Select Staff...",
-    className
+    className,
+    children,
+    hideSelectedBadges = false,
+    container
 }) => {
     const [open, setOpen] = useState(false);
     const { employees, isLoading, isInitialized } = useEmployees();
@@ -97,7 +116,7 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
           Let's follow the standard badge approach for multi-select.
       */}
 
-            {mode === 'multiple' && selected.length > 0 && (
+            {mode === 'multiple' && selected.length > 0 && !hideSelectedBadges && (
                 <div className="flex flex-wrap gap-1 mb-1">
                     {selected.map(emp => (
                         <Badge key={emp.id} variant="secondary" className="pl-1 pr-1 py-0.5 h-6 flex items-center gap-1">
@@ -119,26 +138,30 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
 
             <Popover open={open} onOpenChange={setOpen} modal={true}>
                 <PopoverTrigger asChild>
-                    <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className={cn("w-full justify-between font-normal text-left", className)}
-                    >
-                        {mode === 'single' ? (
-                            selected.length > 0 ? selected[0].displayName : placeholder
-                        ) : (
-                            selected.length > 0 ? `${selected.length} selected` : placeholder
-                        )}
+                    {children ? (
+                        children
+                    ) : (
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={open}
+                            className={cn("w-full justify-between font-normal text-left", className)}
+                        >
+                            {mode === 'single' ? (
+                                selected.length > 0 ? selected[0].displayName : placeholder
+                            ) : (
+                                selected.length > 0 ? `${selected.length} selected` : placeholder
+                            )}
 
-                        {isLoading ? (
-                            <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
-                        ) : (
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        )}
-                    </Button>
+                            {isLoading ? (
+                                <Loader2 className="ml-2 h-4 w-4 animate-spin opacity-50" />
+                            ) : (
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            )}
+                        </Button>
+                    )}
                 </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0" align="start">
+                <PopoverContent className="w-[300px] p-0" align="start" container={container}>
                     <Command>
                         <CommandInput placeholder="Search staff..." />
                         <CommandList className="max-h-[300px] overflow-y-auto">

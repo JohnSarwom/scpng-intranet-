@@ -79,7 +79,6 @@ import { useGraphProfile } from '@/hooks/useGraphProfile';
 // Import tab components
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { TasksTab, Bucket } from '@/components/unit-tabs/TasksTab';
-import { GroupTemplateDialog } from '@/components/unit-tabs/GroupTemplateDialog';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
 import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
@@ -209,6 +208,7 @@ const Unit = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [taskBuckets, setTaskBuckets] = useState<Bucket[]>([]);
+  const [defaultGroupId, setDefaultGroupId] = useState<string | null>(null);
 
 
 
@@ -353,8 +353,13 @@ const Unit = () => {
   }, [kpiState, canEditStrategy]);
 
   // Create/Task Handlers
-  const handleCreateTask = () => {
+  const handleCreateTask = (groupId?: string) => {
     setEditingTask(null);
+    if (groupId) {
+      setDefaultGroupId(groupId);
+    } else {
+      setDefaultGroupId(null);
+    }
     setIsDialogOpen(true);
   };
 
@@ -486,12 +491,16 @@ const Unit = () => {
 
     return kras.map((kra): Kra => {
       const kpisForKra: Kpi[] = kpisByKraId[kra.id] || [];
+      // Find the objective for this KRA
+      const objective = objectivesData.find(o => String(o.id) === String(kra.objective_id));
+
       return {
         ...kra,
         unitKpis: kpisForKra,
+        unitObjectives: objective // Attach the full objective object to fix 'Unknown Objective' in charts
       };
     });
-  }, [kraState.data, kpiState.data]);
+  }, [kraState.data, kpiState.data, objectivesData]);
 
   // --- Combine KRAs and KPIs for Overview ---
   const combinedKrasForOverview = useMemo(() => {
@@ -578,7 +587,7 @@ const Unit = () => {
             t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()))
         );
 
-        if (isCreator || isAdmin || hasAssignedTask) {
+        if (isCreator || isAdmin) {
           return true;
         }
 
@@ -618,6 +627,18 @@ const Unit = () => {
       const isAssignedOrphan = !t.projectId &&
         (t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()) ||
           t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase());
+
+      // 🔒 SHARED GROUP FIX:
+      // A task is only "Shared" if it is assigned to me BUT NOT created by me.
+      // If I created it, it should stay in my view as just "Uncategorized" or "To Do",
+      // not trigger a special "Shared Projects" group.
+      const isCreatedByMe = t.createdByEmail?.toLowerCase() === userContext.email?.toLowerCase() ||
+        t.authorEmail?.toLowerCase() === userContext.email?.toLowerCase();
+
+      // If I created it, it is NOT an orphan for the purpose of "Shared Projects"
+      if (isCreatedByMe) {
+        return false;
+      }
 
       const isOrphaned = hasOrphanedProject || isCrossUnit || isAssignedOrphan;
 
@@ -796,11 +817,13 @@ const Unit = () => {
                     <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('list')} title="List View"><List className="h-4 w-4" /></Button>
                   </div>
 
-                  <Button size="sm" onClick={handleCreateTask}>
-                    <Plus className="mr-2 h-3.5 w-3.5" /> Task
+                  <Button size="sm" onClick={() => handleCreateTask()} disabled={isDataLoading}>
+                    {isDataLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-2 h-3.5 w-3.5" />}
+                    Task
                   </Button>
                 </div>
               )}
+
             </div>
           </div>
 
@@ -853,7 +876,15 @@ const Unit = () => {
                   setIsDialogOpen={setIsDialogOpen}
                   onRenameGroup={handleRenameGroup}
                   viewMode={viewMode}
+                  setViewMode={setViewMode}
                   currentUnit={userContext?.unit}
+                  setPreselectedGroup={setDefaultGroupId}
+                  preselectedGroup={defaultGroupId}
+                  isDialogOpen={isDialogOpen}
+                  editingTask={editingTask}
+                  currentUserEmail={userContext?.email}
+                  kras={combinedKrasForTabs}
+                  kpis={kpiState.data || []}
                 />
               )}
             </div>
@@ -912,16 +943,7 @@ const Unit = () => {
           </TabsContent>
         </Tabs>
       )}
-      <TaskDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        onSubmit={handleTaskSubmit}
-        initialData={editingTask}
-        staffMembers={staffMembers}
-        buckets={visibleBuckets}
-        kras={combinedKrasForTabs}
-        kpis={kpiState.data}
-      />
+
 
 
     </PageLayout>

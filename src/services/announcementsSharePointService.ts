@@ -78,16 +78,52 @@ export class AnnouncementsSharePointService {
         .get();
 
       if (lists.value.length === 0) {
-        throw new Error(
-          `Announcements list '${LIST_NAME}' not found. Please create it in SharePoint first.`
-        );
+        console.log(`Announcements list '${LIST_NAME}' not found. Creating it...`);
+        const newList = await this.createAnnouncementsList();
+        this.listId = newList.id;
+        console.log(`✅ Announcements list created with ID: ${this.listId}`);
+      } else {
+        this.listId = lists.value[0].id;
       }
-
-      this.listId = lists.value[0].id;
     } catch (error) {
       console.error("Error initializing announcements service:", error);
       throw error;
     }
+  }
+
+  private async createAnnouncementsList() {
+    return await this.client
+      .api(`/sites/${this.siteId}/lists`)
+      .post({
+        displayName: LIST_NAME,
+        columns: [
+          {
+            name: 'Content',
+            text: { allowMultipleLines: true }
+          },
+          {
+            name: 'Category',
+            choice: {
+              choices: ['Announcement', 'Event', 'Update', 'Alert']
+            }
+          },
+          {
+            name: 'IsPinned',
+            boolean: {}
+          },
+          {
+            name: 'ExpiryDate',
+            dateTime: {}
+          },
+          {
+            name: 'SourceEmail',
+            text: {}
+          }
+        ],
+        list: {
+          template: 'genericList'
+        }
+      });
   }
 
   async getAnnouncements(): Promise<IAnnouncement[]> {

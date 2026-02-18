@@ -7,6 +7,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useNoticeBoard } from '@/hooks/useNoticeBoard';
 import { IAnnouncement } from '@/types';
+import DOMPurify from 'dompurify';
 
 const NewsCarousel: React.FC = () => {
   const newsImages = [
@@ -49,21 +50,68 @@ const NoticeBoard = () => {
   const getCategoryDetails = (category: IAnnouncement['category']) => {
     switch (category) {
       case 'Announcement':
-        return { color: 'bg-blue-500', icon: <Bell size={14} /> };
+        return { color: 'bg-intranet-primary', icon: <Bell size={14} /> };
       case 'Event':
-        return { color: 'bg-green-500', icon: <Calendar size={14} /> };
+        return { color: 'bg-intranet-primary', icon: <Calendar size={14} /> };
       case 'Update':
-        return { color: 'bg-yellow-500', icon: <ExternalLink size={14} /> };
+        return { color: 'bg-intranet-primary', icon: <ExternalLink size={14} /> };
       case 'Alert':
-        return { color: 'bg-red-500', icon: <Bell size={14} /> };
+        return { color: 'bg-intranet-primary', icon: <Bell size={14} /> };
       default:
-        return { color: 'bg-gray-500', icon: <Bell size={14} /> };
+        return { color: 'bg-intranet-primary', icon: <Bell size={14} /> };
     }
   };
 
   // Format date
   const formatDate = (date: Date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Helper to remove common email signatures
+  const stripSignature = (content: string) => {
+    const signaturePatterns = [
+      /Best(?:<[^>]+>|\s|&nbsp;)+Regards/i,
+      /Kind(?:<[^>]+>|\s|&nbsp;)+Regards/i,
+      /Regards,?/i,
+      /Sincerely,?/i,
+      /Cheers,?/i,
+      /Sent(?:<[^>]+>|\s|&nbsp;)+from(?:<[^>]+>|\s|&nbsp;)+my/i,
+      /Sent(?:<[^>]+>|\s|&nbsp;)+from(?:<[^>]+>|\s|&nbsp;)+Outlook/i,
+      /From:/i,
+      /_{10,}/, // Underscore line separator
+      /This(?:<[^>]+>|\s|&nbsp;)+communication(?:<[^>]+>|\s|&nbsp;)+contains(?:<[^>]+>|\s|&nbsp;)+information/i // Common disclaimer start
+    ];
+
+    // Find the first occurrence of any signature pattern
+    let cutoffIndex = content.length;
+
+    for (const pattern of signaturePatterns) {
+      const match = content.match(pattern);
+      if (match && match.index !== undefined && match.index < cutoffIndex) {
+        cutoffIndex = match.index;
+      }
+    }
+
+    if (cutoffIndex !== content.length) {
+      // Trim any trailing whitespace/newlines before the cutoff to clean it up
+      return content.substring(0, cutoffIndex).trim();
+    }
+    return content;
+  };
+
+  // Helper to sanitize HTML content
+  const sanitizeContent = (content: string) => {
+    // 1. First Strip Signature (from raw HTML)
+    const cleanContent = stripSignature(content);
+
+    // 2. Then Extract Body if present
+    const bodyMatch = cleanContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+    const contentToSanitize = bodyMatch ? bodyMatch[1] : cleanContent;
+
+    return DOMPurify.sanitize(contentToSanitize, {
+      USE_PROFILES: { html: true },
+      ADD_ATTR: ['target', 'class', 'style'],
+    });
   };
 
   return (
@@ -109,7 +157,10 @@ const NoticeBoard = () => {
                     {getCategoryDetails(notice.category).icon}
                   </Badge>
                 </div>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mb-1 line-clamp-2">{notice.content}</p>
+                <div
+                  className="text-xs text-gray-600 dark:text-gray-300 mb-1 line-clamp-2 prose dark:prose-invert max-w-none [&_*]:inline"
+                  dangerouslySetInnerHTML={{ __html: sanitizeContent(notice.content) }}
+                />
                 <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(notice.createdDate)}</div>
               </div>
             ))}
@@ -142,9 +193,12 @@ const NoticeBoard = () => {
           </DialogHeader>
 
           <div className="mt-4 max-h-[60vh] overflow-y-auto pr-2">
-            <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed break-words">
-              {selectedNotice?.content}
-            </div>
+            <div
+              className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed break-words prose dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: selectedNotice ? sanitizeContent(selectedNotice.content) : ''
+              }}
+            />
 
             {selectedNotice?.sourceEmail && (
               <div className="mt-6 pt-4 border-t text-xs text-gray-500">

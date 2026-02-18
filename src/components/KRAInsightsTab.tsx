@@ -1,6 +1,15 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { Kra, Kpi, User } from '@/types/kpi';
 import {
@@ -117,12 +126,20 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
     const statusCounts: Record<string, number> = {};
     activeKpis.forEach(kpi => {
       if (kpi?.status) {
-        statusCounts[kpi.status] = (statusCounts[kpi.status] || 0) + 1;
+        // Normalize status to match statusColors keys (Title Case)
+        const normalizedStatus = kpi.status
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+
+        statusCounts[normalizedStatus] = (statusCounts[normalizedStatus] || 0) + 1;
       }
     });
+
+    // Sort logic to match the order in modals if possible, or just value desc
     return Object.entries(statusCounts)
       .map(([name, value]) => ({ name, value }))
-      .filter(d => d.value > 0);
+      .sort((a, b) => b.value - a.value);
   }, [activeKpis]);
 
   // Completion Trend (Last 6 Months)
@@ -215,11 +232,17 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
     if (active && payload && payload.length) {
       return (
         <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
-          <p className="font-medium mb-1">{label || payload[0].name}</p>
-          <p className="text-muted-foreground">
-            <span style={{ color: payload[0].payload?.fill || payload[0].color }}>■</span> {payload[0].name}:
-            <span className="font-bold ml-1">{payload[0].value}{unit || ''}</span>
-          </p>
+          <p className="font-medium mb-1 border-b pb-1">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-muted-foreground flex items-center gap-2">
+              <span
+                className="w-2 h-2 rounded-full inline-block"
+                style={{ backgroundColor: entry.color || entry.fill }}
+              />
+              <span>{entry.name}:</span>
+              <span className="font-bold ml-auto">{entry.value}{unit || ''}</span>
+            </p>
+          ))}
         </div>
       );
     }
@@ -230,193 +253,382 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
     <div className="space-y-6 mt-4">
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>{scopeLabel} KRA Status Overview</CardTitle>
-            <CardDescription>Status distribution of KRAs ({scopeLabel.toLowerCase()})</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {kraStatusData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Pie
-                      data={kraStatusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={80}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      cornerRadius={10}
-                      dataKey="value"
-                      labelLine={false}
-                      stroke="none"
-                    >
-                      {kraStatusData.map((entry) => (
-                        <Cell key={`cell-kra-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
-                      ))}
-                    </Pie>
-                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
-                      <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold" fill={themeColors.foreground}>
-                        {kraCompletionRate}%
-                      </tspan>
-                      <tspan x="50%" dy="1.5em" fontSize="12" fill={themeColors.neutral}>
-                        Completed
-                      </tspan>
-                    </text>
-                    <Legend
-                      verticalAlign="bottom"
-                      height={36}
-                      iconType="circle"
-                      formatter={(value, entry) => <span style={{ color: themeColors.foreground }}>{value}</span>}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                  <p className="text-muted-foreground">No KRAs found in {scopeLabel} view.</p>
-                  {viewScope === 'my' && (
-                    <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
-                      View Organization Stats
-                    </Button>
-                  )}
+        <Dialog>
+          <Card className="group relative">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle>{scopeLabel} KRA Status Overview</CardTitle>
+                  <CardDescription>Status distribution of KRAs ({scopeLabel.toLowerCase()})</CardDescription>
                 </div>
-              )}
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                {kraStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Tooltip content={<CustomTooltip />} />
+                      <Pie
+                        data={kraStatusData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={80}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        cornerRadius={10}
+                        dataKey="value"
+                        labelLine={false}
+                        stroke="none"
+                      >
+                        {kraStatusData.map((entry) => (
+                          <Cell key={`cell-kra-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
+                        ))}
+                      </Pie>
+                      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
+                        <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold" fill={themeColors.foreground}>
+                          {kraCompletionRate}%
+                        </tspan>
+                        <tspan x="50%" dy="1.5em" fontSize="12" fill={themeColors.neutral}>
+                          Completed
+                        </tspan>
+                      </text>
+                      <Legend
+                        verticalAlign="bottom"
+                        height={36}
+                        iconType="circle"
+                        formatter={(value, entry) => <span style={{ color: themeColors.foreground }}>{value}</span>}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
+                    <p className="text-muted-foreground">No KRAs found in {scopeLabel} view.</p>
+                    {viewScope === 'my' && (
+                      <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
+                        View Organization Stats
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About KRA Status</DialogTitle>
+              <DialogDescription>
+                Overview of Key Result Areas status
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>This chart provides a high-level view of how KRAs are progressing:</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#83002A]"></div>
+                  <span><strong>Completed:</strong> All KPIs within the KRA are finished.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#10b981]"></div>
+                  <span><strong>On Track:</strong> Moving forward according to plan.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#3b82f6]"></div>
+                  <span><strong>In Progress:</strong> Active but may need monitoring.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#ef4444]"></div>
+                  <span><strong>Behind:</strong> Issues detected that may affect the KRA outcome.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#ff6b6b]"></div>
+                  <span><strong>At Risk:</strong> Significant issues needing immediate attention.</span>
+                </div>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Helps identify which areas need support and which are performing well.</li>
+                <li><strong>Trend:</strong> A high percentage of 'On Track' or 'Completed' indicates successful execution, while 'At Risk' suggests potential blockers.</li>
+              </ul>
+              <div className="mt-4 pt-4 border-t">
+                <p className="font-medium">Center Metric</p>
+                <p className="text-muted-foreground">The percentage in the center represents the overall completion rate of KRAs.</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>{scopeLabel} KPI Status</CardTitle>
-            <CardDescription>Status distribution of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {kpiStatusData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="vertical"
-                    data={kpiStatusData}
-                    margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
-                    barGap={4}
-                    barSize={12}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={themeColors.neutral} strokeOpacity={0.3} />
-                    <XAxis type="number" allowDecimals={false} stroke={themeColors.neutral} fontSize={12} />
-                    <YAxis type="category" dataKey="name" width={80} stroke={themeColors.neutral} fontSize={12} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey="value" name="KPIs" radius={[0, 8, 8, 0]}>
-                      {kpiStatusData.map((entry) => (
-                        <Cell key={`cell-kpi-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
-                      ))}
-                      <LabelList dataKey="value" position="right" fontSize={11} fill={themeColors.foreground} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                  <p className="text-muted-foreground">No KPIs found in {scopeLabel} view.</p>
-                  {viewScope === 'my' && (
-                    <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
-                      View Organization Stats
-                    </Button>
-                  )}
+        <Dialog>
+          <Card className="group relative">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle>{scopeLabel} KPI Status</CardTitle>
+                  <CardDescription>Status distribution of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
                 </div>
-              )}
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                {kpiStatusData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={kpiStatusData}
+                      margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+                      barGap={4}
+                      barSize={12}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={themeColors.neutral} strokeOpacity={0.3} />
+                      <XAxis type="number" allowDecimals={false} stroke={themeColors.neutral} fontSize={12} />
+                      <YAxis type="category" dataKey="name" width={80} stroke={themeColors.neutral} fontSize={12} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                      <Bar dataKey="value" name="KPIs" radius={[0, 8, 8, 0]}>
+                        {kpiStatusData.map((entry) => (
+                          <Cell key={`cell-kpi-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
+                        ))}
+                        <LabelList dataKey="value" position="right" fontSize={11} fill={themeColors.foreground} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
+                    <p className="text-muted-foreground">No KPIs found in {scopeLabel} view.</p>
+                    {viewScope === 'my' && (
+                      <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
+                        View Organization Stats
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About KPI Status</DialogTitle>
+              <DialogDescription>
+                Current status of Key Performance Indicators
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>This chart breaks down KPIs by their current tracking status:</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#83002A]"></div>
+                  <span><strong>Completed:</strong> KPIs that have reached their target.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#10b981]"></div>
+                  <span><strong>On Track:</strong> Progressing as expected towards the deadline.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#3b82f6]"></div>
+                  <span><strong>In Progress:</strong> Active but may need monitoring.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#ef4444]"></div>
+                  <span><strong>Behind:</strong> Falling short of expected progress.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#ff6b6b]"></div>
+                  <span><strong>At Risk:</strong> Significant issues needing immediate attention.</span>
+                </div>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Provides a granular view of performance across all objectives.</li>
+                <li><strong>Trend:</strong> Monitoring the shift of KPIs from 'In Progress' to 'Completed' helps track operational velocity.</li>
+              </ul>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* New insights section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Completion Trend Chart - UPDATED */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>{scopeLabel} Completion Rate (6 Months)</CardTitle>
-            <CardDescription>Average KPI completion rate over the last 6 months</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {completionTrendData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={completionTrendData}
-                    margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorPercentage" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={themeColors.accent} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={themeColors.accent} stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
-                    <Tooltip content={<CustomTooltip unit="%" />} />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="percentage"
-                      name="Completion %"
-                      stroke={themeColors.accent}
-                      fillOpacity={1}
-                      fill="url(#colorPercentage)"
-                      strokeWidth={3}
-                      activeDot={{ r: 6, strokeWidth: 0 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">No trend data available.</div>
-              )}
+        <Dialog>
+          <Card className="group relative">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle>{scopeLabel} Completion Rate (6 Months)</CardTitle>
+                  <CardDescription>Average KPI completion rate over the last 6 months</CardDescription>
+                </div>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                {completionTrendData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={completionTrendData}
+                      margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorPercentage" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={themeColors.accent} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={themeColors.accent} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip unit="%" />} />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="percentage"
+                        name="Completion %"
+                        stroke={themeColors.accent}
+                        fillOpacity={1}
+                        fill="url(#colorPercentage)"
+                        strokeWidth={3}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No trend data available.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About Completion Rate</DialogTitle>
+              <DialogDescription>
+                Historical performance trends
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>
+                This area chart tracks the <strong>average KPI completion rate</strong> over the past 6 months.
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-sm bg-[#ff6b6b]"></div>
+                <span><strong>Completion %:</strong> The upward or downward trend of completed KPIs over time.</span>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Helps ensure consistency in performance delivery.</li>
+                <li><strong>Trend:</strong> An upward trend indicates improving efficiency, while a downward trend may suggest bottlenecks or increasing workload.</li>
+              </ul>
+              <p className="text-muted-foreground pt-2 border-t">
+                Based on target dates of KPIs falling within each month.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
-        {/* KPI Distribution by Objective - UPDATED with Labels */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>KPI Distribution by Objective</CardTitle>
-            <CardDescription>Top objectives by number of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              {kpisByObjective.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={kpisByObjective}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      interval={0}
-                      fontSize={10}
-                      tickLine={false}
-                    />
-                    <YAxis tickLine={false} axisLine={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend />
-                    <Bar dataKey="total" name="Total KPIs" fill={themeColors.neutral} radius={[8, 8, 8, 8]}>
-                      <LabelList dataKey="total" position="top" fontSize={11} fill={themeColors.foreground} />
-                    </Bar>
-                    <Bar dataKey="completed" name="Completed" fill={themeColors.primary} radius={[8, 8, 8, 8]}>
-                      <LabelList dataKey="completed" position="top" fontSize={11} fill={themeColors.foreground} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">No objective data available.</div>
-              )}
+        {/* KPI Distribution by Objective - UPDATED with Info Modal */}
+        <Dialog>
+          <Card className="group relative">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div className="space-y-1">
+                  <CardTitle>KPI Distribution by Objective</CardTitle>
+                  <CardDescription>Top objectives by number of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
+                </div>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                {kpisByObjective.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={kpisByObjective}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        interval={0}
+                        fontSize={11}
+                        tickLine={false}
+                        height={40}
+                        tick={({ x, y, payload }) => (
+                          <g transform={`translate(${x},${y})`}>
+                            <title>{payload.value}</title>
+                            <text
+                              x={0}
+                              y={0}
+                              dy={16}
+                              textAnchor="middle"
+                              fill={themeColors.neutral}
+                              fontSize={11}
+                            >
+                              {payload.value.length > 12 ? `${payload.value.substring(0, 12)}...` : payload.value}
+                            </text>
+                          </g>
+                        )}
+                      />
+                      <YAxis tickLine={false} axisLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend />
+                      <Bar dataKey="total" name="Total KPIs" fill={themeColors.neutral} radius={[8, 8, 8, 8]}>
+                        <LabelList dataKey="total" position="top" fontSize={11} fill={themeColors.foreground} />
+                      </Bar>
+                      <Bar dataKey="completed" name="Completed" fill={themeColors.primary} radius={[8, 8, 8, 8]}>
+                        <LabelList dataKey="completed" position="top" fontSize={11} fill={themeColors.foreground} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-muted-foreground">No objective data available.</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About this Chart</DialogTitle>
+              <DialogDescription>
+                Understanding the KPI Distribution by Objective
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>
+                This chart visualizes the workload distribution across your strategic objectives.
+              </p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-slate-400 rounded-sm"></div>
+                  <span><strong>Grey Bars (Total):</strong> The total number of KPIs linked to a specific objective.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-[#83002A] rounded-sm"></div>
+                  <span><strong>Maroon Bars (Completed):</strong> The count of KPIs that have been marked as completed.</span>
+                </div>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Identifies which objectives are driving the most activity.</li>
+                <li><strong>Trend:</strong> Large gaps between Total and Completed bars may indicate resource constraints or ambitious targeting.</li>
+              </ul>
+              <p className="text-muted-foreground pt-2 border-t">
+                Use this chart to identify which objectives have the most activity and track their completion progress relative to the total workload.
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Priority KPIs Section */}
@@ -468,8 +680,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
             </div>
           )}
         </CardContent>
-      </Card>
-    </div>
+      </Card >
+    </div >
   );
 };
 

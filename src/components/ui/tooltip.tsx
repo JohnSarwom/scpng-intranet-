@@ -11,9 +11,9 @@ const TooltipTrigger = TooltipPrimitive.Trigger
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <TooltipPrimitive.Portal>
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content> & { container?: HTMLElement | null }
+>(({ className, sideOffset = 4, container, ...props }, ref) => (
+  <TooltipPrimitive.Portal container={container || undefined}>
     <TooltipPrimitive.Content
       ref={ref}
       sideOffset={sideOffset}

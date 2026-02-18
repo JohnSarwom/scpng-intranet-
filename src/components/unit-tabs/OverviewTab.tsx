@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Calendar, BarChart2, Target, Clock, Flag,
-  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity
+  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2
 } from 'lucide-react';
 import { KPIPerformanceBar } from '@/components/dashboard/KPIPerformanceBar';
 import { TaskTrendsLine } from '@/components/dashboard/TaskTrendsLine';
@@ -16,7 +17,7 @@ import { TrafficLightCard } from '@/components/dashboard/TrafficLightCard';
 import { calculateTaskTrends, calculateTrafficLightMetrics } from '@/utils/dashboardUtils';
 import { SetupWizard } from '@/components/setup-wizard/SetupWizard';
 import { SetupWizardState as FullSetupWizardState } from '@/hooks/useSetupWizard';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 import { Label } from '@/components/ui/label';
@@ -102,6 +103,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 }) => {
   const [selectedInsight, setSelectedInsight] = useState('overview');
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { strategyData } = useStrategySharePoint();
   const objectives = strategyData?.objectives || [];
 
@@ -205,7 +208,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
 
   // Calculate KPI Statuses
-  const allKpis = kras.flatMap(kra => kra.unitKpis || kra.kpis || []);
+  const allKpis = kras.flatMap(kra => (kra.unitKpis || kra.kpis || []) as any[]);
   const kpiStats = {
     completed: allKpis.filter(k => k.status === 'completed').length,
     onTrack: allKpis.filter(k => k.status === 'on-track').length,
@@ -251,11 +254,11 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
 
   // --- Prepare KRA Chart Data ---
   const kraStatusCounts = {
-    onTrack: kras.filter(k => k.status === 'on-track').length,
-    atRisk: kras.filter(k => k.status === 'at-risk').length,
-    offTrack: kras.filter(k => k.status === 'off-track').length,
-    completed: kras.filter(k => k.status === 'completed' || k.status === 'closed').length, // handle both status sets
-    pending: kras.filter(k => !k.status || k.status === 'pending').length
+    onTrack: kras.filter(k => (k.status as string) === 'on-track').length,
+    atRisk: kras.filter(k => (k.status as string) === 'at-risk').length,
+    offTrack: kras.filter(k => (k.status as string) === 'off-track').length,
+    completed: kras.filter(k => (k.status as string) === 'completed' || (k.status as string) === 'closed').length, // handle both status sets
+    pending: kras.filter(k => !k.status || (k.status as string) === 'pending').length
   };
 
   const kraChartData = [
@@ -286,7 +289,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const handleCreateOneDriveFolder = async (folderName) => {
     try {
       // Check if we have the Microsoft Graph hook available
-      if (!window.msalInstance) {
+      if (!(window as any).msalInstance) {
         toast.error('Microsoft authentication is not available');
         return;
       }
@@ -295,13 +298,13 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       toast.info('Creating OneDrive folder...');
 
       // Get a token
-      const accounts = window.msalInstance.getAllAccounts();
+      const accounts = (window as any).msalInstance.getAllAccounts();
       if (!accounts || accounts.length === 0) {
         toast.error('No Microsoft account found. Please sign in first.');
         return;
       }
 
-      const response = await window.msalInstance.acquireTokenSilent({
+      const response = await (window as any).msalInstance.acquireTokenSilent({
         scopes: ['Files.ReadWrite.All'],
         account: accounts[0]
       });
@@ -347,11 +350,35 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     }
   };
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
   return (
-    <div className="space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-      <div className="flex flex-col space-y-1.5">
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
-        <p className="text-muted-foreground">High-level summary of unit performance and metrics.</p>
+    <div ref={containerRef} className={cn("space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6 transition-all duration-300", isFullScreen ? "bg-background overflow-y-auto h-screen fixed inset-0 z-50 border-0 m-0 rounded-none" : "")}>
+      <div className="flex flex-row items-start justify-between">
+        <div className="flex flex-col space-y-1.5">
+          <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
+          <p className="text-muted-foreground">High-level summary of unit performance and metrics.</p>
+        </div>
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
+          {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
       </div>
       {/* Setup File Button - Removed */}
       {/* <div className="flex justify-end">
@@ -372,167 +399,514 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="space-y-6">
         {/* Stats cards - Expanded to 4 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tasks/Daily Operations</CardTitle>
-              <CheckCircle className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{tasks.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {completedTasks} completed, {inProgressTasks} in progress
-              </p>
-              <Progress className="h-2 mt-2" value={(completedTasks / tasks.length) * 100 || 0} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">KPIs</CardTitle>
-              <Briefcase className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {kras.reduce((acc, kra) => acc + (kra.unitKpis?.length || kra.kpis?.length || 0), 0)}
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Tasks/Daily Operations</CardTitle>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <CheckCircle className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{tasks.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {completedTasks} completed, {inProgressTasks} in progress
+                </p>
+                <Progress className="h-2 mt-2" value={(completedTasks / tasks.length) * 100 || 0} />
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>About Tasks</DialogTitle>
+                <DialogDescription>
+                  Daily operations and task management
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This card shows the total volume of operational tasks currently in the system.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>Progress Bar:</strong> Visualizes the completion rate relative to total tasks.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> High task volume with low completion may indicate bottlenecks.</li>
+                  <li><strong>Trend:</strong> A steady increase in completed tasks shows healthy operational velocity.</li>
+                </ul>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Total KPIs tracked across all KRAs
-              </p>
-              <div className="flex h-2 mt-2 w-full rounded-full overflow-hidden bg-secondary">
-                <div style={{ width: `${(kpiStats.onTrack / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-emerald-500" title="On Track" />
-                <div style={{ width: `${(kpiStats.completed / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-blue-500" title="Completed" />
-                <div style={{ width: `${(kpiStats.atRisk / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-amber-500" title="At Risk" />
-                <div style={{ width: `${(kpiStats.behind / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-rose-500" title="Behind" />
-              </div>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">KRA Progress</CardTitle>
-              <Target className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {Math.round(kras.reduce((acc, kra) => acc + kra.progress, 0) / (kras.length || 1))}%
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">KPIs</CardTitle>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <Briefcase className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {kras.reduce((acc, kra) => acc + (kra.unitKpis?.length || kra.kpis?.length || 0), 0)}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Total KPIs tracked across all KRAs
+                </p>
+                <div className="flex h-2 mt-2 w-full rounded-full overflow-hidden bg-secondary">
+                  <div style={{ width: `${(kpiStats.onTrack / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-emerald-500" title="On Track" />
+                  <div style={{ width: `${(kpiStats.completed / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-blue-500" title="Completed" />
+                  <div style={{ width: `${(kpiStats.atRisk / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-amber-500" title="At Risk" />
+                  <div style={{ width: `${(kpiStats.behind / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-rose-500" title="Behind" />
+                </div>
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md" container={isFullScreen ? containerRef.current : null}>
+              <DialogHeader>
+                <DialogTitle>About KPIs</DialogTitle>
+                <DialogDescription>
+                  Key Performance Indicators summary
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This card aggregates the status of all KPIs associated with your unit's KRAs.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-emerald-500"></div>
+                    <span><strong>Green:</strong> On Track</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                    <span><strong>Blue:</strong> Completed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-amber-500"></div>
+                    <span><strong>Yellow:</strong> At Risk</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-rose-500"></div>
+                    <span><strong>Red:</strong> Behind</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> The colored bar provides an instant visual health check of your performance metrics.</li>
+                  <li><strong>Trend:</strong> A growing green/blue section indicates successful strategy execution.</li>
+                </ul>
               </div>
-              <p className="text-xs text-muted-foreground">
-                {kras.filter(kra => kra.status === 'closed').length} completed
-              </p>
-              <Progress
-                className="h-2 mt-2"
-                value={kras.reduce((acc, kra) => acc + kra.progress, 0) / (kras.length || 1)}
-              />
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Objectives Summary</CardTitle>
-              <Flag className="h-6 w-6 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalObjectives}</div>
-              <p className="text-xs text-muted-foreground">
-                {completedObjectives} completed
-              </p>
-              <Progress
-                className="h-2 mt-2"
-                value={objectiveProgress} // Average progress of objectives
-              />
-            </CardContent>
-          </Card>
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">KRA Progress</CardTitle>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <Target className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {Math.round(kras.reduce((acc, kra) => acc + kra.progress, 0) / (kras.length || 1))}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {kras.filter(kra => kra.status === 'closed').length} completed
+                </p>
+                <Progress
+                  className="h-2 mt-2"
+                  value={kras.reduce((acc, kra) => acc + kra.progress, 0) / (kras.length || 1)}
+                />
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md" container={isFullScreen ? containerRef.current : null}>
+              <DialogHeader>
+                <DialogTitle>About KRA Progress</DialogTitle>
+                <DialogDescription>
+                  Key Result Area performance
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This card tracks the average completion percentage of all assigned KRAs.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>Progress Bar:</strong> Visualizes the average progress across all KRAs.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> A low percentage here suggests that while daily tasks might be moving, strategic goals are lagging.</li>
+                  <li><strong>Trend:</strong> Ensure this metric moves in tandem with your KPI completion rates.</li>
+                </ul>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Objectives Summary</CardTitle>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+                <Flag className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalObjectives}</div>
+                <p className="text-xs text-muted-foreground">
+                  {completedObjectives} completed
+                </p>
+                <Progress
+                  className="h-2 mt-2"
+                  value={objectiveProgress} // Average progress of objectives
+                />
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md" container={isFullScreen ? containerRef.current : null}>
+              <DialogHeader>
+                <DialogTitle>About Objectives</DialogTitle>
+                <DialogDescription>
+                  Strategic Objectives overview
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This card displays the count and progress of high-level strategic objectives.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>Progress Bar:</strong> Visualizes the average progress across all Objectives.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> Objectives are the highest level of goal tracking. Stalled progress here impacts all downstream KRAs and KPIs.</li>
+                  <li><strong>Trend:</strong> Consistent progress indicates good alignment between daily work and strategic vision.</li>
+                </ul>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
 
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Task Completion</CardTitle>
+                    <CardDescription>Overall progress of all tasks</CardDescription>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DialogTrigger>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px] flex flex-col items-center justify-center gap-6">
+                  <TaskCompletionDonut
+                    segments={[
+                      { value: todoTasks, color: '#cbd5e1', label: 'To Do' },
+                      { value: inProgressTasks, color: '#9E3A5D', label: 'In Progress' },
+                      { value: reviewTasks, color: '#83002A', label: 'Review' },
+                      { value: completedTasks, color: '#5C001E', label: 'Done' }
+                    ]}
+                    centerLabel={`${tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%`}
+                    centerSubtext="Completed"
+                    size={200}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>About Task Completion</DialogTitle>
+                <DialogDescription>
+                  Breakdown of task statuses
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This donut chart visualizes the distribution of tasks by their current status.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#cbd5e1]"></div>
+                    <span><strong>To Do:</strong> Not yet started.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#9E3A5D]"></div>
+                    <span><strong>In Progress:</strong> Currently being worked on.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#83002A]"></div>
+                    <span><strong>Review:</strong> Awaiting approval or feedback.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#5C001E]"></div>
+                    <span><strong>Done:</strong> Successfully completed.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> A large 'In Progress' segment suggests good activity, but 'Review' bottlenecks should be monitored.</li>
+                  <li><strong>Trend:</strong> The goal is to maximize the dark maroon 'Done' segment over time.</li>
+                </ul>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Task Groups</CardTitle>
+                    <CardDescription>Active tasks by group</CardDescription>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DialogTrigger>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Using new TaskGroupList component (Horizontal Cards) */}
+                <TaskGroupList data={taskGroupData} />
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>About Task Groups</DialogTitle>
+                <DialogDescription>
+                  Workload by category
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This list shows how your active tasks are distributed across different projects, departments, or custom groups.</p>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> identifies which projects or teams carry the heaviest workload.</li>
+                  <li><strong>Trend:</strong> Balanced distribution ensures no single group is overwhelmed.</li>
+                </ul>
+                <p className="text-muted-foreground pt-2 border-t">
+                  The colored bars indicate the relative volume of tasks in each group.
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <Dialog>
+          <Card className="group relative">
             <CardHeader>
-              <CardTitle>Task Completion</CardTitle>
-              <CardDescription>Overall progress of all tasks</CardDescription>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>Task Trends</CardTitle>
+                  <CardDescription>Tasks completed vs. new tasks over time</CardDescription>
+                </div>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px] flex flex-col items-center justify-center gap-6">
-                <TaskCompletionDonut
-                  segments={[
-                    { value: todoTasks, color: '#cbd5e1', label: 'To Do' },
-                    { value: inProgressTasks, color: '#9E3A5D', label: 'In Progress' },
-                    { value: reviewTasks, color: '#83002A', label: 'Review' },
-                    { value: completedTasks, color: '#5C001E', label: 'Done' }
-                  ]}
-                  centerLabel={`${tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%`}
-                  centerSubtext="Completed"
-                  size={200}
-                />
-
-
+              <div className="h-[300px]">
+                <TaskTrendsLine data={taskTrendData} />
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Groups</CardTitle>
-              <CardDescription>Active tasks by group</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Using new TaskGroupList component (Horizontal Cards) */}
-              <TaskGroupList data={taskGroupData} />
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Task Trends</CardTitle>
-            <CardDescription>Tasks completed vs. new tasks over time</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <TaskTrendsLine data={taskTrendData} />
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About Task Trends</DialogTitle>
+              <DialogDescription>
+                Historical task activity analysis
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>This chart tracks task activity over time, showing the volume of new tasks versus completed tasks.</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-primary" style={{ height: '2px' }}></div>
+                  <span><strong>Line Trend:</strong> Shows the velocity of task completion.</span>
+                </div>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Helps forecast workload and identify productivity peaks or slumps.</li>
+                <li><strong>Trend:</strong> Ideally, the completion rate should match or exceed the rate of new tasks to prevent backlog accumulation.</li>
+              </ul>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
         {/* Duplicated KPI Performance Card - Full Width */}
-        <Card>
-          <CardHeader>
-            <CardTitle>KPI Performance</CardTitle>
-            <CardDescription>Performance distribution of KPIs (Expanded View)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <KPIPerformanceBar data={kpiStatusData} />
+        <Dialog>
+          <Card className="group relative">
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>KPI Performance</CardTitle>
+                  <CardDescription>Performance distribution of KPIs (Expanded View)</CardDescription>
+                </div>
+                <DialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </DialogTrigger>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <KPIPerformanceBar data={kpiStatusData} />
+              </div>
+            </CardContent>
+          </Card>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>About KPI Performance</DialogTitle>
+              <DialogDescription>
+                Detailed KPI status breakdown
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>This bar chart provides a comparative view of KPI statuses across the organization.</p>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#34d399]"></div>
+                  <span><strong>On Track:</strong> Progressing as planned.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#3b82f6]"></div>
+                  <span><strong>Completed:</strong> Goal achieved.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#fbbf24]"></div>
+                  <span><strong>At Risk:</strong> Needs attention.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-sm bg-[#ef4444]"></div>
+                  <span><strong>Behind:</strong> Delayed.</span>
+                </div>
+              </div>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                <li><strong>Analysis:</strong> Compares the volume of successful KPIs against those needing intervention.</li>
+                <li><strong>Trend:</strong> Watch for any increase in the 'At Risk' or 'Behind' bars to take proactive measures.</li>
+              </ul>
             </div>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
         {/* NEW Charts: KRA Status and Objectives Progress */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>KRA Status Distribution</CardTitle>
-              <CardDescription>Overview of KRA health</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <KRAStatusChart data={kraChartData} />
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>KRA Status Distribution</CardTitle>
+                    <CardDescription>Overview of KRA health</CardDescription>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DialogTrigger>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <KRAStatusChart data={kraChartData} />
+                </div>
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>About KRA Status</DialogTitle>
+                <DialogDescription>
+                  Health check of Key Result Areas
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This chart categorizes KRAs based on their overall status.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-[#34d399]"></div>
+                    <span><strong>On Track:</strong> Proceeding nicely.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-[#3b82f6]"></div>
+                    <span><strong>Completed:</strong> Done.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-[#fbbf24]"></div>
+                    <span><strong>At Risk:</strong> Warning signs present.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-[#ef4444]"></div>
+                    <span><strong>Off Track:</strong> Deviated from plan.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> Provides a high-level strategic health check. A healthy dashboard is predominantly blue and green.</li>
+                  <li><strong>Trend:</strong> Use this to identify systemic issues if multiple KRAs go off-track simultaneously.</li>
+                </ul>
               </div>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Top Objectives Progress</CardTitle>
-              <CardDescription>Progress of key objectives</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ObjectivesProgressChart data={objectiveChartData} />
+          <Dialog>
+            <Card className="group relative">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle>Top Objectives Progress</CardTitle>
+                    <CardDescription>Progress of key objectives</CardDescription>
+                  </div>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DialogTrigger>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ObjectivesProgressChart data={objectiveChartData} />
+                </div>
+              </CardContent>
+            </Card>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>About Top Objectives</DialogTitle>
+                <DialogDescription>
+                  Leaderboard of strategic goals
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <p>This chart ranks your top strategic objectives by their completion percentage.</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>Bars:</strong> Represent the percentage of progress towards the objective goal.</span>
+                  </div>
+                </div>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li><strong>Analysis:</strong> Highlights which top-tier goals are nearing completion and which are lagging.</li>
+                  <li><strong>Trend:</strong> Focus resources on objectives consistently appearing at the bottom of this list.</li>
+                </ul>
               </div>
-            </CardContent>
-          </Card>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Task Audit Table - Removed */}

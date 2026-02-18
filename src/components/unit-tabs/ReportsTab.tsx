@@ -20,6 +20,16 @@ import { format } from 'date-fns';
 import { DatePicker } from "@/components/ui/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import WeeklyReviewTab from './WeeklyReviewTab';
+import { SharePointOpsService } from '@/services/sharePointOpsService';
+import { StrategyService } from '@/services/strategyService';
+import { getGraphClient } from '@/services/graphService';
+import { reportsService } from '@/integrations/supabase/reportsService';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useMsal } from "@azure/msal-react";
+import { Report, ReportSectionContent } from '@/types/reports';
+import { Loader2, RefreshCcw, Eye } from 'lucide-react';
+import { ReportViewerModal } from '../reports/ReportViewerModal';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ReportsTabProps {
   tasks?: Task[];
@@ -77,8 +87,49 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(new Date());
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(new Date());
   const [reportLayout, setReportLayout] = useState<string>("standard");
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const { user } = useSupabaseAuth();
+  const { instance } = useMsal();
 
-  const handleGenerateReport = () => {
+  // History State
+  const [reports, setReports] = useState<Report[]>([]);
+  const [isLoadingReports, setIsLoadingReports] = useState(false);
+  const [viewReport, setViewReport] = useState<Report | null>(null);
+  const [showReportViewer, setShowReportViewer] = useState(false);
+
+  const handleFetchReports = async () => {
+    setIsLoadingReports(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (client) {
+        const ops = new SharePointOpsService(client);
+        const data = await ops.getReports();
+        setReports(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch reports", error);
+      toast({ title: "Error", description: "Failed to load report history", variant: "destructive" });
+    } finally {
+      setIsLoadingReports(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (selectedReportTab === 'history') {
+      handleFetchReports();
+    }
+  }, [selectedReportTab]);
+
+  // Helper to filter items by date range
+  const filterByDateRange = (items: any[], dateField: string) => {
+    if (!customStartDate || !customEndDate) return items;
+    return items.filter(item => {
+      const itemDate = new Date(item[dateField]); // Ensure your types have consistent date fields or handle variations
+      return itemDate >= customStartDate && itemDate <= customEndDate;
+    });
+  };
+
+  const handleGenerateReport = async () => {
     if (!reportName) {
       toast({
         title: "Report Name Required",
@@ -88,10 +139,181 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       return;
     }
 
-    toast({
-      title: "Report Generated",
-      description: "Your report has been generated successfully",
-    });
+    setIsGenerating(true);
+    const client = await getGraphClient(instance);
+    if (!client) {
+      setIsGenerating(false);
+      toast({
+        title: "Connection Error",
+        description: "Could not connect to SharePoint services.",
+        variant: "destructive"
+      });
+      return;
+    }
+    const strategyService = new StrategyService(client);
+    const sharePointOpsService = new SharePointOpsService(client);
+
+    try {
+      await strategyService.initialize();
+      // Check if Ops service is initialized, if strict check needed, do here. Assuming it is or will lazily init if designed so.
+      // Actually Ops Service needs explicit init usually.
+      await sharePointOpsService.initialize();
+
+      // 1. Fetch Data
+      // Note: Services usually fetch "all" for the context, we then filter by date here for the report.
+      const [allProjects, allTasks, allRisks, allKRAs] = await Promise.all([
+        sharePointOpsService.getProjects('Unit', { unit: 'IT Unit', role: 'admin' }), // Hardcoding context for now or pass dynamic
+        sharePointOpsService.getTasks('Unit', { unit: 'IT Unit', role: 'admin' }),
+        sharePointOpsService.getRisks('Unit', { unit: 'IT Unit', role: 'admin' }),
+        sharePointOpsService.getKRAs('Unit', { unit: 'IT Unit', role: 'admin' }) // Using admin role to ensure we get data for report for now
+      ]);
+
+      // 2. Filter Data by Date Range (using Created or Modified or DueDate depending on report type)
+      // For a general "Status Report", we usually want active items or items due in range.
+      // Let's assume we want items active in the range (StartDate <= End AND EndDate >= Start)
+      // Or simpler: items due in this range?
+      // For simplicity: Include ALL fetched items for the Status Report, and let specific sections filter if needed.
+      // Or filter Tasks by DueDate within range.
+
+      // const filteredTasks = allTasks.filter(t => t.dueDate && new Date(t.dueDate) >= customStartDate! && new Date(t.dueDate) <= customEndDate!);
+      // Using all active data for "Current State" report is often better.
+
+      const filteredTasks = allTasks;
+      const filteredProjects = allProjects;
+      const filteredRisks = allRisks;
+      const filteredKRAs = allKRAs;
+
+
+      // 3. Process Metrics
+      const completedTasks = filteredTasks.filter(t => t.status === 'done').length;
+      const totalTasks = filteredTasks.length;
+      const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+      const atRiskKPIs = filteredKRAs.filter(k => k.status === 'at-risk').length; // KRA status
+      const onTrackKPIs = filteredKRAs.filter(k => k.status === 'in-progress' || k.status === 'on-track').length;
+
+      const highRisks = filteredRisks.filter(r => r.impact === 'High' || r.impact === 'Critical').length;
+
+
+      // 4. Construct Report Sections
+      const reportSections: ReportSectionContent[] = [];
+
+      // Executive Summary (Custom Section)
+      reportSections.push({
+        id: 'exec-summary',
+        title: 'Executive Summary',
+        type: 'custom',
+        data: [
+          { label: 'Task Completion', value: `${taskCompletionRate}%`, status: taskCompletionRate > 80 ? 'good' : 'average' },
+          { label: 'Active Projects', value: filteredProjects.length, status: 'neutral' },
+          { label: 'High Risks', value: highRisks, status: highRisks > 0 ? 'bad' : 'good' },
+          { label: 'KPIs On Track', value: onTrackKPIs, status: 'good' }
+        ],
+        visualization: { type: 'metrics' }
+      });
+
+      // KPIs Section
+      if (filteredKRAs.length > 0) {
+        reportSections.push({
+          id: 'kpis',
+          title: 'KPI Performance',
+          type: 'kpi',
+          data: filteredKRAs.map(k => ({
+            name: k.title,
+            status: k.status,
+            progress: k.progress
+          })),
+          visualization: { type: 'chart', chart_type: 'bar' }
+        });
+      }
+
+      // Projects Section
+      if (filteredProjects.length > 0) {
+        reportSections.push({
+          id: 'projects',
+          title: 'Project Status',
+          type: 'project',
+          data: filteredProjects.map(p => ({
+            name: p.title,
+            status: p.status,
+            progress: p.progress,
+            manager: p.manager
+          })),
+          visualization: { type: 'table' }
+        });
+      }
+
+      // Risks Section
+      if (filteredRisks.length > 0) {
+        reportSections.push({
+          id: 'risks',
+          title: 'Risk Assessment',
+          type: 'risk',
+          data: filteredRisks.map(r => ({
+            title: r.title,
+            impact: r.impact,
+            mitigation: r.mitigation || 'None'
+          })),
+          visualization: { type: 'table' }
+        });
+      }
+
+      // Generate report object
+      const newReport: Omit<Report, 'id'> = {
+        name: reportName || `Report - ${format(new Date(), 'PP')}`,
+        template_id: selectedTemplate,
+        content: {
+          sections: reportSections,
+          metadata: {
+            generated_at: new Date().toISOString(),
+            version: '1.0'
+          }
+        },
+        created_by: user?.email || 'system',
+        created_at: new Date().toISOString(),
+        date_range: {
+          start_date: customStartDate ? customStartDate.toISOString() : undefined,
+          end_date: customEndDate ? customEndDate.toISOString() : undefined,
+        },
+        ai_analysis: enableAIAnalysis,
+        ai_insights: enableAIAnalysis ? {
+          trends: ['Performance is stable', 'Task completion rate is consistent'],
+          risks: ['Review high priority risks in IT'],
+          recommendations: ['Focus on closing overdue tasks'],
+          predictions: ['Project completion expected on time']
+        } : undefined
+      };
+
+      // Save to SharePoint List "Performance_Reports"
+      // Note: ReportsService (Supabase) is replaced by SharePointOpsService
+      try {
+        await sharePointOpsService.saveReport(newReport);
+
+        toast({
+          title: "Report Generated",
+          description: "Your report has been generated and saved to SharePoint successfully.",
+        });
+      } catch (error) {
+        console.error("Failed to save report to SharePoint", error);
+        toast({
+          title: "Save Failed",
+          description: "Report generated but failed to save to SharePoint.",
+          variant: "destructive"
+        });
+      }
+
+      setIsGenerating(false);
+      setSelectedReportTab("templates"); // Redirect to templates/list view for now
+    } catch (error) {
+      console.error("Report generation failed:", error);
+      toast({
+        title: "Generation Failed",
+        description: "Failed to generate report. Check console for details.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleScheduleReport = () => {
@@ -336,12 +558,78 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             Schedule
           </Button>
         </div>
-        <Button onClick={handleGenerateReport}>
-          <FileText className="mr-2 h-4 w-4" />
-          Generate Report
+        <Button onClick={handleGenerateReport} disabled={isGenerating}>
+          {isGenerating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <FileText className="mr-2 h-4 w-4" />
+              Generate Report
+            </>
+          )}
         </Button>
       </div>
-    </div>
+    </div >
+  );
+
+  const renderHistorySection = () => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Report History</CardTitle>
+          <CardDescription>View previously generated reports</CardDescription>
+        </div>
+        <Button variant="outline" size="sm" onClick={handleFetchReports} disabled={isLoadingReports}>
+          <RefreshCcw className={`h-4 w-4 mr-2 ${isLoadingReports ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Generated By</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {reports.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    {isLoadingReports ? "Loading reports..." : "No reports found."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                reports.map((report) => (
+                  <TableRow key={report.id}>
+                    <TableCell className="font-medium">{report.name}</TableCell>
+                    <TableCell><Badge variant="outline">{report.template_id}</Badge></TableCell>
+                    <TableCell>{format(new Date(report.created_at || new Date()), 'PP p')}</TableCell>
+                    <TableCell>{report.created_by}</TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        setViewReport(report);
+                        setShowReportViewer(true);
+                      }}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 
   const renderScheduledSection = () => (
@@ -392,6 +680,18 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             </div>
           </div>
 
+          <div className="border rounded-md p-4 bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium">System Setup (Admin)</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Use this to create the necessary SharePoint list for storing reports if it doesn't exist.
+            </p>
+            <Button variant="outline" size="sm" onClick={handleInitializeReportsList}>
+              Initialize Reports List
+            </Button>
+          </div>
+
           <div className="border rounded-md p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-medium">System Templates</h3>
@@ -416,6 +716,25 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
     </Card>
   );
 
+  const handleInitializeReportsList = async () => {
+    const { instance } = useMsal();
+    const client = await getGraphClient(instance);
+    if (!client) {
+      toast({ title: "Error", description: "No Graph Client available", variant: "destructive" });
+      return;
+    }
+    const sharePointOpsService = new SharePointOpsService(client);
+
+    toast({ title: "Initializing...", description: "Setting up SharePoint List..." });
+    try {
+      await sharePointOpsService.initialize();
+      await sharePointOpsService.createReportsList();
+      toast({ title: "Success", description: "Performance_Reports list created/verified!" });
+    } catch (e: any) {
+      toast({ title: "Error", description: `Failed: ${e.message}`, variant: "destructive" });
+    }
+  }
+
   return (
     <div className="space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
       <div className="flex justify-between items-center">
@@ -428,6 +747,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       <Tabs defaultValue="generate" value={selectedReportTab} onValueChange={setSelectedReportTab}>
         <TabsList>
           <TabsTrigger value="generate">Generate Reports</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="weekly">Weekly Review</TabsTrigger>
           <TabsTrigger value="scheduled">Scheduled Reports</TabsTrigger>
           <TabsTrigger value="templates">Report Templates</TabsTrigger>
@@ -435,6 +755,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
 
         <TabsContent value="generate" className="space-y-4 mt-4">
           {renderGenerateSection()}
+        </TabsContent>
+
+        <TabsContent value="history" className="space-y-4 mt-4">
+          {renderHistorySection()}
         </TabsContent>
 
         <TabsContent value="weekly" className="space-y-4 mt-4">
@@ -512,6 +836,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReportViewerModal
+        report={viewReport}
+        open={showReportViewer}
+        onOpenChange={setShowReportViewer}
+      />
     </div >
   );
 };

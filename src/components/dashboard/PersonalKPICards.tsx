@@ -78,7 +78,15 @@ const PersonalKPICards: React.FC = () => {
   // -- Efficiency Rate (Using KPIs) --
   // Logic: Average of (Actual / Target * 100) for all KPIs
   const efficiencyMetrics = useMemo(() => {
-    const kpis = kpiState.data || [];
+    // Filter KPIs to only include those linked to active KRAs (avoid orphaned data)
+    const kras = kraState.data || [];
+    const validKraIds = new Set(kras.map(k => String(k.id)));
+
+    // Only count KPIs that are attached to a KRA that exists in our current view
+    const kpis = (kpiState.data || []).filter(k =>
+      k.kra_id && validKraIds.has(String(k.kra_id))
+    );
+
     if (kpis.length === 0) return { rate: 0, trend: 0 };
 
     let totalEfficiency = 0;
@@ -89,13 +97,13 @@ const PersonalKPICards: React.FC = () => {
       const target = Number(kpi.target) || 0;
 
       if (target > 0) {
-        // Cap at 100% or allow over-performance? Usually caps at 100 or 120 for UI. 
-        // Let's cap at 100 for "Efficiency" unless requested otherwise, or let it ride. 
-        // For now, raw calculation clamped to reasonable visual range if needed, but let's just do mathematical avg.
+        // Calculate efficiency per KPI
         let efficiency = (actual / target) * 100;
-        // Clamp to 100 max for the card display if preferred, or keep as is. Let's cap at 100 for neatness unless user specified.
-        // User didn't specify cap, but "Efficiency" > 100% is valid. Let's keep it real but maybe cap for the progress bar data if we had one.
-        // For the single number, raw average is fine.
+
+        // Optional: Cap single KPI efficiency to avoid one outlier skewing the whole average too much?
+        // standard is usually uncapped average, or capped at 100.
+        // For now, leaving uncapped as per standard practice unless requested.
+
         totalEfficiency += efficiency;
         validKpiCount++;
       }
@@ -105,7 +113,7 @@ const PersonalKPICards: React.FC = () => {
 
     const rate = Math.round(totalEfficiency / validKpiCount);
     return { rate, trend: 2 };
-  }, [kpiState.data]);
+  }, [kpiState.data, kraState.data]);
 
   // -- KRA Achievement Rate --
   // Logic: Average of 'progress' field on KRAs
@@ -133,7 +141,26 @@ const PersonalKPICards: React.FC = () => {
       })),
       trendType: "increase" as const,
       trendLabel: "vs last month",
-      color: "#83002A"
+      color: "#83002A",
+      info: {
+        title: "Task Completion",
+        description: "Overall task completion rate",
+        content: (
+          <div className="space-y-4">
+            <p>This metric represents the percentage of all assigned tasks that have been marked as 'Completed' or 'Done'.</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#83002A]"></div>
+                <span><strong>Trend Line:</strong> Shows the velocity of task completion over the last 30 days.</span>
+              </div>
+            </div>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li><strong>Analysis:</strong> High completion rates indicate strong productivity and effective workload management.</li>
+              <li><strong>Trend:</strong> An upward trend suggests improving efficiency or recently closed milestones.</li>
+            </ul>
+          </div>
+        )
+      }
     },
     {
       title: "Efficiency Rate",
@@ -145,7 +172,26 @@ const PersonalKPICards: React.FC = () => {
       })),
       trendType: "increase" as const,
       trendLabel: "vs last quarter",
-      color: "#5C001E"
+      color: "#5C001E",
+      info: {
+        title: "Efficiency Rate",
+        description: "Performance against KPI targets",
+        content: (
+          <div className="space-y-4">
+            <p>This metric calculates the average achievement percentage of your Key Performance Indicators (KPIs).</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#5C001E]"></div>
+                <span><strong>Line Trend:</strong> Visualizes performance consistency over time.</span>
+              </div>
+            </div>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li><strong>Analysis:</strong> Measures effectiveness in meeting specific targets, distinct from volume.</li>
+              <li><strong>Trend:</strong> Scores consistently above 100% indicate high performance or potentially understated targets.</li>
+            </ul>
+          </div>
+        )
+      }
     },
     {
       title: "KRA Achievement", // Changed to match user request "Career Achievement" -> wait, user map said "KRA Achievement". "Career Achievement" was in prompt 00:13 but 00:27 clarify "KRA Achievement". Sticking to KRA.
@@ -157,7 +203,26 @@ const PersonalKPICards: React.FC = () => {
       })),
       trendType: "increase" as const,
       trendLabel: "vs last quarter",
-      color: "#83002A"
+      color: "#83002A",
+      info: {
+        title: "KRA Achievement",
+        description: "Quarterly progress on key result areas",
+        content: (
+          <div className="space-y-4">
+            <p>This metric tracks the average completion percentage across all assigned Key Result Areas (KRAs).</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#83002A]"></div>
+                <span><strong>Line Trend:</strong> Shows progress velocity over time.</span>
+              </div>
+            </div>
+            <ul className="list-disc pl-5 space-y-1 mt-2">
+              <li><strong>Analysis:</strong> Indicates strategic alignment and long-term goal success.</li>
+              <li><strong>Trend:</strong> Consistent progress towards 100% by quarter-end is the target.</li>
+            </ul>
+          </div>
+        )
+      }
     }
   ];
 

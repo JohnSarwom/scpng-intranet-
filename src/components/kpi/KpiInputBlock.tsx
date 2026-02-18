@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from 'lucide-react';
+import { Trash2, ListChecks, Calculator } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -16,6 +16,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { StaffMember } from '@/types/staff';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
+import ChecklistSection, { ChecklistItem } from '@/components/ChecklistSection';
+import { calculateKpiProgress } from '@/utils/kpiUtils';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface KpiInputBlockProps {
   kpiIndex: number;
@@ -25,6 +28,7 @@ interface KpiInputBlockProps {
   isOnlyBlock?: boolean; // Optional: To disable remove on the last block
   users?: User[]; // Add users prop for assignee selection
   staffMembers?: StaffMember[]; // Add staffMembers prop
+  container?: HTMLElement | null;
 }
 
 // --- Assignee Selector Component replaced by GlobalAssigneeSelector ---
@@ -47,7 +51,7 @@ const getQuarter = (dateString: string | undefined): string => {
   }
 };
 
-const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onChange, onRemove, isOnlyBlock, users = [], staffMembers = [] }) => {
+const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onChange, onRemove, isOnlyBlock, users = [], staffMembers = [], container }) => {
   // Use DB format for values, but map to user-friendly labels
   const statusOptions: { value: Kpi['status']; label: string }[] = [
     { value: 'not-started', label: 'Not Started' },
@@ -58,6 +62,42 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
     { value: 'behind', label: 'Behind' },
   ];
   const [calculatedQuarter, setCalculatedQuarter] = useState<string>(() => getQuarter(formData.targetDate));
+
+  // Initialize calculation type if missing
+  useEffect(() => {
+    if (!formData.calculationType) {
+      onChange('calculationType', 'manual');
+    }
+  }, []);
+
+  const handleChecklistChange = (items: ChecklistItem[]) => {
+    onChange('checklist', items);
+
+    // Auto-calculate actual if in checklist mode
+    if (formData.calculationType === 'checklist') {
+      // Create temp KPI object to use utility
+      const tempKpi = { ...formData, checklist: items, calculationType: 'checklist' as const };
+      const progress = calculateKpiProgress(tempKpi);
+      onChange('actual', progress);
+
+      // Also update target to 100 implicitly for checklist items? 
+      // Or keep it user defined? Usually checklist implies 100% completion goal.
+      if (formData.target !== 100) {
+        onChange('target', 100);
+      }
+    }
+  };
+
+  const handleTypeChange = (value: string) => {
+    if (!value) return; // Prevent unselecting
+    onChange('calculationType', value as 'manual' | 'checklist');
+
+    // Reset or Recalculate based on switch
+    if (value === 'checklist') {
+      onChange('target', 100); // Standardize target for checklist
+      handleChecklistChange(formData.checklist || []);
+    }
+  };
 
   // Update quarter when targetDate changes
   useEffect(() => {
@@ -93,30 +133,62 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
           />
         </div>
 
-        {/* Target & Actual (Side by side) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor={`kpi-target-${kpiIndex}`}>Target *</Label>
-            <Input
-              id={`kpi-target-${kpiIndex}`}
-              type="number"
-              value={formData.target ?? ''} // Use nullish coalescing for optional number
-              onChange={(e) => onChange('target', e.target.value ? parseFloat(e.target.value) : undefined)}
-              placeholder="e.g., 95"
-              required
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor={`kpi-actual-${kpiIndex}`}>Actual</Label>
-            <Input
-              id={`kpi-actual-${kpiIndex}`}
-              type="number"
-              value={formData.actual ?? ''} // Use nullish coalescing
-              onChange={(e) => onChange('actual', e.target.value ? parseFloat(e.target.value) : undefined)}
-              placeholder="e.g., 92"
-            />
-          </div>
+        {/* Calculation Method Toggle */}
+        <div className="flex flex-col space-y-2">
+          <Label>Measurement Method</Label>
+          <ToggleGroup
+            type="single"
+            value={formData.calculationType || 'manual'}
+            onValueChange={handleTypeChange}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="manual" aria-label="Manual Calculation" className="gap-2">
+              <Calculator className="h-4 w-4" />
+              Manual Input
+            </ToggleGroupItem>
+            <ToggleGroupItem value="checklist" aria-label="Checklist Calculation" className="gap-2">
+              <ListChecks className="h-4 w-4" />
+              Checklist
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+
+        {/* Target & Actual (Side by side) - Conditional Logic */}
+        {formData.calculationType === 'checklist' ? (
+          <div className="space-y-4 border rounded-md p-4 bg-background">
+            <ChecklistSection
+              items={formData.checklist || []}
+              onChange={handleChecklistChange}
+            />
+            <div className="text-xs text-muted-foreground">
+              * Actual value is automatically calculated based on checklist completion. Target is set to 100%.
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor={`kpi-target-${kpiIndex}`}>Target *</Label>
+              <Input
+                id={`kpi-target-${kpiIndex}`}
+                type="number"
+                value={formData.target ?? ''} // Use nullish coalescing for optional number
+                onChange={(e) => onChange('target', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="e.g., 95"
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor={`kpi-actual-${kpiIndex}`}>Actual</Label>
+              <Input
+                id={`kpi-actual-${kpiIndex}`}
+                type="number"
+                value={formData.actual ?? ''} // Use nullish coalescing
+                onChange={(e) => onChange('actual', e.target.value ? parseFloat(e.target.value) : undefined)}
+                placeholder="e.g., 92"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Cost Associated */}
         <div className="grid gap-1.5">
@@ -172,7 +244,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             <SelectTrigger id={`kpi-status-${kpiIndex}`}>
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent container={container}>
               {statusOptions.map(option => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label} { /* Display user-friendly label */}
@@ -202,6 +274,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             }}
             mode="multiple"
             placeholder="Select Assignees..."
+            container={container}
           />
         </div>
 
@@ -229,7 +302,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
           />
         </div>
       </CardContent>
-    </Card>
+    </Card >
   );
 };
 

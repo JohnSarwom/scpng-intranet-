@@ -23,6 +23,7 @@ interface KpiModalProps {
   existingKraTitles?: string[]; // Add prop for existing titles
   userContext?: { division: string; unit: string; name: string; email: string };
   editingKpi?: { kraId: string; kpi: Partial<Kpi> }; // New prop for single KPI editing
+  container?: HTMLElement | null; // Add container prop
 }
 
 const KpiModal: React.FC<KpiModalProps> = ({
@@ -37,6 +38,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
   existingKraTitles = [], // Add default value
   userContext,
   editingKpi,
+  container,
 }) => {
   // Initialize state based on whether we are editing or adding
   const [formData, setFormData] = useState<Partial<Kra>>({});
@@ -178,7 +180,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col" container={container}>
         <DialogHeader>
           <DialogTitle>{editingKpi ? 'Edit KPI' : (kraData ? 'Edit KRA' : 'Add New KRA')}</DialogTitle>
           <DialogDescription>
@@ -203,6 +205,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   units={units}
                   existingKraTitles={existingKraTitles}
                   isAddingNew={isAddingNew}
+                  container={container}
                 />
                 <Separator />
               </>
@@ -222,6 +225,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   isOnlyBlock={kpiBlocks.length === 1}
                   users={users}
                   staffMembers={staffMembers}
+                  container={container}
                 />
               ))}
               {!editingKpi && (

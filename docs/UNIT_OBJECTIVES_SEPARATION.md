@@ -18,7 +18,7 @@ We moved from a unified/ambiguous objective model to two distinct entities:
     *   **Scope**: Operational execution goals (Departments/Units).
     *   **Goal Type**: 'Unit'.
     *   **Owned By**: Unit Managers / Leads.
-    *   **Source**: `mockStrategyData.unitObjectives`.
+    *   **Source**: `mockStrategyData.unitObjectives` (deprecated fallback).
     *   **Lookup**: Can optionally link back to a parent `Strategic_Objective`.
 
 ### Service Layer Updates
@@ -51,7 +51,22 @@ We added a `createUnitObjectivesList` method that defines the SharePoint schema:
 
 ### Step 3: Frontend Integration (`Unit.tsx` & `useSharePointOps.ts`)
 *   The **Unit Page** (`Unit.tsx`) calls `useSharePointObjectives`.
-*   We modified `useSharePointOps.ts` to fallback to `mockStrategyData.unitObjectives` (instead of Strategic ones) if the live list is empty or fails to load. This ensures that even in a dev/offline environment, the UI displays contextually relevant "Unit" data.
+*   **Update (Feb 2026)**: The mock fallback logic was **removed** from `useSharePointObjectives`.
+    *   **Reason**: The greedy fallback masked actual data issues. If the backend returned 0 items (validly), the UI would show mock data, confusing users who expected to see their specific (but currently defined as 0) objectives.
+    *   **Behavior**: The hook now trusts the service response. If `getObjectives` returns [], the UI shows an empty state, prompting the user to "Add Objective".
+
+### Step 4: Logic Fixes & Context Injection
+To ensure data consistency and visibility, the following logic was reinforced:
+
+*   **Context Injection in `addObjective`**:
+    *   **Problem**: New objectives were being created with a default or missing 'Division', causing them to be immediately filtered out by the `getObjectives` scope filter (which expects a match with the user's division).
+    *   **Fix**: `useSharePointOps.ts` now automatically injects `context.division` as a fallback if the form data doesn't explicitly provide a department.
+    *   **Code**: `await service.addObjective(item, department || context?.division);`
+
+*   **Service-Side Filtering (`SharePointOpsService.ts`)**:
+    *   The service fetches all items to avoid OData indexing limitations with complex filters.
+    *   It then applies an in-memory filter based on `Scope` (Division/Unit/Individual) and `Context` (User's Division/Unit).
+    *   **Debug**: If items are missing, check the server-side logs or enable debug logging in `getObjectives` to see why items are being rejected (e.g., "Division mismatch").
 
 ---
 

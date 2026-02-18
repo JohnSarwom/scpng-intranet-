@@ -57,23 +57,25 @@ interface TaskDialogProps {
   defaultGroup?: string | null; // Default group for new tickets
   staffMembers: StaffMember[];
   kras: Kra[];
+
   kpis: Kpi[];
+  container?: HTMLElement | null;
 }
 
 const DEFAULT_STATUSES = [
-  { id: 'not-started', name: 'Not Started' },
-  { id: 'on-track', name: 'On Track' },
+  { id: 'todo', name: 'To Do' },
   { id: 'in-progress', name: 'In Progress' },
   { id: 'on-hold', name: 'On Hold' },
-  { id: 'completed', name: 'Completed' },
-  { id: 'behind', name: 'Behind' }
+  { id: 'in-review', name: 'In Review' },
+  { id: 'completed', name: 'Completed' }
 ];
 
 const DEFAULT_BUCKETS = [
   { id: 'todo', title: 'TO DO' },
   { id: 'in-progress', title: 'IN PROGRESS' },
-  { id: 'review', title: 'REVIEW' },
-  { id: 'done', title: 'DONE' }
+  { id: 'on-hold', title: 'ON HOLD' },
+  { id: 'in-review', title: 'IN REVIEW' },
+  { id: 'completed', title: 'COMPLETED' }
 ];
 
 const TaskDialog: React.FC<TaskDialogProps> = ({
@@ -87,7 +89,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   defaultGroup,
   staffMembers,
   kras = [],
-  kpis = []
+  kpis = [],
+  container
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -128,10 +131,11 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       } else {
         // Fallback map for common variations if not in statuses array
         const lower = currentStatus.toLowerCase();
-        if (lower === 'to do' || lower === 'open') currentStatus = 'todo';
+        if (lower === 'to do' || lower === 'not started' || lower === 'open') currentStatus = 'todo';
         else if (lower === 'in progress' || lower === 'doing') currentStatus = 'in-progress';
-        else if (lower === 'review' || lower === 'in review') currentStatus = 'review';
-        else if (lower === 'done' || lower === 'completed') currentStatus = 'done';
+        else if (lower === 'on hold') currentStatus = 'on-hold';
+        else if (lower === 'review' || lower === 'in review' || lower === 'under review') currentStatus = 'in-review';
+        else if (lower === 'done' || lower === 'completed' || lower === 'closed') currentStatus = 'completed';
       }
 
       setStatus(currentStatus);
@@ -171,8 +175,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
             id: staff.id,
             name: staff.name,
             email: staff.email,
-            avatarUrl: staff.avatarUrl,
-            initials: staff.initials
+            avatarUrl: (staff as any).avatarUrl,
+            initials: (staff as any).initials || staff.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()
           }]);
         } else {
           // Minimal user object if not found in staff list
@@ -295,7 +299,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
+      <DialogContent container={container} className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
           <div className="flex justify-between items-start">
             <div>
@@ -345,7 +349,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="group" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select group" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     {effectiveBuckets.map((bucket) => (
                       <SelectItem key={bucket.id} value={bucket.id}>
                         {bucket.title}
@@ -360,7 +364,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="status" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     {statuses.map((statusOption) => (
                       <SelectItem key={statusOption.id} value={statusOption.id}>
                         {statusOption.name}
@@ -375,7 +379,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="priority" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
@@ -392,6 +396,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   placeholder="Pick a date range"
                   numberOfMonths={2}
                   className="py-3 px-4 rounded-lg"
+                  container={container}
                 />
               </div>
               <div className="space-y-1">
@@ -400,7 +405,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select recurrence" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly</SelectItem>
@@ -439,6 +444,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   }}
                   mode="multiple"
                   placeholder="Assign to team members..."
+                  container={container}
                 />
               </div>
               <div className="space-y-1">
@@ -447,7 +453,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="kra" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select a KRA" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     <SelectItem value="none">None</SelectItem>
                     {kras.map((kra) => (
                       <SelectItem key={kra.id} value={kra.id.toString()}>
@@ -463,7 +469,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="kpi" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select a KPI" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     <SelectItem value="none">None</SelectItem>
                     {kpis
                       .filter((kpi) => kpi.kra_id?.toString() === selectedKraId)

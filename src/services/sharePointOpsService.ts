@@ -5,6 +5,7 @@
 
 import { Client } from '@microsoft/microsoft-graph-client';
 import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext } from '@/types';
+import { Report } from '@/types/reports';
 import { Logger } from '@/utils/logger';
 
 // Configuration for SharePoint Lists
@@ -18,6 +19,7 @@ const OPS_CONFIG = {
         TASKS: 'Operations_Tasks',
         RISKS: 'Operations_Risks',
         OBJECTIVES: 'Unit_Objectives',
+        REPORTS: 'Performance_Reports',
         SETTINGS: 'System_View_Settings'
     }
 };
@@ -109,15 +111,25 @@ export class SharePointOpsService {
                     // ALWAYS include 'Org', null types (strategic fallback), or featured objectives for alignment lookups
                     if (isOrgLevel || isFeatured) return true;
 
+                    // Debug log for rejection
+                    const debugRejection = (reason: string) => {
+                        // console.log(`⛔ [Filter Debug] Objective "${f.Title}" rejected. Reason: ${reason}. Scope: ${scope}. Context: Div="${context?.division}", Unit="${context?.unit}". Item: Div="${f.Division}", Unit="${f.Unit}"`);
+                    };
+
                     // Then apply scope-specific filtering
                     if (scope === 'Division' && context?.division) {
-                        return f.Division === context.division;
+                        if (f.Division === context.division) return true;
+                        debugRejection('Division mismatch');
+                        return false;
                     } else if (scope === 'Unit' && context?.unit) {
-                        return f.Unit === context.unit;
+                        if (f.Unit === context.unit) return true;
+                        debugRejection('Unit mismatch');
+                        return false;
                     } else if (scope === 'Individual' && context?.name) {
                         return f.Owner === context.name;
                     }
 
+                    debugRejection('No matching scope condition');
                     return false;
                 })
                 .map((item: any) => this.mapObjective(item));
@@ -285,7 +297,7 @@ export class SharePointOpsService {
                 query = query.filter(filter);
                 Logger.debug(`🔄 [Scoped Query] User: ${context?.email} | Filter: ${filter}`);
             } else {
-                Logger.info(`🌐 [Global Fetch] Projects - User: ${context?.email} | Fetching ALL (Filter Disabled for Debugging)`);
+                // Logger.info(`🌐 [Global Fetch] Projects - User: ${context?.email} | Fetching ALL (Filter Disabled for Debugging)`);
             }
         }
 
@@ -298,8 +310,9 @@ export class SharePointOpsService {
 
     async getTasks(scope: FilterScope = 'Unit', context?: UserContext): Promise<Task[]> {
         if (!this.listIds['TASKS']) return [];
-        let query = this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).expand('fields');
-        query = query.header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly');
+
+        let query = this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`)
+            .expand('fields');
 
         query = query.header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly');
 
@@ -337,24 +350,24 @@ export class SharePointOpsService {
         const response = await query.get();
         console.log(`📊 [Tasks Fetched] User: ${context?.email} | Count: ${response.value?.length || 0} | Admin: ${isAdmin}`);
 
-        if ((!response.value || response.value.length === 0)) {
-            console.warn(`⚠️ [SP Ops] No tasks found. Probing list content/permissions...`);
-            // Probe: Is list empty or is expand failing?
-            try {
-                const probe = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).top(5).select('id,fields').expand('fields').get();
-                console.log(`🕵️ [SP Ops] List Probe Result (Top 5): ${probe.value?.length} items exist. Permission check: OK.`);
-                if (probe.value?.length > 0) {
-                    console.log(`🕵️ [SP Ops] Probe Sample Fields:`, Object.keys(probe.value[0].fields));
-                }
-            } catch (e) {
-                console.error(`❌ [SP Ops] List Probe Failed`, e);
-            }
-        }
+        // if ((!response.value || response.value.length === 0)) {
+        //     console.warn(`⚠️ [SP Ops] No tasks found. Probing list content/permissions...`);
+        //     // Probe: Is list empty or is expand failing?
+        //     try {
+        //         const probe = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).top(5).select('id,fields').expand('fields').get();
+        //         console.log(`🕵️ [SP Ops] List Probe Result (Top 5): ${probe.value?.length} items exist. Permission check: OK.`);
+        //         if (probe.value?.length > 0) {
+        //             console.log(`🕵️ [SP Ops] Probe Sample Fields:`, Object.keys(probe.value[0].fields));
+        //         }
+        //     } catch (e) {
+        //         console.error(`❌ [SP Ops] List Probe Failed`, e);
+        //     }
+        // }
 
-        if (response.value && response.value.length > 0) {
-            console.log('🔍 [SP Ops] First Task Fields:', Object.keys(response.value[0].fields));
-            // console.log('🔍 [SP Ops] First Task Assignees Raw:', response.value[0].fields.Assignees);
-        }
+        // if (response.value && response.value.length > 0) {
+        //     // Log first task fields keys
+        //     console.log('🔍 [SP Ops] First Task Fields Keys:', Object.keys(response.value[0].fields));
+        // }
         return response.value.map((item: any) => this.mapTask(item));
     }
 
@@ -384,13 +397,13 @@ export class SharePointOpsService {
                 RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
                 RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
                 RelatedProjectLookupId: relatedProjectId
-                // Note: AssignedTo is a Person field and difficult to set via simple write without user lookup
             }
         };
 
 
-        console.log('📝 [SP Ops] Adding Task Payload:', JSON.stringify(payload, null, 2));
+        // console.log('📝 [SP Ops] Adding Task Payload:', JSON.stringify(payload, null, 2));
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
+
         return this.mapTask(response);
 
     }
@@ -682,7 +695,9 @@ export class SharePointOpsService {
                 Description: kpi.description,
                 StartDate: kpi.startDate ? new Date(kpi.startDate).toISOString() : null,
                 EndDate: kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null, // targetDate maps to EndDate
-                RelatedKRALookupId: kpi.kra_id ? Number(kpi.kra_id) : null
+                RelatedKRALookupId: kpi.kra_id ? Number(kpi.kra_id) : null,
+                CalculationType: kpi.calculationType || 'manual',
+                ChecklistJSON: kpi.checklist ? JSON.stringify(kpi.checklist) : undefined
             }
         };
 
@@ -716,13 +731,14 @@ export class SharePointOpsService {
         if (kpi.description !== undefined) fields.Description = kpi.description;
         if (kpi.startDate !== undefined) fields.StartDate = kpi.startDate ? new Date(kpi.startDate).toISOString() : null;
         if (kpi.targetDate !== undefined) fields.EndDate = kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null;
+        if (kpi.calculationType !== undefined) fields.CalculationType = kpi.calculationType;
+        if (kpi.checklist !== undefined) fields.ChecklistJSON = JSON.stringify(kpi.checklist);
 
         if (kpi.assignees !== undefined) {
             // Assignees is a Text column storing JSON
             fields['Assignees'] = JSON.stringify(kpi.assignees || []);
         }
 
-        console.log(`📝 [SP Ops] Updating KPI ${id} Payload:`, JSON.stringify({ fields }, null, 2));
         try {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).patch({ fields });
             return this.mapKPI(response);
@@ -779,25 +795,24 @@ export class SharePointOpsService {
         try {
             const columns = await this.client
                 .api(`/sites/${this.siteId}/lists/${listId}/columns`)
-                .select('name,displayName,hidden,readOnly')
-                .get();
+                .get(); // Remove select to get EVERYTHING
 
             console.log(`🔍 [SP Ops] --- Columns for ${listKey} ---`);
             const helpful = columns.value.map((c: any) => ({
                 InternalName: c.name,
                 DisplayName: c.displayName,
-                // Type: c.typeAsString, // Causing 400 Bad Request
-                Hidden: c.hidden
+                Type: c.typeAsString, // Included
+                Hidden: c.hidden,
+                Lookup: c.lookup // Included
             })).filter((c: any) => !c.Hidden && !c.InternalName.startsWith('_'));
             console.table(helpful);
 
-            // Checks specifically for Assignees
-            const assignees = columns.value.find((c: any) => c.name === 'Assignees' || c.displayName === 'Assignees');
-            if (assignees) {
-                console.log(`🔍 [SP Ops] Found 'Assignees' column:`, assignees);
-            } else {
-                console.error(`❌ [SP Ops] 'Assignees' column NOT FOUND in ${listKey}!`);
+            // Inspect RelatedProject specifically
+            const projCol = columns.value.find((c: any) => c.name === 'RelatedProject');
+            if (projCol) {
+                // console.log(`🔍 [SP Ops] 'RelatedProject' Column Details:`, JSON.stringify(projCol, null, 2));
             }
+
             console.log(`-------------------------------------------`);
         } catch (e) {
             console.error(`❌ [SP Ops] Failed to fetch columns for ${listKey}`, e);
@@ -899,6 +914,8 @@ export class SharePointOpsService {
             description: f.Description || '',
             startDate: f.StartDate || null,
             targetDate: f.EndDate || null,
+            calculationType: (f.CalculationType as any) || 'manual',
+            checklist: f.ChecklistJSON ? JSON.parse(f.ChecklistJSON) : [],
         };
     }
     async addProject(project: Partial<Project>): Promise<Project> {
@@ -1033,6 +1050,134 @@ export class SharePointOpsService {
             updatedAt: item.lastModifiedDateTime ? new Date(item.lastModifiedDateTime) : new Date(),
             unit_id: f.Department,
             division_id: f.Department // Assuming division == department for now
+        };
+    }
+
+    // --- Reports ---
+
+    async createReportsList(): Promise<void> {
+        const listKey = 'REPORTS';
+        const listName = OPS_CONFIG.LISTS[listKey]; // Performance_Reports
+
+        console.log(`🔨 [SP Ops] Ensuring list '${listName}' exists...`);
+
+        if (!this.siteId) await this.initialize();
+
+        // Check if list exists
+        let listId = this.listIds[listKey];
+        if (!listId) {
+            try {
+                // Try to fetch it just in case
+                const existing = await this.client.api(`/sites/${this.siteId}/lists/${listName}`).get();
+                this.listIds[listKey] = existing.id;
+                listId = existing.id;
+                console.log(`✅ [SP Ops] List '${listName}' already exists.`);
+            } catch (e: any) {
+                if (e.statusCode === 404) {
+                    // Create it
+                    console.log(`✨ [SP Ops] Creating list '${listName}'...`);
+                    const newList = await this.client.api(`/sites/${this.siteId}/lists`).post({
+                        displayName: listName,
+                        columns: [
+                            { name: 'ReportType', text: {} },        // Template ID or Type
+                            { name: 'GeneratedBy', text: {} },       // User Email
+                            { name: 'StartDate', dateTime: {} },     // Reporting Period Start
+                            { name: 'EndDate', dateTime: {} },       // Reporting Period End
+                            { name: 'ContentJSON', text: { allowMultipleLines: true } }, // Full Report Data
+                            { name: 'AIAnalysis', boolean: {} },     // Is AI Generated?
+                            { name: 'Status', choice: { choices: ['Generated', 'Draft', 'Archived'] } }
+                        ],
+                        list: {
+                            template: 'genericList'
+                        }
+                    });
+                    this.listIds[listKey] = newList.id;
+                    listId = newList.id;
+                    console.log(`✅ [SP Ops] List '${listName}' created.`);
+                } else {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    async saveReport(report: Omit<Report, 'id'>): Promise<Report> {
+        if (!this.listIds['REPORTS']) {
+            await this.createReportsList();
+        }
+
+        const payload = {
+            fields: {
+                Title: report.name,
+                ReportType: report.template_id,
+                GeneratedBy: report.created_by,
+                StartDate: report.date_range.start,
+                EndDate: report.date_range.end,
+                ContentJSON: JSON.stringify(report.content),
+                AIAnalysis: report.content.metadata?.ai_generated || false,
+                Status: 'Generated'
+            }
+        };
+
+        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['REPORTS']}/items`).post(payload);
+
+        // Return dummy Report object with new ID
+        // Note: We aren't mapping back from SP response fully here, just returning what we saved + ID
+        return {
+            ...report,
+            id: response.id
+        } as Report;
+    }
+
+    async getReports(limit: number = 50): Promise<Report[]> {
+        console.log(`📥 [SP Ops] Fetching reports...`);
+        if (!this.listIds['REPORTS']) await this.initialize();
+        if (!this.listIds['REPORTS']) {
+            console.warn(`⚠️ [SP Ops] Reports list not found, returning empty array.`);
+            return [];
+        }
+
+        try {
+            const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['REPORTS']}/items`)
+                .expand('fields')
+                .top(limit)
+                .orderby('createdDateTime desc')
+                .get();
+
+            return response.value.map((item: any) => this.mapReport(item));
+        } catch (e) {
+            console.error(`❌ [SP Ops] Failed to fetch reports`, e);
+            return [];
+        }
+    }
+
+    private mapReport(item: any): Report {
+        const f = item.fields;
+        if (!f) return { id: item.id, name: 'Error: No fields', template_id: '', content: { sections: [], metadata: {} }, created_by: '', created_at: '', date_range: {}, ai_analysis: false };
+
+        let content: any = { sections: [], metadata: { generated_at: '', version: '' } };
+
+        try {
+            if (f.ContentJSON) {
+                content = JSON.parse(f.ContentJSON);
+            }
+        } catch (e) {
+            console.error(`❌ [SP Ops] Failed to parse Report ContentJSON for ${item.id}`, e);
+        }
+
+        return {
+            id: item.id,
+            name: f.Title,
+            template_id: f.ReportType,
+            content: content,
+            created_by: f.GeneratedBy,
+            created_at: item.createdDateTime,
+            date_range: {
+                start_date: f.StartDate ? new Date(f.StartDate).toISOString() : '',
+                end_date: f.EndDate ? new Date(f.EndDate).toISOString() : ''
+            },
+            ai_analysis: f.AIAnalysis,
+            // ai_insights:  // Not storing this separately yet, might be in ContentJSON
         };
     }
 }

@@ -1,55 +1,119 @@
 # Power Automate Setup for Notice Board
 
-This document provides instructions on how to set up a Power Automate flow to automatically add emails sent to `allstaff@scpng.gov.pg` to the SCPNG Notice Board.
+This document provides a comprehensive guide on setting up the automated integration between Outlook emails and the SCPNG Intranet Notice Board. It covers the automatic list creation, the Power Automate flow configuration (including robust error handling), and the frontend logic for distinct content rendering.
 
-## 1. SharePoint List Setup
+## 1. SharePoint List Setup (Automated)
 
-Before creating the Power Automate flow, you need to create a new list in your SharePoint site.
+You do **not** need to create the SharePoint list manually. The Intranet application can create it for you.
 
-1.  Navigate to your SharePoint site: `https://scpng1.sharepoint.com/sites/scpngintranet`
-2.  Go to **Site contents** and click **New** > **List**.
-3.  Name the list **Announcements** and click **Create**.
-4.  Once the list is created, add the following columns:
+1.  **Test Ground Method**:
+    *   Navigate to `/test-ground` in the application.
+    *   Find the **Announcements Setup** card.
+    *   Click **Deploy Announcements List**.
+    *   This will check for the "Announcements" list and create it with the correct schema if it's missing.
 
-| Column name   | Type                  | Notes                                        |
-| ------------- | --------------------- | -------------------------------------------- |
-| `Title`       | Single line of text   | (Default column)                             |
-| `Content`     | Multiple lines of text|                                              |
-| `Category`    | Choice                | Options: `Announcement`, `Event`, `Update`, `Alert` |
-| `IsPinned`    | Yes/No                |                                              |
-| `ExpiryDate`  | Date and time         |                                              |
-| `SourceEmail` | Single line of text   |                                              |
+2.  **Schema Verification**:
+    The list includes the following columns:
+    *   `Title` (Single line of text) - Stores Email Subject
+    *   `Content` (Multiple lines, Rich Text) - Stores Email Body (HTML)
+    *   `Category` (Choice) - 'Announcement', 'Event', 'Update', 'Alert'
+    *   `IsPinned` (Boolean) - For manual pinning
+    *   `ExpiryDate` (Date & Time) - Optional
+    *   `SourceEmail` (Single line of text) - Stores Sender Address
+
+---
 
 ## 2. Power Automate Flow Setup
 
-1.  Go to [Power Automate](https://make.powerautomate.com/).
-2.  Click **Create** and select **Automated cloud flow**.
-3.  Give your flow a name, for example, "Add All Staff Emails to Notice Board".
-4.  In "Choose your flow's trigger", search for "When a new email arrives" (Office 365 Outlook) and select it.
-5.  Click **Create**.
+This flow monitors specific email boxes and creates items in the SharePoint list.
 
-### Configure the Trigger
+### Step-by-Step Configuration
 
-1.  Sign in to your Office 365 account if prompted.
-2.  In the "When a new email arrives" trigger, click **Show advanced options**.
-3.  In the **To** field, enter `allstaff@scpng.gov.pg`.
-4.  You can also set other options like **From** or **Subject filter** to further filter the emails.
+1.  **Create Flow**:
+    *   Go to [Power Automate](https://make.powerautomate.com/).
+    *   Create an **Automated cloud flow**.
+    *   Name: "Add All Staff & Boardroom Emails to Notice Board".
+    *   Trigger: **When a new email arrives (V3)** (Office 365 Outlook).
 
-### Configure the Action
+2.  **Configure Trigger**:
+    *   **Folder**: Inbox
+    *   **Include Attachments**: No (unless required)
+    *   **To**: Leave empty (we filter in the next step).
+    *   **Important**: This ensures the flow triggers for every email, and we filter specifically for our targets.
 
-1.  Click **+ New step**.
-2.  Search for "Create item" (SharePoint) and select it.
-3.  In the "Create item" action, provide the following information:
-    *   **Site Address**: Select your SharePoint site (`https://scpng1.sharepoint.com/sites/scpngintranet`).
-    *   **List Name**: Select the **Announcements** list.
-4.  Now, map the fields from the email to the SharePoint list columns:
-    *   **Title**: Select **Subject** from the dynamic content.
-    *   **Content**: Select **Body** from the dynamic content.
-    *   **Category**: Set a default value, for example, `Announcement`. You can also add logic to determine the category from the email subject or body.
-    *   **SourceEmail**: Select **From** from the dynamic content.
+3.  **Add Condition (The Filter)**:
+    *   Add a **Condition** action.
+    *   We need to check if the email is sent TO or CC'd to our target groups (`allstaff` or `boardroom`).
+    *   **Robust Formula**: Because the "CC" field can be null (causing flow failures), we use `coalesce` to handle empty values.
+    *   Use the **OR** logic for these checks:
+        *   `To` contains `allstaff@scpng.gov.pg`
+        *   `To` contains `boardroom@scpng.gov.pg`
+        *   `CC` (null-safe) contains `allstaff@scpng.gov.pg`
+        *   `CC` (null-safe) contains `boardroom@scpng.gov.pg`
 
-### Save and Test the Flow
+    *Note: In the Condition builder, you can just use the "contains" operator. The "CC" field might need the following expression if you encounter "Null" errors:*
+    `coalesce(triggerOutputs()?['body/ccRecipients'], '')`
 
-1.  Click **Save**.
-2.  To test the flow, send an email to `allstaff@scpng.gov.pg`.
-3.  After a few moments, the email content should appear as a new item in your "Announcements" list in SharePoint, and it will be displayed on the SCPNG Notice Board in the application.
+4.  **Configure "If Yes" Branch**:
+    *   Add **Create item** (SharePoint) action.
+    *   **Site Address**: Select SCPNG Intranet site.
+    *   **List Name**: Announcements.
+
+    **Field Mappings**:
+    *   **Title**: `Subject` (from Dynamic Content)
+    *   **Content**: `Body` (This captures the HTML content)
+    *   **SourceEmail**: `From` (from Dynamic Content)
+    *   **Category**: **CRITICAL STEP**
+        *   Use the following Expression to automatically set "Event" for Boardroom emails and "Announcement" for others.
+        *   It handles missing CC fields safely.
+        
+        ```javascript
+        if(or(contains(coalesce(triggerOutputs()?['body/toRecipients'], ''), 'boardroom'), contains(coalesce(triggerOutputs()?['body/ccRecipients'], ''), 'boardroom')), 'Event', 'Announcement')
+        ```
+        
+    *   **IsPinned**: No (Default)
+
+5.  **Save and Turn On**:
+    *   Your flow is now ready to catch emails and post them to SharePoint.
+
+---
+
+## 3. Frontend Logic (NoticeBoard.tsx)
+
+The application frontend (`src/components/dashboard/NoticeBoard.tsx`) has specific logic to handle these email-generated announcements.
+
+### HTML Sanitization
+*   **Library**: `isomorphic-dompurify` (or `dompurify`)
+*   **Purpose**: Since the email body is saved as raw HTML, we must sanitize it before rendering to prevent XSS attacks while preserving formatting (Bold, Links, Lists).
+*   **Implementation**:
+    ```typescript
+    const sanitizeContent = (content: string) => {
+      // Logic to strip Body tags if nested
+      // Uses DOMPurify.sanitize(content, { USE_PROFILES: { html: true } })
+    };
+    ```
+
+### Intelligent Signature Stripping
+*   **Problem**: Emails often contain long signatures ("Best Regards", "Sent from Outlook") which clutter the Notice Board.
+*   **Solution**: A Regex-based filter removes these automatically.
+*   **Logic**:
+    *   It looks for markers like `Best Regards`, `Kind Regards`, `Sent from my`, `From:`.
+    *   It handles variations with HTML tags (e.g., `Best<br>Regards`).
+    *   It explicitly **ignores** polite closings like "Thank you" to preserve the message tone.
+    *   It truncates purely the signature block at the end of the content.
+
+### Category Display
+*   items via "Boardroom" -> Display with **Green** "Event" badge.
+*   items via "All Staff" -> Display with **Blue** "Announcement" badge.
+
+---
+
+## Troubleshooting
+
+*   **Flow fails on "Null"**:
+    *   Use the `coalesce(..., '')` function in your expressions. Power Automate hates null values in string functions.
+*   **Raw HTML showing in Notice Board**:
+    *   Ensure the frontend code uses `dangerouslySetInnerHTML` combined with the `sanitizeContent` function.
+    *   If you see `<html>` tags, the sanitizer is working but the rendering mechanism might be treating it as plain text.
+*   **Signatures still showing**:
+    *   The Regex might need tuning if a unique signature format is used (e.g., "Warmly" instead of "Regards"). Check `NoticeBoard.tsx` > `stripSignature`.

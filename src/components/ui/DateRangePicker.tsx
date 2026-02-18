@@ -15,6 +15,7 @@ interface DateRangePickerProps {
   placeholder?: string;
   error?: boolean; // Optional error prop for styling
   numberOfMonths?: number;
+  container?: HTMLElement | null;
 }
 
 const DateRangePicker: React.FC<DateRangePickerProps> = ({
@@ -25,6 +26,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
   placeholder = "Pick a date range",
   error = false,
   numberOfMonths = 2,
+  container
 }) => {
   return (
     <Popover>
@@ -54,7 +56,7 @@ const DateRangePicker: React.FC<DateRangePickerProps> = ({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto p-0" align="start" container={container}>
         <Calendar
           initialFocus
           mode="range"

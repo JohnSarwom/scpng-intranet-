@@ -130,6 +130,12 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Reserve space for scrollbar to prevent layout shift when modals open */
+    scrollbar-gutter: stable;
+  }
+
+  html {
+    /* Removed overflow-y: scroll as scrollbar-gutter handles this better */
   }
 }
 
@@ -362,36 +368,35 @@
 
 /* Kanban Board Custom Scrollbar (Updated to match KRA table light style) */
 .kanban-scrollbar {
-  scrollbar-width: thin;
-  /* Firefox */
-  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  scrollbar-width: auto;
+  /* Use auto to allow custom width/height */
+  scrollbar-color: rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.05);
   /* Firefox: thumb track */
 }
 
 .kanban-scrollbar::-webkit-scrollbar {
-  height: 8px;
-  /* Thinner height for horizontal scrollbar */
-  width: 8px;
-  /* Thinner width for vertical scrollbar */
+  height: 14px;
+  /* Height for horizontal scrollbar */
+  width: 14px;
+  /* Width for vertical scrollbar */
 }
 
 .kanban-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-  /* Transparent track for cleaner look */
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.2);
-  /* Lighter thumb */
-  border-radius: 4px;
+  background-color: hsl(var(--primary));
+  opacity: 0.8;
+  border-radius: 6px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(0, 0, 0, 0.3);
-  /* Slightly darker on hover */
+  background-color: hsl(var(--primary));
+  opacity: 1;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-corner {
@@ -399,7 +404,7 @@
 }
 
 .dark .kanban-scrollbar {
-  scrollbar-color: #94a3b8 rgba(255, 255, 255, 0.1);
+  scrollbar-color: hsl(var(--primary)) rgba(255, 255, 255, 0.1);
 }
 
 .dark .kanban-scrollbar::-webkit-scrollbar-track {
@@ -407,11 +412,11 @@
 }
 
 .dark .kanban-scrollbar::-webkit-scrollbar-thumb {
-  background-color: #94a3b8;
-  /* slate-400 */
+  background-color: hsl(var(--primary));
+  opacity: 0.6;
 }
 
 .dark .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #cbd5e1;
-  /* slate-300 */
+  background-color: hsl(var(--primary));
+  opacity: 0.9;
 }

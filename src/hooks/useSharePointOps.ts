@@ -41,21 +41,8 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
 
                 // Fallback to mock data if no objectives found (e.g. connection issue or empty list)
                 // This ensures the "Strategic Objectives" dropdown is always populated for demo/dev purposes
-                if (!data || data.length === 0) {
-                    console.warn('⚠️ [useSharePointOps] No objectives found. Falling back to mock UNIT objectives.');
-                    // Fallback to unitObjectives for the Unit view
-                    const mockObjectives: any[] = (mockStrategyData.unitObjectives || []).map((obj: any) => ({
-                        id: obj.id,
-                        title: obj.title,
-                        description: obj.description,
-                        goalType: 'Unit',
-                        status: obj.status,
-                        progress: obj.progress,
-                        deliverables: obj.deliverables || [], // Unit objectives usually have deliverables direct
-                        owner: obj.owner,
-                        icon: obj.icon
-                    }));
-                    return mockObjectives;
+                if (!data) {
+                    return [];
                 }
 
                 console.log('✅ [useSharePointOps] Loaded Objectives:', data.length);
@@ -85,18 +72,7 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
                 console.error('❌ [useSharePointOps] Failed to fetch Objectives', err);
 
                 // Also fallback on error
-                // Also fallback on error to unit objectives
-                return (mockStrategyData.unitObjectives || []).map((obj: any) => ({
-                    id: obj.id,
-                    title: obj.title,
-                    description: obj.description,
-                    goalType: 'Unit',
-                    status: obj.status,
-                    progress: obj.progress,
-                    deliverables: obj.deliverables || [],
-                    owner: obj.owner,
-                    icon: obj.icon
-                })) as unknown as Objective[];
+                return [];
             }
         }
     });
@@ -108,7 +84,7 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
         add: async (item: Partial<Objective>) => {
             try {
                 const service = await getService();
-                await service.addObjective(item, department);
+                await service.addObjective(item, department || context?.division);
                 query.refetch();
                 return true;
             } catch (error) {

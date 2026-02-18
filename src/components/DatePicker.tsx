@@ -15,12 +15,14 @@ interface DatePickerProps {
   date: Date | undefined;
   setDate: (date: Date) => void;
   className?: string;
+  container?: HTMLElement | null;
 }
 
 const DatePicker: React.FC<DatePickerProps> = ({
   date,
   setDate,
   className,
+  container,
 }) => {
   return (
     <div className={cn("grid gap-2", className)}>
@@ -37,7 +39,7 @@ const DatePicker: React.FC<DatePickerProps> = ({
             {date ? format(date, "PPP") : <span>Pick a date</span>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0">
+        <PopoverContent className="w-auto p-0" container={container}>
           <Calendar
             mode="single"
             selected={date}

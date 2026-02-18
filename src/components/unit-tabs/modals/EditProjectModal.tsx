@@ -27,6 +27,7 @@ interface EditProjectModalProps {
   onProjectChange: (project: Project) => void;
   onSave?: (project: Project) => void;
   staffMembers: StaffMember[];
+  container?: HTMLElement | null;
 }
 
 const EditProjectModal: React.FC<EditProjectModalProps> = ({
@@ -35,7 +36,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
   project,
   onProjectChange,
   onSave,
-  staffMembers
+  staffMembers,
+  container
 }) => {
   const staffLoading = false;
 
@@ -84,7 +86,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
+      <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]" container={container}>
         <DialogHeader className="p-6 pb-4 border-b flex-shrink-0">
           <DialogTitle>Edit Project</DialogTitle>
           <DialogDescription>
@@ -132,6 +134,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   }}
                   mode="single"
                   placeholder="Select manager"
+                  container={container}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -161,6 +164,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   }}
                   mode="multiple"
                   placeholder="Select Assignees..."
+                  container={container}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -174,7 +178,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                   <SelectTrigger id="project-status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent container={container}>
                     <SelectItem value="planned">Planned</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
@@ -189,6 +193,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <DatePicker
                   date={editedProject.startDate}
                   setDate={(date) => handleChange('startDate', date)}
+                  container={container}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -196,6 +201,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 <DatePicker
                   date={editedProject.endDate}
                   setDate={(date) => handleChange('endDate', date)}
+                  container={container}
                 />
               </div>
             </div>

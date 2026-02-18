@@ -38,6 +38,7 @@ export interface KPI {
   unit?: string;
   progress?: number;
   costAssociated?: number;
+  calculationType?: 'manual' | 'checklist';
 }
 
 export interface KRA {
@@ -323,6 +324,8 @@ export interface Kpi {
   unit?: string;
   progress?: number;
   costAssociated?: number;
+  calculationType?: 'manual' | 'checklist';
+  checklist?: ChecklistItem[];
 }
 export interface Kra {
   id: string | number;

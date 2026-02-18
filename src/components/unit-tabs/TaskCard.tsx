@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { StaffMember } from '@/types/staff';
+import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
+import { Employee } from '@/contexts/EmployeesContext';
 
 // Extend props to include anything needed by useSortable or event handlers
 export interface TaskCardProps {
@@ -37,8 +39,10 @@ export interface TaskCardProps {
   onComplete?: (id: string, completed: boolean) => void;
   onPriorityChange?: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange?: (id: string, assignee: StaffMember) => void;
+  onAssigneesChange?: (id: string, assignees: StaffMember[]) => void;
   onStatusChange?: (id: string, status: string) => void;
   availableAssignees?: StaffMember[];
+  container?: HTMLElement | null;
 }
 
 const priorityColors = {
@@ -50,26 +54,24 @@ const priorityColors = {
 
 const statusColors = {
   todo: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700',
-  'not-started': 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-900/30 dark:text-slate-400 dark:border-slate-700',
-  'on-track': 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700',
   'in-progress': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700',
   'on-hold': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700',
+  'in-review': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
+  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
+  // Legacy support fallback
   review: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
   done: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
-  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
-  behind: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700'
 };
 
 const statusLabels = {
   todo: 'To Do',
-  'not-started': 'Not Started',
-  'on-track': 'On Track',
   'in-progress': 'In Progress',
   'on-hold': 'On Hold',
-  review: 'Review',
-  done: 'Done',
+  'in-review': 'In Review',
   completed: 'Completed',
-  behind: 'Behind'
+  // Legacy support
+  review: 'In Review',
+  done: 'Completed'
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -95,10 +97,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onComplete,
   onPriorityChange,
   onAssigneeChange,
-  // We might want a new handler for multiple assignees in the future, 
-  // but for now we'll stick to single assignee change or let the parent handle it via edit dialog
+  onAssigneesChange,
   onStatusChange,
-  availableAssignees = []
+  availableAssignees = [],
+  container
 }) => {
   // State for editable dropdowns
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
@@ -271,7 +273,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 </AnimatePresence>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent container={container}>
               <p>{isCompletedOptimistic ? 'Mark as incomplete' : 'Mark as complete'}</p>
             </TooltipContent>
           </Tooltip>
@@ -368,7 +370,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </TooltipProvider>
 
           {showStatusDropdown && (
-            <div className="absolute z-10 mt-1 min-w-[120px] bg-background border rounded shadow-lg py-1">
+            <div
+              className="absolute z-10 mt-1 min-w-[120px] bg-background border rounded shadow-lg py-1"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               {Object.keys(statusLabels).map(key => (
                 <Button
                   key={key}
@@ -410,7 +415,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
             </Tooltip>
           </TooltipProvider>
           {showPriorityDropdown && (
-            <div className="absolute z-10 mt-1 w-24 bg-background border rounded shadow-lg">
+            <div
+              className="absolute z-10 mt-1 w-24 bg-background border rounded shadow-lg"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
                 <Button
                   key={p}
@@ -493,97 +501,108 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       <div className="flex-grow"></div>
 
-      {/* Assignee dropdown */}
-      <div className="relative" ref={assigneeDropdownRef}>
-        <div onClick={handleAssigneeClick} className="cursor-pointer flex items-center">
-          {assignees && assignees.length > 0 ? (
-            <div className="flex -space-x-2 overflow-hidden">
-              {assignees.slice(0, 3).map((person, index) => (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background">
-                        <AvatarImage src={person.avatarUrl} alt={person.name} />
-                        <AvatarFallback className="text-xs font-medium">
-                          {person.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{person.name}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-              {assignees.length > 3 && (
-                <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-xs font-medium border-2 border-background">
-                  +{assignees.length - 3}
-                </div>
-              )}
-            </div>
-          ) : assignee ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="text-xs font-medium">
-                      {assignee.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{assignee.name}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <div className="h-8 w-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
-              <User className="h-4 w-4 text-gray-400" />
-            </div>
-          )}
-        </div>
+      {/* Assignee dropdown using GlobalAssigneeSelector */}
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        <GlobalAssigneeSelector
+          selected={(assignees && assignees.length > 0)
+            ? assignees.map(a => ({
+              id: String(a.id),
+              displayName: a.name,
+              mail: a.email || '',
+              jobTitle: a.role || '',
+              givenName: '',
+              surname: '',
+              department: a.department
+            } as Employee))
+            : assignee
+              ? [{
+                id: String(assignee.id),
+                displayName: assignee.name,
+                mail: assignee.email || '',
+                jobTitle: assignee.role || '',
+                givenName: '',
+                surname: '',
+                department: assignee.department
+              } as Employee]
+              : []
+          }
+          onChange={(employees) => {
+            const newAssignees: StaffMember[] = employees.map(e => ({
+              id: e.id,
+              name: e.displayName,
+              email: e.mail,
+              role: e.jobTitle,
+              department: e.department,
+              // Try to preserve avatarUrl if we can find it in availableAssignees, otherwise it's lost until refresh
+              avatarUrl: availableAssignees.find(s => s.email === e.mail)?.avatarUrl
+            }));
 
-        {showAssigneeDropdown && onAssigneeChange && (
-          <div className="fixed inset-0 z-[100]" onClick={() => setShowAssigneeDropdown(false)}>
-            <div
-              className="absolute z-[101] bg-white dark:bg-gray-800 shadow-lg rounded-md border border-gray-200 dark:border-gray-700 py-1 min-w-[160px] max-h-[180px] overflow-y-auto"
-              style={{
-                right: assigneeDropdownRef.current ? (window.innerWidth - assigneeDropdownRef.current.getBoundingClientRect().right) + 'px' : '0px',
-                top: (assigneeDropdownRef.current?.getBoundingClientRect().bottom + 5) + 'px'
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              {availableAssignees.map(person => (
-                <button
-                  key={person.id}
-                  className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleChangeAssignee(person);
-                  }}
-                >
-                  <Avatar className="h-5 w-5 mr-2">
-                    <AvatarFallback className="text-xs">{person.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  {person.name}
-                </button>
-              ))}
-
-              <button
-                className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center text-gray-500"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleChangeAssignee({} as StaffMember);
-                }}
-              >
-                <div className="h-5 w-5 mr-2 flex items-center justify-center">
-                  <User className="h-3 w-3" />
-                </div>
-                Unassign
-              </button>
-            </div>
+            if (onAssigneesChange) {
+              onAssigneesChange(id, newAssignees);
+            } else if (onAssigneeChange) {
+              // Fallback: If cleared, pass empty object or similar? 
+              // Existing logic handles empty object as unassign usually
+              if (newAssignees.length === 0) {
+                onAssigneeChange(id, {} as StaffMember);
+              } else {
+                onAssigneeChange(id, newAssignees[0]);
+              }
+            }
+          }}
+          mode="multiple"
+          hideSelectedBadges={true}
+          className="p-0 border-0 h-auto hover:bg-transparent"
+          container={container}
+        >
+          <div className="cursor-pointer flex items-center">
+            {assignees && assignees.length > 0 ? (
+              <div className="flex -space-x-2 overflow-hidden">
+                {assignees.slice(0, 3).map((person, index) => (
+                  <TooltipProvider key={index}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background">
+                          <AvatarImage src={person.avatarUrl} alt={person.name} />
+                          <AvatarFallback className="text-xs font-medium">
+                            {person.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TooltipTrigger>
+                      <TooltipContent container={container}>
+                        <p>{person.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+                {assignees.length > 3 && (
+                  <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-xs font-medium border-2 border-background">
+                    +{assignees.length - 3}
+                  </div>
+                )}
+              </div>
+            ) : assignee ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="text-xs font-medium">
+                        {assignee.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TooltipTrigger>
+                  <TooltipContent container={container}>
+                    <p>{assignee.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div className="h-8 w-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                <User className="h-4 w-4 text-gray-400" />
+              </div>
+            )}
           </div>
-        )}
+        </GlobalAssigneeSelector>
+        {/* Removing the old manual dropdown implementation */}
       </div>
     </div>
   );

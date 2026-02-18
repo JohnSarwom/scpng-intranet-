@@ -3,13 +3,22 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Activity, Loader2 } from 'lucide-react';
+import { Activity, Loader2, Info } from 'lucide-react';
 import { useSharePointTasks, useSharePointKRAs, useSharePointKPIs } from '@/hooks/useSharePointOps';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useGraphProfile } from '@/hooks/useGraphProfile';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
 import { startOfQuarter, endOfQuarter, isWithinInterval, getQuarter, getYear, parseISO, isValid } from 'date-fns';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from '@/components/ui/button';
 
 const PersonalKPIStats: React.FC = () => {
   // 1. Context & User Setup
@@ -90,7 +99,15 @@ const PersonalKPIStats: React.FC = () => {
 
       // -- Efficiency (KPIs) --
       // Formula: Average % achievement of KPIs due or active in this quarter
-      const kpis = kpiState.data || [];
+
+      // Filter out orphaned KPIs (must be linked to an active KRA)
+      const kras = kraState.data || [];
+      const validKraIds = new Set(kras.map(k => String(k.id)));
+
+      const kpis = (kpiState.data || []).filter(k =>
+        k.kra_id && validKraIds.has(String(k.kra_id))
+      );
+
       const quarterKpis = kpis.filter(k => {
         // Use targetDate or startDate to place in quarter
         const dateToCheck = k.targetDate ? new Date(k.targetDate) : (k.startDate ? new Date(k.startDate) : null);
@@ -120,7 +137,6 @@ const PersonalKPIStats: React.FC = () => {
 
       // -- KRA Success --
       // Formula: Average progress of KRAs due or active in this quarter
-      const kras = kraState.data || [];
       const quarterKras = kras.filter(k => {
         const dateToCheck = k.targetDate ? new Date(k.targetDate) : (k.startDate ? new Date(k.startDate) : null);
         if (dateToCheck && isValid(dateToCheck)) {
@@ -129,7 +145,7 @@ const PersonalKPIStats: React.FC = () => {
         return false;
       });
 
-      const totalKraProgress = quarterKras.reduce((acc, k) => acc + (k.progress || 0), 0);
+      const totalKraProgress = quarterKras.reduce((acc, k) => acc + ((k as any).progress || 0), 0);
       const kraSuccess = quarterKras.length > 0 ? Math.round(totalKraProgress / quarterKras.length) : 0;
 
 
@@ -164,8 +180,8 @@ const PersonalKPIStats: React.FC = () => {
       const mappedGoals = krasInQuarter.map(k => ({
         quarter: `Q${q}`,
         goal: k.title,
-        progress: k.progress || 0,
-        status: k.status === 'completed' || (k.progress || 0) >= 100 ? 'completed' : 'in-progress'
+        progress: (k as any).progress || 0,
+        status: k.status === 'completed' || ((k as any).progress || 0) >= 100 ? 'completed' : 'in-progress'
       }));
 
       goals = [...goals, ...mappedGoals];
@@ -192,12 +208,51 @@ const PersonalKPIStats: React.FC = () => {
   }
 
   return (
-    <Card className="shadow-sm mb-6 animate-fade-in rounded-xl">
-      <CardHeader className="pb-2">
+    <Card className="shadow-sm mb-6 animate-fade-in rounded-xl group">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <Activity className="h-5 w-5 text-intranet-primary" />
           Personal KPI Statistics
         </CardTitle>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+              <Info className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Personal KPI Statistics</DialogTitle>
+              <DialogDescription>Quarterly performance metrics breakdown</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 text-sm">
+              <p>This chart visualizes your performance across three key dimensions: Productivity (task completion), Efficiency (KPI achievement), and KRA Success (goal progress) for each quarter of the current year.</p>
+
+              <div className="space-y-2">
+                <h4 className="font-semibold text-xs uppercase text-muted-foreground">Legend Colors</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#83002A]"></div>
+                    <span><strong>Productivity:</strong> Task completion vs assignments.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#5C001E]"></div>
+                    <span><strong>Efficiency:</strong> KPI target achievement rate.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-[#9E3A5D]"></div>
+                    <span><strong>KRA Success:</strong> Progress on long-term goals.</span>
+                  </div>
+                </div>
+              </div>
+
+              <ul className="list-disc pl-5 space-y-1">
+                <li><strong>Analysis:</strong> Compare the three metrics to identify if high activity (Productivity) translates to effective results (Efficiency/KRA).</li>
+                <li><strong>Trend:</strong> Look for consistent growth or maintenance of high scores across all quarters. Dips in one area may indicate a need for focus shift.</li>
+              </ul>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardHeader>
       <CardContent className="h-80">
         <Tabs defaultValue="performance" className="w-full h-full flex flex-col">

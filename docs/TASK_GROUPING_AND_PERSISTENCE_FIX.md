@@ -66,19 +66,26 @@ private updateTagsWithBucketId(tags: string[], bucketId?: string): string[] {
 We refactored the board initialization logic.
 
 **Strict Hierarchy:**
-1.  **Check `projectId` first:** If the task has a `projectId` (which now correctly comes from the Service, either from a real project or a bucket tag), place it in that column **immediately**.
-2.  **Fallback to Status:** Only if `projectId` is completely missing do we fall back to placing it in a Status column.
+1.  **Check `projectId` FIRST (Highest Priority):** If the task has a `projectId` (which now correctly comes from the Service, either from a real project or a bucket tag), place it in that column **immediately**. This ensures tasks assigned to a specific group STAY there, regardless of their source unit.
+2.  **Check Shared/External:** If `projectId` is missing, we check if the task belongs to a different Unit. If so, it goes to "Shared Projects".
+3.  **Fallback to Uncategorized:** If neither of the above apply, it goes to "Uncategorized".
 
 ```typescript
 // Logic in TasksTab.tsx
+// 1. Explicit Group Assignment
 if (task.projectId) {
     const projectBucket = activeBuckets.find(b => b.id === task.projectId);
     if (projectBucket) {
         newBoardData[projectBucket.id].push(task);
-        return; // STOP HERE - Do not check status
+        return; // STOP HERE
     }
 }
-// ... Fallback to Status ...
+
+// 2. Shared/External Logic
+if (currentUnit && task.unit_id && task.unit_id !== currentUnit) {
+     newBoardData['shared-tasks-virtual'].push(task);
+     return;
+}
 ```
 
 ### C. Drag and Drop Fix

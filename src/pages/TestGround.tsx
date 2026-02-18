@@ -8,6 +8,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useMsal } from '@azure/msal-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { SharePointListSetupService } from '@/services/sharePointListSetupService';
+import { SharePointOpsService } from '@/services/sharePointOpsService';
+import { AnnouncementsSharePointService } from '@/services/announcementsSharePointService';
 import { getGraphClient } from '@/services/graphService';
 import {
     Settings,
@@ -27,7 +29,8 @@ import {
     Info,
     List,
     FolderKanban,
-    Users
+    Users,
+    Target
 } from "lucide-react";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
@@ -43,6 +46,8 @@ const TestGround = () => {
     const [isSettingUpLists, setIsSettingUpLists] = useState(false);
     const [isSettingUpStrategyHub, setIsSettingUpStrategyHub] = useState(false);
     const [setupResult, setSetupResult] = useState<any>(null);
+    const [isSettingUpAnnouncements, setIsSettingUpAnnouncements] = useState(false);
+    const [isPurgingOps, setIsPurgingOps] = useState(false);
 
     const handleSetupStrategyLists = async () => {
         setIsSettingUpLists(true);
@@ -132,6 +137,45 @@ const TestGround = () => {
         }
     };
 
+    const handleSetupAnnouncements = async () => {
+        setIsSettingUpAnnouncements(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Creating Announcements List",
+                description: "Setting up Announcements list...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const announcementsService = new AnnouncementsSharePointService(graphClient);
+            await announcementsService.initialize();
+
+            toast({
+                title: "✅ Success!",
+                description: "Announcements list created/verified successfully",
+            });
+            setSetupResult({ success: true, message: "Announcements list ready." });
+
+        } catch (error: any) {
+            console.error('❌ [TestGround] Setup failed:', error);
+            setSetupResult({
+                success: false,
+                message: error.message || "Failed to create Announcements list",
+                error
+            });
+            toast({
+                title: "❌ Setup Failed",
+                description: error.message || "Failed to create Announcements list",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpAnnouncements(false);
+        }
+    };
+
     const handleSetupStrategyHubEngine = async () => {
         setIsSettingUpStrategyHub(true);
         setSetupResult(null);
@@ -171,6 +215,97 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpStrategyHub(false);
+        }
+    };
+
+    const handlePurgeAndResetOperations = async () => {
+        if (!confirm('⚠️ WARNING: This will DELETE all Operations data (Tasks, Projects, Risks, KPIs, KRAs) and Unit Objectives.\n\nStrategic Pillars and Strategic Objectives will remain intact.\n\nAre you sure you want to proceed with a fresh start?')) return;
+
+        setIsPurgingOps(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🧹 Purging & Resetting",
+                description: "Deleting old lists and recreating fresh ones...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.purgeAndResetOperations(true); // true = skip sample data
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Fresh Start Ready!",
+                    description: "All operations lists have been reset. You can now start adding clean data.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Purge failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Purge Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsPurgingOps(false);
+        }
+    };
+
+    const [isResettingStrategy, setIsResettingStrategy] = useState(false);
+
+    const handleResetStrategyProgress = async () => {
+        if (!confirm('This will reset the progress of ALL Strategic Objectives to 0%. This is useful if you have deleted all operational data and want a clean slate.\n\nAre you sure completely?')) return;
+
+        setIsResettingStrategy(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🔄 Resetting Progress",
+                description: "Setting all Strategic Objectives progress to 0%...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.resetStrategicProgress();
+
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Strategy Reset Complete",
+                    description: result.message,
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Reset failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Reset Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsResettingStrategy(false);
         }
     };
 
@@ -552,6 +687,52 @@ const TestGround = () => {
     const [isGeneratingMock, setIsGeneratingMock] = useState(false);
     const [isUploadingMock, setIsUploadingMock] = useState(false);
     const [mockUploadStatus, setMockUploadStatus] = useState<string>('');
+
+
+    // ==========================================
+    // REPORTS & ANALYTICS SETUP
+    // ==========================================
+    const [isSettingUpReports, setIsSettingUpReports] = useState(false);
+
+    const handleSetupReportsList = async () => {
+        setIsSettingUpReports(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Creating Reports List",
+                description: "Setting up Performance_Reports list...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const opsService = new SharePointOpsService(graphClient);
+            await opsService.initialize();
+            await opsService.createReportsList();
+
+            toast({
+                title: "✅ Success!",
+                description: "Performance_Reports list created/verified successfully",
+            });
+            setSetupResult({ success: true, message: "Reports list ready." });
+
+        } catch (error: any) {
+            console.error('❌ [TestGround] Setup failed:', error);
+            setSetupResult({
+                success: false,
+                message: error.message || "Failed to create Reports list",
+                error
+            });
+            toast({
+                title: "❌ Setup Failed",
+                description: error.message || "Failed to create Reports list",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpReports(false);
+        }
+    };
 
     const handleGenerateMockData = async () => {
         setIsGeneratingMock(true);
@@ -1294,6 +1475,52 @@ const TestGround = () => {
                                 <AlertCircle className="h-5 w-5" />
                                 Reset / Delete Operations Lists
                             </Button>
+
+                            <Button
+                                onClick={handlePurgeAndResetOperations}
+                                disabled={isSettingUpLists || isSettingUpOps || isPurgingOps}
+                                variant="destructive"
+                                size="lg"
+                                className="w-full gap-2 border-red-600 bg-red-600 hover:bg-red-700 text-white"
+                            >
+                                {isPurgingOps ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Purging & Resetting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trash2 className="h-5 w-5" />
+                                        Purge & Reset (Fresh Start)
+                                    </>
+                                )}
+                            </Button>
+
+                            <div className="border-t border-gray-200 my-4"></div>
+
+                            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <Target className="w-4 h-4 text-purple-600" />
+                                Strategy Maintenance
+                            </h3>
+
+                            <Button
+                                onClick={handleResetStrategyProgress}
+                                disabled={isResettingStrategy}
+                                variant="outline"
+                                className="w-full gap-2 border-purple-200 text-purple-700 hover:bg-purple-50"
+                            >
+                                {isResettingStrategy ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                                        Resetting Strategy...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Target className="h-4 w-4 text-purple-600" />
+                                        Reset Strategy Progress (0%)
+                                    </>
+                                )}
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -1465,7 +1692,60 @@ const TestGround = () => {
                 </Card>
 
                 {/* Market Data Lists Setup Card */}
-                {/* App Settings List Setup Card */}
+                {/* Announcements List Setup Card */}
+                <Card className="border-2 border-orange-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Rocket className="h-5 w-5 text-orange-600" />
+                            Announcements Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Create 'Announcements' list for the Notice Board and functionality.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <ListChecks className="h-4 w-4" />
+                                Lists to be Created:
+                            </h4>
+                            <ul className="space-y-2 ml-6 text-sm">
+                                <li key="announcements">
+                                    <div className="font-medium flex items-center gap-2">
+                                        <Database className="h-3 w-3 text-orange-500" />
+                                        Announcements
+                                    </div>
+                                    <div className="text-muted-foreground ml-5">
+                                        Stores intranet announcements, events, and alerts.
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupAnnouncements}
+                                disabled={isSettingUpAnnouncements}
+                                size="lg"
+                                className="w-full bg-orange-600 hover:bg-orange-700"
+                            >
+                                {isSettingUpAnnouncements ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                        Creating Announcements list...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Rocket className="h-5 w-5 mr-2" />
+                                        Deploy Announcements List
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* App Settings List Setup Card */}\n                {/* App Settings List Setup Card */}\n
                 <Card className="border-2 border-slate-500/20">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -1597,6 +1877,57 @@ const TestGround = () => {
                                 Delete Documents Library
                             </Button>
                         </div>
+                    </CardContent>
+                </Card>
+
+                {/* Reports Setup Card */}
+                <Card className="border-2 border-pink-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-pink-600" />
+                            Reports & Analytics Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Create SharePoint list for storing generated Performance Reports.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <ListChecks className="h-4 w-4" />
+                                Lists to be Created:
+                            </h4>
+                            <ul className="space-y-2 ml-6 text-sm">
+                                <li key="reports">
+                                    <div className="font-medium flex items-center gap-2">
+                                        <Database className="h-3 w-3 text-pink-500" />
+                                        Performance_Reports
+                                    </div>
+                                    <div className="text-muted-foreground ml-5">
+                                        Stores generated reports (JSON content) + Metadata
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <Button
+                            onClick={handleSetupReportsList}
+                            disabled={isSettingUpReports || isSettingUpLists}
+                            className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                            size="lg"
+                        >
+                            {isSettingUpReports ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Initializing List...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="mr-2 h-4 w-4" />
+                                    Initialize Reports List
+                                </>
+                            )}
+                        </Button>
                     </CardContent>
                 </Card>
 
@@ -1817,7 +2148,7 @@ const TestGround = () => {
                     <SharePointExplorer />
                 </div>
             </div>
-        </PageLayout>
+        </PageLayout >
     );
 };
 

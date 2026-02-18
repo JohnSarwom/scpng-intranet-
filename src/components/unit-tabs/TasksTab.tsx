@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { GroupTemplateDialog } from '@/components/unit-tabs/GroupTemplateDialog';
+
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,11 +17,18 @@ import {
   User,
   MoreVertical,
   Loader2,
+  Maximize2,
+  Minimize2,
+  CheckCircle,
+  Circle,
+  Check,
+  X,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import TaskCard from '@/components/unit-tabs/TaskCard';
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { StaffMember } from '@/types/staff';
-import { Objective, Kra, Task, Project } from '@/types';
+import { Objective, Kra, Kpi, Task, Project } from '@/types';
 import {
   DndContext,
   DragEndEvent,
@@ -102,10 +111,12 @@ const BoardLane = ({
   onToggleComplete,
   onPriorityChange,
   onAssigneeChange,
+  onAssigneesChange,
   onStatusChange,
   dropTargetInfo,
   staffMembers,
-  onInsertAfter
+  onInsertAfter,
+  container
 }: {
   id: string;
   title: string;
@@ -120,6 +131,7 @@ const BoardLane = ({
   onToggleComplete: (id: string, completed: boolean) => void;
   onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange: (id: string, assignee: StaffMember) => void;
+  onAssigneesChange?: (id: string, assignees: StaffMember[]) => void;
   onStatusChange: (id: string, status: string) => void;
   dropTargetInfo: {
     columnId: string | null;
@@ -128,6 +140,7 @@ const BoardLane = ({
   };
   staffMembers: StaffMember[];
   onInsertAfter: (groupId: string) => void;
+  container?: HTMLElement | null;
 }) => {
   const dropId = `group-${id}`;
   const { setNodeRef, isOver: isDroppableOver } = useDroppable({ id: dropId });
@@ -205,7 +218,7 @@ const BoardLane = ({
                 <MoreVertical className="h-3.5 w-3.5" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="end" container={container}>
               <DropdownMenuItem onClick={() => onEdit(id)}>
                 Rename Group
               </DropdownMenuItem>
@@ -224,9 +237,18 @@ const BoardLane = ({
         {/* min-h-full ensures the drop zone covers the entire lane height even if empty */}
         <SortableContext items={incompleteTasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
           {incompleteTasks.length === 0 && completedTasks.length === 0 && (
-            <div className="border-2 border-dashed border-gray-200 dark:border-gray-700/50 rounded-lg flex flex-col items-center justify-center p-4 text-center pointer-events-none opacity-60 h-full min-h-[150px]">
+            <div className="border-2 border-dashed border-gray-200 dark:border-gray-700/50 rounded-lg flex flex-col items-center justify-center p-6 text-center h-full min-h-[150px]">
               <Kanban className="h-8 w-8 text-muted-foreground/30 mb-2" />
-              <p className="text-sm font-medium text-muted-foreground/50">No tasks in this group</p>
+              <p className="text-sm font-medium text-muted-foreground/50 mb-3">No tasks in this group</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAddTask}
+                className="pointer-events-auto"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Task
+              </Button>
             </div>
           )}
 
@@ -251,8 +273,10 @@ const BoardLane = ({
                 onComplete={onToggleComplete}
                 onPriorityChange={onPriorityChange}
                 onAssigneeChange={onAssigneeChange}
+                onAssigneesChange={onAssigneesChange}
                 onStatusChange={onStatusChange}
                 availableAssignees={staffMembers}
+                container={container}
               />
             )
           })}
@@ -285,8 +309,10 @@ const BoardLane = ({
                       onComplete={onToggleComplete}
                       onPriorityChange={onPriorityChange}
                       onAssigneeChange={onAssigneeChange}
+                      onAssigneesChange={onAssigneesChange}
                       onStatusChange={onStatusChange}
                       availableAssignees={staffMembers}
+                      container={container}
                     />
                   );
                 })}
@@ -306,9 +332,11 @@ const TaskGridView: React.FC<{
   onToggleComplete: (id: string, completed: boolean) => void;
   onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange: (id: string, assignee: StaffMember) => void;
+  onAssigneesChange?: (id: string, assignees: StaffMember[]) => void;
   onStatusChange: (id: string, status: string) => void;
   staffMembers: StaffMember[];
-}> = ({ tasks, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange, staffMembers }) => {
+  container?: HTMLElement | null;
+}> = ({ tasks, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onAssigneesChange, onStatusChange, staffMembers, container }) => {
   const allTasks = useMemo(() => {
     const flattened: Task[] = [];
     Object.values(tasks).forEach(columnTasks => {
@@ -344,7 +372,9 @@ const TaskGridView: React.FC<{
             onComplete={onToggleComplete}
             onPriorityChange={onPriorityChange}
             onAssigneeChange={onAssigneeChange}
+            onAssigneesChange={onAssigneesChange}
             onStatusChange={onStatusChange}
+            container={container}
           />
         );
       })}
@@ -362,7 +392,8 @@ const TaskListView: React.FC<{
   onAssigneeChange: (id: string, assignee: StaffMember) => void;
   onStatusChange: (id: string, status: string) => void;
   staffMembers: StaffMember[];
-}> = ({ tasks, buckets, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange, staffMembers }) => {
+  container?: HTMLElement | null;
+}> = ({ tasks, buckets, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange, staffMembers, container }) => {
   const allTasks = useMemo(() => {
     const flattened: (Task & { columnId: string, columnTitle: string })[] = [];
     Object.entries(tasks).forEach(([columnId, columnTasks]) => {
@@ -384,7 +415,7 @@ const TaskListView: React.FC<{
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-[calc(100vh-240px)] flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-full flex flex-col">
       <div className="flex-1 overflow-auto kanban-scrollbar relative">
         <table className="w-full min-w-[1000px]">
           <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
@@ -412,9 +443,45 @@ const TaskListView: React.FC<{
               return (
                 <tr key={task.id} className={cn("border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50", task.completed && "bg-gray-50 dark:bg-gray-800/50")}>
                   <td className="p-3 text-center">
-                    <Button variant="ghost" size="icon" className="h-5 w-5 p-0 text-muted-foreground hover:text-primary" onClick={() => onToggleComplete(task.id, !task.completed)}>
-                      {task.completed ? <Kanban className="h-4 w-4 text-green-600" /> : <List className="h-4 w-4" />}
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-5 w-5 p-0 text-muted-foreground hover:text-primary"
+                            onClick={() => onToggleComplete(task.id, !task.completed)}
+                          >
+                            <AnimatePresence mode="wait" initial={false}>
+                              {task.completed ? (
+                                <motion.div
+                                  key="check"
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                                >
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </motion.div>
+                              ) : (
+                                <motion.div
+                                  key="circle"
+                                  initial={{ scale: 0, opacity: 0 }}
+                                  animate={{ scale: 1, opacity: 1 }}
+                                  exit={{ scale: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <Circle className="h-4 w-4" />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent container={container}>
+                          <p>{task.completed ? 'Mark as incomplete' : 'Mark as complete'}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </td>
                   <td className="p-3">
                     <div className={cn("font-medium text-sm", task.completed && "line-through text-muted-foreground")}>{task.title}</div>
@@ -439,7 +506,7 @@ const TaskListView: React.FC<{
                                       </AvatarFallback>
                                     </Avatar>
                                   </TooltipTrigger>
-                                  <TooltipContent>
+                                  <TooltipContent container={container}>
                                     <p>{person.name}</p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -467,7 +534,7 @@ const TaskListView: React.FC<{
                                   </Avatar>
                                 </div>
                               </TooltipTrigger>
-                              <TooltipContent>
+                              <TooltipContent container={container}>
                                 <p>{assignee.name}</p>
                               </TooltipContent>
                             </Tooltip>
@@ -501,7 +568,7 @@ const TaskListView: React.FC<{
 interface NewTasksTabProps {
   tasks: Task[];
   addTask: (task: Omit<Task, 'id'>) => void;
-  editTask: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => void;
+  editTask: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
   deleteTask: (id: string) => void;
   error?: Error | null;
   onRetry?: () => void;
@@ -516,6 +583,14 @@ interface NewTasksTabProps {
   deleteCustomGroup?: (id: string) => Promise<void>;
   onRenameGroup?: (groupId: string, newTitle: string) => void;
   currentUnit?: string;
+  setPreselectedGroup?: (groupId: string | null) => void;
+  isDialogOpen: boolean;
+  editingTask: Task | null;
+  preselectedGroup?: string | null;
+  currentUserEmail?: string;
+  kras: Kra[];
+  kpis: Kpi[];
+  setViewMode?: (mode: ViewMode) => void;
 }
 
 export const TasksTab: React.FC<NewTasksTabProps> = ({
@@ -533,7 +608,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   addCustomGroup,
   deleteCustomGroup,
   onRenameGroup,
-  currentUnit
+  currentUnit,
+  setPreselectedGroup,
+  isDialogOpen,
+  editingTask,
+  preselectedGroup,
+  currentUserEmail,
+  kras,
+  kpis,
+  setViewMode
 }) => {
   const [boardData, setBoardData] = useState<BoardData>({});
   // Use props if provided, otherwise local state (though mostly we expect props from Unit.tsx now)
@@ -542,6 +625,9 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const activeBuckets = buckets || localBuckets;
   const setActiveBuckets = setBuckets || setLocalBuckets;
 
+  // Local search state for full-screen mode
+  const [searchQuery, setSearchQuery] = useState('');
+
   const [activeDragItem, setActiveDragItem] = useState<Task | null>(null);
   const [itemToDelete, setItemToDelete] = useState<ItemToDelete | null>(null);
   const { toast } = useToast();
@@ -549,35 +635,38 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const [newGroupName, setNewGroupName] = useState<string>('');
   const [isCreatingGroup, setIsCreatingGroup] = useState<boolean>(false);
   const [activeNewGroupId, setActiveNewGroupId] = useState<string | null>(null);
+
   const [insertAfterGroupId, setInsertAfterGroupId] = useState<string | null>(null);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
 
-  const handleCreateFromTemplate = async (templateData: any) => {
-    try {
-      if (addCustomGroup) {
-        // Create a new project group from template
-        const newProject = {
-          name: templateData.name,
-          description: templateData.description,
-          isCustomGroup: true,
-          department: currentUnit,
-          status: 'in-progress' as const,
-        };
+  // Filter States
+  const [selectedPriorities, setSelectedPriorities] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([]);
 
-        await addCustomGroup(newProject);
-        toast({ title: "Success", description: `${templateData.name} group created successfully.` });
-        setShowTemplateDialog(false);
-      } else {
-        toast({ title: "Error", description: "Functionality not available", variant: "destructive" });
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create group from template",
-        variant: "destructive"
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
       });
+    } else {
+      document.exitFullscreen();
     }
   };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullScreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+
 
   // Auto-scroll to new group
   useEffect(() => {
@@ -605,6 +694,43 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const optimisticUpdates = useRef<Map<string, Task>>(new Map());
 
   useEffect(() => {
+    // 0. Filter tasks based on search query AND filters
+    let tasksToProcess = tasks;
+
+    // Search Query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      tasksToProcess = tasksToProcess.filter(t =>
+        t.title?.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query) ||
+        t.assignee?.toLowerCase().includes(query) ||
+        t.assignees?.some(a => a.name?.toLowerCase().includes(query) || a.email?.toLowerCase().includes(query))
+      );
+    }
+
+    // Priority Filter
+    if (selectedPriorities.length > 0) {
+      tasksToProcess = tasksToProcess.filter(t => selectedPriorities.includes(t.priority));
+    }
+
+    // Status Filter
+    if (selectedStatuses.length > 0) {
+      tasksToProcess = tasksToProcess.filter(t => selectedStatuses.includes(t.status));
+    }
+
+    // Assignee Filter
+    if (selectedAssignees.length > 0) {
+      tasksToProcess = tasksToProcess.filter(t =>
+        (t.assignee && selectedAssignees.includes(t.assignee)) ||
+        (t.assignees?.some(a => selectedAssignees.includes(a.email || '')))
+      );
+    }
+
+    // Group Filter
+    if (selectedGroups.length > 0) {
+      tasksToProcess = tasksToProcess.filter(t => t.projectId && selectedGroups.includes(t.projectId));
+    }
+
     // Initialize board data structure
     const newBoardData: BoardData = {};
 
@@ -613,31 +739,79 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       newBoardData[bucket.id] = [];
     });
 
-    tasks.forEach(task => {
-      // 0. Priority: External Unit Tasks (Shared)
-      // If task is from another unit, force it to 'shared-tasks-virtual' if that bucket exists.
-      // This catches tasks with OR without Project IDs.
-      if (currentUnit && task.unit_id && task.unit_id !== currentUnit) {
-        if (newBoardData['shared-tasks-virtual']) {
-          newBoardData['shared-tasks-virtual'].push(task);
-          return;
-        }
-      }
+    // 🛡️ DEDUPLICATION GUARD
+    // Filter out duplicate tasks (same ID) which cause critical drag-and-drop bugs (ghosting, auto-migration)
+    const uniqueTasks = new Map<string, Task>();
+    const duplicateIds = new Set<string>();
 
+    tasksToProcess.forEach(task => {
+      if (uniqueTasks.has(task.id)) {
+        duplicateIds.add(task.id);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`[TasksTab] Duplicate task ID ignored: ${task.id} ("${task.title}")`);
+        }
+      } else {
+        uniqueTasks.set(task.id, task);
+      }
+    });
+
+    if (duplicateIds.size > 0) {
+      console.error(`[TasksTab] Found ${duplicateIds.size} duplicate task IDs. Duplicates removed to prevent bugs.`);
+    }
+
+    const processedTasks = Array.from(uniqueTasks.values());
+
+    // Clean up stale optimistic updates for tasks that no longer exist
+    // This prevents "zombie" tasks from persisting or moving unexpectedly
+    const currentTaskIds = new Set(uniqueTasks.keys());
+    optimisticUpdates.current.forEach((_, id) => {
+      if (!currentTaskIds.has(id)) {
+        optimisticUpdates.current.delete(id);
+      }
+    });
+
+    processedTasks.forEach(task => {
       // 1. Priority: Explicit Group (Project ID) assignment
-      // This ensures that if a user manually assigns a Group, the task stays there regardless of Status
+      // MOVED TO TOP: This ensures that if a user manually assigns a Group, the task stays there regardless of Status or Unit.
       if (task.projectId) {
         const projectBucket = activeBuckets.find(b => b.id === task.projectId);
+
         // Ensure the bucket exists in our board data (it should if it's in activeBuckets)
         if (projectBucket && newBoardData[projectBucket.id]) {
           newBoardData[projectBucket.id].push(task);
           return; // Successfully assigned to explicit group
+        } else {
+          console.log(`⚠️ [TasksTab] Orphaned Project: Task '${task.title}' has projectId '${task.projectId}' but bucket not found or active. Active Buckets:`, activeBuckets.map(b => b.id));
         }
 
         // 🚨 Virtual Bucket Fallback:
         // If task has a projectId but the bucket is missing (e.g. shared from another unit),
         // and we have a 'Shared Projects' virtual bucket, put it there.
-        if (newBoardData['shared-tasks-virtual']) {
+        // 🔒 SHARED GROUP FIX: Only if NOT created by me
+        const isCreatedByMe = currentUserEmail && (
+          task.createdByEmail?.toLowerCase() === currentUserEmail.toLowerCase() ||
+          task.authorEmail?.toLowerCase() === currentUserEmail.toLowerCase()
+        );
+
+        if (newBoardData['shared-tasks-virtual'] && !isCreatedByMe) {
+          newBoardData['shared-tasks-virtual'].push(task);
+          return;
+        }
+      }
+
+      // 0. Priority: External Unit Tasks (Shared)
+      // If task is from another unit, force it to 'shared-tasks-virtual' if that bucket exists.
+      // This catches tasks with OR without Project IDs.
+      if (currentUnit && task.unit_id && task.unit_id !== currentUnit) {
+        console.log(`🔍 [TasksTab] Shared Task Detected: Task '${task.title}' (ID: ${task.id}) unit '${task.unit_id}' !== current '${currentUnit}'`);
+
+        // 🔒 SHARED GROUP FIX: Only if NOT created by me
+        const isCreatedByMe = currentUserEmail && (
+          task.createdByEmail?.toLowerCase() === currentUserEmail.toLowerCase() ||
+          task.authorEmail?.toLowerCase() === currentUserEmail.toLowerCase()
+        );
+
+        if (newBoardData['shared-tasks-virtual'] && !isCreatedByMe) {
           newBoardData['shared-tasks-virtual'].push(task);
           return;
         }
@@ -686,21 +860,30 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
         if (targetColumnId && newBoardData[targetColumnId]) {
           // If server data matches optimistic data, we are good! Accessing props task...
+          // If server data matches optimistic data, we are good! Accessing props task...
           const serverTask = tasks.find(t => t.id === taskId);
 
-          // Simple check: logic above placed it in 'currentColumnId'.
-          // If currentColumnId === targetColumnId, then server has caught up!
-          if (currentColumnId === targetColumnId) {
+          // Check if server has caught up with specific fields we are optimistic about
+          const matches = serverTask &&
+            (optimisticTask.priority ? serverTask.priority === optimisticTask.priority : true) &&
+            (optimisticTask.status ? serverTask.status === optimisticTask.status : true) &&
+            currentColumnId === targetColumnId;
+
+          if (matches) {
             // Server caught up. Remove from optimistic updates.
             optimisticUpdates.current.delete(taskId);
           } else {
-            // Server is stale. Enforce optimistic position.
+            // Server is stale or task moved. Enforce optimistic position/state.
 
             // 1. Remove from where server placed it
-            newBoardData[currentColumnId].splice(currentTaskIndex, 1);
+            if (newBoardData[currentColumnId]) { // Safety check
+              const idx = newBoardData[currentColumnId].findIndex(t => t.id === taskId);
+              if (idx !== -1) newBoardData[currentColumnId].splice(idx, 1);
+            }
 
-            // 2. Add to where we want it
-            // We use the optimisticTask object which has the updated projectId
+            // 2. Add to where we want it with UPDATED properties
+            // We use the optimisticTask object which has the updated properties
+            if (!newBoardData[targetColumnId]) newBoardData[targetColumnId] = [];
             newBoardData[targetColumnId].push(optimisticTask);
           }
         }
@@ -708,9 +891,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     });
 
     setBoardData(newBoardData);
-  }, [tasks, activeBuckets, currentUnit]);
+  }, [tasks, activeBuckets, currentUnit, searchQuery, selectedPriorities, selectedStatuses, selectedAssignees, selectedGroups]);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -778,17 +967,23 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       optimisticUpdates.current.set(activeId, updatedTask);
 
       setBoardData(prev => {
-        const newData = { ...prev };
+        // Create a deep copy of the board data to prevent state mutation
+        const newData: BoardData = {};
 
-        // Remove from source
+        // Deep copy each column's task array
+        Object.keys(prev).forEach(columnId => {
+          newData[columnId] = [...prev[columnId]];
+        });
+
+        // Remove from source column
         newData[sourceColumnId] = newData[sourceColumnId].filter(t => t.id !== activeId);
 
-        // Add to destination
+        // Ensure destination column exists
         if (!newData[destinationColumnId]) {
           newData[destinationColumnId] = [];
         }
 
-        // Add to new column
+        // Add to destination column
         newData[destinationColumnId] = [...newData[destinationColumnId], updatedTask];
 
         return newData;
@@ -831,13 +1026,20 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           // For now, removing from optimistic map means next prop sync will put it back.
           // To see immediate revert, we would need to setBoardData again.
           setBoardData(prev => {
-            // Revert logic is complex without full rebuild.
-            // We can just rely on the next effect run or force one?
-            // Let's manually put it back for immediate visual feedback.
-            const rollbackData = { ...prev };
+            // Create a deep copy for rollback to prevent state mutation
+            const rollbackData: BoardData = {};
+
+            // Deep copy each column's task array
+            Object.keys(prev).forEach(columnId => {
+              rollbackData[columnId] = [...prev[columnId]];
+            });
+
+            // Remove from destination column
             if (rollbackData[destinationColumnId]) {
               rollbackData[destinationColumnId] = rollbackData[destinationColumnId].filter(t => t.id !== activeId);
             }
+
+            // Add back to source column
             if (!rollbackData[sourceColumnId] && taskToMove) {
               rollbackData[sourceColumnId] = [];
             }
@@ -882,8 +1084,13 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     }
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = (groupId?: string) => {
     setEditingTask(null);
+    if (setPreselectedGroup && groupId) {
+      setPreselectedGroup(groupId);
+    } else if (setPreselectedGroup) {
+      setPreselectedGroup(null);
+    }
     setIsDialogOpen(true);
   };
 
@@ -930,7 +1137,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
       // STEP 1: Optimistic Update - Remove task from UI immediately
       setBoardData(prev => {
-        const newData = { ...prev };
+        // Create a deep copy to prevent state mutation
+        const newData: BoardData = {};
+        Object.keys(prev).forEach(columnId => {
+          newData[columnId] = [...prev[columnId]];
+        });
         newData[sourceColumnId] = newData[sourceColumnId].filter(t => t.id !== taskId);
         return newData;
       });
@@ -953,7 +1164,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                 onClick={() => {
                   // Restore the task to boardData
                   setBoardData(prev => {
-                    const newData = { ...prev };
+                    // Create a deep copy for undo action
+                    const newData: BoardData = {};
+                    Object.keys(prev).forEach(columnId => {
+                      newData[columnId] = [...prev[columnId]];
+                    });
                     if (!newData[sourceColumnId]) {
                       newData[sourceColumnId] = [];
                     }
@@ -978,7 +1193,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
           // STEP 4: Rollback on failure - Restore task to UI
           setBoardData(prev => {
-            const newData = { ...prev };
+            // Create a deep copy for rollback
+            const newData: BoardData = {};
+            Object.keys(prev).forEach(columnId => {
+              newData[columnId] = [...prev[columnId]];
+            });
             if (!newData[sourceColumnId]) {
               newData[sourceColumnId] = [];
             }
@@ -1117,7 +1336,18 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   };
 
   const handleToggleComplete = (taskId: string, completed: boolean) => {
-    const task = tasks.find(t => t.id === taskId);
+    // 1. Find the task in boardData to get current state
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
+    });
+
+    if (!task) return;
+
+    const originalTask = { ...task };
+
+    // 2. Logic for recurrence (kept from original)
     if (task && completed && task.recurrence && task.recurrence !== 'none') {
       const now = new Date();
       let newStartDate: Date | undefined;
@@ -1163,7 +1393,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         addTask(newTask);
       }
     }
-    // Toggle the 'completed' tag instead of status
+
+    // 3. Calculate new tags and status
     const currentTags = task?.tags || [];
     let newTags: string[];
 
@@ -1177,166 +1408,593 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       newTags = currentTags.filter(t => t !== 'completed');
     }
 
-    editTask(taskId, {
+    const newStatus = !completed && task?.status === 'done' ? 'todo' : task?.status;
+
+    // 4. Create Optimistic Update
+    const updatedTask = {
+      ...task,
       completed,
       tags: newTags,
-      // Only reset status to 'todo' if un-completing AND it was 'done'
-      // Otherwise keep existing status so it stays in its column
-      status: !completed && task?.status === 'done' ? 'todo' : task?.status
+      status: newStatus
+    };
+
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // 5. Force Local Update Immediately
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
     });
+
+    // 6. Immediate Success Toast
+    toast({
+      title: completed ? "Task Completed" : "Task Reopened",
+      description: completed ? "Task has been marked as complete." : "Task has been marked as incomplete."
+    });
+
+    // 7. Persist with Rollback
+    Promise.resolve(editTask(taskId, {
+      completed,
+      tags: newTags,
+      status: newStatus
+    }, { suppressToast: true }))
+      .catch((error) => {
+        console.error("Failed to toggle completion", error);
+        // Rollback
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ title: "Update Failed", description: "Could not update task status. Changes reverted.", variant: "destructive" });
+      });
   };
 
   const handleAssigneeChange = (taskId: string, assignee: StaffMember) => {
-    if (!assignee || !assignee.email) {
-      // Unassign
-      editTask(taskId, { assignee: undefined, assignees: [] });
-      return;
-    }
-    // For now, replacing the assignee. In future strict add/remove can be implemented.
-    editTask(taskId, {
-      assignee: assignee.email,
-      assignees: [assignee]
+    // 1. Find the current task
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
     });
+
+    if (!task) return;
+
+    const originalTask = { ...task };
+
+    // Prepare updates
+    let updates: Partial<Task> = {};
+    const assigneeName = assignee?.name || assignee?.email || "Unknown";
+
+    if (!assignee || !assignee.email) {
+      updates = { assignee: undefined, assignees: [] };
+    } else {
+      updates = { assignee: assignee.email, assignees: [assignee] };
+    }
+
+    // 2. Create optimistic update
+    const updatedTask = { ...task, ...updates };
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // 3. Force local update immediately
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
+    });
+
+    // 4. Immediate Success Toast
+    toast({
+      title: "Assignee Updated",
+      description: assignee && assignee.email ? `Task assigned to ${assigneeName}` : "Task unassigned"
+    });
+
+    // 5. Persist with Rollback
+    Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
+      .catch((error) => {
+        console.error("Failed to update assignee", error);
+        // Rollback
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ title: "Update Failed", description: "Could not update assignee. Changes reverted.", variant: "destructive" });
+      });
+  };
+
+  const handleAssigneesChange = (taskId: string, assignees: StaffMember[]) => {
+    // 1. Find the current task
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
+    });
+
+    if (!task) return;
+
+    const originalTask = { ...task };
+
+    // Prepare updates
+    let updates: Partial<Task> = {};
+    if (!assignees || assignees.length === 0) {
+      updates = { assignee: undefined, assignees: [] };
+    } else {
+      updates = { assignee: assignees[0].email, assignees: assignees };
+    }
+
+    // 2. Create optimistic update
+    const updatedTask = { ...task, ...updates };
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // 3. Force local update immediately
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
+    });
+
+    // 4. Immediate Success Toast
+    toast({
+      title: "Assignees Updated",
+      description: "Task assignees have been updated."
+    });
+
+    // 5. Persist with Rollback
+    Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
+      .catch((error) => {
+        console.error("Failed to update assignees", error);
+        // Rollback
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ title: "Update Failed", description: "Could not update assignees. Changes reverted.", variant: "destructive" });
+      });
+  };
+
+  const handlePriorityChange = (taskId: string, priority: 'low' | 'medium' | 'high' | 'urgent') => {
+    // 1. Find the current task
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
+    });
+
+    if (!task) return;
+
+    const originalTask = { ...task };
+
+    // 2. Create optimistic update
+    const updatedTask = { ...task, priority };
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // 3. Force local update immediately
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
+    });
+
+    // 4. Immediate Success Toast
+    toast({
+      title: "Priority Updated",
+      description: `Task priority set to ${priority}.`
+    });
+
+    // 5. Persist with Rollback
+    Promise.resolve(editTask(taskId, { priority }, { suppressToast: true }))
+      .catch((error) => {
+        console.error("Failed to update priority", error);
+        // Rollback
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ title: "Update Failed", description: "Could not update priority. Changes reverted.", variant: "destructive" });
+      });
+  };
+
+  const handleStatusChange = (taskId: string, status: string) => {
+    // 1. Find the current task
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
+    });
+
+    if (!task) return;
+
+    const originalTask = { ...task };
+
+    // 2. Create optimistic update
+    const updatedTask = { ...task, status: status as Task['status'] };
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // 3. Force local update immediately
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
+    });
+
+    // 4. Immediate Success Toast
+    // Map status to user-friendly text
+    const statusLabel = status === 'todo' ? 'To Do' : status === 'in-progress' ? 'In Progress' : status === 'review' ? 'Review' : 'Done';
+    toast({
+      title: "Status Updated",
+      description: `Task moved to ${statusLabel}.`
+    });
+
+    // 5. Persist with Rollback
+    Promise.resolve(editTask(taskId, { status: status as Task['status'] }, { suppressToast: true }))
+      .catch((error) => {
+        console.error("Failed to update status", error);
+        // Rollback
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ title: "Update Failed", description: "Could not update status. Changes reverted.", variant: "destructive" });
+      });
   };
 
   return (
     <div className="flex flex-col h-full">
       <main className="flex-1 flex flex-col overflow-hidden">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={pointerWithin}
-          onDragEnd={handleDragEnd}
-          onDragStart={handleDragStart}
+        <div
+          ref={containerRef}
+          className={cn(
+            "flex flex-col bg-background/50 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden",
+            isFullScreen ? "bg-background p-4 h-full" : "h-full"
+          )}
         >
-          <div className="flex-1 p-0 flex flex-col min-h-0 border-0 mx-0 mb-0 h-full">
-            {viewMode === 'board' ? (
-              <div className="flex flex-col h-full bg-background/50 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                {/* Tasks/Operations Section */}
-                <div className="flex flex-col h-full">
-
-                  {/* Fixed Header */}
-                  <div className="p-4 shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold tracking-tight">Tasks/Operations</h2>
-                      <p className="text-muted-foreground">Manage daily tasks and operational workflows.</p>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={() => setShowTemplateDialog(true)}>
-                      <LayoutGrid className="mr-2 h-4 w-4" />
-                      Create from Template
+          {/* Fixed Header - Common for all views */}
+          <div className="p-4 shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 bg-background/50 backdrop-blur-sm z-10 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">Tasks/Operations</h2>
+              <p className="text-muted-foreground">Manage daily tasks and operational workflows.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Full Screen Controls */}
+              {isFullScreen && (
+                <>
+                  <Input
+                    placeholder="Search tasks..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-[200px] h-8"
+                  />
+                  <div className="flex items-center gap-1 border-r pr-2 mr-2">
+                    <Button
+                      variant={viewMode === 'board' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setViewMode?.('board')}
+                      title="Board View"
+                    >
+                      <Kanban className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setViewMode?.('list')}
+                      title="List View"
+                    >
+                      <List className="h-4 w-4" />
                     </Button>
                   </div>
 
-                  {/* Container Specific Scrollbar - Flex-1 to take remaining height */}
-                  <div
-                    ref={scrollContainerRef}
-                    className="flex-1 overflow-x-auto overflow-y-auto kanban-scrollbar px-4 pb-4 pt-4 flex items-start space-x-6 w-full min-h-0 h-[calc(100vh-450px)]"
-                  >
-                    {activeBuckets.map(bucket => (
-                      <div
-                        key={bucket.id}
-                        id={`board-lane-${bucket.id}`}
-                        className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full"
-                      >
-                        <BoardLane
-                          id={bucket.id}
-                          title={bucket.title}
-                          tasks={boardData[bucket.id] || []}
-                          staffMembers={staffMembers}
-                          onAddTask={handleCreateTask}
-                          onEditTask={handleEditTask}
-                          onEdit={() => { }}
-                          onDeleteTask={handleDeleteTask}
-                          onDeleteGroup={handleDeleteGroup}
-                          onRenameGroup={onRenameGroup || ((id, title) => { })}
-                          onToggleComplete={handleToggleComplete}
-                          onPriorityChange={() => { }}
-                          onAssigneeChange={handleAssigneeChange}
-                          onStatusChange={() => { }}
-                          dropTargetInfo={{ columnId: null, overItemId: null, isBottomHalf: false }}
-                          onInsertAfter={(id) => {
-                            setInsertAfterGroupId(id);
-                            setIsAddingGroup(true);
-                          }}
-                        />
-                      </div>
-                    ))}
+                  <Button size="sm" onClick={() => handleCreateTask()} className="h-8">
+                    <Plus className="mr-2 h-3.5 w-3.5" />
+                    Task
+                  </Button>
+                </>
+              )}
 
-                    {isAddingGroup ? (
-                      <div className="w-80 flex-shrink-0 animate-fade-in">
-                        <div className="bg-muted/30 dark:bg-muted/20 rounded-lg p-3 h-full flex flex-col">
-                          <Input
-                            value={newGroupName}
-                            onChange={(e) => setNewGroupName(e.target.value)}
-                            placeholder="Group name"
-                            autoFocus
-                            className="mb-2"
-                            onKeyDown={(e) => e.key === 'Enter' && handleSaveNewGroup()}
-                          />
-                          <div className="flex space-x-2">
-                            <Button size="sm" onClick={handleSaveNewGroup} className="flex-1" disabled={isCreatingGroup}>
-                              {isCreatingGroup ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={handleCancelAddGroup} className="flex-1" disabled={isCreatingGroup}>Cancel</Button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        className="h-[52px] flex-shrink-0 w-80 border-dashed bg-muted/20 dark:bg-muted/10 hover:bg-muted/30 dark:hover:bg-muted/20 text-muted-foreground"
-                        onClick={() => setIsAddingGroup(true)}
-                      >
-                        <Plus className="mr-2 h-5 w-5" />
-                        Add New Group
+              <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
+                {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className={selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length > 0 ? "bg-accent text-accent-foreground border-primary" : ""}>
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                    {(selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length) > 0 && (
+                      <Badge variant="secondary" className="ml-2 h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">
+                        {selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length}
+                      </Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[300px] p-0 overflow-hidden" container={(isFullScreen && containerRef.current) || undefined}>
+                  <DropdownMenuLabel className="flex items-center justify-between p-3 border-b bg-muted/20">
+                    Filters
+                    {(selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length) > 0 && (
+                      <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
+                        setSelectedPriorities([]);
+                        setSelectedStatuses([]);
+                        setSelectedAssignees([]);
+                        setSelectedGroups([]);
+                      }}>
+                        Clear all
                       </Button>
                     )}
-                  </div>
-                </div>
+                  </DropdownMenuLabel>
+                  <div className="max-h-[60vh] overflow-y-auto kanban-scrollbar p-1">
+                    <DropdownMenuSeparator />
 
-              </div>
-            ) : viewMode === 'grid' ? (
-              <TaskGridView
-                tasks={boardData}
-                onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
-                onToggleComplete={handleToggleComplete}
-                onPriorityChange={() => { }}
-                onAssigneeChange={handleAssigneeChange}
-                onStatusChange={() => { }}
-                staffMembers={staffMembers}
-              />
-            ) : (
-              <TaskListView
-                tasks={boardData}
-                buckets={activeBuckets}
-                onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
-                onToggleComplete={handleToggleComplete}
-                onPriorityChange={() => { }}
-                onAssigneeChange={handleAssigneeChange}
-                onStatusChange={() => { }}
-                staffMembers={staffMembers}
-              />
-            )}
+                    {/* Priority Section */}
+                    <div className="p-2">
+                      <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Priority</div>
+                      {['low', 'medium', 'high', 'urgent'].map(priority => (
+                        <div key={priority} className="flex items-center space-x-2 mb-1">
+                          <Checkbox
+                            id={`filter-priority-${priority}`}
+                            checked={selectedPriorities.includes(priority)}
+                            onCheckedChange={(checked) => {
+                              if (checked) setSelectedPriorities([...selectedPriorities, priority]);
+                              else setSelectedPriorities(selectedPriorities.filter(p => p !== priority));
+                            }}
+                          />
+                          <label htmlFor={`filter-priority-${priority}`} className="text-sm capitalize cursor-pointer flex-1">{priority}</label>
+                        </div>
+                      ))}
+                    </div>
+                    <DropdownMenuSeparator />
+
+                    {/* Status Section */}
+                    <div className="p-2">
+                      <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Status</div>
+                      {['todo', 'in-progress', 'review', 'done'].map(status => (
+                        <div key={status} className="flex items-center space-x-2 mb-1">
+                          <Checkbox
+                            id={`filter-status-${status}`}
+                            checked={selectedStatuses.includes(status)}
+                            onCheckedChange={(checked) => {
+                              if (checked) setSelectedStatuses([...selectedStatuses, status]);
+                              else setSelectedStatuses(selectedStatuses.filter(s => s !== status));
+                            }}
+                          />
+                          <label htmlFor={`filter-status-${status}`} className="text-sm capitalize cursor-pointer flex-1">
+                            {status === 'todo' ? 'To Do' : status === 'in-progress' ? 'In Progress' : status === 'review' ? 'Review' : 'Done'}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    <DropdownMenuSeparator />
+
+                    {/* Groups Section */}
+                    {activeBuckets.length > 0 && (
+                      <>
+                        <div className="p-2">
+                          <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Groups</div>
+                          <div className="space-y-1">
+                            {activeBuckets.map(bucket => (
+                              <div key={bucket.id} className="flex items-center space-x-2 mb-1">
+                                <Checkbox
+                                  id={`filter-group-${bucket.id}`}
+                                  checked={selectedGroups.includes(bucket.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) setSelectedGroups([...selectedGroups, bucket.id]);
+                                    else setSelectedGroups(selectedGroups.filter(g => g !== bucket.id));
+                                  }}
+                                />
+                                <label htmlFor={`filter-group-${bucket.id}`} className="text-sm cursor-pointer flex-1 truncate">{bucket.title}</label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+
+                    {staffMembers.length > 0 && (
+                      <div className="p-2">
+                        <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Assignees</div>
+                        <div className="space-y-1">
+                          {staffMembers.map(staff => (
+                            <div key={staff.email} className="flex items-center space-x-2 mb-1">
+                              <Checkbox
+                                id={`filter-assignee-${staff.email}`}
+                                checked={selectedAssignees.includes(staff.email)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) setSelectedAssignees([...selectedAssignees, staff.email]);
+                                  else setSelectedAssignees(selectedAssignees.filter(a => a !== staff.email));
+                                }}
+                              />
+                              <div className="flex items-center gap-2 flex-1 overflow-hidden">
+                                <Avatar className="h-5 w-5">
+                                  <AvatarImage src={staff.avatarUrl || staff.photoUrl} />
+                                  <AvatarFallback className="text-[9px]">{staff.name?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <label htmlFor={`filter-assignee-${staff.email}`} className="text-sm cursor-pointer truncate">{staff.name}</label>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-          <DragOverlay>
-            {activeDragItem ? (
-              <div className="opacity-90 w-[280px] cursor-grabbing">
-                <TaskCard
-                  {...activeDragItem}
-                  assignee={staffMembers.find(s => s.email === activeDragItem.assignee)}
-                  isDragOverlay
-                  className="shadow-2xl scale-105 rotate-2 cursor-grabbing"
-                // Attempt to fix layout thrashing by maintaining dimensions?
-                // TaskCard has internal sizing, but we can enforce width here if needed
-                />
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
+
+          <DndContext
+            sensors={sensors}
+            collisionDetection={pointerWithin}
+            onDragEnd={handleDragEnd}
+            onDragStart={handleDragStart}
+          >
+            <div className="flex-1 p-0 flex flex-col min-h-0 border-0 mx-0 mb-0 h-full overflow-hidden">
+              {viewMode === 'board' ? (
+                // Board View
+                <div
+                  ref={scrollContainerRef}
+                  className="flex-1 overflow-x-auto overflow-y-auto kanban-scrollbar px-4 pb-4 pt-4 flex items-start space-x-6 w-full h-full"
+                >
+                  {activeBuckets.map(bucket => (
+                    <div
+                      key={bucket.id}
+                      id={`board-lane-${bucket.id}`}
+                      className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full"
+                    >
+                      <BoardLane
+                        id={bucket.id}
+                        title={bucket.title}
+                        tasks={boardData[bucket.id] || []}
+                        staffMembers={staffMembers}
+                        onAddTask={() => handleCreateTask(bucket.id)}
+                        onEditTask={handleEditTask}
+                        onEdit={() => { }}
+                        onDeleteTask={handleDeleteTask}
+                        onDeleteGroup={handleDeleteGroup}
+                        onRenameGroup={onRenameGroup || ((id, title) => { })}
+                        onToggleComplete={handleToggleComplete}
+                        onPriorityChange={handlePriorityChange}
+                        onAssigneeChange={handleAssigneeChange}
+                        onAssigneesChange={handleAssigneesChange}
+                        onStatusChange={handleStatusChange}
+                        dropTargetInfo={{ columnId: null, overItemId: null, isBottomHalf: false }}
+                        onInsertAfter={(id) => {
+                          setInsertAfterGroupId(id);
+                          setIsAddingGroup(true);
+                        }}
+                        container={isFullScreen ? containerRef.current : null}
+                      />
+                    </div>
+                  ))}
+
+                  {isAddingGroup ? (
+                    <div className="w-80 flex-shrink-0 animate-fade-in">
+                      <div className="bg-muted/30 dark:bg-muted/20 rounded-lg p-3 h-full flex flex-col">
+                        <Input
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          placeholder="Group name"
+                          autoFocus
+                          className="mb-2"
+                          onKeyDown={(e) => e.key === 'Enter' && handleSaveNewGroup()}
+                        />
+                        <div className="flex space-x-2">
+                          <Button size="sm" onClick={handleSaveNewGroup} className="flex-1" disabled={isCreatingGroup}>
+                            {isCreatingGroup ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelAddGroup} className="flex-1" disabled={isCreatingGroup}>Cancel</Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="h-[52px] flex-shrink-0 w-80 border-dashed bg-muted/20 dark:bg-muted/10 hover:bg-muted/30 dark:hover:bg-muted/20 text-muted-foreground"
+                      onClick={() => setIsAddingGroup(true)}
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Add New Group
+                    </Button>
+                  )}
+                </div>
+              ) : viewMode === 'grid' ? (
+                // Grid View
+                <div className="flex-1 overflow-y-auto p-4">
+                  <TaskGridView
+                    tasks={boardData}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
+                    onPriorityChange={handlePriorityChange}
+                    onAssigneeChange={handleAssigneeChange}
+                    onAssigneesChange={handleAssigneesChange}
+                    onStatusChange={handleStatusChange}
+                    staffMembers={staffMembers}
+                    container={isFullScreen ? containerRef.current : null}
+                  />
+                </div>
+              ) : (
+                // List View
+                <div className="flex-1 h-full p-4 overflow-hidden">
+                  <TaskListView
+                    tasks={boardData}
+                    buckets={activeBuckets}
+                    onEditTask={handleEditTask}
+                    onDeleteTask={handleDeleteTask}
+                    onToggleComplete={handleToggleComplete}
+                    onPriorityChange={handlePriorityChange}
+                    onAssigneeChange={handleAssigneeChange}
+                    onStatusChange={handleStatusChange}
+                    staffMembers={staffMembers}
+                    container={isFullScreen ? containerRef.current : null}
+                  />
+                </div>
+              )}
+
+              {isFullScreen && containerRef.current ? createPortal(
+                <DragOverlay>
+                  {activeDragItem ? (
+                    <div className="opacity-90 w-[280px] cursor-grabbing">
+                      <TaskCard
+                        {...activeDragItem}
+                        assignee={staffMembers?.find(s => s.email === activeDragItem.assignee)}
+                        isDragOverlay
+                        className="shadow-2xl scale-105 rotate-2 cursor-grabbing"
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>,
+                containerRef.current
+              ) : (
+                <DragOverlay>
+                  {activeDragItem ? (
+                    <div className="opacity-90 w-[280px] cursor-grabbing">
+                      <TaskCard
+                        {...activeDragItem}
+                        assignee={staffMembers?.find(s => s.email === activeDragItem.assignee)}
+                        isDragOverlay
+                        className="shadow-2xl scale-105 rotate-2 cursor-grabbing"
+                      />
+                    </div>
+                  ) : null}
+                </DragOverlay>
+              )}
+            </div>
+          </DndContext>
+        </div>
       </main>
+
       <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent container={isFullScreen ? containerRef.current : null}>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {itemToDelete?.type === 'task' ? 'Delete Task?' : 'Delete Group?'}
@@ -1355,12 +2013,47 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <GroupTemplateDialog
-        open={showTemplateDialog}
-        onOpenChange={setShowTemplateDialog}
-        onCreateFromTemplate={handleCreateFromTemplate}
+      {/* GroupTemplateDialog removed */}
+      <TaskDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        initialData={editingTask || undefined}
+        buckets={activeBuckets}
+        defaultGroup={preselectedGroup || (activeBuckets.length > 0 ? activeBuckets[0].id : null)}
+        staffMembers={staffMembers}
+        container={isFullScreen ? containerRef.current : null}
+        kras={kras}
+        kpis={kpis}
+        onSubmit={async (taskData) => {
+          if (editingTask) {
+            await editTask(editingTask.id, taskData);
+            toast({ title: "Task Updated", description: "Task updated successfully." });
+          } else {
+            // Create new task
+            let targetProjectId = undefined;
+
+            if (preselectedGroup) {
+              targetProjectId = preselectedGroup;
+            } else if (activeBuckets.length > 0) {
+              targetProjectId = activeBuckets[0].id;
+            }
+
+            await addTask({
+              title: taskData.title || '',
+              description: taskData.description || '',
+              status: taskData.status || 'todo',
+              priority: taskData.priority || 'medium',
+              dueDate: taskData.dueDate,
+              assignee: taskData.assignee,
+              projectId: taskData.projectId || targetProjectId,
+              tags: []
+            });
+            toast({ title: "Task Created", description: "New task created successfully." });
+          }
+          setIsDialogOpen(false);
+        }}
       />
-    </div>
+    </div >
   );
 };
 export default TasksTab;

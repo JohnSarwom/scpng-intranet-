@@ -23,6 +23,8 @@ import StrategySetupWizard from '@/components/strategy/StrategySetupWizard';
 import { Settings2, Plus, Pencil } from 'lucide-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import EditStrategicObjectiveModal from '@/components/strategy/EditStrategicObjectiveModal';
+import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps'; // Import KRA, KPI, and Objectives hooks
+import { calculateStrategicProgress } from '@/utils/kpiUtils'; // Import calculation utility
 
 // Map icon strings to components
 const IconMap: Record<string, React.ComponentType<any>> = {
@@ -203,6 +205,16 @@ const Strategy = () => {
     const { isAdmin } = useRoleBasedAuth();
     const { refreshStrategy } = useStrategySharePoint();
 
+    // Fetch ALL KRAs for dynamic progress calculation
+    // We use 'All' scope to get KRAs from all units/divisions
+    const { data: allKras } = useSharePointKRAs(undefined, 'All', undefined);
+
+    // Fetch ALL KPIs for dynamic KRA progress calculation
+    const { data: allKpis } = useSharePointKPIs(undefined, 'All', undefined);
+
+    // Fetch ALL Unit Objectives for dynamic Key Deliverable display
+    const { data: allObjectives } = useSharePointObjectives(undefined, 'All', undefined);
+
     // Dynamic state for local overrides (after wizard saves)
     const [localMission, setLocalMission] = useState<string | null>(null);
     const [localVision, setLocalVision] = useState<string | null>(null);
@@ -263,10 +275,107 @@ const Strategy = () => {
     ]);
 
     // Strategic Objectives (The implementation cards)
-    const effectiveObjectives = objectives && objectives.length > 0 ? objectives : strategicObjectives;
+    // DYNAMIC CALCULATION: Override stored progress with aggregated KRA progress
+    const baseObjectives = objectives && objectives.length > 0 ? objectives : strategicObjectives;
+
+    const effectiveObjectives = baseObjectives.map((obj: any) => {
+        // Find linked KRAs for this objective
+        const linkedKras = allKras.filter(kra =>
+            String(kra.objective_id) === String(obj.id) ||
+            String(kra.objectiveId) === String(obj.id)
+        );
+
+        // If KRAs exist, calculate dynamic progress
+        if (linkedKras.length > 0) {
+            const calculated = calculateStrategicProgress(linkedKras, allKpis || []);
+            return { ...obj, progress: calculated };
+        }
+
+        // Fallback to manual/stored progress
+        return obj;
+    });
 
     // Divisional Alignments (The cascade)
     const effectiveAlignments = alignments && alignments.length > 0 ? alignments : divisionAlignment;
+
+    // NEW: Group unit objectives by division and Key Deliverable
+    const groupedObjectivesByDivision = React.useMemo(() => {
+        if (!allObjectives || allObjectives.length === 0) {
+            return effectiveAlignments; // Fallback to static data
+        }
+
+        // Initialize map with all alignment divisions to ensure they appear even if empty
+        const divisionMap = new Map<string, any>();
+
+        effectiveAlignments.forEach((div: any) => {
+            divisionMap.set(div.name, {
+                name: div.name,
+                director: div.director || 'Director',
+                icon: div.icon || 'LayoutDashboard',
+                deliverables: new Map<string, any>(),
+                // Keep references to old format data for fallback if needed
+                alignedObjectiveTitle: div.alignedObjectiveTitle || (div.objectives && div.objectives[0]?.title),
+                kras: div.kras || (div.objectives && div.objectives[0]?.kras) || []
+            });
+        });
+
+        allObjectives.forEach((objective: any) => {
+            const division = objective.division || 'Unassigned';
+            const linkedDeliverable = objective.linkedDeliverable;
+            const parentGoalTitle = objective.parentGoalTitle;
+
+            // NEW: Calculate progress for this specific unit objective
+            const linkedKras = allKras.filter(kra =>
+                String(kra.objective_id || kra.objectiveId) === String(objective.id)
+            );
+            const calculatedProgress = linkedKras.length > 0
+                ? calculateStrategicProgress(linkedKras, allKpis || [])
+                : objective.progress || 0;
+
+            const objectiveWithProgress = { ...objective, progress: calculatedProgress };
+
+            if (!divisionMap.has(division)) {
+                divisionMap.set(division, {
+                    name: division,
+                    director: 'Director',
+                    icon: 'LayoutDashboard',
+                    deliverables: new Map<string, any>()
+                });
+            }
+
+            const divData = divisionMap.get(division);
+
+            // Group by Key Deliverable
+            if (linkedDeliverable) {
+                if (!divData.deliverables.has(linkedDeliverable)) {
+                    divData.deliverables.set(linkedDeliverable, {
+                        deliverableName: linkedDeliverable,
+                        parentGoalTitle: parentGoalTitle || 'Strategic Objective',
+                        objectives: []
+                    });
+                }
+                divData.deliverables.get(linkedDeliverable).objectives.push(objectiveWithProgress);
+            } else {
+                // Standalone objective (No Deliverable link)
+                const standaloneKey = 'Standalone Objectives';
+                if (!divData.deliverables.has(standaloneKey)) {
+                    divData.deliverables.set(standaloneKey, {
+                        deliverableName: standaloneKey,
+                        parentGoalTitle: 'Unit Operations',
+                        objectives: [],
+                        isStandalone: true
+                    });
+                }
+                divData.deliverables.get(standaloneKey).objectives.push(objectiveWithProgress);
+            }
+        });
+
+        // Convert to array format for rendering
+        return Array.from(divisionMap.values()).map(div => ({
+            ...div,
+            deliverables: Array.from(div.deliverables.values())
+        }));
+    }, [allObjectives, effectiveAlignments]);
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -352,14 +461,22 @@ const Strategy = () => {
 
                     <TabsContent value="strategy" className="space-y-10 mt-0 outline-none">
                         {/* 1. Mission & Vision (Provided Content) */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Card className="border-l-4 border-l-intranet-primary shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader>
+                        <div className="grid grid-cols-1 gap-6">
+                            <Card className="relative overflow-hidden border-l-4 border-l-intranet-primary shadow-sm hover:shadow-md transition-shadow">
+                                <div className="absolute inset-0 z-0">
+                                    <img
+                                        src="/images/Mission.jpg"
+                                        alt="Mission Background"
+                                        className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-950 dark:via-gray-950/90" />
+                                </div>
+                                <CardHeader className="relative z-10">
                                     <CardTitle className="flex items-center gap-2 text-intranet-primary text-lg">
                                         <Flag className="w-5 h-5" /> Mission
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="relative z-10 max-w-2xl">
                                     <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
                                         "{effectiveMission}"
                                     </p>
@@ -381,13 +498,21 @@ const Strategy = () => {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
-                                <CardHeader>
+                            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
+                                <div className="absolute inset-0 z-0">
+                                    <img
+                                        src="/images/Vision.jpg"
+                                        alt="Vision Background"
+                                        className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-950 dark:via-gray-950/90" />
+                                </div>
+                                <CardHeader className="relative z-10">
                                     <CardTitle className="flex items-center gap-2 text-purple-600 text-lg">
                                         <Target className="w-5 h-5" /> Vision
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="relative z-10 max-w-2xl">
                                     <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
                                         "{effectiveVision}"
                                     </p>
@@ -581,8 +706,9 @@ const Strategy = () => {
                             </div>
 
                             <Accordion type="single" collapsible className="w-full space-y-4">
-                                {effectiveAlignments.map((division: any, index: number) => {
-                                    // Handle both format variants (from service vs from mock)
+                                {groupedObjectivesByDivision.map((division: any, index: number) => {
+                                    // Use the new deliverables structure if available, otherwise fallback to old format
+                                    const hasDeliverables = division.deliverables && division.deliverables.length > 0;
                                     const alignedTitle = division.alignedObjectiveTitle || (division.objectives && division.objectives[0]?.title);
                                     const kraList = division.kras || (division.objectives && division.objectives[0]?.kras) || [];
 
@@ -607,47 +733,151 @@ const Strategy = () => {
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent className="px-6 pb-8 pt-2">
-                                                <div className="grid grid-cols-1 md:grid-cols-1 gap-8 border-t border-gray-50 dark:border-gray-800 mt-2">
-                                                    <div className="space-y-6 pt-6">
-                                                        <div className="space-y-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-4 w-1 bg-intranet-primary rounded-full"></div>
-                                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">Aligned Strategic Objective & Execution</span>
+                                                {hasDeliverables ? (
+                                                    // NEW: Display Key Deliverables as nested accordions
+                                                    <div className="space-y-4 pt-4">
+                                                        <Accordion type="multiple" className="w-full space-y-3">
+                                                            {division.deliverables.map((deliverable: any, delIdx: number) => (
+                                                                <AccordionItem
+                                                                    key={delIdx}
+                                                                    value={`del-${index}-${delIdx}`}
+                                                                    className="border rounded-xl bg-gray-50/50 dark:bg-gray-800/30 overflow-hidden border-gray-100 dark:border-gray-700 shadow-sm"
+                                                                >
+                                                                    <AccordionTrigger className="hover:no-underline px-4 py-3 group/del">
+                                                                        <div className="flex flex-col items-start gap-1 text-left w-full">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Badge variant="outline" className="text-[9px] h-4 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-wider">
+                                                                                    {deliverable.parentGoalTitle}
+                                                                                </Badge>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-3 w-full">
+                                                                                <div className="p-2 rounded-lg bg-white dark:bg-gray-800 text-intranet-primary shadow-sm border border-gray-100 dark:border-gray-700">
+                                                                                    <Target className="w-4 h-4" />
+                                                                                </div>
+                                                                                <div className="flex-1">
+                                                                                    <div className="text-[10px] font-black uppercase tracking-[0.1em] text-intranet-primary/60 mb-0.5">Key Deliverable</div>
+                                                                                    <div className="text-sm font-bold text-gray-800 dark:text-gray-200">{deliverable.deliverableName}</div>
+                                                                                </div>
+                                                                                <Badge variant="secondary" className="ml-auto text-[10px] bg-intranet-primary/10 text-intranet-primary border-none">
+                                                                                    {deliverable.objectives.length} {deliverable.objectives.length === 1 ? 'Objective' : 'Objectives'}
+                                                                                </Badge>
+                                                                            </div>
+                                                                        </div>
+                                                                    </AccordionTrigger>
+                                                                    <AccordionContent className="px-4 pb-4 pt-2">
+                                                                        <div className="grid grid-cols-1 gap-3 border-t border-gray-100 dark:border-gray-700 pt-4 mt-2">
+                                                                            {deliverable.objectives.map((objective: any, objIdx: number) => (
+                                                                                <div
+                                                                                    key={objIdx}
+                                                                                    className="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all hover:translate-x-1"
+                                                                                >
+                                                                                    <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-intranet-primary/5 text-intranet-primary flex items-center justify-center">
+                                                                                        <ChevronRight className="w-3 h-3" />
+                                                                                    </div>
+                                                                                    <div className="flex-1 space-y-2">
+                                                                                        <div className="flex items-start justify-between gap-3">
+                                                                                            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-snug">
+                                                                                                {objective.title}
+                                                                                            </p>
+                                                                                            <div className="flex flex-col items-end gap-1 shrink-0">
+                                                                                                {objective.status && (
+                                                                                                    <Badge variant="secondary" className="text-[9px] font-bold">
+                                                                                                        {objective.status}
+                                                                                                    </Badge>
+                                                                                                )}
+                                                                                                {objective.progress !== undefined && (
+                                                                                                    <div className="text-[10px] font-bold text-intranet-primary">
+                                                                                                        {Math.round(objective.progress)}%
+                                                                                                    </div>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        {objective.progress !== undefined && (
+                                                                                            <div className="space-y-1">
+                                                                                                <Progress
+                                                                                                    value={objective.progress}
+                                                                                                    className="h-1 bg-gray-100 dark:bg-gray-700"
+                                                                                                />
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {objective.description && (
+                                                                                            <p className="text-xs text-muted-foreground line-clamp-2 hover:line-clamp-none transition-all">
+                                                                                                {objective.description}
+                                                                                            </p>
+                                                                                        )}
+                                                                                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[9px] text-muted-foreground font-medium uppercase tracking-wider">
+                                                                                            {objective.unit && (
+                                                                                                <span className="flex items-center gap-1.5">
+                                                                                                    <Building2 className="w-3 h-3 text-intranet-primary/70" />
+                                                                                                    {objective.unit}
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {objective.owner && (
+                                                                                                <span className="flex items-center gap-1.5">
+                                                                                                    <Users className="w-3 h-3 text-intranet-primary/70" />
+                                                                                                    {objective.owner}
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {objective.year && (
+                                                                                                <span className="flex items-center gap-1.5">
+                                                                                                    <Clock className="w-3 h-3 text-intranet-primary/70" />
+                                                                                                    {objective.year}
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    </AccordionContent>
+                                                                </AccordionItem>
+                                                            ))}
+                                                        </Accordion>
+                                                    </div>
+                                                ) : (
+                                                    // FALLBACK: Display old format (static KRAs)
+                                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-8 border-t border-gray-50 dark:border-gray-800 mt-2">
+                                                        <div className="space-y-6 pt-6">
+                                                            <div className="space-y-3">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-4 w-1 bg-intranet-primary rounded-full"></div>
+                                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">Aligned Strategic Objective & Execution</span>
+                                                                </div>
+                                                                <div className="text-lg font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
+                                                                    <Target className="w-5 h-5 text-intranet-primary" />
+                                                                    {alignedTitle}
+                                                                </div>
                                                             </div>
-                                                            <div className="text-lg font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-                                                                <Target className="w-5 h-5 text-intranet-primary" />
-                                                                {alignedTitle}
-                                                            </div>
-                                                        </div>
 
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="h-4 w-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
-                                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Key Result Areas (KRAs)</span>
-                                                            </div>
-                                                            <div className="grid grid-cols-1 gap-3">
-                                                                {kraList.map((kra: string, kraIdx: number) => (
-                                                                    <div
-                                                                        key={kraIdx}
-                                                                        className="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
-                                                                    >
-                                                                        <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-intranet-primary/5 text-intranet-primary flex items-center justify-center">
-                                                                            <ChevronRight className="w-3 h-3" />
+                                                            <div className="space-y-4">
+                                                                <div className="flex items-center gap-3">
+                                                                    <div className="h-4 w-1 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+                                                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Key Result Areas (KRAs)</span>
+                                                                </div>
+                                                                <div className="grid grid-cols-1 gap-3">
+                                                                    {kraList.map((kra: string, kraIdx: number) => (
+                                                                        <div
+                                                                            key={kraIdx}
+                                                                            className="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
+                                                                        >
+                                                                            <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-intranet-primary/5 text-intranet-primary flex items-center justify-center">
+                                                                                <ChevronRight className="w-3 h-3" />
+                                                                            </div>
+                                                                            <div className="space-y-1">
+                                                                                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-snug">
+                                                                                    {kra}
+                                                                                </p>
+                                                                                <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter opacity-60">
+                                                                                    Target Status: Active Tracking
+                                                                                </p>
+                                                                            </div>
                                                                         </div>
-                                                                        <div className="space-y-1">
-                                                                            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 leading-snug">
-                                                                                {kra}
-                                                                            </p>
-                                                                            <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-tighter opacity-60">
-                                                                                Target Status: Active Tracking
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
+                                                                    ))}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                )}
                                             </AccordionContent>
                                         </AccordionItem>
                                     );

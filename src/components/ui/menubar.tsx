@@ -82,13 +82,13 @@ MenubarSubContent.displayName = MenubarPrimitive.SubContent.displayName
 
 const MenubarContent = React.forwardRef<
   React.ElementRef<typeof MenubarPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Content>
+  React.ComponentPropsWithoutRef<typeof MenubarPrimitive.Content> & { container?: HTMLElement | null }
 >(
   (
-    { className, align = "start", alignOffset = -4, sideOffset = 8, ...props },
+    { className, align = "start", alignOffset = -4, sideOffset = 8, container, ...props },
     ref
   ) => (
-    <MenubarPrimitive.Portal>
+    <MenubarPrimitive.Portal container={container || undefined}>
       <MenubarPrimitive.Content
         ref={ref}
         align={align}
