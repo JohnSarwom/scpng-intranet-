@@ -368,19 +368,33 @@ const Strategy = () => {
     const baseObjectives = objectives && objectives.length > 0 ? objectives : strategicObjectives;
 
     const effectiveObjectives = baseObjectives.map((obj: any) => {
-        // Find linked KRAs for this objective
+        // Priority 1: KRA/KPI-based progress
         const linkedKras = allKras.filter(kra =>
             String(kra.objective_id) === String(obj.id) ||
             String(kra.objectiveId) === String(obj.id)
         );
-
-        // If KRAs exist, calculate dynamic progress
         if (linkedKras.length > 0) {
             const calculated = calculateStrategicProgress(linkedKras, allKpis || []);
-            return { ...obj, progress: calculated };
+            if (calculated > 0) return { ...obj, progress: calculated };
         }
 
-        // Fallback to manual/stored progress
+        // Priority 2: Aggregate from child unit-level objectives via parentGoalId
+        const childObjectives = (allUnitObjectives || []).filter((child: Objective) =>
+            String(child.parentGoalId) === String(obj.id)
+        );
+        if (childObjectives.length > 0) {
+            const totalProgress = childObjectives.reduce((sum: number, child: Objective) => {
+                let p = child.progress || 0;
+                if (p === 0 && (child.status === 'Completed' || child.status === 'Achieved')) {
+                    p = 100;
+                }
+                return sum + p;
+            }, 0);
+            const avgProgress = Math.round(totalProgress / childObjectives.length);
+            if (avgProgress > 0) return { ...obj, progress: avgProgress };
+        }
+
+        // Priority 3: Stored/manual progress fallback
         return obj;
     });
 
@@ -637,7 +651,7 @@ const Strategy = () => {
                                                             <span>Progress</span>
                                                             <Clock className="h-3 w-3" />
                                                         </div>
-                                                        <Progress value={objective.progress} className="h-1.5" />
+                                                        <Progress value={objective.progress} className="h-1.5" indicatorClassName="bg-[#c4506a]" />
                                                     </div>
 
                                                     <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
@@ -778,7 +792,7 @@ const Strategy = () => {
                                                         </Badge>
 
                                                         <div className="flex-1 max-w-[300px] ml-auto mr-4 hidden sm:flex items-center gap-2">
-                                                            <Progress value={divAvgProgress} className="h-3 w-full" />
+                                                            <Progress value={divAvgProgress} className="h-4 w-full border border-gray-100" indicatorClassName="bg-[#c4506a]" />
                                                             <span className="text-xs font-medium text-gray-600 dark:text-gray-400 w-9 text-right">{divAvgProgress}%</span>
                                                         </div>
                                                     </div>
@@ -822,7 +836,7 @@ const Strategy = () => {
                                                                                 {/* Unit Progress Bar */}
                                                                                 {unitObjCount > 0 && (
                                                                                     <div className="flex-1 max-w-[200px] ml-auto mr-4 hidden sm:flex items-center gap-2">
-                                                                                        <Progress value={unitAvgProgress} className="h-2.5" />
+                                                                                        <Progress value={unitAvgProgress} className="h-3.5 border border-gray-100" indicatorClassName="bg-[#c4506a]" />
                                                                                         <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 w-8 text-right">{unitAvgProgress}%</span>
                                                                                     </div>
                                                                                 )}
@@ -830,54 +844,133 @@ const Strategy = () => {
                                                                         </AccordionTrigger>
 
                                                                         <AccordionContent className="px-4 pb-4 pt-1">
-                                                                            <div className="border-t border-gray-100 dark:border-gray-700 pt-3 space-y-4">
-                                                                                {/* Key Deliverables */}
-                                                                                {Object.entries(deliverables).map(([deliverable, objectives], dIdx) => (
-                                                                                    <div key={dIdx} className="space-y-2">
-                                                                                        {/* Key Deliverable header */}
-                                                                                        <div className="flex items-center gap-2 mb-1">
-                                                                                            <div className="h-3 w-0.5 bg-intranet-primary rounded-full flex-shrink-0"></div>
-                                                                                            <span className="text-[9px] font-black uppercase tracking-[0.18em] text-intranet-primary/60">Key Deliverable</span>
-                                                                                        </div>
-                                                                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
-                                                                                            <Target className="w-4 h-4 text-intranet-primary flex-shrink-0 mt-0.5" />
-                                                                                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 leading-snug">{deliverable}</p>
-                                                                                        </div>
+                                                                            <div className="border-t border-gray-100 dark:border-gray-700 pt-3 space-y-5">
+                                                                                {/* Group objectives by Strategic Objective → Key Deliverable → Objectives */}
+                                                                                {(() => {
+                                                                                    // Flatten all objectives in this unit
+                                                                                    const allObjs = Object.entries(deliverables).flatMap(([del, objs]) =>
+                                                                                        objs.map(obj => ({ ...obj, _deliverable: del }))
+                                                                                    );
 
-                                                                                        {/* Objectives under this deliverable */}
-                                                                                        <div className="pl-3 space-y-2">
-                                                                                            {objectives.map((obj) => {
-                                                                                                const statusLower = (obj.status || '').toLowerCase();
-                                                                                                const badgeClass =
-                                                                                                    statusLower === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
-                                                                                                        statusLower === 'in progress' || statusLower === 'in-progress' ? 'bg-blue-100 text-blue-700 border-blue-200' :
-                                                                                                            'bg-gray-100 text-gray-600 border-gray-200';
+                                                                                    // Group by parentGoalId (strategic objective)
+                                                                                    const stratGroups: Record<string, { title: string; objectives: (Objective & { _deliverable: string })[] }> = {};
+                                                                                    allObjs.forEach(obj => {
+                                                                                        const parentId = obj.parentGoalId ? String(obj.parentGoalId) : 'unlinked';
+                                                                                        if (!stratGroups[parentId]) {
+                                                                                            // Look up strategic objective title
+                                                                                            const stratObj = effectiveObjectives.find((so: any) => String(so.id) === parentId);
+                                                                                            stratGroups[parentId] = {
+                                                                                                title: stratObj?.title || obj.parentGoalTitle || 'Unlinked Objectives',
+                                                                                                objectives: []
+                                                                                            };
+                                                                                        }
+                                                                                        stratGroups[parentId].objectives.push(obj);
+                                                                                    });
 
-                                                                                                return (
-                                                                                                    <div key={obj.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-white dark:bg-gray-800/70 border border-gray-100/80 dark:border-gray-700/50 shadow-sm">
-                                                                                                        <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-intranet-primary flex-shrink-0" />
-                                                                                                        <div className="flex-1 min-w-0">
-                                                                                                            <div className="flex items-start justify-between gap-2">
-                                                                                                                <span className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-snug">{obj.title}</span>
-                                                                                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeClass}`}>
-                                                                                                                    {obj.status || 'Not Started'}
-                                                                                                                </span>
-                                                                                                            </div>
-                                                                                                            {obj.description && (
-                                                                                                                <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1 italic">{obj.description}</p>
-                                                                                                            )}
-                                                                                                            {obj.goalType && (
-                                                                                                                <span className="text-[9px] text-muted-foreground/60 uppercase font-bold tracking-wider">
-                                                                                                                    {obj.goalType} Level
-                                                                                                                </span>
-                                                                                                            )}
-                                                                                                        </div>
+                                                                                    // Sort: linked strategic objectives first, unlinked last
+                                                                                    const sortedEntries = Object.entries(stratGroups).sort(([a], [b]) => {
+                                                                                        if (a === 'unlinked') return 1;
+                                                                                        if (b === 'unlinked') return -1;
+                                                                                        return 0;
+                                                                                    });
+
+                                                                                    return sortedEntries.map(([stratId, group]) => {
+                                                                                        // Sub-group by deliverable within this strategic objective
+                                                                                        const deliverableGroups: Record<string, (Objective & { _deliverable: string })[]> = {};
+                                                                                        group.objectives.forEach(obj => {
+                                                                                            const del = obj._deliverable || 'General';
+                                                                                            if (!deliverableGroups[del]) deliverableGroups[del] = [];
+                                                                                            deliverableGroups[del].push(obj);
+                                                                                        });
+
+                                                                                        // Calculate progress for this strategic group
+                                                                                        const groupProgress = group.objectives.length > 0
+                                                                                            ? Math.round(group.objectives.reduce((sum, obj) => {
+                                                                                                let p = obj.progress || 0;
+                                                                                                if (p === 0 && (obj.status === 'Completed' || obj.status === 'Achieved')) p = 100;
+                                                                                                return sum + p;
+                                                                                            }, 0) / group.objectives.length)
+                                                                                            : 0;
+
+                                                                                        const stratObj = effectiveObjectives.find((so: any) => String(so.id) === stratId);
+                                                                                        const StratIcon = stratObj?.icon ? (IconMap[stratObj.icon] || (typeof stratObj.icon === 'function' ? stratObj.icon : Layers)) : Layers;
+
+                                                                                        return (
+                                                                                            <div key={stratId} className="space-y-3">
+                                                                                                {/* Strategic Objective Header */}
+                                                                                                <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-intranet-primary/8 to-transparent border border-intranet-primary/15">
+                                                                                                    <div className="p-2 rounded-lg bg-intranet-primary/15 text-intranet-primary flex-shrink-0">
+                                                                                                        <StratIcon className="w-4 h-4" />
                                                                                                     </div>
-                                                                                                );
-                                                                                            })}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                ))}
+                                                                                                    <div className="flex-1 min-w-0">
+                                                                                                        <div className="flex items-center gap-2">
+                                                                                                            <span className="text-[9px] font-black uppercase tracking-[0.15em] text-intranet-primary/70">
+                                                                                                                {stratId === 'unlinked' ? 'Unlinked' : 'Strategic Objective'}
+                                                                                                            </span>
+                                                                                                        </div>
+                                                                                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-snug mt-0.5">{group.title}</p>
+                                                                                                    </div>
+                                                                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                                                                        <div className="w-16 hidden sm:block">
+                                                                                                            <Progress value={groupProgress} className="h-2 border border-gray-100" indicatorClassName="bg-[#c4506a]" />
+                                                                                                        </div>
+                                                                                                        <span className="text-[10px] font-bold text-intranet-primary">{groupProgress}%</span>
+                                                                                                    </div>
+                                                                                                </div>
+
+                                                                                                {/* Key Deliverables under this Strategic Objective */}
+                                                                                                <div className="pl-4 space-y-3 border-l-2 border-intranet-primary/15 ml-5">
+                                                                                                    {Object.entries(deliverableGroups).map(([deliverable, objs], dIdx) => (
+                                                                                                        <div key={dIdx} className="space-y-2">
+                                                                                                            {/* Key Deliverable header */}
+                                                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                                                <div className="h-3 w-0.5 bg-intranet-primary rounded-full flex-shrink-0"></div>
+                                                                                                                <span className="text-[9px] font-black uppercase tracking-[0.18em] text-intranet-primary/60">Key Deliverable</span>
+                                                                                                            </div>
+                                                                                                            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                                                                                                                <Target className="w-4 h-4 text-intranet-primary flex-shrink-0 mt-0.5" />
+                                                                                                                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 leading-snug">{deliverable}</p>
+                                                                                                            </div>
+
+                                                                                                            {/* Objectives under this deliverable */}
+                                                                                                            <div className="pl-3 space-y-2">
+                                                                                                                {objs.map((obj) => {
+                                                                                                                    const statusLower = (obj.status || '').toLowerCase();
+                                                                                                                    const badgeClass =
+                                                                                                                        statusLower === 'completed' ? 'bg-green-100 text-green-700 border-green-200' :
+                                                                                                                            statusLower === 'in progress' || statusLower === 'in-progress' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                                                                                                                'bg-gray-100 text-gray-600 border-gray-200';
+
+                                                                                                                    return (
+                                                                                                                        <div key={obj.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-white dark:bg-gray-800/70 border border-gray-100/80 dark:border-gray-700/50 shadow-sm">
+                                                                                                                            <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-intranet-primary flex-shrink-0" />
+                                                                                                                            <div className="flex-1 min-w-0">
+                                                                                                                                <div className="flex items-start justify-between gap-2">
+                                                                                                                                    <span className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-snug">{obj.title}</span>
+                                                                                                                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${badgeClass}`}>
+                                                                                                                                        {obj.status || 'Not Started'}
+                                                                                                                                    </span>
+                                                                                                                                </div>
+                                                                                                                                {obj.description && (
+                                                                                                                                    <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-1 italic">{obj.description}</p>
+                                                                                                                                )}
+                                                                                                                                {obj.goalType && (
+                                                                                                                                    <span className="text-[9px] text-muted-foreground/60 uppercase font-bold tracking-wider">
+                                                                                                                                        {obj.goalType} Level
+                                                                                                                                    </span>
+                                                                                                                                )}
+                                                                                                                            </div>
+                                                                                                                        </div>
+                                                                                                                    );
+                                                                                                                })}
+                                                                                                            </div>
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        );
+                                                                                    });
+                                                                                })()}
                                                                             </div>
                                                                         </AccordionContent>
                                                                     </AccordionItem>
@@ -1343,7 +1436,7 @@ const GoalCascadeItem = ({ item, level }: { item: StrategicItem, level: number }
                                             <span>Progress</span>
                                             <span>{item.progress}%</span>
                                         </div>
-                                        <Progress value={item.progress} className="h-1.5" />
+                                        <Progress value={item.progress} className="h-1.5" indicatorClassName="bg-[#c4506a]" />
                                     </div>
                                     <Badge
                                         variant={item.status === 'on-track' ? 'default' : item.status === 'at-risk' ? 'destructive' : 'secondary'}
