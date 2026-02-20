@@ -22,6 +22,12 @@ export interface MicrosoftContact {
   companyName?: string;
   preferredLanguage?: string;
   photo?: string;
+  manager?: {
+    id: string;
+    displayName: string;
+    jobTitle?: string;
+    mail?: string;
+  };
 }
 
 export const useMicrosoftContacts = () => {
@@ -50,7 +56,7 @@ export const useMicrosoftContacts = () => {
         scopes: ['User.Read', 'People.Read', 'Directory.Read.All']
       });
 
-      const result = await fetch('https://graph.microsoft.com/v1.0/users?$select=id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone,userPrincipalName,preferredLanguage,companyName', {
+      const result = await fetch('https://graph.microsoft.com/v1.0/users?$select=id,displayName,givenName,surname,mail,jobTitle,department,officeLocation,businessPhones,mobilePhone,userPrincipalName,preferredLanguage,companyName&$expand=manager($select=id,displayName,jobTitle,mail)', {
         headers: {
           Authorization: `Bearer ${response.accessToken}`
         }
@@ -76,7 +82,13 @@ export const useMicrosoftContacts = () => {
         givenName: user.givenName,
         surname: user.surname,
         companyName: user.companyName,
-        preferredLanguage: user.preferredLanguage
+        preferredLanguage: user.preferredLanguage,
+        manager: user.manager ? {
+          id: user.manager.id,
+          displayName: user.manager.displayName,
+          jobTitle: user.manager.jobTitle,
+          mail: user.manager.mail
+        } : undefined
       }));
 
       setContacts(transformedContacts);

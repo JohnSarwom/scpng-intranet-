@@ -678,7 +678,24 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
   const handleOpenAddObjectiveModal = () => {
     setEditingObjective(undefined);
-    setNewObjectiveData({ title: '', description: '' });
+    // Pre-fill data from userContext or auth user
+    const ownerName = userContext?.name || user?.user_metadata?.full_name || '';
+    const userDivision = userContext?.division || user?.user_metadata?.division || '';
+    const userUnit = userContext?.unit || user?.user_metadata?.unit || '';
+
+    setNewObjectiveData({
+      title: '',
+      description: '',
+      status: 'Not Started',
+      progress: 0,
+      year: new Date().getFullYear().toString(),
+      goalType: 'Division',
+      division: userDivision,
+      unit: userUnit,
+      owner: ownerName,
+      parentGoalId: '',
+      linkedDeliverable: ''
+    });
     setIsObjectiveModalOpen(true);
   };
 

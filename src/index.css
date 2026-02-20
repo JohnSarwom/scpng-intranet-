@@ -320,18 +320,36 @@
   }
 }
 
-/* Sidebar Scrollbar Styles - Hidden but functional */
+/* Sidebar Scrollbar Styles - Subtle, visible only on hover */
 .sidebar-scrollable {
-  scrollbar-width: none;
-  /* For Firefox - hides scrollbar but keeps functionality */
-  -ms-overflow-style: none;
-  /* For Internet Explorer and Edge */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
 }
 
-/* Hide scrollbar for Webkit browsers (Chrome, Safari) but keep scrolling */
+.sidebar-scrollable:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+/* Webkit browsers (Chrome, Safari, Edge) */
 .sidebar-scrollable::-webkit-scrollbar {
-  display: none;
-  /* Hides the scrollbar completely */
+  width: 4px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.sidebar-scrollable:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-scrollable:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
 
 /* Hover-visible Scrollbar Styles */

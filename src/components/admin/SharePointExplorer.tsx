@@ -253,6 +253,18 @@ export const SharePointExplorer = () => {
         toast({ title: "Success", description: "Schema copied to clipboard" });
     };
 
+    const handleCopyAllLists = () => {
+        const allListNames = lists.map(l => l.displayName).join('\n');
+        navigator.clipboard.writeText(allListNames);
+        toast({ title: "Success", description: "All list names copied to clipboard" });
+    };
+
+    const handleCopyList = (e: React.MouseEvent, listName: string) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(listName);
+        toast({ title: "Success", description: `Computed name '${listName}' to clipboard` });
+    };
+
     // Filtered Lists
     const filteredLists = lists.filter(l =>
         l.displayName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -271,9 +283,14 @@ export const SharePointExplorer = () => {
                         <h3 className="font-semibold flex items-center gap-2">
                             <Database className="w-4 h-4" /> Lists ({lists.length})
                         </h3>
-                        <Button variant="ghost" size="icon" onClick={loadLists} disabled={isLoadingLists}>
-                            <RefreshCw className={`w-4 h-4 ${isLoadingLists ? 'animate-spin' : ''}`} />
-                        </Button>
+                        <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" onClick={handleCopyAllLists} title="Copy All List Names">
+                                <Copy className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={loadLists} disabled={isLoadingLists}>
+                                <RefreshCw className={`w-4 h-4 ${isLoadingLists ? 'animate-spin' : ''}`} />
+                            </Button>
+                        </div>
                     </div>
                     <div className="relative">
                         <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -320,10 +337,19 @@ export const SharePointExplorer = () => {
                                     : 'hover:bg-muted'
                                 }`}
                         >
-                            <span className="truncate" title={list.displayName}>{list.displayName}</span>
-                            {selectedList?.id === list.id && (
-                                <Badge variant="secondary" className="text-xs">{items.length}</Badge>
-                            )}
+                            <span className="truncate flex-1" title={list.displayName}>{list.displayName}</span>
+                            <div className="flex items-center gap-2">
+                                {selectedList?.id === list.id && (
+                                    <Badge variant="secondary" className="text-xs">{items.length}</Badge>
+                                )}
+                                <div
+                                    className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-background/20 cursor-pointer ${selectedList?.id === list.id ? 'text-primary-foreground' : 'text-muted-foreground'}`}
+                                    onClick={(e) => handleCopyList(e, list.displayName)}
+                                    title="Copy Name"
+                                >
+                                    <Copy className="w-3 h-3" />
+                                </div>
+                            </div>
                         </button>
                     ))}
                     {filteredLists.length === 0 && (
@@ -548,6 +574,6 @@ export const SharePointExplorer = () => {
                     </div>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
