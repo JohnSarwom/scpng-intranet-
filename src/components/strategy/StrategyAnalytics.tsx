@@ -86,7 +86,7 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
 
             {/* Row 1: Status Distribution + Progress Trends */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <StatusDistribution objectives={filteredObjectives} />
+                <StatusDistribution objectives={filteredObjectives} kras={filteredKras} kpis={kpis} />
                 <ProgressTrends objectives={filteredObjectives} timePeriod={timePeriod} />
             </div>
 
@@ -101,7 +101,7 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
                         status: obj.status || '',
                     }))}
                 />
-                <DivisionalComparison objectives={filteredObjectives} kras={filteredKras} unitObjectives={unitObjectives} kpis={kpis} />
+                <DivisionalComparison objectives={filteredObjectives} kras={filteredKras} unitObjectives={unitObjectives} kpis={kpis} orgHierarchy={orgHierarchy} />
             </div>
 
             {/* Milestones Timeline */}

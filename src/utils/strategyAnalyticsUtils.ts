@@ -73,7 +73,7 @@ export function buildStatusDistributionData(objectives: any[]): Array<{ name: st
 export function buildProgressTrendData(
     objectives: any[],
     period: TimePeriod = 'all'
-): Array<{ name: string; objectives: number; executions: number }> {
+): Array<{ name: string; objectives: number; executions: number; planned: number }> {
     const now = new Date();
 
     // Helper: average progress of objectives that are "active" at a given reference date
@@ -85,6 +85,21 @@ export function buildProgressTrendData(
             if (p === 0 && (status === 'completed' || status === 'achieved')) p = 100;
             return s + p;
         }, 0) / objs.length);
+    };
+
+    // Helper: average planned (expected) progress based on elapsed time vs objective lifespan
+    const avgPlannedOf = (objs: any[], refDate: Date) => {
+        const withDates = objs.filter(o => o.startDate && o.endDate);
+        if (withDates.length === 0) return null; // null = no reference line
+        const totalPlanned = withDates.reduce((sum: number, o: any) => {
+            const start = new Date(o.startDate);
+            const end = new Date(o.endDate);
+            const totalMs = end.getTime() - start.getTime();
+            if (totalMs <= 0) return sum;
+            const elapsedMs = Math.min(Math.max(refDate.getTime() - start.getTime(), 0), totalMs);
+            return sum + (elapsedMs / totalMs) * 100;
+        }, 0);
+        return Math.round(totalPlanned / withDates.length);
     };
 
     // Helper: filter objectives that are active at a given reference date
@@ -99,7 +114,13 @@ export function buildProgressTrendData(
     const buildPoint = (label: string, refDate: Date) => {
         const active = activeAt(objectives, refDate);
         const execs = active.filter((o: any) => o.isFeatured);
-        return { name: label, objectives: avgProgressOf(active), executions: avgProgressOf(execs) };
+        const planned = avgPlannedOf(active, refDate);
+        return {
+            name: label,
+            objectives: avgProgressOf(active),
+            executions: avgProgressOf(execs),
+            planned: planned ?? 0,
+        };
     };
 
     if (period === 'weekly') {
@@ -141,15 +162,44 @@ export function buildDivisionalComparisonData(
     objectives: any[], // kept for API compatibility — not used for chart data
     kras: any[],
     unitObjectives: any[] = [],
-    kpis: any[] = []
-): Array<{ name: string; fullName: string; objectiveProgress: number; kraProgress: number }> {
-    const divisions = [
+    kpis: any[] = [],
+    orgHierarchy: any[] = []
+): Array<{ name: string; fullName: string; objectiveProgress: number; kraProgress: number; objCount: number; kraCount: number }> {
+
+    // --- Dynamic division extraction from orgHierarchy ---
+    type DivisionEntry = { abbr: string; full: string; aliases: string[] };
+
+    const buildDivisionsFromHierarchy = (): DivisionEntry[] => {
+        // Group by division name, collect associated units as aliases
+        const divMap = new Map<string, Set<string>>();
+        orgHierarchy.forEach((h: any) => {
+            const div = (h.division || '').trim();
+            if (!div) return;
+            if (!divMap.has(div)) divMap.set(div, new Set());
+            const unit = (h.unit || '').trim();
+            if (unit) divMap.get(div)!.add(unit.toLowerCase());
+        });
+        return Array.from(divMap.entries()).map(([div, unitSet]) => {
+            // Build abbreviation from first letters of each word
+            const abbr = div.split(/\s+/).map(w => w[0]?.toUpperCase() || '').join('');
+            return {
+                abbr,
+                full: div,
+                aliases: [div.toLowerCase(), ...Array.from(unitSet)],
+            };
+        });
+    };
+
+    // Fallback hardcoded divisions (when orgHierarchy is empty)
+    const FALLBACK_DIVISIONS: DivisionEntry[] = [
         { abbr: 'LSD', full: 'Legal Services', aliases: ['legal services division', 'legal advisory'] },
         { abbr: 'LISD', full: 'Licensing', aliases: ['licensing, market & supervision division', 'licensing division', 'licensing unit', 'supervision unit', 'market data unit', 'investigations unit'] },
         { abbr: 'RPD', full: 'Research', aliases: ['research & publication division', 'research division', 'publication unit'] },
         { abbr: 'CSD', full: 'Corporate Services', aliases: ['corporate services division', 'finance unit', 'it unit', 'human resource unit'] },
         { abbr: 'OC', full: 'Office of the Chairman', aliases: ['office of the chairman', 'executive division', 'secretariat unit'] },
     ];
+
+    const divisions = orgHierarchy.length > 0 ? buildDivisionsFromHierarchy() : FALLBACK_DIVISIONS;
 
     const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
 
@@ -176,7 +226,6 @@ export function buildDivisionalComparisonData(
         };
 
         // Only use true unit-level objectives — exclude org/strategic/board types
-        // This mirrors the exact filter used in Strategy.tsx accordion (lines 258–261)
         const trueUnitObjs = unitObjectives.filter(o => {
             const type = (o.goalType || '').toLowerCase();
             return type !== 'org' && type !== 'strategic' && type !== 'board';
@@ -188,9 +237,19 @@ export function buildDivisionalComparisonData(
         );
 
         // Calculate objective progress from unit objectives only
-        // FALLBACK: If status is 'Completed'/'Achieved', treat as 100%
         const avgObjProgress = divUnitObjs.length > 0
             ? Math.round(divUnitObjs.reduce((s: number, o: any) => {
+                // Priority: Calculate from linked KRAs if they exist (Dynamic)
+                const linkedKras = kras.filter(k =>
+                    String(k.objective_id || k.objectiveId) === String(o.id)
+                );
+
+                if (linkedKras.length > 0) {
+                    const kraAvgProgress = linkedKras.reduce((sum, kra) => sum + getKraProgressFromKpis(kra), 0) / linkedKras.length;
+                    return s + kraAvgProgress;
+                }
+
+                // Fallback: Manual progress or status-based override
                 let p = o.progress || 0;
                 const status = (o.status || '').toLowerCase();
                 if (p === 0 && (status === 'completed' || status === 'achieved')) p = 100;
@@ -209,7 +268,14 @@ export function buildDivisionalComparisonData(
             ? Math.round(divKras.reduce((s: number, k: any) => s + getKraProgressFromKpis(k), 0) / divKras.length)
             : 0;
 
-        return { name: abbr, fullName: full, objectiveProgress: avgObjProgress, kraProgress: avgKraProgress };
+        return {
+            name: abbr,
+            fullName: full,
+            objectiveProgress: avgObjProgress,
+            kraProgress: avgKraProgress,
+            objCount: divUnitObjs.length,
+            kraCount: divKras.length,
+        };
     });
 }
 

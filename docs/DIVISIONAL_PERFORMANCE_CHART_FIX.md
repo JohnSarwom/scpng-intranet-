@@ -138,45 +138,30 @@ Recharts BarChart — LSD / LISD / RPD / CSD / OC with real progress values
 
 ---
 
-## 6. Update: KPI Status-Based KRA Progress (2026-02-23)
+### Update: Reinforced Status & Manual Overrides (2026-02-24)
 
 > **Status**: Implemented & Verified
 
-### Problem
-The KRAs bar in the Divisional Performance chart was reading the stored `Progress` field from `Performance_KRAs` in SharePoint, which was defaulting to `100%` due to the list column's default value. This made the chart inaccurate and disconnected from actual work completion.
+To support more flexible work tracking, the purely KPI-based calculation was refined to allow **manual completion overrides**.
 
-### SharePoint Schema Changes
-The following columns were removed from the `Performance_KRAs` list to prevent stale/default values polluting the chart:
+#### Persistence Restored
+- **Status Field**: The `Status` field in SharePoint is once again used for persistence. `KRAsTab.tsx` explicitly writes the user-selected status to SharePoint.
+- **Progress Field**: The `Progress` field is also persisted to SharePoint to ensure the database stays in sync with the calculated/selected state.
 
-| Column | Action | Reason |
-|--------|--------|--------|
-| `Status` | **Deleted** | App was setting `status: 'pending'` on creation; now no status is written |
-| `Progress` | Default value cleared | The app no longer reads this for chart calculation |
+#### Calculation Refinement (`kpiUtils.ts`)
+The `calculateKraProgress()` function (used by this chart) now follows this priority:
+1. **Manual Override**: If KRA Status is **'Completed'**, **'Done'**, or **'Closed'**, progress is forced to **100%**.
+2. **Dynamic Count**: Otherwise, it calculates progress based on the completion status of linked KPIs.
 
-### New Calculation Rule
-KRA progress is now **derived entirely from the completion status of its linked KPIs**. No stored value is used.
-
-```
-KRA Progress (%) = (KPIs with status "completed" / "achieved" / "done") ÷ (total KPIs) × 100
-```
-
-- A KRA with **0 completed KPIs** → **0%**
-- A KRA with **all KPIs completed** → **100%** (counts as "completed" in the dashboard)
-- Target/Actual numeric fields on KPIs have **no effect** on progress
-
-### Files Changed
+#### Summary of Logic Alignment
+This refinement ensures that marking a KRA as finished (even if KPIs aren't fully updated) will correctly show as 100% on the **Divisional Performance** chart.
 
 | File | Change |
 |------|--------|
-| `src/utils/kpiUtils.ts` | `calculateKraProgress()` rewritten to count completed KPIs by status only |
-| `src/utils/strategyAnalyticsUtils.ts` | `buildDivisionalComparisonData()` now accepts a `kpis` param and uses `getKraProgressFromKpis()` inline (same rule) |
-| `src/components/strategy/analytics/DivisionalComparison.tsx` | Added `kpis?: any[]` prop, passes to `buildDivisionalComparisonData()` |
-| `src/components/strategy/StrategyAnalytics.tsx` | Passes `kpis={kpis}` to `<DivisionalComparison>` |
-| `src/components/unit-tabs/OverviewTab.tsx` | Dashboard KRA Progress card now calls `calculateKraProgress()` instead of `kra.progress`; "X completed" count based on KPI completion |
-| `src/components/kpi/KpiModal.tsx` | Removed `status: 'pending'` from both `setFormData` and `handleSubmit` — no status written to SharePoint on create/edit |
-
-### Consistent Behavior Across UI
-Both the **Dashboard Overview KRA Progress card** and the **Strategy Analytics Divisional Performance chart** now use the identical calculation rule, ensuring the numbers are always consistent.
+| `src/utils/kpiUtils.ts` | `calculateKraProgress()`: Implemented manual status override for 100% completion. |
+| `src/components/unit-tabs/KRAsTab.tsx` | Fixed `handleKpiFormSubmit` payload to include `status` and `progress`. |
+| `src/services/sharePointOpsService.ts` | Aligned `updateKRA`/`addKRA` status mapping for consistency. |
+| `src/pages/Unit.tsx` | Aligned UI status badge mapping with SharePoint sets. |
 
 ---
 

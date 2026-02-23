@@ -1,11 +1,13 @@
 /**
  * useApps Hook
  * React hook for fetching and managing applications from SharePoint
+ * Cached via React Query with localStorage persistence
  */
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { Client } from '@microsoft/microsoft-graph-client';
+import { useQuery } from '@tanstack/react-query';
 import { AppsSharePointService, SharePointApp } from '@/services/appsSharePointService';
 
 interface UseAppsReturn {
@@ -20,44 +22,11 @@ interface UseAppsReturn {
 
 export const useApps = (): UseAppsReturn => {
   const { instance, accounts } = useMsal();
-  const [apps, setApps] = useState<SharePointApp[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const account = accounts[0];
 
-  const CACHE_KEY = 'scpng_apps_cache';
-  const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
-  const fetchApps = async (forceRefresh = false) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Check cache first if not forcing refresh
-      if (!forceRefresh) {
-        const cachedData = localStorage.getItem(CACHE_KEY);
-        if (cachedData) {
-          const { apps: cachedApps, timestamp } = JSON.parse(cachedData);
-          const isExpired = Date.now() - timestamp > CACHE_DURATION;
-
-          if (!isExpired && cachedApps.length > 0) {
-            console.log('📦 [useApps] Loading from cache');
-            setApps(cachedApps);
-
-            // Extract categories from cache
-            const uniqueCategories = Array.from(
-              new Set((cachedApps as SharePointApp[]).map(app => app.category).filter(Boolean))
-            ).sort();
-            setCategories(uniqueCategories as string[]);
-
-            setLoading(false);
-            return;
-          }
-        }
-      }
-
-      // Get access token
-      const account = accounts[0];
+  const query = useQuery({
+    queryKey: ['sharePointApps', account?.username],
+    queryFn: async () => {
       if (!account) {
         throw new Error('No account found. Please sign in.');
       }
@@ -67,61 +36,32 @@ export const useApps = (): UseAppsReturn => {
         account: account,
       });
 
-      // Initialize Graph client
       const client = Client.init({
         authProvider: (done) => {
           done(null, response.accessToken);
         },
       });
 
-      // Initialize service and fetch apps
       const service = new AppsSharePointService(client);
       await service.initialize();
 
       const fetchedApps = await service.getApplications();
       const activeApps = fetchedApps.filter(app => app.isActive !== false);
 
-      setApps(activeApps);
-
-      // Extract unique categories
-      const uniqueCategories = Array.from(
-        new Set(activeApps.map(app => app.category).filter(Boolean))
-      ).sort();
-      setCategories(uniqueCategories);
-
-      // Save to cache
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        apps: activeApps,
-        timestamp: Date.now()
-      }));
-
       console.log('✅ [useApps] Successfully fetched', activeApps.length, 'applications');
-    } catch (err: any) {
-      console.error('❌ [useApps] Error fetching applications:', err);
-      setError(err.message || 'Failed to fetch applications');
+      return activeApps;
+    },
+    enabled: !!account,
+    staleTime: 1000 * 60 * 30, // 30 minutes — apps change rarely
+  });
 
-      // If error occurs, try to load from cache even if expired as fallback
-      const cachedData = localStorage.getItem(CACHE_KEY);
-      if (cachedData) {
-        console.warn('⚠️ [useApps] Using expired cache due to fetch error');
-        const { apps: cachedApps } = JSON.parse(cachedData);
-        setApps(cachedApps);
-        const uniqueCategories = Array.from(
-          new Set((cachedApps as SharePointApp[]).map(app => app.category).filter(Boolean))
-        ).sort();
-        setCategories(uniqueCategories as string[]);
-      } else {
-        setApps([]);
-        setCategories([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const apps = query.data ?? [];
 
-  useEffect(() => {
-    fetchApps();
-  }, [instance, accounts]);
+  const categories = useMemo(() => {
+    return Array.from(
+      new Set(apps.map(app => app.category).filter(Boolean))
+    ).sort() as string[];
+  }, [apps]);
 
   const getAppsByCategory = (category: string): SharePointApp[] => {
     return apps.filter(app =>
@@ -136,9 +76,9 @@ export const useApps = (): UseAppsReturn => {
   return {
     apps,
     categories,
-    loading,
-    error,
-    refetch: () => fetchApps(true),
+    loading: query.isLoading,
+    error: query.error?.message ?? null,
+    refetch: async () => { await query.refetch(); },
     getAppsByCategory,
     getAppById,
   };

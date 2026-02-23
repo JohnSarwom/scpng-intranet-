@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
+import { useQuery } from '@tanstack/react-query';
 import { NewsSharePointService } from '@/services/newsSharePointService';
 
 export interface NewsItem {
@@ -99,31 +99,22 @@ const MOCK_NEWS: NewsItem[] = [
 ];
 
 export function useInternalNews() {
-  const [news, setNews] = useState<NewsItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { getClient } = useMicrosoftGraph();
 
-  const fetchNews = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const query = useQuery({
+    queryKey: ['internalNews'],
+    queryFn: async () => {
       const client = await getClient();
       if (!client) {
-        // If no client (not logged in?), maybe fallback or just return empty.
-        // For now, let's just log and return.
         console.warn('Graph client not available for internal news.');
-        setNews([]);
-        setIsLoading(false);
-        return;
+        return [];
       }
 
       const service = new NewsSharePointService(client);
       const allNews = await service.getAllNews();
 
       // Filter for 'SCPNG News' or 'Internal' and take top 7
-      const scpngNews = allNews
+      return allNews
         .filter(item => {
           const cat = (item.category || '').toLowerCase();
           return cat.includes('scpng') || cat.includes('internal');
@@ -134,31 +125,21 @@ export function useInternalNews() {
           id: item.id,
           title: item.title,
           description: item.description,
-          image: item.imageUrl || 'https://via.placeholder.com/800x450/83002A/FFFFFF?text=SCPNG+News', // Fallback image
+          image: item.imageUrl || 'https://via.placeholder.com/800x450/83002A/FFFFFF?text=SCPNG+News',
           date: item.publishDate,
           category: item.category || 'SCPNG News',
-          priority: 'normal' as const, // Default, logic could be added if SharePoint has priority
+          priority: 'normal' as const,
           link: item.sourceUrl,
           author: item.sourceName || 'SCPNG'
         }));
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-      setNews(scpngNews);
-      setIsLoading(false);
-    } catch (err: any) {
-      console.error('Error fetching internal news:', err);
-      // Fallback to empty if error, or show error state
-      setError(err.message || 'Failed to load news');
-      setIsLoading(false);
-    }
+  return {
+    news: query.data ?? [],
+    isLoading: query.isLoading,
+    error: query.error?.message ?? null,
+    refetch: query.refetch,
   };
-
-  useEffect(() => {
-    fetchNews();
-  }, [getClient]); // Re-fetch if client availability changes
-
-  const refetch = () => {
-    fetchNews();
-  };
-
-  return { news, isLoading, error, refetch };
 }

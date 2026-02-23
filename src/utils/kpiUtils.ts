@@ -37,16 +37,22 @@ export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
  * @param kpis Array of KPIs belonging to this KRA
  * @returns The calculated progress as a percentage (0-100)
  */
-export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[]): number => {
+export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[] = []): number => {
+    const kraId = kra.id ? String(kra.id) : (kra.ID ? String(kra.ID) : '');
+    if (!kraId) return 0;
+
+    // Priority: If KRA is marked Completed/Closed, force 100%
+    const status = (kra.status || '').toLowerCase();
+    if (['completed', 'closed', 'done'].includes(status)) {
+        return 100;
+    }
+
     // Filter KPIs that belong to this KRA
-    const kraKpis = kpis.filter(kpi => {
-        const kpiKraId = kpi.kra_id ? String(kpi.kra_id) : '';
-        const targetId = kra.id ? String(kra.id) : (kra.ID ? String(kra.ID) : '');
-        return kpiKraId !== '' && kpiKraId === targetId;
-    });
+    const kraKpis = kpis.filter(kpi => String(kpi.kra_id || '') === kraId);
 
     if (!kraKpis || kraKpis.length === 0) {
-        return 0;
+        // Fallback to stored progress if no KPIs available and NOT completed
+        return kra.progress || 0;
     }
 
     // KRA progress = % of KPIs that have a "completed" status

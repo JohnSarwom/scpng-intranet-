@@ -628,7 +628,7 @@ export class SharePointOpsService {
                 Responsible: kra.owner?.name || null,
                 Unit: kra.unit || null,
                 Division: kra.division || null,
-                Status: kra.status === 'in-progress' ? 'In Progress' : (kra.status === 'closed' ? 'Closed' : 'Open'),
+                Status: ['completed', 'done', 'closed'].includes(kra.status?.toLowerCase() || '') ? 'Closed' : (kra.status === 'in-progress' ? 'In Progress' : 'Open'),
                 Progress: kra.progress ?? 0,
                 Description: kra.description,
                 UnitObjectiveLookupId: kra.objective_id ? Number(kra.objective_id) : null,
@@ -656,7 +656,7 @@ export class SharePointOpsService {
         if (kra.owner !== undefined) fields.Responsible = kra.owner?.name || null;
         if (kra.unit !== undefined) fields.Unit = kra.unit;
         if (kra.division !== undefined) fields.Division = kra.division;
-        if (kra.status !== undefined) fields.Status = kra.status === 'in-progress' ? 'In Progress' : (kra.status === 'closed' ? 'Closed' : 'Open');
+        if (kra.status !== undefined) fields.Status = ['completed', 'done', 'closed'].includes(kra.status?.toLowerCase() || '') ? 'Closed' : (kra.status === 'in-progress' ? 'In Progress' : 'Open');
         if (kra.progress !== undefined) fields.Progress = kra.progress;
         if (kra.description !== undefined) fields.Description = kra.description;
         if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = kra.objective_id ? Number(kra.objective_id) : null;
@@ -801,11 +801,14 @@ export class SharePointOpsService {
                 return Number(lookupId) === kraIdNum;
             });
 
-            // 2. Calculate progress directly from the already-filtered KPI items.
-            const { calculateKpiProgress } = await import('@/utils/kpiUtils');
+            // 2. Calculate progress strictly from KPI completion status.
+            // KRA progress = % of KPIs that have a "completed" status. Nothing else affects it.
+            const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
             const mappedKpis = kpiItems.map((item: any) => this.mapKPI(item));
-            const totalProgress = mappedKpis.reduce((sum: number, kpi: any) => sum + calculateKpiProgress(kpi), 0);
-            const newProgress = mappedKpis.length > 0 ? Math.round(totalProgress / mappedKpis.length) : 0;
+            const completedCount = mappedKpis.filter((kpi: any) =>
+                COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
+            ).length;
+            const newProgress = mappedKpis.length > 0 ? Math.round((completedCount / mappedKpis.length) * 100) : 0;
 
             console.log(`[SP Ops] Syncing KRA ${kraId}: ${mappedKpis.length} KPIs found. Calculated progress: ${newProgress}%`);
 

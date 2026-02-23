@@ -34,7 +34,7 @@ import {
 
 import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import StatusBadge from '@/components/common/StatusBadge';
-import { calculateObjectiveStatus } from '@/utils/kpiUtils';
+import { calculateObjectiveStatus, calculateStrategicProgress } from '@/utils/kpiUtils';
 import KRATimelineTab from '@/components/KRATimelineTab';
 import KRAInsightsTab from '@/components/KRAInsightsTab';
 import KpiModal from '@/components/kpi/KpiModal';
@@ -297,6 +297,20 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     return Array.from(new Set(titles)); // Get unique titles
   }, [kras]);
 
+  // Derive existing KRA objects (deduplicated by case-insensitive title) for ID-based linking
+  const existingKraObjects = useMemo(() => {
+    const seen = new Map<string, Kra>();
+    for (const kra of kras) {
+      if (!kra.title) continue;
+      const key = kra.title.trim().toLowerCase();
+      // Keep the first occurrence (which has the original casing and ID)
+      if (!seen.has(key)) {
+        seen.set(key, kra);
+      }
+    }
+    return Array.from(seen.values());
+  }, [kras]);
+
   // Derive departments for filtering - Now use the passed units prop
   const departments = useMemo(() => units.map(u => u.name), [units]);
   const kpiStatuses: (Kpi['status'] | 'all')[] = ['all', 'not-started', 'on-track', 'in-progress', 'at-risk', 'on-hold', 'completed', 'behind'];
@@ -539,27 +553,39 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   const handleKpiFormSubmit = async (formData: any) => {
     console.log("[handleKpiFormSubmit] Received form data:", JSON.stringify(formData, null, 2));
     const isEditing = !!editingKra?.id;
-    let kraId = editingKra?.id;
+    // Check if an existing KRA was selected from the combobox (ID came from selection, not from editing)
+    // Only treat numeric IDs as real SharePoint IDs (temp IDs like "kra_123456" should be ignored)
+    const rawId = !isEditing && formData.id ? formData.id : null;
+    const selectedExistingKraId = rawId && !String(rawId).startsWith('kra_') && !String(rawId).startsWith('temp') ? rawId : null;
+    let kraId = editingKra?.id || selectedExistingKraId;
     let operationError = false;
+
+    // If user selected an existing KRA by title, reuse its ID — don't create a duplicate
+    if (selectedExistingKraId) {
+      console.log(`[handleKpiFormSubmit] Existing KRA selected by ID: ${selectedExistingKraId}. Will link KPIs to it instead of creating a new KRA.`);
+    }
 
     // 1. Prepare KRA Payload (Map ONLY active fields from KraFormSection)
     const kraPayload: any = {
       title: formData.title || null, // Map from title input
-      objective_id: formData.objectiveId || null, // Map from objective select
+      objective_id: formData.objectiveId || formData.objective_id || null, // Map from objective select
       unit_id: formData.unitId || null, // Map from unit select (now storing ID)
       description: formData.description || formData.comments || null, // Map description FROM comments textarea or description field
       ownerId: formData.responsibleId || formData.ownerId || null, // Map owner if present
       owner: formData.owner || null, // Full owner object — needed to embed isOwner in Assignees JSON
       assignees: formData.assignees || [], // Map assignees
+      status: formData.status || formData.Status || 'open', // PERSIST STATUS - Handle both casings just in case
+      progress: formData.progress ?? 0, // PERSIST PROGRESS
       // Set Department so the KRA is visible under the correct division/unit scope filter.
       // Priority: 1. Manual selection from dropdown (formData.unit), 2. Fallback to context
-      department: formData.unit || userContext?.division || userContext?.unit || '',
+      department: formData.unit || formData.department || userContext?.division || userContext?.unit || '',
       // Auto-fill Unit and Division from user context — no manual selection required
       unit: formData.unit || userContext?.unit || '',
       division: userContext?.division || '',
     };
 
-    if (isEditing) {
+    // If editing OR reusing an existing KRA, set the ID so onSaveKra does an update (not create)
+    if (isEditing || selectedExistingKraId) {
       kraPayload.id = kraId;
     }
 
@@ -569,15 +595,31 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       kraPayload.division_id = currentDivisionId;
     }
 
+    // --- Duplicate Prevention: Case-insensitive title match as safety net ---
+    // If no ID is set yet (user typed a title manually), check if an existing KRA matches
+    if (!kraPayload.id && kraPayload.title) {
+      const normalizedTitle = kraPayload.title.trim().toLowerCase();
+      const matchingKra = krasFromProps.find(
+        k => k.title && k.title.trim().toLowerCase() === normalizedTitle
+      );
+      if (matchingKra) {
+        console.log(`[handleKpiFormSubmit] Duplicate prevention: Found existing KRA "${matchingKra.title}" (ID: ${matchingKra.id}) matching typed title "${kraPayload.title}". Reusing existing KRA.`);
+        kraPayload.id = matchingKra.id;
+        kraPayload.title = matchingKra.title; // Preserve original casing from SharePoint
+        kraId = matchingKra.id;
+      }
+    }
+
     console.log("[handleKpiFormSubmit] Prepared KRA Payload:", kraPayload);
 
-    // --- KRA Save/Update --- 
+    // --- KRA Save/Update ---
     try {
+      console.log("[handleKpiFormSubmit] Saving KRA to SharePoint via onSaveKra with Payload:", JSON.stringify(kraPayload, null, 2));
       const savedKra: any = await onSaveKra(kraPayload);
       // If we just created a new KRA, we need its ID to save KPIs
       if (savedKra && savedKra.id) {
         kraId = savedKra.id;
-        console.log(`[handleKpiFormSubmit] KRA saved with ID: ${kraId}`);
+        console.log(`[handleKpiFormSubmit] KRA saved/updated successfully. ID: ${kraId}`);
       }
     } catch (error) {
       console.error("[handleKpiFormSubmit] Unexpected error during KRA save/update:", error);
@@ -674,6 +716,34 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     if (!deletingKpi) return;
     try {
       await onDeleteKpi(deletingKpi.kpiId);
+
+      // --- Orphan KRA cleanup ---
+      // After deleting the KPI, check if the parent KRA has any remaining KPIs
+      const parentKra = krasFromProps.find(k => String(k.id) === deletingKpi.kraId);
+      if (parentKra) {
+        const remainingKpis = (parentKra.unitKpis || []).filter(
+          kpi => String(kpi.id) !== deletingKpi.kpiId
+        );
+        if (remainingKpis.length === 0) {
+          // Check if this KRA title exists as another KRA record (potential duplicate)
+          const duplicateKras = krasFromProps.filter(
+            k => k.title && parentKra.title &&
+              k.title.trim().toLowerCase() === parentKra.title.trim().toLowerCase() &&
+              String(k.id) !== deletingKpi.kraId
+          );
+          if (duplicateKras.length > 0) {
+            // This is an orphaned duplicate KRA with no KPIs - auto-delete it
+            console.log(`[handleConfirmDeleteKpi] Orphan KRA detected: "${parentKra.title}" (ID: ${parentKra.id}) has no remaining KPIs and duplicates exist. Auto-deleting orphan.`);
+            try {
+              await onDeleteKra(deletingKpi.kraId);
+              toast({ title: "Cleanup", description: `Orphaned duplicate KRA "${parentKra.title}" was automatically removed.` });
+            } catch (cleanupError) {
+              console.error("[handleConfirmDeleteKpi] Failed to cleanup orphan KRA:", cleanupError);
+            }
+          }
+        }
+      }
+
       onDataRefresh?.();
     } catch (error) {
       console.error("Error deleting KPI:", error);
@@ -936,7 +1006,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     <TableHeader className="sticky top-0 z-50 bg-background">
                       <TableRow className="border-b-2">
                         <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
-                        <TableHead className="w-[200px] min-w-[200px] sticky left-[150px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
+                        <TableHead className="w-[180px] min-w-[180px] sticky left-[150px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
+                        <TableHead className="w-[100px] min-w-[100px] sticky left-[330px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA Status</TableHead>
                         <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-background border-b-2">KPI</TableHead>
                         <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Start Date</TableHead>
                         <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Target Date</TableHead>
@@ -991,6 +1062,19 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                 <TableCell className="align-top border-r sticky left-[150px] z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={kraTitleRowSpan}>
                                   <div className="bg-background w-full h-full min-h-full">
                                     {kraTitle}
+                                  </div>
+                                </TableCell>
+                              )}
+                              {isFirstRowOfKraTitleGroup && (
+                                <TableCell className="align-top border-r sticky left-[330px] z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={kraTitleRowSpan}>
+                                  <div className="bg-background w-full h-full min-h-full flex items-center">
+                                    <Badge variant={
+                                      originalKra.status?.toLowerCase() === 'closed' ? 'secondary' :
+                                        originalKra.status?.toLowerCase() === 'in progress' ? 'default' :
+                                          'outline'
+                                    }>
+                                      {originalKra.status || 'Open'}
+                                    </Badge>
                                   </div>
                                 </TableCell>
                               )}
@@ -1152,6 +1236,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                         <TableHead className="w-[10%]">Goal Type</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="w-[10%]">Status</TableHead>
+                        <TableHead className="w-[10%] text-center">Progress</TableHead>
                         <TableHead className="text-right w-[10%]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1200,6 +1285,26 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                             <TableCell>
                               <StatusBadge status={calculateObjectiveStatus(objective, kras) || 'Not Started'} />
                             </TableCell>
+                            <TableCell>
+                              {(() => {
+                                const linkedKras = kras.filter(k =>
+                                  String(k.objective_id) === String(objective.id) ||
+                                  String(k.objectiveId) === String(objective.id)
+                                );
+                                // Collect all KPIs belonging to these KRAs
+                                const linkedKpis = linkedKras.flatMap(k => (k as any).unitKpis || []);
+                                const progress = calculateStrategicProgress(linkedKras, linkedKpis);
+
+                                return (
+                                  <div className="flex flex-col gap-1 min-w-[80px]">
+                                    <div className="flex justify-between text-[10px] font-medium">
+                                      <span>{progress}%</span>
+                                    </div>
+                                    <Progress value={progress} className="h-1.5" />
+                                  </div>
+                                );
+                              })()}
+                            </TableCell>
                             <TableCell className="text-right">
                               {canEdit && (
                                 <>
@@ -1247,6 +1352,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
           objectives={objectivesData}
           units={units}
           existingKraTitles={existingKraTitles}
+          existingKraObjects={existingKraObjects}
           userContext={userContext}
           editingKpi={editingKpiDetails}
           container={isFullScreen ? containerRef.current : null}

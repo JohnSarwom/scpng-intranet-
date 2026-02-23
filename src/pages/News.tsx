@@ -1,20 +1,21 @@
 // News.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
-import { supabase, logger } from '@/lib/supabaseClient'; // Ensure this path is correct
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'; // Still useful for other auth-dependent logic
-import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth'; // <-- IMPORT THE NEW HOOK
+import { supabase, logger } from '@/lib/supabaseClient';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import TradingViewTicker from '@/components/custom/TradingViewTicker'; // Import the new component
-import ScpngNewsUploadForm from '@/components/custom/ScpngNewsUploadForm'; // Import the new form
-import ScpngArticleModal, { NewsArticle as ModalNewsArticle } from '@/components/custom/ScpngArticleModal'; // <-- IMPORT MODAL AND ITS TYPE
+import TradingViewTicker from '@/components/custom/TradingViewTicker';
+import ScpngNewsUploadForm from '@/components/custom/ScpngNewsUploadForm';
+import ScpngArticleModal, { NewsArticle as ModalNewsArticle } from '@/components/custom/ScpngArticleModal';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
 import { NewsSharePointService } from '@/services/newsSharePointService';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import NewsDashboard from '@/components/dashboard/NewsDashboard';
 import { PageNewsArticle } from '@/types/news';
 
@@ -130,8 +131,7 @@ const News = () => {
   const canUploadNews = hasPermission('news', 'upload');
   const isSystemAdmin = isAdmin;
 
-  const [selectedScpngYear, setSelectedScpngYear] = useState<string>('All'); // Default to 'All'
-  const [availableScpngYears, setAvailableScpngYears] = useState<string[]>([]);
+  const [selectedScpngYear, setSelectedScpngYear] = useState<string>('All');
 
   const newsCategories = baseNewsCategories;
 
@@ -139,20 +139,8 @@ const News = () => {
   const [selectedArticleForModal, setSelectedArticleForModal] = useState<ModalNewsArticle | null>(null);
   const [isArticleModalOpen, setIsArticleModalOpen] = useState(false);
 
-  const initialNewsData: Record<string, NewsTabState> = {};
-  baseNewsCategories.forEach(cat => {
-    initialNewsData[cat] = { articles: [], isLoading: false, error: null, hasFetched: false };
-  });
-
-
-  aiDrivenCategories.forEach(cat => {
-    if (!initialNewsData[cat]) {
-      initialNewsData[cat] = { articles: [], isLoading: false, error: null, hasFetched: false, promptUsed: null };
-    }
-  });
-
-  const [newsData, setNewsData] = useState<Record<string, NewsTabState>>(initialNewsData);
   const [isInvokingEdgeFunction, setIsInvokingEdgeFunction] = useState(false);
+  const queryClient = useQueryClient();
 
   // Handler to open the modal with the selected article
   const handleReadMoreClick = (article: PageNewsArticle) => {
@@ -172,32 +160,19 @@ const News = () => {
   };
 
 
-  // --- CHANGED: Use SharePoint Service ---
-  const { getClient, getAppSetting } = useMicrosoftGraph();
+  // --- Fetch all news from SharePoint via React Query (cached + persistent) ---
+  const { getClient } = useMicrosoftGraph();
 
-  const fetchSharePointNews = async () => {
-    const graphClient = await getClient();
-    if (!graphClient) {
-      // logger.warn('[News] Graph client not available yet.');
-      return;
-    }
+  const { data: allFormattedArticles = [], isLoading: newsLoading, error: newsError, refetch: refetchNews } = useQuery({
+    queryKey: ['sharePointNews'],
+    queryFn: async () => {
+      const graphClient = await getClient();
+      if (!graphClient) return [];
 
-    setNewsData(prev => ({
-      ...prev,
-      ['All News']: { ...prev['All News'], isLoading: true, error: null },
-      ['National News']: { ...(prev['National News'] || { articles: [], isLoading: true, error: null, hasFetched: false }), isLoading: true, error: null },
-      ['Global Insights']: { ...(prev['Global Insights'] || { articles: [], isLoading: true, error: null, hasFetched: false }), isLoading: true, error: null },
-      ['SCPNG News']: { ...(prev['SCPNG News'] || { articles: [], isLoading: true, error: null, hasFetched: false }), isLoading: true, error: null },
-    }));
-
-    try {
-      // logger.info('[News] Fetching news articles from SharePoint...');
       const service = new NewsSharePointService(graphClient);
       const data = await service.getAllNews();
 
-      const formattedArticles: PageNewsArticle[] = data.map((article) => {
-        // Determine category based on string match or default
-        // We will assign a primary category for display, but filtering will be done separately
+      return data.map((article) => {
         let displayCategory = 'General';
         const categoryLower = article.category.toLowerCase();
         const countryUpper = article.country?.toUpperCase() || '';
@@ -218,7 +193,7 @@ const News = () => {
           description_full: article.description,
           date: article.publishDate ? new Date(article.publishDate).toLocaleDateString('en-CA') : new Date().toLocaleDateString('en-CA'),
           published_at_iso: article.publishDate,
-          category: displayCategory, // Used for the badge on the card
+          category: displayCategory,
           important: false,
           sourceName: article.sourceName,
           sourceUrl: article.sourceUrl,
@@ -226,77 +201,56 @@ const News = () => {
           categoriesApi: article.category,
           aiSummary: article.aiSummary,
           country: article.country,
-        };
+        } as PageNewsArticle;
       });
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-      // --- START: Randomize "All News" articles ---
-      const shuffleArray = (array: PageNewsArticle[]) => {
-        const newArray = [...array];
-        for (let i = newArray.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-        }
-        return newArray;
-      };
-      const shuffledAllNews = shuffleArray(formattedArticles);
-      // --- END: Randomize "All News" articles ---
-
-      // Extract years specifically for SCPNG News articles
-      // Filter logic for SCPNG News: Category contains 'SCPNG' or 'Internal'
-      const scpngNewsArticles = formattedArticles.filter(a => {
-        const cat = (a.categoriesApi as string || '').toLowerCase();
-        return cat.includes('scpng') || cat.includes('internal');
-      });
-
-      const years = [...new Set(scpngNewsArticles.map(article => new Date(article.date).getFullYear().toString()))]
-        .sort((a, b) => parseInt(b) - parseInt(a));
-
-      setAvailableScpngYears(years);
-      if (years.length === 0) {
-        setSelectedScpngYear('All');
-      }
-
-      // Filter logic for National News: Country is 'PAPUA NEW GUINEA' but NOT 'SCPNG News'
-      const nationalNewsArticles = formattedArticles.filter(a =>
-        (a.country || '').toUpperCase() === 'PAPUA NEW GUINEA' &&
-        a.category !== 'SCPNG News'
-      );
-
-      // Filter logic for Global Insights: Country is NOT 'PAPUA NEW GUINEA'
-      // Note: We might want to exclude SCPNG specific news if desired, but usually Global is anything non-PNG.
-      // If SCPNG news is also PNG, it might appear in National.
-      // Let's strictly follow: Global = NOT PNG.
-      const globalNewsArticles = formattedArticles.filter(a => (a.country || '').toUpperCase() !== 'PAPUA NEW GUINEA');
-
-      setNewsData(prev => ({
-        ...prev,
-        ['All News']: { articles: shuffledAllNews, isLoading: false, error: null, hasFetched: true },
-        ['National News']: {
-          articles: nationalNewsArticles,
-          isLoading: false, error: null, hasFetched: true
-        },
-        ['Global Insights']: {
-          articles: globalNewsArticles,
-          isLoading: false, error: null, hasFetched: true
-        },
-        ['SCPNG News']: {
-          articles: scpngNewsArticles,
-          isLoading: false, error: null, hasFetched: true
-        },
-      }));
-      // logger.success('[News] Successfully fetched and processed all news from SharePoint.');
-
-    } catch (err: any) {
-      logger.error('[News] Error fetching news from SharePoint:', err.message);
-      setNewsData(prev => ({
-        ...prev,
-        ['All News']: { articles: [], isLoading: false, error: err.message, hasFetched: true },
-        ['National News']: { articles: [], isLoading: false, error: err.message, hasFetched: true },
-        ['Global Insights']: { articles: [], isLoading: false, error: err.message, hasFetched: true },
-        ['SCPNG News']: { articles: [], isLoading: false, error: err.message, hasFetched: true },
-      }));
+  // Derive categorized news from the cached data
+  const shuffledAllNews = useMemo(() => {
+    const newArray = [...allFormattedArticles];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
     }
-  };
+    return newArray;
+  }, [allFormattedArticles]);
+
+  const scpngNewsArticles = useMemo(() =>
+    allFormattedArticles.filter(a => {
+      const cat = (a.categoriesApi as string || '').toLowerCase();
+      return cat.includes('scpng') || cat.includes('internal');
+    }), [allFormattedArticles]);
+
+  const nationalNewsArticles = useMemo(() =>
+    allFormattedArticles.filter(a =>
+      (a.country || '').toUpperCase() === 'PAPUA NEW GUINEA' &&
+      a.category !== 'SCPNG News'
+    ), [allFormattedArticles]);
+
+  const globalNewsArticles = useMemo(() =>
+    allFormattedArticles.filter(a => (a.country || '').toUpperCase() !== 'PAPUA NEW GUINEA'),
+    [allFormattedArticles]);
+
+  const availableScpngYears = useMemo(() =>
+    [...new Set(scpngNewsArticles.map(article => new Date(article.date).getFullYear().toString()))]
+      .sort((a, b) => parseInt(b) - parseInt(a)),
+    [scpngNewsArticles]);
+
+  // Legacy compat: build newsData shape for renderNewsCards
+  const newsData = useMemo(() => {
+    const errorMsg = newsError ? (newsError as Error).message : null;
+    return {
+      'News Dashboard': { articles: [] as PageNewsArticle[], isLoading: newsLoading, error: errorMsg, hasFetched: !newsLoading },
+      'All News': { articles: shuffledAllNews, isLoading: newsLoading, error: errorMsg, hasFetched: !newsLoading },
+      'SCPNG News': { articles: scpngNewsArticles, isLoading: newsLoading, error: errorMsg, hasFetched: !newsLoading },
+      'National News': { articles: nationalNewsArticles, isLoading: newsLoading, error: errorMsg, hasFetched: !newsLoading },
+      'Global Insights': { articles: globalNewsArticles, isLoading: newsLoading, error: errorMsg, hasFetched: !newsLoading },
+    } as Record<string, NewsTabState>;
+  }, [shuffledAllNews, scpngNewsArticles, nationalNewsArticles, globalNewsArticles, newsLoading, newsError]);
+
+  const fetchSharePointNews = () => { refetchNews(); };
 
   // --- AMENDED SECTION: Use supabase.functions.invoke() ---
   const handleInvokeEdgeFunction = async () => {
@@ -327,251 +281,6 @@ const News = () => {
   // --- END AMENDED SECTION ---
 
 
-  const fetchAiNewsForCategory = async (categoryName: string, userId: string, globalSettings: any) => {
-    // Only proceed if this category is genuinely meant to be fetched by AI and not from Supabase
-    if (categoryName === 'National News' || categoryName === 'Global Insights' || categoryName === 'SCPNG News') { // Added SCPNG News
-      // logger.info(`[News] Skipping AI fetch for ${categoryName} as it's now sourced from Supabase.`);
-      return;
-    }
-
-    setNewsData(prev => ({
-      ...prev,
-      [categoryName]: { ...prev[categoryName], isLoading: true, error: null },
-    }));
-
-    try {
-      const prompt = globalSettings.prompts?.[categoryName];
-      if (!prompt) {
-        throw new Error(`Prompt for ${categoryName} not configured. Please check News Admin Settings.`);
-      }
-
-      let apiKey = import.meta.env.VITE_GEMINI_API_KEY || globalSettings.api_key;
-      let modelName = 'gemini-1.5-flash';
-
-      if (!apiKey && getAppSetting) {
-        // Try fetching from SharePoint
-        // logger.info('[News] Attempting to fetch API Key from SharePoint...');
-        const spKey = await getAppSetting('GeminiAPIKey');
-        if (spKey) apiKey = spKey;
-
-        const spModel = await getAppSetting('GeminiModel');
-        if (spModel) modelName = spModel;
-      }
-
-      if (!apiKey) {
-        throw new Error("AI API Key not configured. Please add VITE_GEMINI_API_KEY to .env or configure in settings/SharePoint.");
-      }
-
-      // Use Supabase Edge Function instead of client-side fetch
-      // Changed to use direct client-side fetch for now to match AIHub
-
-      const requestBody = {
-        contents: [
-          {
-            parts: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-      };
-
-      const cleanApiKey = apiKey.trim();
-      const apiUrl = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${cleanApiKey}`;
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody)
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(`Gemini API request failed: ${response.status} ${responseData.error?.message || ''}`);
-      }
-
-      let generatedText = '';
-      if (responseData.candidates && responseData.candidates.length > 0 &&
-        responseData.candidates[0].content && responseData.candidates[0].content.parts &&
-        responseData.candidates[0].content.parts.length > 0 && responseData.candidates[0].content.parts[0].text) {
-        generatedText = responseData.candidates[0].content.parts[0].text;
-      } else {
-        // logger.warn("[News] Gemini response structure not as expected or no content generated.", responseData);
-        throw new Error('Gemini response format is not recognized or content is missing.');
-      }
-
-      let cleanedJsonString = generatedText.trim();
-      if (cleanedJsonString.startsWith("```json")) {
-        cleanedJsonString = cleanedJsonString.substring(7);
-      } else if (cleanedJsonString.startsWith("```")) {
-        cleanedJsonString = cleanedJsonString.substring(3);
-      }
-      if (cleanedJsonString.endsWith("```")) {
-        cleanedJsonString = cleanedJsonString.substring(0, cleanedJsonString.length - 3);
-      }
-      cleanedJsonString = cleanedJsonString.trim();
-
-      let articlesFromAI: any[];
-      try {
-        articlesFromAI = JSON.parse(cleanedJsonString);
-        if (!Array.isArray(articlesFromAI)) {
-          throw new Error('Parsed content is not an array. Prompt Gemini to return a JSON array output.');
-        }
-      } catch (parseError: any) {
-        logger.error("[News] Failed to parse JSON from Gemini response:", { error: parseError, rawText: generatedText, cleanedText: cleanedJsonString });
-        throw new Error(`Failed to parse news articles from AI. Ensure AI is prompted for JSON array output. Error: ${parseError.message}`);
-      }
-
-      const formattedArticles: PageNewsArticle[] = articlesFromAI.map((aiArticle: any, index: number) => {
-        if (typeof aiArticle !== 'object' || aiArticle === null) {
-          // logger.warn('[News] Invalid item in AI-generated article array:', aiArticle);
-          return null;
-        }
-        return {
-          id: `${categoryName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${index}`,
-          title: aiArticle.Headline || aiArticle.title || `Article ${index + 1}`,
-          summary: aiArticle.Summary || aiArticle.summary || 'Content not available.',
-          date: aiArticle.PublicationDate || aiArticle.date || new Date().toLocaleDateString('en-CA'),
-          category: categoryName,
-          important: aiArticle.important || false,
-          sourceName: aiArticle.Source || aiArticle.SourceName || undefined,
-          sourceUrl: aiArticle.SourceURL || aiArticle.Url || aiArticle.Link || undefined,
-          relevanceNote: categoryName === 'All News' ? (aiArticle.RelevanceNote || undefined) : undefined,
-        };
-      }).filter(article => article !== null) as PageNewsArticle[];
-
-      if (formattedArticles.length === 0 && articlesFromAI.length > 0) {
-        throw new Error('AI returned an array, but items within were not valid article objects.');
-      }
-      if (formattedArticles.length === 0) {
-        // logger.warn(`[News] No valid articles were parsed for ${categoryName} from AI response, though API call was successful.`);
-      }
-
-      setNewsData(prev => ({
-        ...prev,
-        [categoryName]: { articles: formattedArticles, isLoading: false, error: null, hasFetched: true, promptUsed: prompt },
-      }));
-      // logger.success(`[News] Successfully fetched and parsed REAL news for ${categoryName} from Gemini`);
-
-    } catch (err: any) {
-      logger.error(`[News] Error fetching real news for ${categoryName} from Gemini:`, err.message);
-      setNewsData(prev => ({
-        ...prev,
-        [categoryName]: { articles: [], isLoading: false, error: err.message, hasFetched: true, promptUsed: null },
-      }));
-    }
-  };
-
-  const getFilteredArticles = (allArticles: PageNewsArticle[], filterLogic: (article: PageNewsArticle) => boolean): PageNewsArticle[] => {
-    return allArticles.filter(filterLogic);
-  };
-
-  // If renderArchivedNewsCards is used, ensure it uses PageNewsArticle
-  // This is a placeholder, actual implementation might differ or be removed if not used.
-  const renderArchivedNewsCards = (articles: PageNewsArticle[]) => {
-    if (!articles || articles.length === 0) {
-      return <p>No archived news available.</p>;
-    }
-    return (
-      <div className="space-y-4">
-        {articles.map(article => (
-          <Card key={article.id}>
-            <CardHeader>
-              <CardTitle>{article.title}</CardTitle>
-              <p className="text-sm text-gray-500">{article.date} - {article.category}</p>
-            </CardHeader>
-            <CardContent>
-              <p>{article.summary}</p>
-              {/* Add a way to view full archived article if needed */}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  };
-
-  const loadNewsData = async () => {
-    let settings: any = null;
-    let settingsErrorMsg: string | null = null;
-
-    // Fetch all news from Supabase if not already loading or fetched for 'All News'
-    // This now also handles 'National News', 'Global Insights', and 'SCPNG News'
-    if (!newsData['All News'].isLoading && !newsData['All News'].hasFetched) {
-      fetchSharePointNews();
-    }
-
-    // Handle any other categories that are still purely AI-driven (if any)
-    const categoriesToFetchAI = aiDrivenCategories.filter(
-      category => !newsData[category]?.isLoading && !newsData[category]?.hasFetched &&
-        category !== 'National News' && category !== 'Global Insights' && category !== 'SCPNG News' // Exclude Supabase-driven
-    );
-
-    if (categoriesToFetchAI.length > 0) {
-      try {
-        const { data: dbData, error: dbError } = await supabase
-          .from('news_api_settings')
-          .select('prompts')
-          .eq('id', 1)
-          .single();
-
-        if (dbError && dbError.code !== 'PGRST116') {
-          settingsErrorMsg = `Failed to load global news settings: ${dbError.message}`;
-        } else if (!dbData && dbError?.code === 'PGRST116') {
-          settingsErrorMsg = "Global news settings not found. Please configure them via an admin in the Settings tab.";
-        } else {
-          settings = dbData;
-        }
-      } catch (e: any) {
-        settingsErrorMsg = `Exception loading global news settings: ${e.message}`;
-      }
-
-      if (settingsErrorMsg) {
-        logger.error('[News] Global settings issue for AI categories:', settingsErrorMsg);
-        const updates: Record<string, Partial<NewsTabState>> = {};
-        categoriesToFetchAI.forEach(category => {
-          updates[category] = { error: settingsErrorMsg, hasFetched: true, isLoading: false };
-        });
-        if (Object.keys(updates).length > 0) {
-          setNewsData(prev => {
-            const newState = { ...prev };
-            for (const catKey in updates) {
-              newState[catKey] = { ...(newState[catKey] || {}), ...updates[catKey] } as NewsTabState;
-            }
-            return newState;
-          });
-        }
-      } else if (settings) {
-        for (const category of categoriesToFetchAI) {
-          fetchAiNewsForCategory(category, session?.user?.id || "anonymous_user", settings);
-        }
-      }
-    }
-
-    if (session && newsData['All News'].articles.length > 0 && !newsData['News Dashboard']?.hasFetched) {
-      setNewsData(prev => ({
-        ...prev,
-        ['News Dashboard']: {
-          articles: [], // Dashboard doesn't need its own articles list, it uses others
-          isLoading: false,
-          error: null,
-          hasFetched: true,
-        }
-      }));
-    } else if (!session && !newsData['News Dashboard']?.hasFetched) {
-      setNewsData(prev => ({
-        ...prev,
-        ['News Dashboard']: { articles: [], isLoading: false, error: null, hasFetched: true }
-      }));
-    }
-  };
-
-  useEffect(() => {
-    loadNewsData();
-  }, [session, newsData]);
 
   const renderNewsCards = (category?: string) => {
     const tabKey = category && newsData[category] ? category : 'All News';

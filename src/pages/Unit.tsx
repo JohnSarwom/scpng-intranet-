@@ -538,8 +538,9 @@ const Unit = () => {
 
       // Map KraStatus to KRA status
       let mappedStatus: 'open' | 'in-progress' | 'closed' = 'open';
-      if (kra.status === 'completed') mappedStatus = 'closed';
-      else if (kra.status === 'on-track' || kra.status === 'at-risk' || kra.status === 'off-track') mappedStatus = 'in-progress';
+      const normalizedStatus = kra.status?.toLowerCase() || '';
+      if (['completed', 'closed', 'done'].includes(normalizedStatus)) mappedStatus = 'closed';
+      else if (['on-track', 'at-risk', 'off-track', 'in-progress'].includes(normalizedStatus)) mappedStatus = 'in-progress';
 
       return {
         id: kra.id.toString(),

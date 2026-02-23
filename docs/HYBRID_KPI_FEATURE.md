@@ -32,8 +32,8 @@ KPIs can now be measured in two ways:
 #### 2. Dynamic Strategic Objective Progress
 Strategic Objectives on the Strategy Dashboard now display **real-time calculated progress** based on the average progress of all linked KRAs across the organization, replacing the previous manual progress updates.
 
-#### 3. Dynamic KRA Progress Calculation
-KRA progress is now **automatically calculated** from the average progress of all linked KPIs, ensuring that completed KPIs immediately reflect in KRA and Strategic Objective progress.
+#### 3. Dynamic KRA Progress & Manual Overrides
+KRA progress is primarily calculated from its linked KPIs. However, to support flexibility, users can **manually override** a KRA's progress to 100% by setting its status to 'Completed', 'Done', or 'Closed'. This ensures that strategic completion can be tracked even when individual KPIs are still being finalized.
 
 #### 4. Read-Only Strategic Objective Progress
 The progress slider in the "Edit Strategic Objective" modal is now **read-only** to prevent manual overrides of auto-calculated values.
@@ -176,11 +176,11 @@ export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[]): number => 
 };
 ```
 
-**Key Features:**
-- Handles both `id` and `ID` field variations from SharePoint
-- Falls back to stored `progress` value if no KPIs are linked
-- Uses `calculateKpiProgress()` to get real-time KPI progress
-- Returns rounded average for clean percentage display
+**Key Features (Refined 2026-02-24):**
+- **Manual Status Override**: If KRA Status is **'Completed'**, **'Done'**, or **'Closed'**, progress is forced to **100%** regardless of KPI counts.
+- **Dynamic Context**: Falls back to the average of linked KPIs if the KRA is still in an active/open status.
+- **Data Persistence**: Status and Progress are now explicitly persisted to SharePoint to ensure the dashboard reflects the same state as the backend.
+- **Rounded Display**: Returns a clean percentage for UI components and strategy roll-ups.
 
 #### Function: `calculateStrategicProgress(kras: any[], kpis: Partial<Kpi>[] = []): number`
 

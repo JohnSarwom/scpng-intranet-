@@ -10,6 +10,7 @@ export interface StrategyQuestionCategory {
 }
 
 export const STRATEGY_QUICK_QUESTIONS: string[] = [
+    "Executive Brief",
     "What is the overall strategic progress?",
     "Which division is underperforming?",
     "What objectives are at risk?",

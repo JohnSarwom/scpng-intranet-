@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -9,6 +9,7 @@ import { useMsal } from '@azure/msal-react';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
 import { serializeStrategyContext } from '@/utils/strategyAnalyticsUtils';
 import { STRATEGY_QUICK_QUESTIONS, STRATEGY_QUESTION_LIBRARY } from './strategyQuestions';
+import strategyCalculationLogic from '@/prompts/strategyCalculationLogic.txt?raw';
 import {
     AIChatPanel,
     StaticQuestionLibrarySidebar,
@@ -30,13 +31,14 @@ INSTRUCTIONS:
 - Calculate averages, percentages, and comparisons directly from the numbers provided
 - Identify patterns, risks, and opportunities based on the actual progress values
 
-Your analytical capabilities:
-- Strategic objective progress analysis and trend identification
-- Divisional and unit performance comparison
-- KRA/KPI completion rate assessment and at-risk flagging
-- Milestone tracking and deadline risk analysis
-- Actionable recommendations for improving execution
-- Executive-level summaries of organizational performance
+{calculationLogic}
+
+ANALYTICS EXPANSION SUMMARY:
+- Executive Scorecard: Dynamic color coding and a 5th "At-Risk" card.
+- Status Distribution: Donut chart with Objectives/KRAs/KPIs tab toggle.
+- Progress Trends: Line chart with a dashed "Planned Progress" reference line.
+- Bar Chart: Horizontal layout, sorted by progress ascending, color-coded by status.
+- Milestones: Date-aware countdowns and overdue indicators.
 
 Response Format:
 1. Use data-driven analysis — cite specific numbers, percentages, and objective names
@@ -86,6 +88,21 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const briefTriggeredRef = useRef(false);
+
+    // Teaser metrics for collapsed view
+    const teaserMetrics = useMemo(() => {
+        const avgCompletion = objectives.length > 0
+            ? Math.round(objectives.reduce((s, o) => s + (o.progress || 0), 0) / objectives.length)
+            : 0;
+        const atRiskCount = objectives.filter(o => {
+            const status = (o.status || '').toLowerCase();
+            if (status === 'completed' || status === 'achieved' || (o.progress || 0) >= 100) return false;
+            if (status === 'at-risk' || status === 'behind') return true;
+            return (o.progress || 0) < 25;
+        }).length;
+        return { avgCompletion, atRiskCount };
+    }, [objectives]);
 
     const { isLoading: isAuthLoading } = useSupabaseAuth();
     const { inProgress: msalInProgress } = useMsal();
@@ -184,6 +201,8 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         fetchAiSettings();
     }, [isAuthLoading, msalInProgress, graphContext]);
 
+
+
     const isAiTyping =
         chatMessages.length > 0 &&
         chatMessages[chatMessages.length - 1].sender === 'ai' &&
@@ -247,12 +266,14 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         const strategyContext = serializeStrategyContext(
             objectives, kras, kpis, milestones, unitObjectives, orgHierarchy
         );
-        const systemPrompt = STRATEGY_AI_SYSTEM_PROMPT.replace('{strategyDataContext}', strategyContext);
+        const systemContext = STRATEGY_AI_SYSTEM_PROMPT
+            .replace('{strategyDataContext}', strategyContext)
+            .replace('{calculationLogic}', strategyCalculationLogic);
 
         const conversationHistory: any[] = [
             {
                 role: 'user',
-                parts: [{ text: `System Instruction: ${systemPrompt}` }],
+                parts: [{ text: `System Instruction: ${systemContext}` }],
             },
             {
                 role: 'model',
@@ -344,8 +365,12 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     };
 
     const handleFollowUpClick = (question: string) => {
-        setQuery(question);
-        handleSend(undefined, question);
+        // Map short button labels to detailed prompts
+        const prompt = question === 'Executive Brief'
+            ? 'Give me a concise executive brief: top-line progress, any at-risk objectives, and the single most important action item. Keep it under 150 words.'
+            : question;
+        setQuery(prompt);
+        handleSend(undefined, prompt);
     };
 
     const handleCopy = (messageId: string, text: string) => {
@@ -415,7 +440,27 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                     </div>
                 </div>
                 {!expanded && (
-                    <CardDescription>AI-powered strategic analysis and insights</CardDescription>
+                    <div className="mt-2">
+                        <CardDescription className="mb-2">AI-powered strategic analysis and insights</CardDescription>
+                        {objectives.length > 0 && (
+                            <div className="flex flex-wrap gap-3">
+                                <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
+                                    <TrendingUp className="w-3 h-3 text-intranet-primary" />
+                                    <span>{teaserMetrics.avgCompletion}% avg. completion</span>
+                                </div>
+                                {teaserMetrics.atRiskCount > 0 && (
+                                    <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        <span>{teaserMetrics.atRiskCount} at-risk</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
+                                    <BarChart3 className="w-3 h-3 text-blue-500" />
+                                    <span>{kras.length} KRAs · {kpis.length} KPIs</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 )}
             </CardHeader>
 

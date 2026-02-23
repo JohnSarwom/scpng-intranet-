@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { logger } from '@/lib/supabaseClient';
 import { Loader2, Newspaper } from 'lucide-react';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
+import { useQuery } from '@tanstack/react-query';
 import { NewsSharePointService } from '@/services/newsSharePointService';
 
 interface NewsArticle {
@@ -13,48 +14,41 @@ interface NewsArticle {
 }
 
 const NewsTicker: React.FC = () => {
-    const [articles, setArticles] = useState<NewsArticle[]>([]);
-    const [loading, setLoading] = useState(true);
     const { getClient } = useMicrosoftGraph();
 
-    useEffect(() => {
-        const fetchNewsArticles = async () => {
-            try {
-                logger.info('[NewsTicker] Fetching latest news articles from SharePoint...');
-                const client = await getClient();
-                if (!client) {
-                    return;
-                }
+    const { data: fetchedArticles = [], isLoading: loading } = useQuery({
+        queryKey: ['newsTicker'],
+        queryFn: async () => {
+            logger.info('[NewsTicker] Fetching latest news articles from SharePoint...');
+            const client = await getClient();
+            if (!client) return [];
 
-                const service = new NewsSharePointService(client);
-                const data = await service.getAllNews();
+            const service = new NewsSharePointService(client);
+            const data = await service.getAllNews();
 
-                // Map SharePoint items to Ticker items
-                const tickerItems: NewsArticle[] = data.map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    source_name: item.sourceName,
-                    published_at: item.publishDate,
-                    source_url: item.sourceUrl
-                }));
+            const tickerItems: NewsArticle[] = data.map(item => ({
+                id: item.id,
+                title: item.title,
+                source_name: item.sourceName,
+                published_at: item.publishDate,
+                source_url: item.sourceUrl
+            }));
 
-                // Shuffle the articles to show a random sequence on each load
-                for (let i = tickerItems.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [tickerItems[i], tickerItems[j]] = [tickerItems[j], tickerItems[i]];
-                }
+            logger.success('[NewsTicker] Successfully fetched news articles');
+            return tickerItems;
+        },
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 
-                setArticles(tickerItems);
-                logger.success('[NewsTicker] Successfully fetched news articles');
-            } catch (error) {
-                logger.error('[NewsTicker] Failed to fetch news articles:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchNewsArticles();
-    }, [getClient]);
+    // Shuffle articles for display (memoized so it doesn't re-shuffle on every render)
+    const articles = useMemo(() => {
+        const shuffled = [...fetchedArticles];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+    }, [fetchedArticles]);
 
     if (loading) {
         return (

@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, Cell, LabelList } from 'recharts';
 import { buildDivisionalComparisonData } from '@/utils/strategyAnalyticsUtils';
-import { Network, Info } from 'lucide-react';
+import { Network, Info, Trophy, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -19,6 +19,7 @@ interface DivisionalComparisonProps {
     kras: any[];
     unitObjectives?: any[];
     kpis?: any[];
+    orgHierarchy?: any[];
 }
 
 const CustomXAxisTick = (props: any) => {
@@ -45,8 +46,52 @@ const CustomXAxisTick = (props: any) => {
     );
 };
 
-const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({ objectives, kras, unitObjectives = [], kpis = [] }) => {
-    const data = buildDivisionalComparisonData(objectives, kras, unitObjectives, kpis);
+/** Rich custom tooltip showing counts */
+const CustomTooltipContent = ({ active, payload, label }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
+    const entry = payload[0]?.payload;
+    return (
+        <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-xs min-w-[160px]">
+            <p className="font-bold text-sm mb-2">{entry?.fullName || label}</p>
+            <div className="space-y-1.5">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-[#600018] shrink-0" />
+                        <span className="text-muted-foreground">Objectives</span>
+                    </div>
+                    <span className="font-bold">{entry?.objectiveProgress ?? 0}%
+                        <span className="font-normal text-muted-foreground ml-1">({entry?.objCount ?? 0})</span>
+                    </span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-sm bg-[#2563eb] shrink-0" />
+                        <span className="text-muted-foreground">KRAs</span>
+                    </div>
+                    <span className="font-bold">{entry?.kraProgress ?? 0}%
+                        <span className="font-normal text-muted-foreground ml-1">({entry?.kraCount ?? 0})</span>
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({
+    objectives, kras, unitObjectives = [], kpis = [], orgHierarchy = []
+}) => {
+    const data = buildDivisionalComparisonData(objectives, kras, unitObjectives, kpis, orgHierarchy);
+
+    // Find top and lowest performers
+    const { topDiv, lowestDiv } = useMemo(() => {
+        if (data.length === 0) return { topDiv: null, lowestDiv: null };
+        const withData = data.filter(d => d.objCount > 0 || d.kraCount > 0);
+        if (withData.length === 0) return { topDiv: null, lowestDiv: null };
+        const sorted = [...withData].sort((a, b) =>
+            (a.objectiveProgress + a.kraProgress) - (b.objectiveProgress + b.kraProgress)
+        );
+        return { topDiv: sorted[sorted.length - 1], lowestDiv: sorted[0] };
+    }, [data]);
 
     return (
         <Dialog>
@@ -68,9 +113,28 @@ const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({ objectives,
                             </Button>
                         </DialogTrigger>
                     </div>
-                    <CardDescription>Objective &amp; KRA progress comparison across divisions</CardDescription>
+                    <CardDescription>
+                        Objective &amp; KRA progress comparison across {data.length} divisions
+                        {orgHierarchy.length > 0 && (
+                            <span className="text-[9px] ml-1 opacity-60">(from Org Hierarchy)</span>
+                        )}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {/* Top / Lowest performer callouts */}
+                    {topDiv && lowestDiv && topDiv !== lowestDiv && (
+                        <div className="flex gap-3 mb-4">
+                            <div className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800">
+                                <Trophy className="w-3 h-3" />
+                                <span><span className="font-bold">{topDiv.fullName}</span> leads</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                <AlertTriangle className="w-3 h-3" />
+                                <span><span className="font-bold">{lowestDiv.fullName}</span> needs focus</span>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="h-[350px] w-full">
                         <ChartContainer
                             className="aspect-auto h-full w-full"
@@ -90,10 +154,11 @@ const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({ objectives,
                                     tick={<CustomXAxisTick />}
                                 />
                                 <YAxis
-                                    label={{ value: 'Progress (%)', angle: -90, position: 'insideLeft' }}
+                                    label={{ value: 'Progress (%)', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
                                     domain={[0, 100]}
+                                    tick={{ fontSize: 11 }}
                                 />
-                                <ChartTooltip content={<ChartTooltipContent formatter={(value, name) => [`${value}%`, name]} />} />
+                                <ChartTooltip content={<CustomTooltipContent />} />
                                 <Legend />
                                 <Bar dataKey="objectiveProgress" name="Objectives" fill="#600018" radius={[4, 4, 0, 0]} maxBarSize={60} />
                                 <Bar dataKey="kraProgress" name="KRAs" fill="#2563eb" radius={[4, 4, 0, 0]} maxBarSize={60} />
@@ -110,6 +175,11 @@ const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({ objectives,
                 </DialogHeader>
                 <div className="space-y-4 text-sm">
                     <p>This chart compares the average progress of <strong>Objectives</strong> and <strong>KRAs</strong> across each SCPNG division.</p>
+                    {orgHierarchy.length > 0 && (
+                        <div className="rounded-md bg-green-50 dark:bg-green-900/20 px-3 py-2 text-xs text-green-700 dark:text-green-300">
+                            ✓ Divisions are sourced dynamically from the <strong>Org_Hierarchy</strong> SharePoint list ({orgHierarchy.length} entries).
+                        </div>
+                    )}
                     <div className="space-y-2">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded-sm bg-[#600018] shrink-0" />

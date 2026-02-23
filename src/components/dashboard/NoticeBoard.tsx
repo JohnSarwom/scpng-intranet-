@@ -62,9 +62,10 @@ const NoticeBoard = () => {
     }
   };
 
-  // Format date
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  // Format date — handles both Date objects and ISO strings (from cache deserialization)
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   // Helper to remove common email signatures

@@ -1,6 +1,6 @@
 // src/components/kpi/KpiModal.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Kra, Kpi, User, Objective } from '@/types/kpi'; // Use the centralized types
+import { Kra, Kpi, User, Objective } from '@/types'; // Use the centralized types
 import { StaffMember } from '@/types/staff'; // Import StaffMember type
 import KraFormSection from './KraFormSection';
 import KpiInputBlock from './KpiInputBlock';
@@ -21,6 +21,7 @@ interface KpiModalProps {
   objectives?: Objective[]; // Changed from string[] to Objective[]
   units?: { id: string | number; name: string }[]; // Update units prop type
   existingKraTitles?: string[]; // Add prop for existing titles
+  existingKraObjects?: Kra[]; // Full KRA objects for ID-based linking
   userContext?: { division: string; unit: string; name: string; email: string };
   editingKpi?: { kraId: string; kpi: Partial<Kpi> }; // New prop for single KPI editing
   container?: HTMLElement | null; // Add container prop
@@ -36,6 +37,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
   objectives = [], // Provide default empty arrays
   units = [], // Provide default empty arrays
   existingKraTitles = [], // Add default value
+  existingKraObjects = [], // Full KRA objects for ID-based linking
   userContext,
   editingKpi,
   container,
@@ -115,6 +117,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
           targetDate: '',
           description: '', // Reset description/comments
           owner: undefined,
+          status: 'open',
         });
         // Ensure default KPI block has assignees array
         setKpiBlocks([{ assignees: [] }]);
@@ -157,19 +160,21 @@ const KpiModal: React.FC<KpiModalProps> = ({
     });
 
     // Ensure unit (department name) is included in submission data
+    // Only use a real ID (from editing or existing KRA selection); don't generate temp IDs
     const completeFormData = {
       ...formData,
-      id: formData.id || kraData?.id || `kra_${Date.now()}`,
+      id: formData.id || kraData?.id || undefined,
       kpis: finalKpiBlocks,
       unit: formData.unit, // Ensure unit (department name string) is submitted
       department: formData.unit, // Map unit to department as assumed by sharePointOpsService
       unitId: formData.unitId, // Keep unitId if still needed for other purposes
       title: formData.title || 'Untitled KRA',
-      objectiveId: formData.objectiveId,
+      objective_id: formData.objective_id || formData.objectiveId,
       startDate: formData.startDate || '',
       targetDate: formData.targetDate || '',
       owner: formData.owner,
       description: formData.description, // Include description
+      status: formData.status || kraData?.status || 'open',
     } as Partial<Kra>;
 
     console.log("Modal Submit:", completeFormData);
@@ -202,6 +207,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   objectives={objectives}
                   units={units}
                   existingKraTitles={existingKraTitles}
+                  existingKraObjects={existingKraObjects}
                   isAddingNew={isAddingNew}
                   container={container}
                 />

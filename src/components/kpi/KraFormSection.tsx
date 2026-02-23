@@ -28,6 +28,7 @@ interface KraFormSectionProps {
   objectives?: Objective[]; // List of objectives for dropdown
   units?: { id: string | number; name: string }[]; // Now expects { id: "Dept Name", name: "Dept Name" }
   existingKraTitles?: string[]; // Add prop for existing titles
+  existingKraObjects?: Kra[]; // Full KRA objects for ID-based linking
   isAddingNew: boolean; // Add prop to know if we are adding a new KRA
   container?: HTMLElement | null;
 }
@@ -44,6 +45,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
   objectives = [],
   units = [], // Receives derived department list
   existingKraTitles = [], // Accept prop
+  existingKraObjects = [], // Full KRA objects for ID-based linking
   isAddingNew, // Destructure the new prop
   container,
 }) => {
@@ -121,26 +123,62 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
               <CommandList>
                 <CommandEmpty>No existing KRAs found. Type to create new.</CommandEmpty>
                 <CommandGroup>
-                  {existingKraTitles.map((title) => (
-                    <CommandItem
-                      key={title}
-                      value={title}
-                      onSelect={(currentValue) => {
-                        // Also trim when selecting an existing value to be safe
-                        const trimmedValue = currentValue.trim();
-                        onChange('title', trimmedValue === formData.title ? '' : trimmedValue)
-                        // Optionally close popover on select: document.getElementById('kra-title')?.parentElement?.parentElement?.['aria-expanded'] = false;
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          formData.title === title ? "opacity-100" : "opacity-0"
-                        )}
-                      />
-                      {title}
-                    </CommandItem>
-                  ))}
+                  {existingKraObjects.length > 0
+                    ? existingKraObjects.map((kra) => (
+                      <CommandItem
+                        key={kra.id}
+                        value={kra.title}
+                        onSelect={() => {
+                          // Use the original KRA title (preserving casing) instead of cmdk's lowercased currentValue
+                          const originalTitle = kra.title.trim();
+                          if (originalTitle === formData.title) {
+                            // Deselect: clear title and ID
+                            onChange('title', '');
+                            onChange('id' as any, undefined);
+                          } else {
+                            // Select existing KRA: link by ID and prefill fields
+                            onChange('title', originalTitle);
+                            onChange('id' as any, kra.id); // Link to existing KRA by ID
+                            if (kra.objective_id) onChange('objectiveId' as any, String(kra.objective_id));
+                            if (kra.unit) onChange('unit', kra.unit);
+                            if (kra.status) onChange('status', kra.status);
+                            if (kra.description) onChange('description', kra.description);
+                            if (kra.assignees) onChange('assignees', kra.assignees);
+                            if (kra.owner) onChange('owner', kra.owner);
+                          }
+                          setInputValue(originalTitle === formData.title ? '' : originalTitle);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            formData.title?.trim().toLowerCase() === kra.title.trim().toLowerCase() ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {kra.title}
+                      </CommandItem>
+                    ))
+                    : existingKraTitles.map((title) => (
+                      <CommandItem
+                        key={title}
+                        value={title}
+                        onSelect={() => {
+                          // Fallback: use original title string (not cmdk's lowercased value)
+                          const trimmedValue = title.trim();
+                          onChange('title', trimmedValue === formData.title ? '' : trimmedValue);
+                          setInputValue(trimmedValue === formData.title ? '' : trimmedValue);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            formData.title === title ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {title}
+                      </CommandItem>
+                    ))
+                  }
                 </CommandGroup>
               </CommandList>
             </Command>
@@ -240,6 +278,24 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                   <div className="px-2 py-1.5 text-sm text-muted-foreground">No units defined.</div>
                 );
               })()}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Status Dropdown */}
+        <div className="grid gap-1.5">
+          <Label htmlFor="kra-status">Status</Label>
+          <Select
+            value={formData.status || 'Open'}
+            onValueChange={(value) => onChange('status', value)}
+          >
+            <SelectTrigger id="kra-status">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent container={container}>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="in-progress">In Progress</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
         </div>

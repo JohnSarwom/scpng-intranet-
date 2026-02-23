@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
+import { useQuery } from '@tanstack/react-query';
 import {
   fetchCalendarEvents,
   getTodaysEvents,
@@ -125,75 +126,41 @@ export const useCalendarEvents = (
 };
 
 /**
- * Hook specifically for today's events
+ * Hook specifically for today's events — cached via React Query
  */
 export const useTodaysCalendarEvents = (includeShared: boolean = true) => {
   const { instance: msalInstance } = useMsal();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetchToday = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const todayEvents = await getTodaysEvents(msalInstance, includeShared);
-      setEvents(todayEvents);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch today\'s events');
-      setError(error);
-      console.error('Error fetching today\'s events:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [msalInstance, includeShared]);
-
-  useEffect(() => {
-    fetchToday();
-  }, [fetchToday]);
+  const query = useQuery({
+    queryKey: ['calendarEvents', 'today', includeShared],
+    queryFn: () => getTodaysEvents(msalInstance, includeShared),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   return {
-    events,
-    loading,
-    error,
-    refetch: fetchToday,
+    events: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   };
 };
 
 /**
- * Hook specifically for upcoming events
+ * Hook specifically for upcoming events — cached via React Query
  */
 export const useUpcomingCalendarEvents = (days: number = 7, includeShared: boolean = true) => {
   const { instance: msalInstance } = useMsal();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetchUpcoming = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const upcomingEvents = await getUpcomingEvents(msalInstance, days, includeShared);
-      setEvents(upcomingEvents);
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Failed to fetch upcoming events');
-      setError(error);
-      console.error('Error fetching upcoming events:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [msalInstance, days, includeShared]);
-
-  useEffect(() => {
-    fetchUpcoming();
-  }, [fetchUpcoming]);
+  const query = useQuery({
+    queryKey: ['calendarEvents', 'upcoming', days, includeShared],
+    queryFn: () => getUpcomingEvents(msalInstance, days, includeShared),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   return {
-    events,
-    loading,
-    error,
-    refetch: fetchUpcoming,
+    events: query.data ?? [],
+    loading: query.isLoading,
+    error: query.error,
+    refetch: query.refetch,
   };
 };

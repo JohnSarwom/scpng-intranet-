@@ -88,61 +88,60 @@ Filtering for KRAs has been updated to use the new `Division` column for divisio
 
 ---
 
-## 6. KRA Progress & Status Architecture (2026-02-23)
+### KRA Progress & Status Architecture (Refined 2026-02-24)
+
+The architecture described below was initially implemented to move towards purely computed progress. However, to support manual completion overrides and ensure data persistence in SharePoint, the logic was refined on **2026-02-24**.
+
+#### Old State (2026-02-23 Implementation)
+- **Problem**: `Status` and `Progress` were being omitted from payloads, leading to "stuck" UI states where changes were not saved to SharePoint.
+- **Decision**: Initially attempted to remove `Status` usage and rely solely on live KPI counting. This proved inflexible for manually completed KRAs.
+
+---
+
+## 7. Reinforced Persistence & Manual Completion Logic (2026-02-24)
 
 > **Status**: Implemented & Verified
 
-### Problem
-Two sources of inaccuracy were identified in how KRA progress was tracked:
+To resolve status persistence issues and support manual work tracking, the following refinements were implemented:
 
-1. **Stored `Progress` field defaulted to 100%** — The `Performance_KRAs` SharePoint list had a column default value of `100`, meaning every new KRA appeared as fully complete regardless of actual work done.
-2. **Status field conflict** — `KpiModal.tsx` was writing `status: 'pending'` to SharePoint on every creation/edit, creating a discrepancy against SharePoint's own column default of `Open`.
+### 1. Manual Completion Override
+The progress calculation logic in `kpiUtils.ts` now prioritizes the KRA's own status.
 
-### SharePoint Changes
+**Rule**: If KRA Status is **'completed'**, **'done'**, or **'closed'**, `calculateKraProgress()` returns **100%** immediately, overriding the count of individual KPIs.
 
-| Column | Action |
-|--------|--------|
-| `Status` | **Deleted** from `Performance_KRAs` list |
-| `Progress` | Default value **cleared** (column retained for backward compatibility) |
-
-### New Progress Calculation Rule
-
-KRA progress is now **computed live** from the completion status of its linked KPIs. No stored field is used.
-
-```
-KRA Progress (%) = (# of KPIs with status "completed" / "achieved" / "done")
-                   ÷ (total KPIs in that KRA) × 100
-```
-
-This calculation is implemented in `calculateKraProgress()` in `src/utils/kpiUtils.ts` and is the **single source of truth** used by:
-- The **Dashboard Overview KRA Progress card** (`OverviewTab.tsx`)
-- The **Strategy Analytics Divisional Performance chart** (`strategyAnalyticsUtils.ts` → `DivisionalComparison.tsx`)
-
-### KRA Creation Change
-
-`KpiModal.tsx` no longer sends a `status` or `progress` value to SharePoint during KRA creation or editing. The form data no longer includes these fields:
+### 2. Payload Persistence Fix
+`KRAsTab.tsx` (the submission handler for `KpiModal.tsx`) now explicitly includes the `status` and `progress` fields in the `kraPayload` sent to SharePoint.
 
 ```typescript
-// Before
-const completeFormData = {
+// Fixed Payload Construction in KRAsTab.tsx
+const kraPayload = {
   ...formData,
-  status: formData.status || 'pending',  // ← removed
-};
-
-// After
-const completeFormData = {
-  ...formData,
-  // no status field
+  status: formData.status || 'open', // Now explicitly persisted
+  progress: formData.progress ?? 0,    // Now explicitly persisted
+  // ...
 };
 ```
 
-### Summary of Affected Files
+### 3. SharePoint Status Mapping Alignment
+`SharePointOpsService.ts` has been updated to handle the broadened "Closed" set. The `updateKRA` and `addKRA` methods now correctly map UI-level statuses:
+- **`'completed'`, `'done'`, `'closed'`** → Mapped to **`'Closed'`** in SharePoint.
+- **`'in-progress'`** → Mapped to **`'In Progress'`**.
+- **Default** → Mapped to **`'Open'`**.
+
+### 4. Summary of Affected Files (2026-02-24)
 
 | File | Change |
 |------|--------|
-| `src/utils/kpiUtils.ts` | `calculateKraProgress()`: KPI status-based count only |
-| `src/utils/strategyAnalyticsUtils.ts` | `buildDivisionalComparisonData()`: uses same rule via `getKraProgressFromKpis()` |
-| `src/components/unit-tabs/OverviewTab.tsx` | KRA Progress card reads `calculateKraProgress()` not `kra.progress` |
-| `src/components/kpi/KpiModal.tsx` | Removed `status: 'pending'` from form init and submit |
-| `src/components/strategy/analytics/DivisionalComparison.tsx` | Added `kpis` prop |
-| `src/components/strategy/StrategyAnalytics.tsx` | Passes `kpis` to `DivisionalComparison` |
+| `src/components/unit-tabs/KRAsTab.tsx` | Fixed `handleKpiFormSubmit` payload to include `status` and `progress`. |
+| `src/services/sharePointOpsService.ts` | Aligned `updateKRA`/`addKRA` status mapping to include 'completed' and 'done'. |
+| `src/utils/kpiUtils.ts` | `calculateKraProgress()`: Added manual status override for 100% completion. |
+| `src/pages/Unit.tsx` | `combinedKrasForOverview`: Aligned UI status mapping for consistency. |
+
+---
+
+## Related Files (Updated)
+- `src/components/unit-tabs/KRAsTab.tsx`: Payload preparation and diagnostic logging.
+- `src/utils/kpiUtils.ts`: Progress calculation with manual override.
+- `src/services/sharePointOpsService.ts`: SharePoint status mapping and persistence.
+- `docs/walkthrough.md`: (Internal) Step-by-step verification of these fixes.
+

@@ -210,7 +210,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             <Input
               id={`kpi-start-date-${kpiIndex}`}
               type="date"
-              value={formData.startDate || ''}
+              value={formData.startDate?.substring(0, 10) || ''}
               onChange={(e) => onChange('startDate', e.target.value)}
             />
           </div>
@@ -220,9 +220,9 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
               <Input
                 id={`kpi-target-date-${kpiIndex}`}
                 type="date"
-                value={formData.targetDate || ''}
+                value={formData.targetDate?.substring(0, 10) || ''}
                 onChange={(e) => onChange('targetDate', e.target.value)}
-                min={formData.startDate || ''} // Prevent target date before start date
+                min={formData.startDate?.substring(0, 10) || ''} // Prevent target date before start date
                 className="flex-1"
               />
               {/* Display Calculated Quarter */}
