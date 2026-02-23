@@ -1,6 +1,6 @@
 // src/components/kpi/KpiModal.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Kra, Kpi, User, Objective, KraStatus } from '@/types/kpi'; // Use the centralized types
+import { Kra, Kpi, User, Objective } from '@/types/kpi'; // Use the centralized types
 import { StaffMember } from '@/types/staff'; // Import StaffMember type
 import KraFormSection from './KraFormSection';
 import KpiInputBlock from './KpiInputBlock';
@@ -114,7 +114,6 @@ const KpiModal: React.FC<KpiModalProps> = ({
           startDate: '',
           targetDate: '',
           description: '', // Reset description/comments
-          status: 'pending' as KraStatus, // Use a valid KraStatus
           owner: undefined,
         });
         // Ensure default KPI block has assignees array
@@ -169,7 +168,6 @@ const KpiModal: React.FC<KpiModalProps> = ({
       objectiveId: formData.objectiveId,
       startDate: formData.startDate || '',
       targetDate: formData.targetDate || '',
-      status: formData.status || 'pending', // Use a valid KraStatus
       owner: formData.owner,
       description: formData.description, // Include description
     } as Partial<Kra>;

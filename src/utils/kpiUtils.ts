@@ -38,12 +38,6 @@ export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
  * @returns The calculated progress as a percentage (0-100)
  */
 export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[]): number => {
-    // Priority 1: If Status is explicitly 'Completed', force 100%
-    const status = (kra.status || '').toLowerCase();
-    if (status === 'completed' || status === 'achieved' || status === 'done') {
-        return 100;
-    }
-
     // Filter KPIs that belong to this KRA
     const kraKpis = kpis.filter(kpi => {
         const kpiKraId = kpi.kra_id ? String(kpi.kra_id) : '';
@@ -52,16 +46,18 @@ export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[]): number => 
     });
 
     if (!kraKpis || kraKpis.length === 0) {
-        return Number(kra.progress) || 0;
+        return 0;
     }
 
-    // Calculate average progress of all KPIs
-    const totalProgress = kraKpis.reduce((sum, kpi) => {
-        return sum + calculateKpiProgress(kpi);
-    }, 0);
+    // KRA progress = % of KPIs that have a "completed" status
+    const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
+    const completedCount = kraKpis.filter(kpi =>
+        COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
+    ).length;
 
-    return Math.round(totalProgress / kraKpis.length);
+    return Math.round((completedCount / kraKpis.length) * 100);
 };
+
 
 /**
  * Calculates the progress of a Strategic Objective by aggregating its linked KRAs.

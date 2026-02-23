@@ -4,10 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Calendar, BarChart2, Target, Clock, Flag,
-  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2, Users, TrendingUp, TrendingDown, Minus
+  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2
 } from 'lucide-react';
 import { KPIPerformanceBar } from '@/components/dashboard/KPIPerformanceBar';
 import { TaskTrendsLine } from '@/components/dashboard/TaskTrendsLine';
@@ -16,6 +15,7 @@ import { KRAStatusChart } from '@/components/dashboard/KRAStatusChart';
 import { ObjectivesProgressChart } from '@/components/dashboard/ObjectivesProgressChart';
 import { TrafficLightCard } from '@/components/dashboard/TrafficLightCard';
 import { calculateTaskTrends, calculateTrafficLightMetrics } from '@/utils/dashboardUtils';
+import { calculateKraProgress } from '@/utils/kpiUtils';
 import { SetupWizard } from '@/components/setup-wizard/SetupWizard';
 import { SetupWizardState as FullSetupWizardState } from '@/hooks/useSetupWizard';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -118,40 +118,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const { strategyData } = useStrategySharePoint();
   const objectives = strategyData?.objectives || [];
 
-  // --- View Scope ---
-  const [viewScope, setViewScope] = useState<DashboardViewScope>('individual');
-
-  // Set default scope based on role when userContext becomes available
-  useEffect(() => {
-    if (!userContext?.role) return;
-    const role = userContext.role.toLowerCase();
-    if (role === 'admin' || role === 'super_admin') setViewScope('division');
-    else if (role === 'manager') setViewScope('unit');
-    else setViewScope('individual');
-  }, [userContext?.role]);
+  // Always show individual data only
+  const viewScope: DashboardViewScope = 'individual';
 
   // Only managers, admins, and super admins can use the View Scope dropdown
   const canUseViewScope = useMemo(() => {
     const role = userContext?.role?.toLowerCase();
     return role === 'manager' || role === 'admin' || role === 'super_admin';
   }, [userContext?.role]);
-
-  const availableScopes = useMemo(() => {
-    const role = userContext?.role?.toLowerCase();
-    const isAdmin = role === 'admin' || role === 'super_admin';
-    const isManager = role === 'manager';
-
-    const scopes: { value: DashboardViewScope; label: string }[] = [
-      { value: 'individual', label: 'My Data' }
-    ];
-    if (isManager || isAdmin) {
-      scopes.push({ value: 'unit', label: userContext?.unit ? `Unit – ${userContext.unit}` : 'Unit' });
-    }
-    if (isAdmin) {
-      scopes.push({ value: 'division', label: userContext?.division ? `Division – ${userContext.division}` : 'Division' });
-    }
-    return scopes;
-  }, [userContext]);
 
   const userEmail = userContext?.email?.toLowerCase() || '';
   const userUnit = userContext?.unit || '';
@@ -243,153 +217,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     }
     return objectives;
   }, [objectives, viewScope, userEmail, userName, userUnit, userDivision, canUseViewScope]);
-
-  // --- Unit Staff Performance (only in Unit scope) ---
-  // Source of truth is the live SharePoint UserRoles roster (unitRoster prop).
-  // Falls back to the static DivisionStaffMap while the roster is loading,
-  // so the UI is never blank during the initial fetch.
-  const unitStaffPerformance = useMemo(() => {
-    if (viewScope !== 'unit' || !canUseViewScope) return [];
-
-    // Service-account / facility keywords — exclude these from performance cards
-    const serviceKeywords = ['service account', 'facility', 'information service', 'boardroom', 'enquiries'];
-
-    // Build a normalised roster: prefer live SharePoint data, fall back to static map
-    type RosterEntry = { email: string; name: string; jobTitle: string };
-    let rosterEntries: RosterEntry[];
-
-    if (unitRoster && unitRoster.length > 0) {
-      // Live roster from SharePoint UserRoles
-      rosterEntries = unitRoster
-        .filter(u => {
-          const isService = serviceKeywords.some(
-            kw => u.role_name?.toLowerCase().includes(kw) ||
-              u.user_name?.toLowerCase().includes(kw) ||
-              u.user_email?.toLowerCase().includes(kw)
-          );
-          return !isService;
-        })
-        .map(u => ({
-          email: u.user_email,
-          name: u.user_name || u.user_email,
-          jobTitle: u.role_name || '',
-        }));
-    } else {
-      // Fallback: static DivisionStaffMap (available immediately, no network needed)
-      rosterEntries = DivisionStaffMap.getAllStaff()
-        .filter(s => {
-          const unitMatch = s.unit?.toLowerCase() === userUnit.toLowerCase();
-          const isService = serviceKeywords.some(
-            kw => s.job_title?.toLowerCase().includes(kw) || s.name?.toLowerCase().includes(kw)
-          );
-          return unitMatch && !isService;
-        })
-        .map(s => ({ email: s.email, name: s.name, jobTitle: s.job_title }));
-    }
-
-    if (rosterEntries.length === 0) return [];
-
-    const getLevel = (score: number) => {
-      if (score >= 80) return { label: 'Excellent', color: '#10b981', trend: 'up' };
-      if (score >= 60) return { label: 'Good', color: '#3b82f6', trend: 'up' };
-      if (score >= 40) return { label: 'Fair', color: '#f59e0b', trend: 'flat' };
-      return { label: 'Needs Attention', color: '#ef4444', trend: 'down' };
-    };
-
-    return rosterEntries
-      .map(staff => {
-        const staffEmail = staff.email.toLowerCase();
-
-        const staffTasks = tasks.filter(t =>
-          t.assignees?.some(a => a.email?.toLowerCase() === staffEmail) ||
-          t.createdByEmail?.toLowerCase() === staffEmail ||
-          t.authorEmail?.toLowerCase() === staffEmail ||
-          t.assignedTo?.toLowerCase() === staffEmail
-        );
-
-        const staffKras = kras.filter(k => {
-          const kraKpis = (k.unitKpis || k.kpis || []) as any[];
-          const hasAssignedKpi = kraKpis.some(kpi =>
-            kpi.assignees?.some((a: any) => a.email?.toLowerCase() === staffEmail)
-          );
-
-          return k.owner?.email?.toLowerCase() === staffEmail ||
-            k.createdByEmail?.toLowerCase() === staffEmail ||
-            k.assignees?.some(a => a.email?.toLowerCase() === staffEmail) ||
-            hasAssignedKpi;
-        });
-
-        // Task metrics
-        const totalTasks = staffTasks.length;
-        const doneTasks = staffTasks.filter(t =>
-          ['done', 'completed', 'closed', 'complete'].includes(t.status?.toLowerCase() || '')
-        ).length;
-        const inProgressTasks = staffTasks.filter(t =>
-          ['in-progress', 'in progress', 'doing', 'active'].includes(t.status?.toLowerCase() || '')
-        ).length;
-        const taskRate = totalTasks > 0 ? (doneTasks / totalTasks) * 100 : 0;
-
-        // KRA metrics
-        const totalKras = staffKras.length;
-        const completedKras = staffKras.filter(k =>
-          (k.status as string) === 'completed' || (k.status as string) === 'closed'
-        ).length;
-        const onTrackKras = staffKras.filter(k => (k.status as string) === 'on-track').length;
-        const atRiskKras = staffKras.filter(k =>
-          (k.status as string) === 'at-risk' || (k.status as string) === 'off-track'
-        ).length;
-        const kraRate = totalKras > 0 ? ((completedKras + onTrackKras) / totalKras) * 100 : 0;
-
-        // KPI metrics — count all KPIs assigned to this staff member across all KRAs
-        const allStaffKpis = kras.flatMap(k => (k.unitKpis || k.kpis || []) as any[])
-          .filter(kpi => kpi.assignees?.some((a: any) => a.email?.toLowerCase() === staffEmail));
-
-        const totalKpis = allStaffKpis.length;
-        const completedKpis = allStaffKpis.filter(kpi => kpi.status === 'completed').length;
-        const onTrackKpis = allStaffKpis.filter(kpi => kpi.status === 'on-track').length;
-        const atRiskKpis = allStaffKpis.filter(kpi =>
-          kpi.status === 'at-risk' || kpi.status === 'behind'
-        ).length;
-        const kpiRate = totalKpis > 0 ? ((completedKpis + onTrackKpis) / totalKpis) * 100 : 0;
-
-        // Weighted performance score
-        let weightedScore = 0;
-        let totalWeight = 0;
-        if (totalTasks > 0) { weightedScore += taskRate * 0.4; totalWeight += 0.4; }
-        if (totalKpis > 0) { weightedScore += kpiRate * 0.4; totalWeight += 0.4; }
-        if (totalKras > 0) { weightedScore += kraRate * 0.2; totalWeight += 0.2; }
-        const performanceScore = totalWeight > 0 ? Math.round(weightedScore / totalWeight) : 0;
-
-        const nameParts = staff.name.split(' ').filter(Boolean);
-        const initials = nameParts.length >= 2
-          ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
-          : staff.name.substring(0, 2).toUpperCase();
-
-        return {
-          email: staff.email,
-          name: staff.name,
-          jobTitle: staff.jobTitle,
-          initials,
-          totalTasks,
-          doneTasks,
-          inProgressTasks,
-          taskRate: Math.round(taskRate),
-          totalKras,
-          completedKras,
-          onTrackKras,
-          atRiskKras,
-          kraRate: Math.round(kraRate),
-          totalKpis,
-          completedKpis,
-          onTrackKpis,
-          atRiskKpis,
-          kpiRate: Math.round(kpiRate),
-          performanceScore,
-          level: getLevel(performanceScore),
-        };
-      })
-      .sort((a, b) => b.performanceScore - a.performanceScore);
-  }, [viewScope, canUseViewScope, tasks, kras, userUnit, unitRoster]);
 
   const activeProjects = projects.filter(project => project.status === 'in-progress').length;
   const completedProjects = projects.filter(project => project.status === 'completed').length;
@@ -665,23 +492,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           <p className="text-muted-foreground">High-level summary of unit performance and metrics.</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          {canUseViewScope && availableScopes.length > 1 && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">View Scope:</span>
-              <Select value={viewScope} onValueChange={(v) => setViewScope(v as DashboardViewScope)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableScopes.map(scope => (
-                    <SelectItem key={scope.value} value={scope.value}>
-                      {scope.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
           <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
             {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
           </Button>
@@ -822,14 +632,14 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {Math.round(scopedKras.reduce((acc, kra) => acc + kra.progress, 0) / (scopedKras.length || 1))}%
+                  {Math.round(scopedKras.reduce((acc, kra) => acc + calculateKraProgress(kra, allKpis), 0) / (scopedKras.length || 1))}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {scopedKras.filter(kra => kra.status === 'closed').length} completed
+                  {scopedKras.filter(kra => calculateKraProgress(kra, allKpis) === 100).length} completed
                 </p>
                 <Progress
                   className="h-2 mt-2"
-                  value={scopedKras.reduce((acc, kra) => acc + kra.progress, 0) / (scopedKras.length || 1)}
+                  value={scopedKras.reduce((acc, kra) => acc + calculateKraProgress(kra, allKpis), 0) / (scopedKras.length || 1)}
                 />
               </CardContent>
             </Card>
@@ -841,16 +651,24 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 text-sm">
-                <p>This card tracks the average completion percentage of all assigned KRAs.</p>
+                <p>This card shows the overall KRA completion for your unit, calculated live from the status of linked KPIs — <strong>no stored value is used</strong>.</p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
-                    <span><strong>Progress Bar:</strong> Visualizes the average progress across all KRAs.</span>
+                    <span><strong>Percentage:</strong> Average across all KRAs of (completed KPIs ÷ total KPIs) × 100.</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>X completed:</strong> Count of KRAs where <em>all</em> linked KPIs have status "Completed".</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
+                    <span><strong>Progress Bar:</strong> Visualizes the same average across all KRAs.</span>
                   </div>
                 </div>
                 <ul className="list-disc pl-5 space-y-1 mt-2">
-                  <li><strong>Analysis:</strong> A low percentage here suggests that while daily tasks might be moving, strategic goals are lagging.</li>
-                  <li><strong>Trend:</strong> Ensure this metric moves in tandem with your KPI completion rates.</li>
+                  <li><strong>How to move this number:</strong> Mark individual KPIs as <em>Completed</em> in the KRAs &amp; Objectives tab.</li>
+                  <li><strong>Note:</strong> Target/Actual figures on KPIs do not affect this percentage — only the KPI status does.</li>
                 </ul>
               </div>
             </DialogContent>
@@ -1222,143 +1040,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
         </div>
 
         {/* Task Audit Table - Removed */}
-
-        {/* Unit Staff Performance Section */}
-        {viewScope === 'unit' && canUseViewScope && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Users className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h3 className="text-lg font-semibold">Unit Staff Performance</h3>
-                <p className="text-sm text-muted-foreground">
-                  Individual performance metrics for staff in {userUnit || 'this unit'}
-                </p>
-              </div>
-            </div>
-
-            {unitStaffPerformance.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border rounded-lg bg-muted/30">
-                <Users className="h-10 w-10 mb-3 opacity-40" />
-                <p className="font-medium">No staff found for <span className="text-foreground">{userUnit}</span></p>
-                <p className="text-xs mt-1">Ensure unit names match the staff directory exactly.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {unitStaffPerformance.map(staff => (
-                  <Card
-                    key={staff.email}
-                    className="border-l-4 overflow-hidden"
-                    style={{ borderLeftColor: staff.level.color }}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        {/* Avatar + Name */}
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-sm font-bold text-white"
-                            style={{ backgroundColor: staff.level.color }}
-                          >
-                            {staff.initials}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm leading-tight truncate">{staff.name}</p>
-                            {staff.jobTitle && (
-                              <p className="text-xs font-medium text-muted-foreground truncate">{staff.jobTitle}</p>
-                            )}
-                            <p className="text-xs text-muted-foreground/60 truncate">{staff.email}</p>
-                          </div>
-                        </div>
-                        {/* Score */}
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-2xl font-bold leading-none" style={{ color: staff.level.color }}>
-                            {staff.performanceScore}%
-                          </div>
-                          <div className="flex items-center justify-end gap-1 mt-1">
-                            {staff.level.trend === 'up' && <TrendingUp className="h-3 w-3" style={{ color: staff.level.color }} />}
-                            {staff.level.trend === 'down' && <TrendingDown className="h-3 w-3" style={{ color: staff.level.color }} />}
-                            {staff.level.trend === 'flat' && <Minus className="h-3 w-3" style={{ color: staff.level.color }} />}
-                            <span className="text-xs font-medium" style={{ color: staff.level.color }}>
-                              {staff.level.label}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3 pt-0">
-                      {/* Tasks */}
-                      <div>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
-                            <CheckCircle className="h-3 w-3" /> Daily Tasks
-                          </span>
-                          <span className="text-xs tabular-nums">
-                            <span className="font-semibold">{staff.doneTasks}</span>
-                            <span className="text-muted-foreground">/{staff.totalTasks} done</span>
-                            {staff.inProgressTasks > 0 && (
-                              <span className="text-muted-foreground ml-1">· {staff.inProgressTasks} active</span>
-                            )}
-                          </span>
-                        </div>
-                        <Progress value={staff.taskRate} className="h-1.5" />
-                      </div>
-
-                      {/* KRAs */}
-                      {staff.totalKras > 0 && (
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
-                              <Target className="h-3 w-3" /> KRAs
-                            </span>
-                            <span className="text-xs tabular-nums">
-                              <span className="font-semibold">{staff.completedKras}</span>
-                              <span className="text-muted-foreground"> done · {staff.onTrackKras} on-track / {staff.totalKras}</span>
-                            </span>
-                          </div>
-                          <Progress value={staff.kraRate} className="h-1.5" />
-                        </div>
-                      )}
-
-                      {/* KPIs */}
-                      {staff.totalKpis > 0 && (
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs font-medium flex items-center gap-1 text-muted-foreground">
-                              <Briefcase className="h-3 w-3" /> KPIs
-                            </span>
-                            <span className="text-xs tabular-nums">
-                              <span className="font-semibold">{staff.completedKpis}</span>
-                              <span className="text-muted-foreground"> done · {staff.onTrackKpis} on-track / {staff.totalKpis}</span>
-                            </span>
-                          </div>
-                          <Progress value={staff.kpiRate} className="h-1.5" />
-                        </div>
-                      )}
-
-                      {/* Risk badges */}
-                      {(staff.atRiskKras > 0 || staff.atRiskKpis > 0) && (
-                        <div className="flex flex-wrap gap-1.5 pt-1 border-t">
-                          {staff.atRiskKras > 0 && (
-                            <Badge variant="destructive" className="text-xs px-1.5 py-0">
-                              <AlertTriangle className="h-2.5 w-2.5 mr-1" />
-                              {staff.atRiskKras} KRA{staff.atRiskKras > 1 ? 's' : ''} at risk
-                            </Badge>
-                          )}
-                          {staff.atRiskKpis > 0 && (
-                            <Badge variant="destructive" className="text-xs px-1.5 py-0">
-                              <AlertTriangle className="h-2.5 w-2.5 mr-1" />
-                              {staff.atRiskKpis} KPI{staff.atRiskKpis > 1 ? 's' : ''} at risk
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
       </div>
 

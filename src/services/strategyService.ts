@@ -193,7 +193,14 @@ export class StrategyService {
                         status: (item.fields.Status?.toLowerCase().replace(' ', '-') || 'on-track') as any,
                         icon: item.fields.Icon || 'Target',
                         goals: item.fields.Deliverables ? item.fields.Deliverables.split(',').map((s: string) => s.trim()) : [],
-                        isFeatured: isFeatured
+                        isFeatured: isFeatured,
+                        division: item.fields.Division || '',
+                        unit: item.fields.Unit || '',
+                        goalType: item.fields.GoalType || '',
+                        startDate: item.fields.StartDate || null,
+                        endDate: item.fields.EndDate || null,
+                        modifiedAt: item.lastModifiedDateTime || null,
+                        createdAt: item.createdDateTime || null,
                     };
                 });
         } catch (error) {

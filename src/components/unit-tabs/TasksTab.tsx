@@ -567,7 +567,7 @@ const TaskListView: React.FC<{
 
 interface NewTasksTabProps {
   tasks: Task[];
-  addTask: (task: Omit<Task, 'id'>) => void;
+  addTask: (task: Omit<Task, 'id'>) => Promise<Task | boolean | void> | void;
   editTask: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
   deleteTask: (id: string) => void;
   error?: Error | null;
@@ -2035,9 +2035,9 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         onSubmit={async (taskData) => {
           if (editingTask) {
             await editTask(editingTask.id, taskData);
-            toast({ title: "Task Updated", description: "Task updated successfully." });
+            setIsDialogOpen(false);
           } else {
-            // Create new task
+            // Create new task with optimistic UI
             let targetProjectId = undefined;
 
             if (preselectedGroup) {
@@ -2046,19 +2046,72 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               targetProjectId = activeBuckets[0].id;
             }
 
-            await addTask({
+            const newTaskData = {
               title: taskData.title || '',
               description: taskData.description || '',
               status: taskData.status || 'todo',
               priority: taskData.priority || 'medium',
               dueDate: taskData.dueDate,
+              startDate: taskData.startDate,
               assignee: taskData.assignee,
+              assignees: taskData.assignees,
               projectId: taskData.projectId || targetProjectId,
-              tags: []
+              tags: taskData.tags || [],
+              kra_id: taskData.kra_id,
+              kpi_id: taskData.kpi_id,
+              subtasks: taskData.subtasks,
+              recurrence: taskData.recurrence,
+              unit_id: currentUnit,
+            };
+
+            // Close dialog immediately for snappy UX
+            setIsDialogOpen(false);
+
+            // Create a temporary optimistic task for instant board rendering
+            const tempId = `temp-${Date.now()}`;
+            const optimisticTask: Task = {
+              ...newTaskData,
+              id: tempId,
+              completed: false,
+              dueDate: newTaskData.dueDate || '',
+              status: (newTaskData.status || 'todo') as Task['status'],
+              priority: (newTaskData.priority || 'medium') as Task['priority'],
+            };
+
+            // Add to board immediately
+            const columnId = optimisticTask.projectId || 'uncategorized-virtual';
+            setBoardData(prev => {
+              const next = { ...prev };
+              if (next[columnId]) {
+                next[columnId] = [...next[columnId], optimisticTask];
+              } else {
+                // Fallback to first bucket
+                const firstBucket = activeBuckets[0]?.id;
+                if (firstBucket && next[firstBucket]) {
+                  next[firstBucket] = [...next[firstBucket], optimisticTask];
+                }
+              }
+              return next;
             });
-            toast({ title: "Task Created", description: "New task created successfully." });
+
+            toast({ title: "Success", description: "Task added successfully" });
+
+            // Fire API call in background — on success, the refetch will replace the temp task with real data
+            try {
+              await addTask(newTaskData);
+              // The hook's background refetch (after ~1.2s) will replace the temp task with real data
+            } catch (error) {
+              // Rollback: remove optimistic task from board
+              setBoardData(prev => {
+                const next = { ...prev };
+                Object.keys(next).forEach(key => {
+                  next[key] = next[key].filter(t => t.id !== tempId);
+                });
+                return next;
+              });
+              toast({ title: "Failed to Create Task", description: "Could not save the task. Please try again.", variant: "destructive" });
+            }
           }
-          setIsDialogOpen(false);
         }}
       />
     </div >

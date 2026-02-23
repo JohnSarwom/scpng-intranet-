@@ -85,3 +85,64 @@ Filtering for KRAs has been updated to use the new `Division` column for divisio
 - `src/components/kpi/KraFormSection.tsx`: UI labels and auto-fill hooks.
 - `src/services/sharePointOpsService.ts`: Core persistence and mapping logic.
 - `src/types/index.ts`: Updated `KRA` interface.
+
+---
+
+## 6. KRA Progress & Status Architecture (2026-02-23)
+
+> **Status**: Implemented & Verified
+
+### Problem
+Two sources of inaccuracy were identified in how KRA progress was tracked:
+
+1. **Stored `Progress` field defaulted to 100%** — The `Performance_KRAs` SharePoint list had a column default value of `100`, meaning every new KRA appeared as fully complete regardless of actual work done.
+2. **Status field conflict** — `KpiModal.tsx` was writing `status: 'pending'` to SharePoint on every creation/edit, creating a discrepancy against SharePoint's own column default of `Open`.
+
+### SharePoint Changes
+
+| Column | Action |
+|--------|--------|
+| `Status` | **Deleted** from `Performance_KRAs` list |
+| `Progress` | Default value **cleared** (column retained for backward compatibility) |
+
+### New Progress Calculation Rule
+
+KRA progress is now **computed live** from the completion status of its linked KPIs. No stored field is used.
+
+```
+KRA Progress (%) = (# of KPIs with status "completed" / "achieved" / "done")
+                   ÷ (total KPIs in that KRA) × 100
+```
+
+This calculation is implemented in `calculateKraProgress()` in `src/utils/kpiUtils.ts` and is the **single source of truth** used by:
+- The **Dashboard Overview KRA Progress card** (`OverviewTab.tsx`)
+- The **Strategy Analytics Divisional Performance chart** (`strategyAnalyticsUtils.ts` → `DivisionalComparison.tsx`)
+
+### KRA Creation Change
+
+`KpiModal.tsx` no longer sends a `status` or `progress` value to SharePoint during KRA creation or editing. The form data no longer includes these fields:
+
+```typescript
+// Before
+const completeFormData = {
+  ...formData,
+  status: formData.status || 'pending',  // ← removed
+};
+
+// After
+const completeFormData = {
+  ...formData,
+  // no status field
+};
+```
+
+### Summary of Affected Files
+
+| File | Change |
+|------|--------|
+| `src/utils/kpiUtils.ts` | `calculateKraProgress()`: KPI status-based count only |
+| `src/utils/strategyAnalyticsUtils.ts` | `buildDivisionalComparisonData()`: uses same rule via `getKraProgressFromKpis()` |
+| `src/components/unit-tabs/OverviewTab.tsx` | KRA Progress card reads `calculateKraProgress()` not `kra.progress` |
+| `src/components/kpi/KpiModal.tsx` | Removed `status: 'pending'` from form init and submit |
+| `src/components/strategy/analytics/DivisionalComparison.tsx` | Added `kpis` prop |
+| `src/components/strategy/StrategyAnalytics.tsx` | Passes `kpis` to `DivisionalComparison` |

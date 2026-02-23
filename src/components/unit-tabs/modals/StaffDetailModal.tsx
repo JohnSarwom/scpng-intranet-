@@ -164,7 +164,7 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                             </TabsTrigger>
                         </TabsList>
 
-                        <ScrollArea className="flex-1 min-h-0 pr-4">
+                        <div className="flex-1 min-h-0 pr-2 overflow-y-auto kanban-scrollbar">
                             {/* ── TASKS TAB ─────────────────────────────────────── */}
                             <TabsContent value="tasks" className="m-0 space-y-4">
                                 {/* Task Summary Cards */}
@@ -438,7 +438,7 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                     <div className="text-center py-10 text-slate-400">No Key Result Areas linked.</div>
                                 )}
                             </TabsContent>
-                        </ScrollArea>
+                        </div>
                     </Tabs>
                 </div>
             </DialogContent>

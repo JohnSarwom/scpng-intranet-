@@ -346,28 +346,18 @@ export class SharePointOpsService {
             }
         }
 
-        const response = await query.get();
-        console.log(`📊 [Tasks Fetched] User: ${context?.email} | Count: ${response.value?.length || 0} | Admin: ${isAdmin}`);
+        // Paginate through all results — Graph API caps at 200 items per page by default.
+        // Without pagination, newly added tasks beyond item #200 are silently dropped.
+        let response = await query.get();
+        let allItems: any[] = response.value || [];
 
-        // if ((!response.value || response.value.length === 0)) {
-        //     console.warn(`⚠️ [SP Ops] No tasks found. Probing list content/permissions...`);
-        //     // Probe: Is list empty or is expand failing?
-        //     try {
-        //         const probe = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).top(5).select('id,fields').expand('fields').get();
-        //         console.log(`🕵️ [SP Ops] List Probe Result (Top 5): ${probe.value?.length} items exist. Permission check: OK.`);
-        //         if (probe.value?.length > 0) {
-        //             console.log(`🕵️ [SP Ops] Probe Sample Fields:`, Object.keys(probe.value[0].fields));
-        //         }
-        //     } catch (e) {
-        //         console.error(`❌ [SP Ops] List Probe Failed`, e);
-        //     }
-        // }
+        while (response['@odata.nextLink']) {
+            response = await this.client.api(response['@odata.nextLink']).get();
+            allItems = allItems.concat(response.value || []);
+        }
 
-        // if (response.value && response.value.length > 0) {
-        //     // Log first task fields keys
-        //     console.log('🔍 [SP Ops] First Task Fields Keys:', Object.keys(response.value[0].fields));
-        // }
-        return response.value.map((item: any) => this.mapTask(item));
+        console.log(`📊 [Tasks Fetched] User: ${context?.email} | Count: ${allItems.length} | Admin: ${isAdmin}`);
+        return allItems.map((item: any) => this.mapTask(item));
     }
 
     async addTask(task: Partial<Task>, department?: string): Promise<Task> {
@@ -639,7 +629,7 @@ export class SharePointOpsService {
                 Unit: kra.unit || null,
                 Division: kra.division || null,
                 Status: kra.status === 'in-progress' ? 'In Progress' : (kra.status === 'closed' ? 'Closed' : 'Open'),
-                Progress: kra.progress,
+                Progress: kra.progress ?? 0,
                 Description: kra.description,
                 UnitObjectiveLookupId: kra.objective_id ? Number(kra.objective_id) : null,
                 Assignees: mergedAssignees.length > 0 ? JSON.stringify(mergedAssignees) : undefined
@@ -798,22 +788,26 @@ export class SharePointOpsService {
             // 0. Small delay to allow SharePoint indexing (Graph API filter lag)
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            // 1. Fetch all KPIs for this KRA
+            // 1. Fetch all KPIs and filter client-side.
+            // Note: Graph API returns HTTP 400 when using $filter on SharePoint lookup columns,
+            // so we cannot use server-side filtering here. Fetch all and filter locally.
             const kpiResponse = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
                 .expand('fields')
-                .filter(`fields/RelatedKRALookupId eq ${kraId}`)
                 .get();
 
-            const kpiItems = kpiResponse.value.map((item: any) => this.mapKPI(item));
+            const kraIdNum = Number(kraId);
+            const kpiItems = (kpiResponse.value || []).filter((item: any) => {
+                const lookupId = item.fields?.RelatedKRALookupId;
+                return Number(lookupId) === kraIdNum;
+            });
 
-            // 2. Import calculation utility
-            const { calculateKraProgress } = await import('@/utils/kpiUtils');
+            // 2. Calculate progress directly from the already-filtered KPI items.
+            const { calculateKpiProgress } = await import('@/utils/kpiUtils');
+            const mappedKpis = kpiItems.map((item: any) => this.mapKPI(item));
+            const totalProgress = mappedKpis.reduce((sum: number, kpi: any) => sum + calculateKpiProgress(kpi), 0);
+            const newProgress = mappedKpis.length > 0 ? Math.round(totalProgress / mappedKpis.length) : 0;
 
-            // 3. Calculate average
-            const mockKra = { id: kraId, status: 'open', progress: 0 };
-            const newProgress = calculateKraProgress(mockKra, kpiItems) || 0;
-
-            console.log(`[SP Ops] Syncing KRA ${kraId}: ${kpiItems.length} KPIs found. Calculated progress: ${newProgress}%`);
+            console.log(`[SP Ops] Syncing KRA ${kraId}: ${mappedKpis.length} KPIs found. Calculated progress: ${newProgress}%`);
 
             // 4. Update SharePoint KRA list
             await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).patch({
@@ -1083,7 +1077,9 @@ export class SharePointOpsService {
                         f.Status?.toLowerCase().replace(/\s+/g, '-') || 'todo') as any,
             priority: (f.Priority?.toLowerCase() || 'medium') as any,
             assignee: f.AssignedToLookupId || 'Unassigned',
-            dueDate: f.DueDate || '',
+            // Normalize to yyyy-MM-dd so <input type="date"> works correctly
+            dueDate: f.DueDate ? f.DueDate.split('T')[0] : '',
+            startDate: f.StartDate ? new Date(f.StartDate) : undefined,
             subtasks: f.SubtasksJSON ? JSON.parse(f.SubtasksJSON) : [],
             tags: tags,
             projectId: projectId, // Use our resolved ID

@@ -1171,7 +1171,8 @@ const Strategy = () => {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
-                                <Table>
+                                <Table className="border-b">
+
                                     <TableHeader>
                                         <TableRow className="bg-muted/50">
                                             <TableHead className="w-[200px] text-[10px] uppercase font-black tracking-widest">Strategic Pillar</TableHead>

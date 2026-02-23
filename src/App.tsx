@@ -3,7 +3,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { supabase, logger } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
@@ -52,7 +54,24 @@ import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { MsalAuthProvider } from '@/integrations/microsoft/MsalProvider';
 
-const queryClient = new QueryClient();
+const CACHE_VERSION = 'v1'; // Bump when SharePoint data schema changes
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,       // 5 min — data considered fresh, no refetch
+      gcTime: 1000 * 60 * 60 * 24,     // 24h — keep in memory/localStorage
+      refetchOnWindowFocus: false,      // Don't refetch when user tabs back
+      retry: 2,
+    },
+  },
+});
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'SCPNG_INTRANET_QUERY_CACHE',
+  throttleTime: 1000, // Debounce localStorage writes to 1/sec
+});
 
 // Role-based authentication hook - now properly implemented
 
@@ -281,7 +300,17 @@ const AppContent = () => {
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister,
+        maxAge: 1000 * 60 * 60 * 24, // 24h max cache age
+        buster: CACHE_VERSION,
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) => query.state.status === 'success',
+        },
+      }}
+    >
       <ThemeProvider attribute="class" defaultTheme="light">
         <TooltipProvider>
           <EmployeesProvider>
@@ -295,7 +324,7 @@ const AppContent = () => {
           </EmployeesProvider>
         </TooltipProvider>
       </ThemeProvider>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   );
 }
 

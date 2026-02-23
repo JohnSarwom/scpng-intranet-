@@ -485,14 +485,9 @@ const Unit = () => {
     }
   }, [userContext.email]);
 
-  // --- Effect to load data on mount ---
-  useEffect(() => {
-    // Objectives are handled by the hook
-    taskState.refresh?.();
-    projectState.refresh?.();
-    kraState.refresh?.();
-    kpiState.refresh?.();
-  }, [taskState.refresh, projectState.refresh, kraState.refresh, kpiState.refresh]);
+  // Data loading is handled by React Query's cache + persistence.
+  // staleTime (5 min) ensures cached data is served instantly on navigation.
+  // Manual refresh is available via handleRefreshAllData for user-triggered updates.
 
   // --- Combine KRAs and KPIs --- 
   const combinedKrasForTabs = useMemo(() => {

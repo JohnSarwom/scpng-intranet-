@@ -2,15 +2,24 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer } from 'recharts';
-import { buildProgressTrendData } from '@/utils/strategyAnalyticsUtils';
+import { buildProgressTrendData, TimePeriod } from '@/utils/strategyAnalyticsUtils';
 import { TrendingUp } from 'lucide-react';
+
+const periodDescriptions: Record<TimePeriod, string> = {
+    weekly: 'Daily objective & execution progress this week',
+    monthly: 'Weekly objective & execution progress this month',
+    quarterly: 'Monthly objective & execution progress this quarter',
+    yearly: 'Monthly objective & execution progress this year',
+    all: 'Monthly objective & execution progress over time',
+};
 
 interface ProgressTrendsProps {
     objectives: any[];
+    timePeriod?: TimePeriod;
 }
 
-const ProgressTrends: React.FC<ProgressTrendsProps> = ({ objectives }) => {
-    const data = buildProgressTrendData(objectives);
+const ProgressTrends: React.FC<ProgressTrendsProps> = ({ objectives, timePeriod = 'all' }) => {
+    const data = buildProgressTrendData(objectives, timePeriod);
 
     return (
         <Card className="animate-fade-in">
@@ -19,7 +28,7 @@ const ProgressTrends: React.FC<ProgressTrendsProps> = ({ objectives }) => {
                     <TrendingUp className="w-5 h-5 text-intranet-primary" />
                     <CardTitle className="text-lg font-semibold">Progress Trends</CardTitle>
                 </div>
-                <CardDescription>Monthly objective & execution progress over time</CardDescription>
+                <CardDescription>{periodDescriptions[timePeriod]}</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="h-[300px] w-full">

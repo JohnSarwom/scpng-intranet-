@@ -181,7 +181,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 <Input
                   id="task-start-date"
                   type="date"
-                  value={editedTask.startDate instanceof Date ? editedTask.startDate.toISOString().split('T')[0] : ''}
+                  value={editedTask.startDate instanceof Date ? editedTask.startDate.toISOString().split('T')[0] : typeof editedTask.startDate === 'string' && editedTask.startDate ? editedTask.startDate.split('T')[0] : ''}
                   onChange={(e) => setEditedTask({ ...editedTask, startDate: new Date(e.target.value) })}
                 />
               </div>
@@ -244,7 +244,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 <Input
                   id="task-due-date"
                   type="date"
-                  value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate : ''}
+                  value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate.split('T')[0] : ''}
                   onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
                 />
               </div>

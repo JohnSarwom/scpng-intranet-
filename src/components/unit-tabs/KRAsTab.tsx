@@ -931,26 +931,27 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
 
               <TabsContent value="kpis">
-                <div className="overflow-auto kanban-scrollbar border rounded-md h-[calc(100vh-220px)] relative">
-                  <table className="w-full caption-bottom text-sm min-w-full table-fixed md:table-auto">
-                    <TableHeader className="sticky top-0 z-50 bg-background border-b-2">
-                      <TableRow>
-                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-50 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
-                        <TableHead className="w-[200px] min-w-[200px] sticky left-[150px] top-0 z-50 bg-background border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
-                        <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-background">KPI</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Start Date</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Target Date</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background">Quarter</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background text-right">Target</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background text-right">Actual</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background">Status</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background text-right">Cost</TableHead>
-                        <TableHead className="min-w-[120px] sticky top-0 z-40 bg-background">Assignees</TableHead>
-                        <TableHead className="min-w-[150px] sticky top-0 z-40 bg-background">Comments</TableHead>
-                        <TableHead className="sticky top-0 z-40 bg-background">Linked Tasks</TableHead>
-                        <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-background border-l z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">Actions</TableHead>
+                <div className="overflow-auto kanban-scrollbar border rounded-md h-[calc(100vh-220px)] relative border-b-2">
+                  <table className="w-full caption-bottom text-sm min-w-full table-fixed md:table-auto border-separate border-spacing-0">
+                    <TableHeader className="sticky top-0 z-50 bg-background">
+                      <TableRow className="border-b-2">
+                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
+                        <TableHead className="w-[200px] min-w-[200px] sticky left-[150px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
+                        <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-background border-b-2">KPI</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Start Date</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Target Date</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2">Quarter</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2 text-right">Target</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2 text-right">Actual</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Status</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2 text-right">Cost</TableHead>
+                        <TableHead className="min-w-[120px] sticky top-0 z-40 bg-background border-b-2">Assignees</TableHead>
+                        <TableHead className="min-w-[150px] sticky top-0 z-40 bg-background border-b-2">Comments</TableHead>
+                        <TableHead className="sticky top-0 z-40 bg-background border-b-2">Linked Tasks</TableHead>
+                        <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-background border-l border-b-2 z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
+
                     <TableBody>
                       {processedRows.length === 0 ? (
                         <TableRow>
@@ -978,29 +979,37 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                           );
 
                           return (
-                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`}>
+                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`} className="group hover:bg-muted/50 border-b">
                               {isFirstRowOfObjective && (
-                                <TableCell className="align-top border-r text-sm font-medium sticky left-0 z-30 bg-card shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={objectiveRowSpan}>
-                                  {objectiveName}
+                                <TableCell className="align-top border-r text-sm font-medium sticky left-0 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={objectiveRowSpan}>
+                                  <div className="bg-background w-full h-full min-h-full">
+                                    {objectiveName}
+                                  </div>
                                 </TableCell>
                               )}
                               {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r sticky left-[150px] z-30 bg-card shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={kraTitleRowSpan}>
-                                  {kraTitle}
+                                <TableCell className="align-top border-r sticky left-[150px] z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={kraTitleRowSpan}>
+                                  <div className="bg-background w-full h-full min-h-full">
+                                    {kraTitle}
+                                  </div>
                                 </TableCell>
                               )}
                               {/* KPI Cells */}
-                              <TableCell className="align-top text-sm">{kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground">-</span>}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
-                              <TableCell className="align-top text-sm">{targetQuarter}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums">{kpi?.target ?? '-'}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums">{kpi?.actual ?? '-'}</TableCell>
-                              <TableCell className="align-top whitespace-nowrap">
+                              <TableCell className="align-top text-sm border-b">{kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground">-</span>}</TableCell>
+
+                              <TableCell className="align-top text-sm whitespace-nowrap border-b">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
+                              <TableCell className="align-top text-sm whitespace-nowrap border-b">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
+                              <TableCell className="align-top text-sm border-b">{targetQuarter}</TableCell>
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">{kpi?.target ?? '-'}</TableCell>
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">{kpi?.actual ?? '-'}</TableCell>
+                              <TableCell className="align-top whitespace-nowrap border-b">
                                 {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground">-</span>}
                               </TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap text-right font-mono tabular-nums">{formatCurrency(kpi?.costAssociated)}</TableCell>
-                              <TableCell className="align-top">
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">
+                                {kpi?.cost ? `K ${Number(kpi.cost).toLocaleString()}` : <span className="text-muted-foreground">-</span>}
+                              </TableCell>
+                              <TableCell className="align-top border-b">
+
                                 {kpi?.assignees && kpi.assignees.length > 0 ? (
                                   <div className="flex -space-x-2 overflow-hidden">
                                     {(kpi.assignees as any[]).map((assignee: any, index: number) => (
@@ -1017,8 +1026,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                   </div>
                                 ) : <span className="text-muted-foreground">-</span>}
                               </TableCell>
-                              <TableCell className="align-top text-xs text-muted-foreground">{kpi?.comments || '-'}</TableCell>
-                              <TableCell className="align-top">
+                              <TableCell className="align-top text-xs text-muted-foreground border-b">{kpi?.comments || '-'}</TableCell>
+                              <TableCell className="align-top border-b">
+
                                 {linkedTasks.length > 0 ? (
                                   <Popover>
                                     <PopoverTrigger asChild>
@@ -1042,8 +1052,10 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                   <span className="text-muted-foreground text-xs">-</span>
                                 )}
                               </TableCell>
-                              <TableCell className="align-top text-right sticky right-0 bg-card border-l px-2 py-1 whitespace-nowrap align-middle">
-                                <div className="flex justify-end items-center space-x-1">
+
+                              <TableCell className="align-top text-right sticky right-0 bg-background border-l px-2 py-1 whitespace-nowrap align-middle border-b">
+                                <div className="flex justify-end items-center space-x-1 bg-background">
+
                                   {canEdit && (
                                     <>
                                       {kpi && kpi.id && kpi.name !== '-' && (
@@ -1129,8 +1141,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               </TabsContent>
 
               <TabsContent value="objectives">
-                <div className="overflow-auto border rounded-md">
-                  <Table>
+                <div className="overflow-auto border rounded-md border-b-2">
+                  <Table className="border-b">
+
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-[20%]">Strategic Alignment</TableHead>

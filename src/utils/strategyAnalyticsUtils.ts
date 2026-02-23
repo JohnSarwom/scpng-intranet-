@@ -25,16 +25,27 @@ export function filterByTimePeriod<T extends Record<string, any>>(
     return items.filter(item => {
         const startStr = item.startDate || item.date;
         const endStr = item.endDate;
+        const fallbackStr = item.modifiedAt || item.updatedAt || item.createdAt;
 
         try {
-            const start = startStr ? (typeof startStr === 'string' ? parseISO(startStr) : new Date(startStr)) : null;
-            const end = endStr ? (typeof endStr === 'string' ? parseISO(endStr) : new Date(endStr)) : null;
+            const toDate = (v: any): Date | null => {
+                if (!v) return null;
+                return typeof v === 'string' ? parseISO(v) : new Date(v);
+            };
+
+            const start = toDate(startStr);
+            const end = toDate(endStr);
 
             // Include if the item's date range overlaps with the filter range
             if (start && end) return start <= range.to && end >= range.from;
             if (start) return start >= range.from && start <= range.to;
             if (end) return end >= range.from && end <= range.to;
-            return true; // No dates = always included
+
+            // Fallback: use last-modified / created timestamp
+            const fallback = toDate(fallbackStr);
+            if (fallback) return fallback >= range.from && fallback <= range.to;
+
+            return true; // No dates at all = always included
         } catch {
             return true;
         }
@@ -60,52 +71,148 @@ export function buildStatusDistributionData(objectives: any[]): Array<{ name: st
 }
 
 export function buildProgressTrendData(
-    objectives: any[]
+    objectives: any[],
+    period: TimePeriod = 'all'
 ): Array<{ name: string; objectives: number; executions: number }> {
+    const now = new Date();
+
+    // Helper: average progress of objectives that are "active" at a given reference date
+    const avgProgressOf = (objs: any[]) => {
+        if (objs.length === 0) return 0;
+        return Math.round(objs.reduce((s: number, o: any) => {
+            let p = o.progress || 0;
+            const status = (o.status || '').toLowerCase();
+            if (p === 0 && (status === 'completed' || status === 'achieved')) p = 100;
+            return s + p;
+        }, 0) / objs.length);
+    };
+
+    // Helper: filter objectives that are active at a given reference date
+    const activeAt = (objs: any[], refDate: Date) =>
+        objs.filter(obj => {
+            const start = obj.startDate ? new Date(obj.startDate) : null;
+            const end = obj.endDate ? new Date(obj.endDate) : null;
+            if (start && end) return refDate >= start && refDate <= end;
+            return true; // No dates = always active
+        });
+
+    const buildPoint = (label: string, refDate: Date) => {
+        const active = activeAt(objectives, refDate);
+        const execs = active.filter((o: any) => o.isFeatured);
+        return { name: label, objectives: avgProgressOf(active), executions: avgProgressOf(execs) };
+    };
+
+    if (period === 'weekly') {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, idx) => {
+            const d = new Date(weekStart);
+            d.setDate(weekStart.getDate() + idx);
+            return buildPoint(day, d);
+        });
+    }
+
+    if (period === 'monthly') {
+        const mStart = startOfMonth(now);
+        return ['Week 1', 'Week 2', 'Week 3', 'Week 4'].map((label, idx) => {
+            const d = new Date(mStart);
+            d.setDate(mStart.getDate() + idx * 7);
+            return buildPoint(label, d);
+        });
+    }
+
+    if (period === 'quarterly') {
+        const qStart = startOfQuarter(now);
+        return [0, 1, 2].map(idx => {
+            const d = new Date(qStart.getFullYear(), qStart.getMonth() + idx, 15);
+            const label = d.toLocaleString('default', { month: 'short' });
+            return buildPoint(label, d);
+        });
+    }
+
+    // yearly / all — show all 12 months
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months.map((month, idx) => {
-        const activeObjs = objectives.filter(obj => {
-            const startMonth = obj.startDate ? new Date(obj.startDate).getMonth() : 0;
-            const endMonth = obj.endDate ? new Date(obj.endDate).getMonth() : 11;
-            return idx >= startMonth && idx <= endMonth;
-        });
-        const avgProgress = activeObjs.length > 0
-            ? Math.round(activeObjs.reduce((s: number, o: any) => s + (o.progress || 0), 0) / activeObjs.length)
-            : 0;
-        const execObjs = activeObjs.filter((o: any) => o.isFeatured);
-        const execProgress = execObjs.length > 0
-            ? Math.round(execObjs.reduce((s: number, o: any) => s + (o.progress || 0), 0) / execObjs.length)
-            : 0;
-        return { name: month, objectives: avgProgress, executions: execProgress };
+        const refDate = new Date(now.getFullYear(), idx, 15);
+        return buildPoint(month, refDate);
     });
 }
 
 export function buildDivisionalComparisonData(
-    objectives: any[],
-    kras: any[]
+    objectives: any[], // kept for API compatibility — not used for chart data
+    kras: any[],
+    unitObjectives: any[] = [],
+    kpis: any[] = []
 ): Array<{ name: string; fullName: string; objectiveProgress: number; kraProgress: number }> {
     const divisions = [
-        { abbr: 'LSD', full: 'Legal Services' },
-        { abbr: 'LISD', full: 'Licensing' },
-        { abbr: 'RPD', full: 'Research' },
-        { abbr: 'CSD', full: 'Corporate Services' },
-        { abbr: 'OC', full: 'Office of the Chairman' },
+        { abbr: 'LSD', full: 'Legal Services', aliases: ['legal services division', 'legal advisory'] },
+        { abbr: 'LISD', full: 'Licensing', aliases: ['licensing, market & supervision division', 'licensing division', 'licensing unit', 'supervision unit', 'market data unit', 'investigations unit'] },
+        { abbr: 'RPD', full: 'Research', aliases: ['research & publication division', 'research division', 'publication unit'] },
+        { abbr: 'CSD', full: 'Corporate Services', aliases: ['corporate services division', 'finance unit', 'it unit', 'human resource unit'] },
+        { abbr: 'OC', full: 'Office of the Chairman', aliases: ['office of the chairman', 'executive division', 'secretariat unit'] },
     ];
-    return divisions.map(({ abbr, full }) => {
-        const divObjs = objectives.filter(o => {
-            const div = (o.division || '').toLowerCase();
-            return div.includes(abbr.toLowerCase()) || div.includes(full.toLowerCase());
+
+    const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
+
+    // Calculate KRA progress purely from KPI completion status
+    const getKraProgressFromKpis = (kra: any): number => {
+        const kraId = String(kra.id || kra.ID || '');
+        if (!kraId) return 0;
+        const kraKpis = kpis.filter(kpi => String(kpi.kra_id || '') === kraId);
+        if (kraKpis.length === 0) return 0;
+        const completedCount = kraKpis.filter(kpi =>
+            COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
+        ).length;
+        return Math.round((completedCount / kraKpis.length) * 100);
+    };
+
+    return divisions.map(({ abbr, full, aliases }) => {
+        // Match function: checks if a division/unit string matches this division
+        const matchesDivision = (divStr: string) => {
+            const lower = (divStr || '').toLowerCase().trim();
+            if (!lower) return false;
+            return lower.includes(abbr.toLowerCase()) ||
+                lower.includes(full.toLowerCase()) ||
+                aliases.some(alias => lower.includes(alias) || alias.includes(lower));
+        };
+
+        // Only use true unit-level objectives — exclude org/strategic/board types
+        // This mirrors the exact filter used in Strategy.tsx accordion (lines 258–261)
+        const trueUnitObjs = unitObjectives.filter(o => {
+            const type = (o.goalType || '').toLowerCase();
+            return type !== 'org' && type !== 'strategic' && type !== 'board';
         });
-        const avgObjProgress = divObjs.length > 0
-            ? Math.round(divObjs.reduce((s: number, o: any) => s + (o.progress || 0), 0) / divObjs.length)
+
+        // Filter to objectives belonging to this division/unit
+        const divUnitObjs = trueUnitObjs.filter(o =>
+            matchesDivision(o.division || '') || matchesDivision(o.unit || '')
+        );
+
+        // Calculate objective progress from unit objectives only
+        // FALLBACK: If status is 'Completed'/'Achieved', treat as 100%
+        const avgObjProgress = divUnitObjs.length > 0
+            ? Math.round(divUnitObjs.reduce((s: number, o: any) => {
+                let p = o.progress || 0;
+                const status = (o.status || '').toLowerCase();
+                if (p === 0 && (status === 'completed' || status === 'achieved')) p = 100;
+                return s + p;
+            }, 0) / divUnitObjs.length)
             : 0;
-        const divKras = kras.filter(k => divObjs.some(o => String(k.objective_id) === String(o.id)));
+
+        // Find KRAs linked directly to unit objectives in this division
+        const divUnitObjIds = new Set(divUnitObjs.map(o => String(o.id)));
+        const divKras = kras.filter(k =>
+            divUnitObjIds.has(String(k.objective_id)) || divUnitObjIds.has(String(k.objectiveId))
+        );
+
+        // KRA progress = % of KPIs within each KRA that are "completed" (by status)
         const avgKraProgress = divKras.length > 0
-            ? Math.round(divKras.reduce((s: number, k: any) => s + (k.progress || 0), 0) / divKras.length)
+            ? Math.round(divKras.reduce((s: number, k: any) => s + getKraProgressFromKpis(k), 0) / divKras.length)
             : 0;
+
         return { name: abbr, fullName: full, objectiveProgress: avgObjProgress, kraProgress: avgKraProgress };
     });
 }
+
 
 export function serializeStrategyContext(
     objectives: any[],
@@ -175,7 +282,7 @@ export function serializeStrategyContext(
     const hierarchySummary = orgHierarchy.length > 0
         ? orgHierarchy.map((h: any, i: number) =>
             `${i + 1}. Division: "${h.division || 'N/A'}" — Unit: "${h.unit || 'N/A'}"${h.head ? `, Head: ${h.head}` : ''}${h.role ? `, Role: ${h.role}` : ''}${h.email ? `, Email: ${h.email}` : ''}${h.description ? `, Description: ${h.description}` : ''}`
-          ).join('\n')
+        ).join('\n')
         : '(No org hierarchy data available)';
 
     return [

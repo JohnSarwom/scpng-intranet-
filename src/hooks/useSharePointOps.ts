@@ -459,10 +459,13 @@ export function useSharePointTasks(
         add: async (item: Partial<Task>) => {
             try {
                 const service = await getService();
-                await service.addTask(item, department);
-                query.refetch();
-                toast({ title: "Success", description: "Task added successfully" });
-                return true;
+                const createdTask = await service.addTask(item, department);
+                // Return the created task immediately so the UI can show it optimistically.
+                // Refetch in the background after a short delay for SharePoint indexing.
+                setTimeout(async () => {
+                    try { await query.refetch(); } catch { /* silent */ }
+                }, 1200);
+                return createdTask;
             } catch (error: any) {
                 console.error('Failed to add Task', error);
                 toast({ title: "Error", description: error.message || "Failed to add Task", variant: "destructive" });
@@ -473,7 +476,7 @@ export function useSharePointTasks(
             try {
                 const service = await getService();
                 await service.updateTask(id, item);
-                query.refetch();
+                await query.refetch();
                 if (!options?.suppressToast) {
                     toast({ title: "Success", description: "Task updated successfully" });
                 }
@@ -488,7 +491,7 @@ export function useSharePointTasks(
             try {
                 const service = await getService();
                 await service.deleteTask(id);
-                query.refetch();
+                await query.refetch();
                 // Toast is now handled by TasksTab with undo functionality
                 return true;
             } catch (error: any) {
