@@ -1,5 +1,6 @@
-// Import the ChecklistItem interface
+// Import and re-export the ChecklistItem interface
 import { ChecklistItem } from '@/components/ChecklistSection';
+export type { ChecklistItem };
 
 // Define Risk interface with all required properties
 export interface Risk {
@@ -48,8 +49,8 @@ export interface KRA {
   objectiveName: string;
   department: string;
   responsible: string;
-  startDate: Date;
-  endDate: Date;
+  startDate?: Date;
+  endDate?: Date;
   progress: number;
   status: 'open' | 'in-progress' | 'closed';
   kpis: KPI[];
@@ -61,11 +62,13 @@ export interface KRA {
   description?: string;
   objective_id?: string | number | null;
   unit?: string | null;
+  division?: string | null;
   unitId?: string | number | null;
   targetDate?: string;
   unitKpis?: Kpi[];
   owner?: User | null;
   ownerId?: string | number | null;
+  createdByEmail?: string;
   unitObjectives?: { title: string } | null;
   assignees?: User[];
 }
@@ -74,7 +77,7 @@ export interface Task {
   id: string;
   title: string;
   description: string;
-  status: 'todo' | 'in-progress' | 'review' | 'done' | 'not-started' | 'on-track' | 'on-hold' | 'behind' | 'completed';
+  status: 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed' | 'done';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   assignee: string;
   assignees?: User[]; // Enhanced multiple assignees
@@ -108,7 +111,7 @@ export interface Project {
   startDate: Date;
   endDate: Date;
   manager: string;
-  budget: number;
+  budget: number; // Renamed from 'get' to 'budget' to fix lint error
   budgetSpent: number;
   progress: number;
   assignees?: User[];
@@ -213,7 +216,7 @@ export interface DivisionMembership {
 export type DivisionRole = 'director' | 'manager' | 'officer' | 'staff';
 
 export type StatusType =
-  | 'todo' | 'in-progress' | 'review' | 'done'
+  | 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed'
   | 'identified' | 'analyzing' | 'mitigating' | 'monitoring' | 'resolved' | 'accepted';
 
 export type KraItem = {
@@ -345,6 +348,7 @@ export interface Kra {
   ownerId?: string | number | null;
   createdAt?: string;
   updatedAt?: string;
+  createdByEmail?: string;
   unitObjectives?: { title: string } | null;
   assignees?: User[];
 }

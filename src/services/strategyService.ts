@@ -18,7 +18,8 @@ const STRATEGY_CONFIG = {
         OBJECTIVES: 'Strategic_Objectives',
         ALIGNMENT: 'Divisional_Alignment',
         MILESTONES: 'Strategy_Milestones',
-        RISKS: 'Strategy_Risks'
+        RISKS: 'Strategy_Risks',
+        HIERARCHY: 'Org_Hierarchy'
     }
 };
 
@@ -91,13 +92,14 @@ export class StrategyService {
         console.log(`📥 [StrategyService] Fetching full strategy data Hub...`);
 
         try {
-            const [config, pillars, objectives, alignments, milestones, risks] = await Promise.all([
+            const [config, pillars, objectives, alignments, milestones, risks, hierarchy] = await Promise.all([
                 this.fetchConfig().catch(e => { console.error('Error fetching config', e); return []; }),
                 this.fetchPillars().catch(e => { console.error('Error fetching pillars', e); return []; }),
                 this.fetchObjectives().catch(e => { console.error('Error fetching objectives', e); return []; }),
                 this.fetchAlignments().catch(e => { console.error('Error fetching alignments', e); return []; }),
                 this.fetchMilestones().catch(e => { console.error('Error fetching milestones', e); return []; }),
-                this.fetchRisks().catch(e => { console.error('Error fetching risks', e); return []; })
+                this.fetchRisks().catch(e => { console.error('Error fetching risks', e); return []; }),
+                this.fetchHierarchy().catch(e => { console.error('Error fetching hierarchy', e); return {}; })
             ]);
 
             // Build Organization Info
@@ -114,7 +116,9 @@ export class StrategyService {
                 objectives,
                 alignments,
                 milestones,
-                risks
+                risks,
+                hierarchy: hierarchy.structure,
+                hierarchyDetails: hierarchy.details
             };
 
         } catch (error) {
@@ -373,5 +377,46 @@ export class StrategyService {
             impact: item.fields.ImpactLevel,
             context: item.fields.Context
         }));
+    }
+
+    private async fetchHierarchy(): Promise<{ structure: Record<string, string[]>; details: any[] }> {
+        if (!this.listIds['HIERARCHY']) return { structure: {}, details: [] };
+        try {
+            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['HIERARCHY']}/items`)
+                .expand('fields')
+                .get();
+
+            const structure: Record<string, string[]> = {};
+            const details: any[] = [];
+
+            (items.value || []).forEach((item: any) => {
+                const f = item.fields;
+                const division = f.Division || f.Title;
+                const unit = f.Unit;
+
+                if (division && unit) {
+                    if (!structure[division]) structure[division] = [];
+                    if (!structure[division].includes(unit)) {
+                        structure[division].push(unit);
+                    }
+
+                    details.push({
+                        division,
+                        unit,
+                        head: f.Head,
+                        email: f.Email,
+                        phone: f.Phone,
+                        role: f.Role,
+                        description: f.Description,
+                        sortOrder: f.SortOrder
+                    });
+                }
+            });
+
+            return { structure, details };
+        } catch (error) {
+            console.error('❌ [StrategyService] Failed to fetch hierarchy:', error);
+            return { structure: {}, details: [] };
+        }
     }
 }

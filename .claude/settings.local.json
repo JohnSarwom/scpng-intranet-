@@ -10,7 +10,9 @@
       "Bash(git checkout:*)",
       "Bash(npm install:*)",
       "Bash(timeout:*)",
-      "Bash(ls -la \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\src\\\\components\\\\ui\"\" 2>/dev/null || echo \"Directory might not exist \")"
+      "Bash(ls -la \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\src\\\\components\\\\ui\"\" 2>/dev/null || echo \"Directory might not exist \")",
+      "Bash(npx vite build)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

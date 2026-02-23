@@ -4,6 +4,7 @@ import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { getGraphClient } from '@/services/graphService';
 import { Kra, Kpi, Project, Task, KRA, Objective, FilterScope, UserContext } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
+import DivisionStaffMap from '@/utils/divisionStaffMap';
 
 // Helper to get service instance
 const useOpsService = () => {
@@ -156,17 +157,18 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
 
                 if (isStaff && !isManagerOrAdmin && context?.email) {
                     krasWithKpis = krasWithKpis.filter(kra => {
-                        // Filter by owner email or owner ID
-                        const isOwner = kra.owner?.email?.toLowerCase() === context.email.toLowerCase() ||
-                            String(kra.ownerId) === String(context.email);
+                        const userEmail = context.email.toLowerCase();
 
-                        // Also check if user is in the assignees list
-                        const isAssigned = kra.assignees?.some(a => a.email?.toLowerCase() === context.email.toLowerCase());
+                        // Check if user created this KRA (Graph API provides createdBy.user.email natively)
+                        const isCreator = (kra as any).createdByEmail?.toLowerCase() === userEmail;
 
-                        const shouldShow = isOwner || isAssigned;
+                        // Check if user is in the assignees list
+                        const isAssigned = kra.assignees?.some(a => a.email?.toLowerCase() === userEmail);
+
+                        const shouldShow = isCreator || isAssigned;
 
                         if (shouldShow) {
-                            console.log(`✅ [Individual Filter] Staff ${context.email} sees KRA: ${kra.title} (Owner: ${isOwner}, Assigned: ${isAssigned})`);
+                            console.log(`✅ [Individual Filter] Staff ${context.email} sees KRA: ${kra.title} (Creator: ${isCreator}, Assigned: ${isAssigned})`);
                         } else {
                             // console.log(`⛔ [Individual Filter] Hiding KRA: "${kra.title}" | Owner: "${kra.owner?.name}" vs User: "${context.name}"`);
                         }
@@ -373,12 +375,21 @@ export function useSharePointProjects(department?: string, scope: FilterScope = 
     };
 }
 
-export function useSharePointTasks(department?: string, scope: FilterScope = 'Unit', context?: UserContext) {
+export function useSharePointTasks(
+    department?: string,
+    scope: FilterScope = 'Unit',
+    context?: UserContext,
+    /** Live unit roster emails from useUnitRoster — when provided replaces DivisionStaffMap for manager filter */
+    unitRosterEmails?: string[]
+) {
     const getService = useOpsService();
     const { toast } = useToast();
 
+    // Stable cache key: sorted joined string so array order doesn't matter
+    const rosterKey = unitRosterEmails ? [...unitRosterEmails].sort().join(',') : '';
+
     const query = useQuery({
-        queryKey: ['sharePoint', 'tasks', department, scope, context?.division, context?.unit, context?.email, context?.role],
+        queryKey: ['sharePoint', 'tasks', department, scope, context?.division, context?.unit, context?.email, context?.role, rosterKey],
         queryFn: async () => {
             try {
                 const service = await getService();
@@ -390,28 +401,45 @@ export function useSharePointTasks(department?: string, scope: FilterScope = 'Un
                 let data = await service.getTasks(scope, context);
                 console.log('✅ [useSharePointOps] Loaded Tasks:', data.length);
 
-                // 🔒 ROLE-AGNOSTIC FILTERING: Users only see tasks they created OR are assigned to
+                // 🔒 ROLE-BASED FILTERING:
+                //   - Admin / Super Admin → no filter, see everything
+                //   - Manager → see all tasks belonging to their unit staff (via DivisionStaffMap)
+                //   - Staff → only see tasks they created or are assigned to
                 const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
+                const isManager = context?.role === 'manager';
 
                 if (!isAdmin && context?.email) {
-                    data = data.filter(task => {
-                        const userEmail = context.email!.toLowerCase();
+                    if (isManager && context?.unit) {
+                        // Prefer the live roster (from useUnitRoster / SharePoint UserRoles).
+                        // Fall back to the static DivisionStaffMap when the roster hasn't loaded yet.
+                        const baseEmails = (unitRosterEmails && unitRosterEmails.length > 0)
+                            ? unitRosterEmails
+                            : DivisionStaffMap.getAllStaff()
+                                .filter(s => s.unit?.toLowerCase() === context.unit!.toLowerCase())
+                                .map(s => s.email.toLowerCase());
 
-                        // Check 1: Is user the creator?
-                        const isCreator = task.createdByEmail?.toLowerCase() === userEmail ||
-                            task.authorEmail?.toLowerCase() === userEmail;
+                        const unitStaffEmails = new Set(baseEmails.map(e => e.toLowerCase()));
+                        // Always include the manager's own email
+                        unitStaffEmails.add(context.email.toLowerCase());
 
-                        // Check 2: Is user an assignee?
-                        const isAssigned = task.assignees?.some(a => a.email?.toLowerCase() === userEmail);
-
-                        const canView = isCreator || isAssigned;
-
-                        if (canView) {
-                            // console.log(`✅ [Visibility] ${context.email} sees Task: "${task.title}" (Creator: ${isCreator}, Assigned: ${isAssigned})`);
-                        }
-                        return canView;
-                    });
-                    console.log(`🔒 [Visibility] Filtered Tasks for ${context.email}: ${data.length} items (Admin: ${isAdmin})`);
+                        data = data.filter(task => {
+                            const creatorEmail = (task.createdByEmail || task.authorEmail || '').toLowerCase();
+                            const assigneeEmails = task.assignees?.map(a => a.email?.toLowerCase() || '') || [];
+                            return unitStaffEmails.has(creatorEmail) ||
+                                assigneeEmails.some(e => e && unitStaffEmails.has(e));
+                        });
+                        console.log(`🔒 [Manager Filter] Unit "${context.unit}" tasks for ${context.email}: ${data.length} items`);
+                    } else if (!isManager) {
+                        // Staff members only see tasks they created or are assigned to
+                        data = data.filter(task => {
+                            const userEmail = context.email!.toLowerCase();
+                            const isCreator = task.createdByEmail?.toLowerCase() === userEmail ||
+                                task.authorEmail?.toLowerCase() === userEmail;
+                            const isAssigned = task.assignees?.some(a => a.email?.toLowerCase() === userEmail);
+                            return isCreator || isAssigned;
+                        });
+                        console.log(`🔒 [Staff Filter] Tasks for ${context.email}: ${data.length} items`);
+                    }
                 }
 
                 return data;

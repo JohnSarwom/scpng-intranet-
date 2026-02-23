@@ -2,11 +2,10 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 
 // Define a type for all possible status values
-export type StatusType = 
-  | 'todo' | 'in-progress' | 'review' | 'done'
+export type StatusType =
+  | 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed'
   | 'identified' | 'analyzing' | 'mitigating' | 'monitoring' | 'resolved'
-  | 'planned' | 'in-progress' | 'completed' | 'on-hold'
-  | 'open' | 'closed'
+  | 'planned' | 'open' | 'closed'
   | 'active' | 'maintenance' | 'retired'
   | 'on-track' | 'at-risk' | 'behind';
 
@@ -16,18 +15,28 @@ interface StatusBadgeProps {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const getStatusColor = () => {
-    // Cast status to the union type for proper type checking
-    const statusValue = status as StatusType;
-    
-    switch (statusValue) {
+    // Cast status to any for switch to handle legacy values gracefully
+    const val = (status || '').toLowerCase();
+
+    switch (val) {
       case 'todo':
+      case 'not-started':
+      case 'open':
         return 'bg-gray-100 text-gray-800';
       case 'in-progress':
+      case 'active':
         return 'bg-amber-100 text-amber-800';
+      case 'on-hold':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800';
+      case 'in-review':
       case 'review':
-        return 'bg-yellow-100 text-yellow-800';
+      case 'under review':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800';
+      case 'completed':
       case 'done':
-        return 'bg-green-100 text-green-800';
+      case 'closed':
+      case 'complete':
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800';
       case 'identified':
         return 'bg-purple-100 text-purple-800';
       case 'analyzing':
@@ -40,16 +49,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return 'bg-green-100 text-green-800';
       case 'planned':
         return 'bg-blue-100 text-blue-800';
-      case 'on-hold':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'open':
-        return 'bg-blue-100 text-blue-800';
-      case 'closed':
-        return 'bg-green-100 text-green-800';
-      case 'active':
-        return 'bg-green-100 text-green-800';
       case 'maintenance':
         return 'bg-amber-100 text-amber-800';
       case 'retired':
@@ -66,18 +65,25 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   };
 
   const getStatusLabel = () => {
-    // Cast status to the union type for proper type checking
-    const statusValue = status as StatusType;
-    
-    switch (statusValue) {
+    const val = (status || '').toLowerCase();
+
+    switch (val) {
       case 'todo':
+      case 'not-started':
+      case 'open':
         return 'To Do';
       case 'in-progress':
         return 'In Progress';
+      case 'on-hold':
+        return 'On Hold';
+      case 'in-review':
       case 'review':
-        return 'Review';
+      case 'under review':
+        return 'In Review';
+      case 'completed':
       case 'done':
-        return 'Done';
+      case 'complete':
+        return 'Completed';
       case 'identified':
         return 'Identified';
       case 'analyzing':
@@ -90,12 +96,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return 'Resolved';
       case 'planned':
         return 'Planned';
-      case 'on-hold':
-        return 'On Hold';
-      case 'completed':
-        return 'Completed';
-      case 'open':
-        return 'Open';
       case 'closed':
         return 'Closed';
       case 'active':
@@ -111,7 +111,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'behind':
         return 'Behind';
       default:
-        return typeof status === 'string' 
+        return typeof status === 'string'
           ? status.charAt(0).toUpperCase() + status.slice(1)
           : 'Unknown';
     }
@@ -124,4 +124,4 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   );
 };
 
-export default StatusBadge; 
+export default StatusBadge;

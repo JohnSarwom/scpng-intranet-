@@ -30,7 +30,8 @@ import {
     List,
     FolderKanban,
     Users,
-    Target
+    Target,
+    Network
 } from "lucide-react";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
@@ -48,6 +49,28 @@ const TestGround = () => {
     const [setupResult, setSetupResult] = useState<any>(null);
     const [isSettingUpAnnouncements, setIsSettingUpAnnouncements] = useState(false);
     const [isPurgingOps, setIsPurgingOps] = useState(false);
+    const [isSeedingOfficers, setIsSeedingOfficers] = useState(false);
+    const [isSettingUpOrgHierarchy, setIsSettingUpOrgHierarchy] = useState(false);
+
+    const handleSeedOfficerData = async () => {
+        setIsSeedingOfficers(true);
+        try {
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedOfficerOperationalData();
+            if (result.success) {
+                toast({ title: "✅ Officer Data Seeded", description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            toast({ title: "❌ Seeding Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSeedingOfficers(false);
+        }
+    };
 
     const handleSetupStrategyLists = async () => {
         setIsSettingUpLists(true);
@@ -215,6 +238,48 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpStrategyHub(false);
+        }
+    };
+
+    const handleSetupOrgHierarchy = async () => {
+        setIsSettingUpOrgHierarchy(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Moving Org Structure to SharePoint",
+                description: "Creating 'Org_Hierarchy' list and seeding current structure...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupStrategyOrgHierarchy();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Org Structure Synchronized!",
+                    description: "Divisions and Units are now managed dynamically via SharePoint.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Org Hierarchy Setup failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Setup Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpOrgHierarchy(false);
         }
     };
 
@@ -1180,6 +1245,51 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
+                {/* Organization Structure Setup Card */}
+                <Card className="border-2 border-intranet-primary shadow-lg overflow-hidden transform transition-all hover:scale-[1.01] mb-6">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Users className="h-24 w-24 text-intranet-primary" />
+                    </div>
+                    <CardHeader className="bg-intranet-primary/5">
+                        <CardTitle className="flex items-center gap-2 text-intranet-primary text-xl">
+                            <Network className="h-6 w-6" />
+                            Organization Structure Setup
+                        </CardTitle>
+                        <CardDescription className="text-base">
+                            Initialize and synchronize the organizational hierarchy (Divisions & Units) from SharePoint.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex gap-3 text-sm text-blue-800">
+                            <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                            <p>
+                                This tool creates or updates the <strong>Org_Hierarchy</strong> list. This list is used by the <strong>Strategy Hub</strong> to dynamically build the organizational tree and divisional alignments.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupOrgHierarchy}
+                                disabled={isSettingUpOrgHierarchy || isSettingUpLists}
+                                size="lg"
+                                className="w-full gap-3 h-16 text-xl font-black shadow-md hover:shadow-lg transition-all bg-intranet-primary hover:bg-intranet-primary/90"
+                            >
+                                {isSettingUpOrgHierarchy ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Synchronizing Hierarchy...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Users className="h-7 w-7" />
+                                        Synchronize Org Hierarchy
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* SharePoint List Setup Card */}
                 <Card className="border-2 border-intranet-primary/20">
                     <CardHeader>
@@ -1439,6 +1549,25 @@ const TestGround = () => {
                                     <>
                                         <Database className="h-4 w-4 text-amber-600" />
                                         Populate Random Completion Dates
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSeedOfficerData}
+                                disabled={isSeedingOfficers || isSettingUpOps}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-emerald-500/50 text-emerald-700 hover:bg-emerald-50"
+                            >
+                                {isSeedingOfficers ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                                        Seeding Officer Data...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Users className="h-4 w-4 text-emerald-600" />
+                                        Seed Officer Operational Data (30 Staff)
                                     </>
                                 )}
                             </Button>

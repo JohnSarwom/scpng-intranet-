@@ -124,7 +124,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     ) : staffMembers && staffMembers.length > 0 ? (
                       staffMembers.map((staff) => (
                         <SelectItem key={staff.id} value={staff.name}>
-                          {staff.name} ({staff.job_title})
+                          {staff.name} ({staff.jobTitle || 'No Title'})
                         </SelectItem>
                       ))
                     ) : (
@@ -133,11 +133,12 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-status">Status</Label>
                 <Select
                   value={editedTask.status || 'todo'}
-                  onValueChange={(value: 'todo' | 'in-progress' | 'review' | 'done' | 'not-started' | 'on-track' | 'on-hold' | 'behind' | 'completed') =>
+                  onValueChange={(value: 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed') =>
                     setEditedTask({ ...editedTask, status: value })
                   }
                 >
@@ -145,16 +146,16 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="not-started">Not Started</SelectItem>
-                    <SelectItem value="on-track">On Track</SelectItem>
+                    <SelectItem value="todo">To Do</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
                     <SelectItem value="on-hold">On Hold</SelectItem>
-                    <SelectItem value="behind">Behind</SelectItem>
+                    <SelectItem value="in-review">In Review</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-priority">Priority</Label>
@@ -176,30 +177,6 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="task-percentage">Completion Percentage</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="task-percentage"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={editedTask.completionPercentage || 0}
-                    onChange={(e) => {
-                      let value = parseInt(e.target.value, 10);
-                      if (isNaN(value) || value < 0) {
-                        value = 0;
-                      } else if (value > 100) {
-                        value = 100;
-                      }
-                      setEditedTask({ ...editedTask, completionPercentage: value });
-                    }}
-                  />
-                  <span>%</span>
-                </div>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
                 <Label htmlFor="task-start-date">Start Date</Label>
                 <Input
                   id="task-start-date"
@@ -208,6 +185,60 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   onChange={(e) => setEditedTask({ ...editedTask, startDate: new Date(e.target.value) })}
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Assignee</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {editedTask.assignees?.map((assignee) => (
+                  <Badge key={assignee.id} variant="secondary" className="pl-1 pr-2 py-1 flex items-center gap-1">
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={assignee.avatarUrl} />
+                      <AvatarFallback className="text-[10px]">{assignee.initials || assignee.name.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs">{assignee.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveAssignee(assignee.id.toString())}
+                      className="hover:text-destructive ml-1"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <GlobalAssigneeSelector
+                selected={editedTask.assignees?.map(u => ({
+                  id: u.id.toString(),
+                  displayName: u.name,
+                  givenName: '',
+                  surname: '',
+                  mail: u.email || '',
+                  jobTitle: u.jobTitle || ''
+                })) || []}
+                onSelect={(selectedUsers) => {
+                  const newAssignees = selectedUsers.map(user => ({
+                    id: parseInt(user.id),
+                    name: user.displayName,
+                    email: user.mail,
+                    avatarUrl: '', // You might need to fetch or generate this
+                    initials: user.givenName.charAt(0) + user.surname.charAt(0),
+                    jobTitle: user.jobTitle,
+                  }));
+                  setEditedTask(prev => ({ ...prev, assignees: newAssignees }));
+                }}
+                staffMembers={staffMembers.map(staff => ({
+                  id: staff.id.toString(),
+                  displayName: staff.name,
+                  givenName: staff.name.split(' ')[0],
+                  surname: staff.name.split(' ').slice(1).join(' '),
+                  mail: staff.email,
+                  jobTitle: staff.jobTitle,
+                }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-due-date">Due Date</Label>
                 <Input
@@ -215,6 +246,17 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   type="date"
                   value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate : ''}
                   onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="task-percentage">Completion %</Label>
+                <Input
+                  id="task-percentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={editedTask.completionPercentage || 0}
+                  onChange={(e) => setEditedTask({ ...editedTask, completionPercentage: parseInt(e.target.value) || 0 })}
                 />
               </div>
             </div>

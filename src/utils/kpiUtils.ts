@@ -9,11 +9,24 @@ import { Kpi, ChecklistItem } from '@/types';
  */
 export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
     // Priority 1: If Status is explicitly 'Completed', force 100%
-    if (kpi.status === 'Completed' || kpi.status === 'Achieved' || kpi.status === 'Done' || kpi.status === 'completed') {
+    const status = (kpi.status || '').toLowerCase();
+    if (status === 'completed' || status === 'achieved' || status === 'done') {
         return 100;
     }
 
-    // Otherwise return 0 - no partial progress allowed
+    // Priority 2: Checklist-based calculation
+    if (kpi.calculationType === 'checklist' && kpi.checklist && kpi.checklist.length > 0) {
+        const completed = kpi.checklist.filter(item => item.checked).length;
+        return Math.round((completed / kpi.checklist.length) * 100);
+    }
+
+    // Priority 3: Manual target/actual calculation
+    if (kpi.target && kpi.target > 0) {
+        const actual = kpi.actual || 0;
+        const rawProgress = (actual / kpi.target) * 100;
+        return Math.min(100, Math.round(rawProgress));
+    }
+
     return 0;
 };
 
@@ -26,20 +39,20 @@ export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
  */
 export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[]): number => {
     // Priority 1: If Status is explicitly 'Completed', force 100%
-    if (kra.status === 'completed' || kra.status === 'achieved' || kra.status === 'done' || kra.status === 'Completed') {
+    const status = (kra.status || '').toLowerCase();
+    if (status === 'completed' || status === 'achieved' || status === 'done') {
         return 100;
     }
 
     // Filter KPIs that belong to this KRA
-    // Handle both string and number IDs safely
-    const kraKpis = kpis.filter(kpi =>
-        String(kpi.kra_id) === String(kra.id) ||
-        String(kpi.kra_id) === String(kra.ID) // Handle case sensitivity in SharePoint objects
-    );
+    const kraKpis = kpis.filter(kpi => {
+        const kpiKraId = kpi.kra_id ? String(kpi.kra_id) : '';
+        const targetId = kra.id ? String(kra.id) : (kra.ID ? String(kra.ID) : '');
+        return kpiKraId !== '' && kpiKraId === targetId;
+    });
 
     if (!kraKpis || kraKpis.length === 0) {
-        // No KPIs, fall back to stored progress
-        return kra.progress || 0;
+        return Number(kra.progress) || 0;
     }
 
     // Calculate average progress of all KPIs

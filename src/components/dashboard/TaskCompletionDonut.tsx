@@ -65,8 +65,8 @@ export const TaskCompletionDonut: React.FC<TaskCompletionDonutProps> = ({
                 if (isVisible) {
                     visibleTotal += value;
                     const label = chart.data.labels[index];
-                    // Flexible matching for "Done" or "Completed"
-                    if (label === 'Done' || label === 'Completed') {
+                    // Standard matching for "Completed"
+                    if (label === 'Completed') {
                         doneValue += value;
                     }
                 }

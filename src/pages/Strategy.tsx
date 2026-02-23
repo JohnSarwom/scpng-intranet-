@@ -23,6 +23,7 @@ import StrategySetupWizard from '@/components/strategy/StrategySetupWizard';
 import { Settings2, Plus, Pencil } from 'lucide-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import EditStrategicObjectiveModal from '@/components/strategy/EditStrategicObjectiveModal';
+import StrategyAnalytics from '@/components/strategy/StrategyAnalytics';
 import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps'; // Import KRA, KPI and Objectives hooks
 import { Objective } from '@/types';
 import { calculateStrategicProgress } from '@/utils/kpiUtils'; // Import calculation utility
@@ -223,7 +224,8 @@ const Strategy = () => {
     // Build dynamic Division → Unit → Key Deliverable → Objectives hierarchy from live objectives data
     // IMPORTANT: This useMemo MUST be before any early returns to satisfy Rules of Hooks
     // Scaffold for known Org Structure to ensure hierarchy always renders
-    const ORG_STRUCTURE: Record<string, string[]> = {
+    // Default structure as fallback if SharePoint list is empty or hasn't been set up
+    const DEFAULT_ORG_STRUCTURE: Record<string, string[]> = {
         'Office of the Chairman': ['Executive Division', 'Secretariat Unit'],
         'Corporate Services Division': ['Finance Unit', 'IT Unit', 'Human Resource Unit'],
         'Licensing, Market & Supervision Division': ['Licensing Unit', 'Supervision Unit', 'Market Data Unit', 'Investigations Unit'],
@@ -234,13 +236,20 @@ const Strategy = () => {
     // Build dynamic Division → Unit → Key Deliverable → Objectives hierarchy from live objectives data
     // IMPORTANT: This useMemo MUST be before any early returns to satisfy Rules of Hooks
     const divisionHierarchy = useMemo(() => {
-        // Initialize hierarchy with known structure (Hybrid Approach)
+        // Use structure from SharePoint if available, else use default
+        const currentStructure = (strategyData as any)?.hierarchy && Object.keys((strategyData as any).hierarchy).length > 0
+            ? (strategyData as any).hierarchy
+            : DEFAULT_ORG_STRUCTURE;
+
+        console.log('🏗️ [Strategy Hierarchy] Using structure:', Object.keys(currentStructure).length > 0 ? 'Dynamic (SharePoint)' : 'Default (Hard-coded)');
+
+        // Initialize hierarchy with structure
         const hierarchy: Record<string, Record<string, Record<string, Objective[]>>> = {};
 
-        // 1. Pre-seed with known divisions and units
-        Object.keys(ORG_STRUCTURE).forEach(div => {
+        // 1. Pre-seed with divisions and units
+        Object.keys(currentStructure).forEach(div => {
             hierarchy[div] = {};
-            ORG_STRUCTURE[div].forEach(unit => {
+            currentStructure[div].forEach((unit: string) => {
                 hierarchy[div][unit] = {};
             });
         });
@@ -277,8 +286,8 @@ const Strategy = () => {
             if (!div) {
                 // Try to find if unit exists in known structure to infer division
                 if (unit) {
-                    const foundDiv = Object.keys(ORG_STRUCTURE).find(d =>
-                        ORG_STRUCTURE[d].some(u => u.toLowerCase() === unit.toLowerCase())
+                    const foundDiv = Object.keys(currentStructure).find(d =>
+                        currentStructure[d].some((u: string) => u.toLowerCase() === unit.toLowerCase())
                     );
                     if (foundDiv) div = foundDiv;
                 }
@@ -403,6 +412,15 @@ const Strategy = () => {
 
     // Lookup helper: match a division name from objectives to static metadata (icon, director)
     const getDivisionMeta = (divName: string) => {
+        // Try to find dynamic data from SharePoint details
+        const dynamicDetails = (strategyData as any)?.hierarchyDetails || [];
+
+        // Find division-level detail (where unit might be 'General' or same as division)
+        const divDetails = dynamicDetails.find((d: any) =>
+            (d.division.toLowerCase() === divName.toLowerCase()) &&
+            (d.unit.toLowerCase().includes('executive') || d.unit.toLowerCase().includes('director') || d.unit === d.division)
+        ) || dynamicDetails.find((d: any) => d.division.toLowerCase() === divName.toLowerCase());
+
         const patterns: Array<{ key: string; director: string; icon: React.ComponentType<any> }> = [
             { key: 'Chairman', director: 'Chairman', icon: Award },
             { key: 'Executive', director: 'Executive Director', icon: Target },
@@ -414,7 +432,12 @@ const Strategy = () => {
         ];
         const lower = divName.toLowerCase();
         const match = patterns.find(p => lower.includes(p.key.toLowerCase()));
-        return match ?? { director: 'Division Director', icon: LayoutDashboard };
+
+        return {
+            director: divDetails?.head || match?.director || 'Division Director',
+            icon: match?.icon || LayoutDashboard,
+            description: divDetails?.description || ''
+        };
     };
 
     const containerVariants = {
@@ -799,6 +822,11 @@ const Strategy = () => {
                                                 </AccordionTrigger>
 
                                                 <AccordionContent className="px-6 pb-6 pt-2">
+                                                    {meta.description && (
+                                                        <div className="mb-6 p-4 rounded-xl bg-intranet-primary/5 border border-dashed border-intranet-primary/20 text-sm italic text-muted-foreground leading-relaxed">
+                                                            {meta.description}
+                                                        </div>
+                                                    )}
                                                     <div className="border-t border-gray-50 dark:border-gray-800 mt-2 pt-5 space-y-3">
                                                         {/* Units */}
                                                         <Accordion type="single" collapsible className="w-full space-y-3">
@@ -827,7 +855,18 @@ const Strategy = () => {
                                                                                 <div className="p-2 rounded-lg bg-intranet-primary/8 text-intranet-primary flex-shrink-0">
                                                                                     <Users className="w-4 h-4" />
                                                                                 </div>
-                                                                                <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 min-w-[150px]">{unitName}</span>
+                                                                                <div className="flex flex-col text-left">
+                                                                                    <span className="font-semibold text-sm text-gray-800 dark:text-gray-200 min-w-[150px]">{unitName}</span>
+                                                                                    {(() => {
+                                                                                        const unitDetails = ((strategyData as any)?.hierarchyDetails || []).find((d: any) =>
+                                                                                            d.division.toLowerCase() === divisionName.toLowerCase() &&
+                                                                                            d.unit.toLowerCase() === unitName.toLowerCase()
+                                                                                        );
+                                                                                        return unitDetails?.head && unitDetails.head !== meta.director ? (
+                                                                                            <span className="text-[10px] text-muted-foreground font-medium">{unitDetails.head}</span>
+                                                                                        ) : null;
+                                                                                    })()}
+                                                                                </div>
 
                                                                                 <Badge variant="outline" className="text-[9px] border-intranet-primary/20 text-intranet-primary bg-intranet-primary/10 ml-2 flex-shrink-0">
                                                                                     {unitObjCount} objective{unitObjCount !== 1 ? 's' : ''}
@@ -1056,130 +1095,14 @@ const Strategy = () => {
                     </TabsContent>
 
                     <TabsContent value="analytics" className="space-y-8 mt-0 outline-none">
-                        {/* 1. Executive Scorecard */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {[
-                                { label: "Strategic Objectives", value: (effectiveObjectives).length.toString(), sub: "Core Focus Areas", icon: Layers, color: "text-intranet-primary", bg: "bg-intranet-primary/5" },
-                                { label: "Avg. Completion", value: `${Math.round((effectiveObjectives).reduce((acc: number, curr: any) => acc + (curr.progress || 0), 0) / (effectiveObjectives.length || 1))}%`, sub: "Objective Progress", icon: TrendingUp, color: "text-intranet-primary", bg: "bg-intranet-primary/5" },
-                                { label: "Strategic Executions", value: effectiveObjectives.filter((o: any) => o.isFeatured).length.toString(), sub: "Featured Projects", icon: Rocket, color: "text-intranet-primary", bg: "bg-intranet-primary/5" },
-                                { label: "Execution Progress", value: `${Math.round((effectiveObjectives.filter((o: any) => o.isFeatured).reduce((acc: number, curr: any) => acc + (curr.progress || 0), 0) / (effectiveObjectives.filter((o: any) => o.isFeatured).length || 1)))}%`, sub: "Featured Avg", icon: Zap, color: "text-intranet-primary", bg: "bg-intranet-primary/5" },
-                            ].map((stat, i) => (
-                                <Card key={i} className="animate-fade-in">
-                                    <div className="p-5 flex items-center gap-4">
-                                        <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
-                                            <stat.icon className="w-6 h-6" />
-                                        </div>
-                                        <div>
-                                            <div className="text-2xl font-black">{stat.value}</div>
-                                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-1">{stat.label}</div>
-                                            <div className="text-[9px] text-muted-foreground opacity-60 mt-1">{stat.sub}</div>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            {/* 2. Strategic Objectives & Execution Distribution & Progress */}
-                            <DonutChart
-                                title="Strategic Status Distribution"
-                                description="Real-time status of Objectives & Executions"
-                                data={[
-                                    { name: "On Track", value: 4, color: "#2563eb" },
-                                    { name: "Needs Attention", value: 2, color: "#f59e0b" },
-                                    { name: "At Risk", value: 0, color: "#ef4444" }
-                                ]}
-                            />
-
-                            <BarChart
-                                title="Objective & Execution Progress"
-                                description="Progress tracking across Strategy Objectives & Executions"
-                                data={[
-                                    ...effectiveObjectives.map((obj: any) => ({
-                                        name: obj.title.split(' ')[0],
-                                        current: obj.progress,
-                                        target: 100
-                                    }))
-                                ]}
-                                xAxisLabel="Strategic Items"
-                                yAxisLabel="Completion (%)"
-                            />
-
-                            {/* 3. Strategic Roadmap Timeline */}
-                            <Card className="animate-fade-in overflow-hidden">
-                                <CardHeader className="border-b border-gray-50 dark:border-gray-800 pb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Clock className="w-5 h-5 text-intranet-primary" />
-                                        <CardTitle className="text-lg">Critical Roadmaps & Milestones</CardTitle>
-                                    </div>
-                                    <CardDescription>Upcoming major strategy deadlines (2025-2026)</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="space-y-6">
-                                        {(milestones && milestones.length > 0 ? milestones : [
-                                            { date: "May 2025", title: "Internal Policy Finalization", status: "Upcoming", color: "bg-blue-500", context: "Corporate Services Division completion" },
-                                            { date: "Sept 2025", title: "Strategic Plan 2025–2030", status: "Planning", color: "bg-purple-500", context: "Finalize with ADB and IFC stakeholders" },
-                                            { date: "April 2026", title: "Board Appointment Cycle", status: "On-Track", color: "bg-green-500", context: "New Board following parliamentary changes" },
-                                            { date: "Dec 2026", title: "SC Act & Capital Market Act", status: "Critical", color: "bg-red-500", context: "Legislative amendments passage deadline" },
-                                        ]).map((milestone: any, idx: number) => (
-                                            <div key={idx} className="flex gap-4 group">
-                                                <div className="flex flex-col items-center">
-                                                    <div className={`w-3 h-3 rounded-full ${milestone.color?.startsWith('bg-') ? milestone.color : 'bg-intranet-primary'} ring-4 ring-gray-50 dark:ring-gray-800`} style={{ backgroundColor: !milestone.color?.startsWith('bg-') ? milestone.color : undefined }} />
-                                                    {idx !== ((milestones?.length || 4) - 1) && <div className="w-0.5 h-full bg-gray-100 dark:bg-gray-800 my-1" />}
-                                                </div>
-                                                <div className="pb-4 flex-1">
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <div className="text-xs font-black text-intranet-primary tracking-tighter">{milestone.date}</div>
-                                                            <div className="font-bold text-sm text-gray-900 dark:text-gray-100">{milestone.title}</div>
-                                                            <div className="text-xs text-muted-foreground mt-0.5">{milestone.context}</div>
-                                                        </div>
-                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase tracking-tight">{milestone.status}</Badge>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* 4. Divisional Impact Index */}
-                            <Card className="animate-fade-in overflow-hidden">
-                                <CardHeader className="border-b border-gray-50 dark:border-gray-800 pb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Network className="w-5 h-5 text-intranet-primary" />
-                                        <CardTitle className="text-lg">Divisional Contribution Impact</CardTitle>
-                                    </div>
-                                    <CardDescription>Weight of contribution per division in 2025 Cycle</CardDescription>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    <div className="space-y-6">
-                                        {[
-                                            { name: "LSD", weight: 35, color: "bg-blue-600", full: "Legal Services" },
-                                            { name: "LISD", weight: 40, color: "bg-intranet-primary", full: "Licensing & Supervision" },
-                                            { name: "RPD", weight: 20, color: "bg-green-600", full: "Research & Publication" },
-                                            { name: "CSD", weight: 25, color: "bg-orange-600", full: "Corporate Services" },
-                                            { name: "Secretariat", weight: 15, color: "bg-purple-600", full: "Internal Audit Units" },
-                                        ].map((div, i) => (
-                                            <div key={i} className="space-y-1.5">
-                                                <div className="flex justify-between text-[11px] font-bold">
-                                                    <span className="text-gray-900 dark:text-gray-100">{div.full}</span>
-                                                    <span className="text-muted-foreground">{div.weight}% Load</span>
-                                                </div>
-                                                <div className="h-2 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                                    <motion.div
-                                                        initial={{ width: 0 }}
-                                                        animate={{ width: `${div.weight}%` }}
-                                                        transition={{ duration: 1, delay: i * 0.1 }}
-                                                        className={`h-full ${div.color} rounded-full`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                        <StrategyAnalytics
+                            objectives={effectiveObjectives}
+                            milestones={milestones}
+                            kras={allKras || []}
+                            kpis={allKpis || []}
+                            unitObjectives={allUnitObjectives || []}
+                            orgHierarchy={(strategyData as any)?.hierarchyDetails || []}
+                        />
                     </TabsContent>
 
                     <TabsContent value="reports" className="space-y-8 mt-0 outline-none">

@@ -227,12 +227,11 @@ export class SharePointOpsService {
             console.log(`🔓 [Admin Bypass] User: ${context?.email} | Role: ${context?.role} | Fetching ALL KRAs (no filter)`);
         } else {
             let filter = '';
-            // KRAs List Schema: 'Department' column holds Division Name.
+            // KRAs List Schema: 'Division' column holds Division Name, 'Unit' column holds Unit Name.
             if (scope === 'Division' && context?.division) {
-                filter = `fields/Department eq '${context.division}'`;
+                filter = `fields/Division eq '${context.division}'`;
             } else if (scope === 'Unit' && context?.unit) {
-                // Fix: Filter by Unit specifically (e.g. 'IT Unit')
-                filter = `fields/Department eq '${context.unit}'`;
+                filter = `fields/Unit eq '${context.unit}'`;
             }
 
             if (filter) {
@@ -480,8 +479,9 @@ export class SharePointOpsService {
         switch (status) {
             case 'todo': return 'Todo';
             case 'in-progress': return 'In Progress';
-            case 'review': return 'Review';
-            case 'done': return 'Done';
+            case 'on-hold': return 'On Hold';
+            case 'in-review': return 'Review';
+            case 'completed': return 'Done';
             default: return 'Todo';
         }
     }
@@ -618,20 +618,31 @@ export class SharePointOpsService {
 
     async addKRA(kra: Partial<KRA>): Promise<KRA> {
         if (!this.listIds['KRAS']) throw new Error('KRAs list not found');
+
+        // Write owner name to the Responsible text field (for SharePoint list display).
+        // Also embed full owner object (id/name/email) into the Assignees JSON with isOwner:true
+        // so the UI can reconstruct the full owner on edit without extra lookups.
+        const mergedAssignees: any[] = [...((kra.assignees as any[]) || [])];
+        if (kra.owner) {
+            const ownerIdx = mergedAssignees.findIndex(a => a.id === (kra.owner as any).id);
+            if (ownerIdx !== -1) {
+                mergedAssignees[ownerIdx] = { ...mergedAssignees[ownerIdx], isOwner: true };
+            } else {
+                mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
+            }
+        }
+
         const payload: any = {
             fields: {
                 Title: kra.title,
-                Department: kra.department,
+                Responsible: kra.owner?.name || null,
+                Unit: kra.unit || null,
+                Division: kra.division || null,
                 Status: kra.status === 'in-progress' ? 'In Progress' : (kra.status === 'closed' ? 'Closed' : 'Open'),
                 Progress: kra.progress,
-                StartDate: kra.startDate ? new Date(kra.startDate).toISOString() : null,
-                EndDate: kra.endDate ? new Date(kra.endDate).toISOString() : null,
                 Description: kra.description,
-                StrategyGoalLookupId: kra.objective_id ? Number(kra.objective_id) : null,
-                // Note: Responsible and Assignees fields are Person/Group type in SharePoint
-                // These cannot be set via Graph API easily as they require user resolution
-                // We use a text field for Assignees to store JSON (Confirmed by user as Multi-line Text)
-                Assignees: kra.assignees ? JSON.stringify(kra.assignees) : undefined
+                UnitObjectiveLookupId: kra.objective_id ? Number(kra.objective_id) : null,
+                Assignees: mergedAssignees.length > 0 ? JSON.stringify(mergedAssignees) : undefined
             }
         };
 
@@ -652,16 +663,25 @@ export class SharePointOpsService {
         if (!this.listIds['KRAS']) throw new Error('KRAs list not found');
         const fields: any = {};
         if (kra.title !== undefined) fields.Title = kra.title;
-        if (kra.department !== undefined) fields.Department = kra.department;
+        if (kra.owner !== undefined) fields.Responsible = kra.owner?.name || null;
+        if (kra.unit !== undefined) fields.Unit = kra.unit;
+        if (kra.division !== undefined) fields.Division = kra.division;
         if (kra.status !== undefined) fields.Status = kra.status === 'in-progress' ? 'In Progress' : (kra.status === 'closed' ? 'Closed' : 'Open');
         if (kra.progress !== undefined) fields.Progress = kra.progress;
-        if (kra.startDate !== undefined) fields.StartDate = kra.startDate ? new Date(kra.startDate).toISOString() : null;
-        if (kra.endDate !== undefined) fields.EndDate = kra.endDate ? new Date(kra.endDate).toISOString() : null;
         if (kra.description !== undefined) fields.Description = kra.description;
-        if (kra.objective_id !== undefined) fields.StrategyGoalLookupId = kra.objective_id ? Number(kra.objective_id) : null;
-
-        if (kra.assignees !== undefined) {
-            fields.Assignees = JSON.stringify(kra.assignees);
+        if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = kra.objective_id ? Number(kra.objective_id) : null;
+        // Rebuild Assignees JSON with owner embedded (same logic as addKRA)
+        if (kra.assignees !== undefined || kra.owner !== undefined) {
+            const mergedAssignees: any[] = [...((kra.assignees as any[]) || [])];
+            if (kra.owner) {
+                const ownerIdx = mergedAssignees.findIndex(a => a.id === (kra.owner as any).id);
+                if (ownerIdx !== -1) {
+                    mergedAssignees[ownerIdx] = { ...mergedAssignees[ownerIdx], isOwner: true };
+                } else {
+                    mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
+                }
+            }
+            fields.Assignees = JSON.stringify(mergedAssignees);
         }
 
         console.log(`📝 [SP Ops] Updating KRA ${id} Payload:`, JSON.stringify({ fields }, null, 2));
@@ -709,6 +729,12 @@ export class SharePointOpsService {
         console.log('📝 [SP Ops] Adding KPI Payload:', JSON.stringify(payload, null, 2));
         try {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`).post(payload);
+
+            // Sync KRA progress if linked
+            if (kpi.kra_id) {
+                await this.syncKRAProgress(kpi.kra_id.toString());
+            }
+
             return this.mapKPI(response);
         } catch (error: any) {
             console.error('❌ [SP Ops] Failed to add KPI:', error);
@@ -741,6 +767,12 @@ export class SharePointOpsService {
 
         try {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).patch({ fields });
+
+            // Sync KRA progress if linked (either passed in this update or already known)
+            if (kpi.kra_id) {
+                await this.syncKRAProgress(kpi.kra_id.toString());
+            }
+
             return this.mapKPI(response);
         } catch (error: any) {
             console.error(`❌ [SP Ops] Failed to update KPI ${id}:`, error);
@@ -754,6 +786,46 @@ export class SharePointOpsService {
     async deleteKPI(id: string): Promise<void> {
         if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
         await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).delete();
+    }
+
+    /**
+     * Recalculates and updates the Progress column of a KRA based on its linked KPIs.
+     */
+    private async syncKRAProgress(kraId: string): Promise<void> {
+        try {
+            if (!this.listIds['KRAS'] || !this.listIds['KPIS']) await this.initialize();
+
+            // 0. Small delay to allow SharePoint indexing (Graph API filter lag)
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 1. Fetch all KPIs for this KRA
+            const kpiResponse = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
+                .expand('fields')
+                .filter(`fields/RelatedKRALookupId eq ${kraId}`)
+                .get();
+
+            const kpiItems = kpiResponse.value.map((item: any) => this.mapKPI(item));
+
+            // 2. Import calculation utility
+            const { calculateKraProgress } = await import('@/utils/kpiUtils');
+
+            // 3. Calculate average
+            const mockKra = { id: kraId, status: 'open', progress: 0 };
+            const newProgress = calculateKraProgress(mockKra, kpiItems) || 0;
+
+            console.log(`[SP Ops] Syncing KRA ${kraId}: ${kpiItems.length} KPIs found. Calculated progress: ${newProgress}%`);
+
+            // 4. Update SharePoint KRA list
+            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).patch({
+                fields: {
+                    Progress: newProgress
+                }
+            });
+
+            console.log(`✅ [SP Ops] Successfully synced KRA ${kraId} progress to SharePoint.`);
+        } catch (error) {
+            console.error(`❌ [SP Ops] Failed to sync KRA ${kraId} progress:`, error);
+        }
     }
 
     // Debugging Helper
@@ -858,28 +930,36 @@ export class SharePointOpsService {
             console.warn(`[SP Ops] Failed to parse Assignees JSON for KRA ${item.id}`, e);
         }
 
+        // Primary: reconstruct owner from isOwner flag in Assignees JSON (full id/name/email).
+        // Fallback: use the Responsible text field (name only) for display if Assignees has no owner entry.
+        const ownerEntry = assignees.find((a: any) => a.isOwner === true) || null;
+        const ownerObj = ownerEntry
+            ? { id: ownerEntry.id, name: ownerEntry.name || ownerEntry.displayName || '', email: ownerEntry.email || ownerEntry.mail || '' }
+            : (f.Responsible ? { id: '', name: f.Responsible, email: '' } : null);
+        // Expose non-owner assignees separately for display
+        const regularAssignees = assignees.filter((a: any) => !a.isOwner);
+
         return {
             id: item.id,
             title: f.Title,
-            department: f.Department,
+            department: f.Unit || null,
+            unit: f.Unit || null,
+            division: f.Division || null,
             status: (f.Status?.toLowerCase() || 'open').replace(' ', '-') as any,
             progress: f.Progress || 0,
-            startDate: f.StartDate ? new Date(f.StartDate) : new Date(),
-            targetDate: f.EndDate ? new Date(f.EndDate).toISOString() : new Date().toISOString(),
-            objective_id: f.StrategyGoalLookupId?.toString(),
-            objectiveName: f.StrategyGoalLookupId ? 'Loading...' : 'N/A',
-            responsible: f.ResponsibleLookupId || 'Unassigned',
+            objective_id: f.UnitObjectiveLookupId?.toString(),
+            objectiveName: f.UnitObjectiveLookupId ? 'Loading...' : 'N/A',
+            responsible: ownerObj?.name || f.Responsible || 'Unassigned',
             kpis: [],
-            // 'Responsible' is a Person field. If expanded, we might get details. 
-            // If only 'f.ResponsibleLookupId' is available, we can't construct a full User object easily without fetching.
-            // For now, satisfy the type check but note it might be incomplete.
-            owner: f.ResponsibleLookupId ? { id: f.ResponsibleLookupId, name: 'Loading...', email: '' } : null,
-            ownerId: f.ResponsibleLookupId || null,
-            assignees: assignees,
+            owner: ownerObj,
+            ownerId: ownerObj?.id || null,
+            // Graph API returns createdBy.user.email natively on every list item — no extra query needed
+            createdByEmail: item.createdBy?.user?.email || '',
+            assignees: regularAssignees,
             unitKpis: [],
             unitObjectives: null,
             name: f.Title,
-            objectiveId: f.StrategyGoalLookupId?.toString() ?? '',
+            objectiveId: f.UnitObjectiveLookupId?.toString() ?? '',
             endDate: f.EndDate ? new Date(f.EndDate) : new Date(),
             createdAt: item.createdDateTime,
             updatedAt: item.lastModifiedDateTime,
@@ -997,7 +1077,10 @@ export class SharePointOpsService {
             id: item.id,
             title: f.Title,
             description: f.Description || '',
-            status: (f.Status?.toLowerCase() || 'todo') as any,
+            status: (f.Status?.toLowerCase() === 'done' ? 'completed' :
+                f.Status?.toLowerCase() === 'review' ? 'in-review' :
+                    f.Status?.toLowerCase() === 'todo' ? 'todo' :
+                        f.Status?.toLowerCase().replace(/\s+/g, '-') || 'todo') as any,
             priority: (f.Priority?.toLowerCase() || 'medium') as any,
             assignee: f.AssignedToLookupId || 'Unassigned',
             dueDate: f.DueDate || '',
@@ -1111,10 +1194,10 @@ export class SharePointOpsService {
                 Title: report.name,
                 ReportType: report.template_id,
                 GeneratedBy: report.created_by,
-                StartDate: report.date_range.start,
-                EndDate: report.date_range.end,
+                StartDate: report.date_range.start_date,
+                EndDate: report.date_range.end_date,
                 ContentJSON: JSON.stringify(report.content),
-                AIAnalysis: report.content.metadata?.ai_generated || false,
+                AIAnalysis: report.content.metadata.ai_generated || false,
                 Status: 'Generated'
             }
         };

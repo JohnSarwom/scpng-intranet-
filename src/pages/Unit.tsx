@@ -67,6 +67,7 @@ import {
   useSharePointObjectives
 } from '@/hooks/useSharePointOps';
 import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
+import { useUnitRoster } from '@/hooks/useUnitRoster';
 
 import { OrganizationUnit, Objective, Kra, Kpi, KRA, KPI, Task } from '@/types';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
@@ -81,6 +82,7 @@ import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { TasksTab, Bucket } from '@/components/unit-tabs/TasksTab';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
+import { StaffMetricsTab } from '@/components/unit-tabs/StaffMetricsTab';
 import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
 
 // Import skeleton
@@ -96,8 +98,9 @@ import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 const statusOptions = [
   { value: 'todo', label: 'To Do' },
   { value: 'in-progress', label: 'In Progress' },
-  { value: 'review', label: 'Review' },
-  { value: 'done', label: 'Done' }
+  { value: 'on-hold', label: 'On Hold' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'completed', label: 'Completed' }
 ];
 
 type ViewMode = 'board' | 'grid' | 'list';
@@ -178,17 +181,20 @@ const Unit = () => {
   const { user: roleUser } = useRoleBasedAuth();
 
   const userContext = useMemo(() => ({
-    // Prioritize Graph Profile (matches 'User Information' page), fallback to Supabase
-    division: graphProfile?.officeLocation || user?.user_metadata?.divisionName || 'General',
-    unit: graphProfile?.department || user?.user_metadata?.unitName || 'General',
+    // Prioritize Graph Profile (matches 'User Information' page), fallback to Supabase, then UserRoles
+    division: graphProfile?.officeLocation || user?.user_metadata?.divisionName || roleUser?.division_name || 'General',
+    unit: graphProfile?.department || user?.user_metadata?.unitName || roleUser?.unit_name || 'General',
     email: graphProfile?.mail || user?.email || '',
     name: graphProfile?.displayName || user?.user_metadata?.full_name || user?.email || '',
     role: roleUser?.role_name
   }), [user, graphProfile, roleUser]);
 
+  // Live unit staff roster from SharePoint UserRoles — updates when admin adds/removes people
+  const { unitRoster, unitRosterEmails } = useUnitRoster(userContext);
+
   // Initialize data states first
   // Switched to SharePoint Hooks
-  const taskState = useSharePointTasks(targetDepartment, getScopeForComponent('Tasks', 'Unit'), userContext);
+  const taskState = useSharePointTasks(targetDepartment, getScopeForComponent('Tasks', 'Unit'), userContext, unitRosterEmails);
   const projectState = useSharePointProjects(targetDepartment, getScopeForComponent('Projects', 'Unit'), userContext);
   const kraState = useSharePointKRAs(targetDepartment, getScopeForComponent('KRAs', 'Division'), userContext);
   const kpiState = useSharePointKPIs(targetDepartment, userContext);
@@ -451,18 +457,33 @@ const Unit = () => {
   // --- Derive Departments from DivisionStaffMap ---
   const derivedUnits = useMemo((): UnitData[] => {
     try {
-      const allStaff = DivisionStaffMap.getAllStaff();
-      // Safely access department with type check
-      const departmentNames = allStaff
-        .map(staff => ('department' in staff ? staff.department : null))
-        .filter(Boolean) as string[];
-      const uniqueDepartmentNames = Array.from(new Set(departmentNames));
-      return uniqueDepartmentNames.map(name => ({ id: name, name: name }));
+      // 1. Get staff for user's division to filter units relevant to them
+      let relevantStaff = DivisionStaffMap.getStaffForUserDivision(userContext.email);
+
+      // 2. Fallback to all staff if user not found in static map (e.g. admin or new user)
+      if (relevantStaff.length === 0) {
+        relevantStaff = DivisionStaffMap.getAllStaff();
+      }
+
+      // 3. Extract and filter unit names (Strictly includes "Unit", excludes "Division")
+      const uniqueNames = Array.from(new Set(
+        relevantStaff
+          .map(staff => staff.unit)
+          .filter(unit =>
+            unit &&
+            unit.toLowerCase().includes('unit') &&
+            !unit.toLowerCase().includes('division')
+          )
+      )) as string[];
+
+      return uniqueNames
+        .sort()
+        .map(name => ({ id: name, name: name }));
     } catch (error) {
       console.error("Error deriving units from DivisionStaffMap:", error);
       return [];
     }
-  }, []);
+  }, [userContext.email]);
 
   // --- Effect to load data on mount ---
   useEffect(() => {
@@ -797,6 +818,7 @@ const Unit = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
               <TabsTrigger value="tasks">Tasks/Daily Operations</TabsTrigger>
               <TabsTrigger value="kras-objectives">KRAs & Objectives</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
@@ -838,6 +860,22 @@ const Unit = () => {
                 buckets={visibleBuckets}
                 kras={combinedKrasForOverview}
                 objectives={objectivesData}
+                userContext={userContext}
+                unitRoster={unitRoster}
+              />
+            )}
+          </TabsContent>
+
+          {/* Staff Metrics Tab */}
+          <TabsContent value="staff-metrics" className="space-y-8">
+            {isDataLoading ? (
+              <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Metrics...</div>
+            ) : (
+              <StaffMetricsTab
+                tasks={taskState.data}
+                kras={combinedKrasForOverview}
+                unitRoster={unitRoster}
+                userContext={userContext}
               />
             )}
           </TabsContent>

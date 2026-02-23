@@ -10,6 +10,7 @@ import { mapKraToSharePoint, mapKpiToSharePoint, mapTaskToSharePoint } from '@/u
 
 import { mockProjects } from '@/mockData/projects';
 import { initialEmployeeData } from '@/data/employeeData';
+import { generateAllOfficerData, SCPNG_STAFF_DATA } from '@/data/mockPerformanceDataGenerator';
 
 export class SharePointListSetupService {
     private client: Client;
@@ -741,9 +742,9 @@ export class SharePointListSetupService {
             results.objectives = unitObjectivesList;
             console.log('✅ [Setup] Unit_Objectives created');
 
-            // 1. Create Performance_KRAs
+            // 1. Create Performance_KRAs (Linking to Unit_Objectives instead of Strategic_Objectives)
             console.log('📝 [Setup] Creating Performance_KRAs...');
-            const kraList = await this.createKrasList(goalListId);
+            const kraList = await this.createKrasList(unitObjectivesList.id);
             results.kras = kraList;
             console.log('✅ [Setup] Performance_KRAs created');
 
@@ -959,19 +960,16 @@ export class SharePointListSetupService {
                 columns: [
                     { name: 'Department', text: {} },
                     { name: 'Responsible', personOrGroup: {} },
-                    { name: 'StartDate', dateTime: { format: 'dateOnly' } },
-                    { name: 'EndDate', dateTime: { format: 'dateOnly' } },
                     { name: 'Status', choice: { choices: ['Open', 'In Progress', 'Closed'] } },
                     { name: 'Progress', number: { decimalPlaces: 'none', minimum: 0, maximum: 100 } },
                     { name: 'Description', text: { allowMultipleLines: true } },
-                    { name: 'Assignees', text: { allowMultipleLines: true } },
-                    { name: 'IsMockData', boolean: {} }
+                    { name: 'Assignees', text: { allowMultipleLines: true } }
                 ],
                 list: { template: 'genericList' }
             });
 
-        // Simplified name 'StrategyGoal' -> Field 'StrategyGoalId'
-        await this.addLookupColumn(list.id, 'StrategyGoal', goalListId, 'Title');
+        // Consistent name 'UnitObjective' -> Field 'UnitObjectiveId'
+        await this.addLookupColumn(list.id, 'UnitObjective', goalListId, 'Title');
         return list;
     }
 
@@ -1196,12 +1194,201 @@ export class SharePointListSetupService {
     }
 
     /**
+     * Setup Org Hierarchy list and seed with current hard-coded structure
+     */
+    async setupStrategyOrgHierarchy(): Promise<{ success: boolean; message: string; details?: any }> {
+        console.log('🚀 [Setup] Starting Org Hierarchy setup...');
+        try {
+            // 1. Create List
+            const list = await this.createOrgHierarchyList();
+            console.log('✅ [Setup] Org_Hierarchy list ensured');
+
+            // 2. Seed Data
+            const result = await this.seedOrgHierarchyData(list.id);
+            console.log('✅ [Setup] Org_Hierarchy data seeded');
+
+            return {
+                success: true,
+                message: 'Organizational hierarchy has been successfully moved to SharePoint!',
+                details: result
+            };
+        } catch (error: any) {
+            console.error('❌ [Setup] Org Hierarchy Setup failed:', error);
+            return {
+                success: false,
+                message: `Failed to setup Org Hierarchy: ${error.message}`,
+                details: error
+            };
+        }
+    }
+
+    /**
+     * Create Org_Hierarchy List
+     */
+    private async createOrgHierarchyList() {
+        // Check if exists first
+        const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Org_Hierarchy'").get();
+        if (check.value && check.value.length > 0) return check.value[0];
+
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Org_Hierarchy',
+                columns: [
+                    { name: 'Division', text: { enforceUniqueValues: false } },
+                    { name: 'Unit', text: {} },
+                    { name: 'SortOrder', number: { decimalPlaces: 'none' } },
+                    { name: 'Head', text: {} },
+                    { name: 'Email', text: {} },
+                    { name: 'Phone', text: {} },
+                    { name: 'Role', text: {} },
+                    { name: 'Description', text: { allowMultipleLines: true } }
+                ],
+                list: { template: 'genericList' }
+            });
+
+        return list;
+    }
+
+    /**
+     * Seed Org_Hierarchy List
+     */
+    private async seedOrgHierarchyData(listId: string) {
+        const ORG_DETAILS = [
+            {
+                division: 'Office of the Chairman',
+                unit: 'Executive Division',
+                head: 'James Joshua',
+                email: 'jjoshua@scpng.gov.pg',
+                phone: '+675 321 2223',
+                role: 'Acting CEO — Executive leadership and strategy',
+                description: 'Oversees the operations and strategic direction of the Commission. Responsible for regulatory oversight, stakeholder engagement, and organizational governance.'
+            },
+            {
+                division: 'Office of the Chairman',
+                unit: 'Secretariat Unit',
+                head: 'Andy Ambulu',
+                email: 'aambulu@scpng.gov.pg',
+                phone: '+675 321 2223',
+                role: 'General Counsel — Legal counsel on regulatory and corporate matters',
+                description: 'Provides legal support to the Board and Executive Management, ensuring compliance and robust governance.'
+            },
+            {
+                division: 'Corporate Services Division',
+                unit: 'Finance Unit',
+                head: 'Sam Taki',
+                email: 'staki@scpng.gov.pg',
+                phone: '+675 321 2223',
+                role: 'Director Corporate Service',
+                description: 'Strategic Focus: Administrative Fundamentals — Internal policies, governance, HR/Finance modernization, IT infrastructure.'
+            },
+            {
+                division: 'Corporate Services Division',
+                unit: 'IT Unit',
+                head: 'Eric Kipongi',
+                role: 'Manager Information Technology',
+                description: 'Network infrastructure, systems administration, database management, IT security, and digital transformation.'
+            },
+            {
+                division: 'Corporate Services Division',
+                unit: 'Human Resource Unit',
+                head: 'Thomas Mondaya',
+                role: 'Senior HR Officer',
+                description: 'Recruitment, performance management, staff welfare, and organizational development.'
+            },
+            {
+                division: 'Licensing, Market & Supervision Division',
+                unit: 'Licensing Unit',
+                head: 'Leeroy Wambillie',
+                role: 'Senior Licensing Officer',
+                description: 'License application review, compliance assessment, and maintaining the license register.'
+            },
+            {
+                division: 'Licensing, Market & Supervision Division',
+                unit: 'Supervision Unit',
+                head: 'Regina Wai',
+                role: 'Senior Supervision Officer',
+                description: 'Supervisory oversight of licensed entities and monitoring of market participant activities.'
+            },
+            {
+                division: 'Licensing, Market & Supervision Division',
+                unit: 'Market Data Unit',
+                head: 'Zomay Apini',
+                role: 'Market Data Manager',
+                description: 'Capital market data collection and analysis, market surveillance, and statistical reporting.'
+            },
+            {
+                division: 'Licensing, Market & Supervision Division',
+                unit: 'Investigations Unit',
+                head: 'Jacob Kom',
+                role: 'Senior Investigations Officer',
+                description: 'Investigation of securities law violations, market misconduct, and fraud detection.'
+            },
+            {
+                division: 'Legal Services Division',
+                unit: 'Legal Advisory Unit',
+                head: 'Tyson Yapao',
+                email: 'tyapao@scpng.gov.pg',
+                phone: '+675 321 2223',
+                role: 'Legal Manager - Compliance & Enforcement',
+                description: 'Strategic Focus: Regulatory Framework Reform — SC Act and Capital Market Act amendments, legal enforcement & compliance.'
+            },
+            {
+                division: 'Research & Publication Division',
+                unit: 'Research Unit',
+                head: 'Max Siwi',
+                role: 'Senior Research Officer',
+                description: 'Capital market trend research, policy analysis, and regulatory impact assessments.'
+            },
+            {
+                division: 'Research & Publication Division',
+                unit: 'Publication Unit',
+                head: 'Joy Komba',
+                email: 'jkomba@scpng.gov.pg',
+                phone: '+675 321 2223',
+                role: 'Director Research & Publication',
+                description: 'Strategic Focus: Investor Education — Social media expansion, investor bootcamps, and "Invest Smart PNG" campaign.'
+            }
+        ];
+
+        const items: any[] = [];
+        let sortOrder = 1;
+
+        for (const detail of ORG_DETAILS) {
+            items.push({
+                fields: {
+                    Title: detail.division,
+                    Division: detail.division,
+                    Unit: detail.unit,
+                    SortOrder: sortOrder++,
+                    Head: detail.head,
+                    Email: detail.email || '',
+                    Phone: detail.phone || '',
+                    Role: detail.role,
+                    Description: detail.description
+                }
+            });
+        }
+
+        // Add items in sequence to avoid conflicts
+        const results = [];
+        for (const item of items) {
+            const created = await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(item);
+            results.push(created);
+        }
+
+        return results;
+    }
+
+
+    /**
      * Add Linked Sample Data for Operations
      */
     private async addOperationsSampleData(goalListId: string, lists: any) {
-        // 1. Get a Division Goal to link to (e.g., "Automate HR...")
+        // 1. Get a Division Goal from Unit_Objectives to link to (e.g., "Automate HR...")
+        const objectivesListId = lists.objectives.id;
         const goals = await this.client
-            .api(`/sites/${this.siteId}/lists/${goalListId}/items`)
+            .api(`/sites/${this.siteId}/lists/${objectivesListId}/items`)
             .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
             .expand('fields')
             .filter("fields/GoalType eq 'Division'")
@@ -2414,6 +2601,132 @@ export class SharePointListSetupService {
             }
             return { success: true, message: `Cleared ${count} mock items` };
         } catch (error: any) {
+            return { success: false, message: error.message };
+        }
+    }
+
+    /**
+     * Seed operational data for all 30 SCPNG officers
+     * Creates 2 KRAs + 4 KPIs + 20 tasks per officer (1,560 items total)
+     * Uses direct SP ID tracking — no description embedding required
+     */
+    async seedOfficerOperationalData(): Promise<{ success: boolean; message: string }> {
+        console.log('[Seeding] Starting officer operational data seeding...');
+        try {
+            // 1. Fetch user map (email → SP user ID)
+            const userMap = await this.getSiteUserMap();
+
+            // 2. Fetch strategic objectives for KRA linkage
+            let objectives: Array<{ id: string | number; title: string }> = [];
+            try {
+                const objListRes = await this.client.api(`/sites/${this.siteId}/lists`)
+                    .filter("displayName eq 'Strategy_Objectives'").select('id').get();
+                if (objListRes.value && objListRes.value.length > 0) {
+                    const objItems = await this.client.api(`/sites/${this.siteId}/lists/${objListRes.value[0].id}/items`)
+                        .expand('fields').select('id,fields/Title').top(50).get();
+                    objectives = (objItems.value || []).map((item: any) => ({
+                        id: item.id,
+                        title: item.fields?.Title || ''
+                    }));
+                    console.log(`[Seeding] Found ${objectives.length} strategic objectives.`);
+                }
+            } catch {
+                console.warn('[Seeding] Could not fetch objectives — KRAs will seed without objective links.');
+            }
+
+            // 3. Generate all officer data
+            const { kras, kpis, tasks } = generateAllOfficerData(SCPNG_STAFF_DATA, objectives);
+            console.log(`[Seeding] Generated: ${kras.length} KRAs, ${kpis.length} KPIs, ${tasks.length} tasks`);
+
+            // 4. Locate target lists
+            const lists = await this.client.api(`/sites/${this.siteId}/lists`).select('id,displayName').get();
+            const kraList = lists.value.find((l: any) => l.displayName === 'Performance_KRAs');
+            const kpiList = lists.value.find((l: any) => l.displayName === 'Performance_KPIs');
+            const taskList = lists.value.find((l: any) => l.displayName === 'Operations_Tasks');
+
+            if (!kraList || !kpiList || !taskList) {
+                return { success: false, message: 'Required lists not found. Run list setup first.' };
+            }
+
+            // 5. Upload KRAs in batches of 5, capture SharePoint item IDs
+            const kraSpIdMap: Record<string, number> = {};
+            let kraSuccess = 0;
+            const kraBatch = 5;
+            for (let i = 0; i < kras.length; i += kraBatch) {
+                const batch = kras.slice(i, i + kraBatch);
+                await Promise.all(batch.map(async (kra) => {
+                    try {
+                        const payload = mapKraToSharePoint(kra, userMap);
+                        const res = await this.client.api(`/sites/${this.siteId}/lists/${kraList.id}/items`).post(payload);
+                        kraSpIdMap[kra.id as string] = parseInt(res.id);
+                        kraSuccess++;
+                    } catch (err: any) {
+                        console.warn(`[Seeding] KRA upload failed: ${kra.title}`, err.message);
+                    }
+                }));
+            }
+            console.log(`[Seeding] KRAs created: ${kraSuccess}/${kras.length}`);
+
+            // 6. Resolve KPI list's RelatedKRA lookup field name
+            const relatedKraInternal = await this.resolveFieldName(kpiList.id, ['RelatedKRA', 'Related KRA', 'RelatedKra', 'KRA']);
+            const relatedKraFieldKey = relatedKraInternal ? `${relatedKraInternal}LookupId` : 'RelatedKRALookupId';
+
+            // 7. Upload KPIs in batches of 5, linking to SP KRA IDs
+            const kpiSpIdMap: Record<string, number> = {};
+            let kpiSuccess = 0;
+            const kpiBatch = 5;
+            for (let i = 0; i < kpis.length; i += kpiBatch) {
+                const batch = kpis.slice(i, i + kpiBatch);
+                await Promise.all(batch.map(async (kpi) => {
+                    const kraSpId = kraSpIdMap[kpi.kra_id as string];
+                    if (!kraSpId) {
+                        console.warn(`[Seeding] KPI skipped — no parent KRA SP ID: ${kpi.name}`);
+                        return;
+                    }
+                    try {
+                        const payload = mapKpiToSharePoint(kpi, {});
+                        delete payload.fields.RelatedKRAId;
+                        payload.fields[relatedKraFieldKey] = kraSpId;
+                        const res = await this.client.api(`/sites/${this.siteId}/lists/${kpiList.id}/items`).post(payload);
+                        kpiSpIdMap[kpi.id as string] = parseInt(res.id);
+                        kpiSuccess++;
+                    } catch (err: any) {
+                        console.warn(`[Seeding] KPI upload failed: ${kpi.name}`, err.message);
+                    }
+                }));
+            }
+            console.log(`[Seeding] KPIs created: ${kpiSuccess}/${kpis.length}`);
+
+            // 8. Resolve task list's RelatedKPI lookup field name
+            const relatedKpiInternal = await this.resolveFieldName(taskList.id, ['RelatedKPI', 'Related KPI', 'RelatedKpi', 'KPI']);
+            const relatedKpiFieldKey = relatedKpiInternal ? `${relatedKpiInternal}LookupId` : 'RelatedKPILookupId';
+
+            // 9. Upload tasks in batches of 10
+            let taskSuccess = 0;
+            const taskBatch = 10;
+            for (let i = 0; i < tasks.length; i += taskBatch) {
+                const batch = tasks.slice(i, i + taskBatch);
+                await Promise.all(batch.map(async (task) => {
+                    try {
+                        const payload = mapTaskToSharePoint(task, {}, userMap);
+                        delete payload.fields.RelatedKPIId;
+                        const kpiSpId = kpiSpIdMap[task.kpi_id as string];
+                        if (kpiSpId) payload.fields[relatedKpiFieldKey] = kpiSpId;
+                        await this.client.api(`/sites/${this.siteId}/lists/${taskList.id}/items`).post(payload);
+                        taskSuccess++;
+                    } catch (err: any) {
+                        console.warn(`[Seeding] Task upload failed: ${task.title}`, err.message);
+                    }
+                }));
+            }
+            console.log(`[Seeding] Tasks created: ${taskSuccess}/${tasks.length}`);
+
+            return {
+                success: true,
+                message: `Officer data seeded: ${kraSuccess} KRAs, ${kpiSuccess} KPIs, ${taskSuccess} tasks (${SCPNG_STAFF_DATA.length} staff members).`
+            };
+        } catch (error: any) {
+            console.error('[Seeding] seedOfficerOperationalData failed', error);
             return { success: false, message: error.message };
         }
     }

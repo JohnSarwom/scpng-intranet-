@@ -547,9 +547,16 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       title: formData.title || null, // Map from title input
       objective_id: formData.objectiveId || null, // Map from objective select
       unit_id: formData.unitId || null, // Map from unit select (now storing ID)
-      description: formData.comments || null, // Map description FROM comments textarea
+      description: formData.description || formData.comments || null, // Map description FROM comments textarea or description field
       ownerId: formData.responsibleId || formData.ownerId || null, // Map owner if present
+      owner: formData.owner || null, // Full owner object — needed to embed isOwner in Assignees JSON
       assignees: formData.assignees || [], // Map assignees
+      // Set Department so the KRA is visible under the correct division/unit scope filter.
+      // Priority: 1. Manual selection from dropdown (formData.unit), 2. Fallback to context
+      department: formData.unit || userContext?.division || userContext?.unit || '',
+      // Auto-fill Unit and Division from user context — no manual selection required
+      unit: formData.unit || userContext?.unit || '',
+      division: userContext?.division || '',
     };
 
     if (isEditing) {

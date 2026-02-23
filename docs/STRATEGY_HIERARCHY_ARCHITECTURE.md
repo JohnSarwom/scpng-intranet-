@@ -1,8 +1,8 @@
 # Strategy Page — Division Hierarchy Architecture
 
 > **Document Version:** 1.0  
-> **Last Updated:** 2026-02-20  
-> **Scope:** Full end-to-end documentation of how the Strategy page's "Division Alignment & KRAs" section works — from SharePoint data source, through the service/hook layers, to the rendered accordion UI.
+> **Last Updated:** 2026-02-21  
+> **Scope:** Full end-to-end documentation of how the Strategy page's "Division Alignment & KRAs" section works — from SharePoint data source, through the service/hook layers, to the rendered accordion UI. Includes progress roll-up from unit-level objectives to strategic cards.
 
 ---
 
@@ -33,7 +33,7 @@
 The Strategy page is the central hub for displaying the organization's strategic direction. The **"Division Alignment & KRAs"** section provides a cascading view of operational execution:
 
 ```
-Division → Unit → Key Deliverable → Objectives
+Division → Unit → Strategic Objective → Key Deliverable → Objectives
 ```
 
 This hierarchy is built dynamically from live SharePoint data (the `Unit_Objectives` list), scaffolded by a hardcoded organizational structure to guarantee completeness even when SharePoint data is sparse.
@@ -441,6 +441,37 @@ Step 3: For each objective, place into hierarchy
 Step 4: Return hierarchy (never null — scaffold ensures structure)
 ```
 
+### 4.4b Strategic Progress Roll-up (effectiveObjectives)
+
+The Strategy page uses a tiered calculation to determine the progress of top-level Strategic Objective cards:
+
+```typescript
+// Priority 1: KRA/KPI-based progress (Manual or Dynamic from KPIs)
+const linkedKras = allKras.filter(kra => ...);
+if (linkedKras.length > 0) {
+    const calculated = calculateStrategicProgress(linkedKras, allKpis);
+    if (calculated > 0) return { ...obj, progress: calculated };
+}
+
+// Priority 2: ROLL-UP FROM UNIT OBJECTIVES (NEW)
+// Counts all objectives where parentGoalId matches this strategic goal
+const childObjectives = allUnitObjectives.filter(child => 
+    String(child.parentGoalId) === String(obj.id)
+);
+if (childObjectives.length > 0) {
+    const totalProgress = childObjectives.reduce((sum, child) => {
+        let p = child.progress || 0;
+        // Status Fallback: If 0% but status indicates completion, treat as 100%
+        if (p === 0 && (child.status === 'Completed' || child.status === 'Achieved')) p = 100;
+        return sum + p;
+    }, 0);
+    return { ...obj, progress: Math.round(totalProgress / childObjectives.length) };
+}
+
+// Priority 3: Fallback to stored/manual progress
+return obj;
+```
+
 #### Output Data Shape
 
 ```typescript
@@ -504,7 +535,7 @@ File: src/pages/Strategy.tsx
 Lines: 701–843
 ```
 
-The hierarchy is rendered using the shadcn/ui `<Accordion>` component in 4 nested levels:
+The hierarchy is rendered using the shadcn/ui `<Accordion>` component in nested levels:
 
 ```
 <Accordion>  ←────── Level 1: Divisions
@@ -524,21 +555,22 @@ The hierarchy is rendered using the shadcn/ui `<Accordion>` component in 4 neste
 │           │   │
 │           │   └── <AccordionContent>
 │           │       │
-│           │       ├── Key Deliverable Header  ←── Level 3: Key Deliverables
-│           │       │   [Target] "Deliverable Text"
-│           │       │
-│           │       └── Objectives List  ←── Level 4: Objectives
-│           │           ├── > "Objective Title"  [Status Badge]
-│           │           │     Description (if present)
-│           │           │     GoalType Level
-│           │           │
-│           │           └── > "Another Objective"  [Status Badge]
+│           │       └── Strategic Objective Header  ←── Level 3: STRATEGIC GROUPS
+│           │           [Layers] "Strategic Objective Title" (Roll-up %)
 │           │
-│           └── <AccordionItem>
-│               └── ...
+│           │           └── Key Deliverable Header  ←── Level 4: KEY DELIVERABLES
+│           │               [Target] "Deliverable Text"
+│           │
+│           │               └── Objectives List  ←── Level 5: OBJECTIVES
+│           │                   ├── > "Objective Title"  [Status Badge]
+│           │                   │     Description (if present)
+│           │                   │     GoalType Level
+│           │                   │
+│           │                   └── ...
+│           │
+│           └── ...
 │
-└── <AccordionItem>
-    └── ...
+└── ...
 ```
 
 #### Status Badge Color Logic

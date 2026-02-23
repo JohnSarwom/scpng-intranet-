@@ -208,9 +208,9 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           />
         </div>
 
-        {/* Unit Dropdown (now Departments) */}
+        {/* Unit Dropdown */}
         <div className="grid gap-1.5">
-          <Label htmlFor="kra-unit">Unit / Department *</Label>
+          <Label htmlFor="kra-unit">Unit *</Label>
           <Select
             // Use unit field (department name string) for value
             value={formData.unit || ''}
@@ -219,7 +219,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             required
           >
             <SelectTrigger id="kra-unit">
-              <SelectValue placeholder="Select a unit/department" />
+              <SelectValue placeholder="Select a unit" />
             </SelectTrigger>
             <SelectContent container={container}>
               {(() => {
@@ -237,7 +237,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                     <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
                   ))
                 ) : (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No units/departments defined.</div>
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No units defined.</div>
                 );
               })()}
             </SelectContent>

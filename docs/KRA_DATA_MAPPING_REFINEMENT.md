@@ -1,0 +1,87 @@
+# KRA Data Mapping Refinements & SharePoint Integration
+
+> **Date**: 2026-02-23
+> **Status**: Implemented & Verified
+
+This document details the refined technical architecture for Key Result Area (KRA) data mapping, focusing on UI consistency, automatic context population, and robust data persistence in SharePoint.
+
+---
+
+## 1. UI Label Standardization
+
+To align with the organizational logic where Divisions contain Units, all UI labels in the KRA management flow have been standardized to **"Unit"** (formerly "Unit / Department").
+
+### Key Changes
+- **Labels**: "Unit / Department *" → **"Unit *"**
+- **Placeholders**: "Select a unit/department" → **"Select a unit"**
+- **Empty States**: "No units/departments defined." → **"No units defined."**
+
+**File**: `src/components/kpi/KraFormSection.tsx`
+
+---
+
+## 2. SharePoint Schema Alignment
+
+The `Department` column in the `Performance_KRAs` SharePoint list was a misnomer (it held Unit-level values) and has been **deleted**. The system now uses dedicated `Unit` and `Division` columns.
+
+### Mapping Strategy
+| App Field | SharePoint Column | Type | Description |
+|-----------|-------------------|------|-------------|
+| `unit` | `Unit` | Text | Stored as the Unit's display name (e.g., "IT Unit"). |
+| `division` | `Division` | Text | Stored as the Division's display name (e.g., "Corporate Services Division"). |
+| `department` | (Deleted) | - | Backward compatibility handled in `mapKRA`. |
+
+**File**: `src/services/sharePointOpsService.ts`
+
+---
+
+## 3. Context Auto-Population
+
+To reduce manual data entry, `Unit` and `Division` fields are automatically populated from the logged-in user's context during KRA creation.
+
+### Data Flow
+1. **User Context**: `UserContext` provides the current user's division and unit.
+2. **KRA Preparation**: `KRAsTab.tsx` merges these values into the `kraPayload`.
+3. **Save**: `sharePointOpsService.ts` writes these directly to the new `Unit` and `Division` columns.
+
+```typescript
+// Auto-population logic in KRAsTab.tsx
+const kraPayload = {
+  ...formData,
+  unit: formData.unit || userContext?.unit || '',
+  division: userContext?.division || '',
+};
+```
+
+---
+
+## 4. Owner (Lead) Persistence Logic
+
+SharePoint's `Responsible` (Person/Group) field type was incompatible with Azure AD GUIDs used by the app. The system now uses a **Hybrid Persistence Pattern**.
+
+### The "Hybrid Persistence" Pattern
+1. **Responsible (Text Column)**: Stores the owner's **Display Name** for easy visibility in the SharePoint list view.
+2. **Assignees (JSON Text Column)**: Stored the full owner object (ID, Name, Email) embedded with an `isOwner: true` flag.
+
+### Logic in `sharePointOpsService.ts`
+- **Write (`addKRA`/`updateKRA`)**: Rebuilds the `Assignees` JSON to include the owner object with the `isOwner` flag.
+- **Read (`mapKRA`)**: 
+    - Finds the `isOwner` entry in the `Assignees` JSON to restore the full `owner` object.
+    - Uses the `Responsible` text field as a name-only fallback.
+
+---
+
+## 5. Fetching & Filtering (RBAC)
+
+Filtering for KRAs has been updated to use the new `Division` column for division-level scoping, ensuring data visibility aligns with the new schema.
+
+**File**: `src/services/sharePointOpsService.ts` → `getKRAs()`
+- **Filter**: `fields/Division eq '${context.division}'`
+
+---
+
+## Related Files
+- `src/components/unit-tabs/KRAsTab.tsx`: Payload preparation and grouping.
+- `src/components/kpi/KraFormSection.tsx`: UI labels and auto-fill hooks.
+- `src/services/sharePointOpsService.ts`: Core persistence and mapping logic.
+- `src/types/index.ts`: Updated `KRA` interface.

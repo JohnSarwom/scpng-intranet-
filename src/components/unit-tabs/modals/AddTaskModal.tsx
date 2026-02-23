@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 }) => {
   const loading = false;
   const currentUserDepartment = staffMembers?.[0]?.department || 'Unknown';
-  
+
   const [newTask, setNewTask] = useState<Omit<Task, 'id'>>({
     title: '',
     description: '',
@@ -55,29 +55,29 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       return;
     }
     if (!newTask.assignee) {
-        toast({
-            title: "Error",
-            description: "Assignee is required",
-            variant: "destructive"
-        });
-        return;
+      toast({
+        title: "Error",
+        description: "Assignee is required",
+        variant: "destructive"
+      });
+      return;
     }
-    
+
     const taskToSubmit = {
       ...newTask,
-      dueDate: typeof newTask.dueDate === 'string' 
-        ? newTask.dueDate 
+      dueDate: typeof newTask.dueDate === 'string'
+        ? newTask.dueDate
         : (newTask.dueDate as Date)?.toISOString?.()?.split('T')[0] || null,
-      
-      startDate: newTask.startDate instanceof Date 
-        ? newTask.startDate 
-        : typeof newTask.startDate === 'string' && newTask.startDate 
-          ? new Date(newTask.startDate) 
+
+      startDate: newTask.startDate instanceof Date
+        ? newTask.startDate
+        : typeof newTask.startDate === 'string' && newTask.startDate
+          ? new Date(newTask.startDate)
           : null
     };
-    
+
     onSubmit(taskToSubmit);
-    
+
     setNewTask({
       title: '',
       description: '',
@@ -90,7 +90,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       checklist: [],
     });
     onOpenChange(false);
-    
+
     toast({
       title: "Task Added",
       description: "The task has been successfully added",
@@ -110,20 +110,20 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="task-title">Title</Label>
-              <Input 
-                id="task-title" 
-                placeholder="Task Title" 
-                value={newTask.title} 
-                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+              <Input
+                id="task-title"
+                placeholder="Task Title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
               />
             </div>
             <div className="grid gap-2">
               <Label htmlFor="task-description">Description</Label>
-              <Textarea 
-                id="task-description" 
-                placeholder="Task Description" 
-                value={newTask.description} 
-                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+              <Textarea
+                id="task-description"
+                placeholder="Task Description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -131,10 +131,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 <Label htmlFor="task-assignee">
                   Assignee {currentUserDepartment && <span className="text-sm text-muted-foreground">({currentUserDepartment})</span>}
                 </Label>
-                <Select 
+                <Select
                   value={newTask.assignee}
                   onValueChange={(value) => {
-                    setNewTask({...newTask, assignee: value});
+                    setNewTask({ ...newTask, assignee: value });
                   }}
                 >
                   <SelectTrigger id="task-assignee" className={loading ? "opacity-50" : ""}>
@@ -157,10 +157,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-status">Status</Label>
-                <Select 
+                <Select
                   value={newTask.status}
-                  onValueChange={(value: 'todo' | 'in-progress' | 'review' | 'done') => 
-                    setNewTask({...newTask, status: value})
+                  onValueChange={(value: 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed') =>
+                    setNewTask({ ...newTask, status: value })
                   }
                 >
                   <SelectTrigger id="task-status">
@@ -169,8 +169,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   <SelectContent>
                     <SelectItem value="todo">To Do</SelectItem>
                     <SelectItem value="in-progress">In Progress</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="on-hold">On Hold</SelectItem>
+                    <SelectItem value="in-review">In Review</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -178,10 +179,10 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-priority">Priority</Label>
-                <Select 
+                <Select
                   value={newTask.priority}
-                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => 
-                    setNewTask({...newTask, priority: value})
+                  onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') =>
+                    setNewTask({ ...newTask, priority: value })
                   }
                 >
                   <SelectTrigger id="task-priority">
@@ -198,8 +199,8 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-percentage">Completion Percentage</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    id="task-percentage" 
+                  <Input
+                    id="task-percentage"
                     type="number"
                     min="0"
                     max="100"
@@ -211,7 +212,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                       } else if (value > 100) {
                         value = 100;
                       }
-                      setNewTask({...newTask, completionPercentage: value});
+                      setNewTask({ ...newTask, completionPercentage: value });
                     }}
                   />
                   <span>%</span>
@@ -221,33 +222,33 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-start-date">Start Date</Label>
-                <Input 
-                  id="task-start-date" 
+                <Input
+                  id="task-start-date"
                   type="date"
-                  value={newTask.startDate instanceof Date ? newTask.startDate.toISOString().split('T')[0] : ''} 
-                  onChange={(e) => setNewTask({...newTask, startDate: new Date(e.target.value)})}
+                  value={newTask.startDate instanceof Date ? newTask.startDate.toISOString().split('T')[0] : ''}
+                  onChange={(e) => setNewTask({ ...newTask, startDate: new Date(e.target.value) })}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <Label htmlFor="task-due-date">Due Date</Label>
-                <Input 
-                  id="task-due-date" 
+                <Input
+                  id="task-due-date"
                   type="date"
                   value={typeof newTask.dueDate === 'string' ? newTask.dueDate : ''}
-                  onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                  onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
                 />
               </div>
             </div>
           </div>
-          
+
           <div className="border-t pt-4 mt-2">
-            <ChecklistSection 
+            <ChecklistSection
               items={newTask.checklist || []}
-              onChange={(items) => setNewTask({...newTask, checklist: items})}
+              onChange={(items) => setNewTask({ ...newTask, checklist: items })}
             />
           </div>
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleAddTask}>Add Task</Button>

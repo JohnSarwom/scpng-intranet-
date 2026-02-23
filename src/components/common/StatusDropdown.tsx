@@ -22,12 +22,13 @@ interface StatusDropdownProps {
 const defaultStatusOptions: StatusOption[] = [
   { value: 'todo', label: 'To Do' },
   { value: 'in-progress', label: 'In Progress' },
-  { value: 'review', label: 'Review' },
-  { value: 'done', label: 'Done' }
+  { value: 'on-hold', label: 'On Hold' },
+  { value: 'in-review', label: 'In Review' },
+  { value: 'completed', label: 'Completed' }
 ];
 
-export const StatusDropdown: React.FC<StatusDropdownProps> = ({ 
-  currentStatus, 
+export const StatusDropdown: React.FC<StatusDropdownProps> = ({
+  currentStatus,
   onStatusChange,
   options = defaultStatusOptions,
 }) => {

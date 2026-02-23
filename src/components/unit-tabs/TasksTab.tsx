@@ -1408,7 +1408,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       newTags = currentTags.filter(t => t !== 'completed');
     }
 
-    const newStatus = !completed && task?.status === 'done' ? 'todo' : task?.status;
+    const newStatus = !completed && (task?.status === 'completed' || task?.status === 'done') ? 'todo' : task?.status;
 
     // 4. Create Optimistic Update
     const updatedTask = {
@@ -1645,7 +1645,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
     // 4. Immediate Success Toast
     // Map status to user-friendly text
-    const statusLabel = status === 'todo' ? 'To Do' : status === 'in-progress' ? 'In Progress' : status === 'review' ? 'Review' : 'Done';
+    const statusLabel = status === 'todo' ? 'To Do'
+      : status === 'in-progress' ? 'In Progress'
+        : status === 'on-hold' ? 'On Hold'
+          : status === 'in-review' || status === 'review' ? 'In Review'
+            : 'Completed';
     toast({
       title: "Status Updated",
       description: `Task moved to ${statusLabel}.`
@@ -1776,7 +1780,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                     {/* Status Section */}
                     <div className="p-2">
                       <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Status</div>
-                      {['todo', 'in-progress', 'review', 'done'].map(status => (
+                      {['todo', 'in-progress', 'on-hold', 'in-review', 'completed'].map(status => (
                         <div key={status} className="flex items-center space-x-2 mb-1">
                           <Checkbox
                             id={`filter-status-${status}`}
@@ -1787,7 +1791,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                             }}
                           />
                           <label htmlFor={`filter-status-${status}`} className="text-sm capitalize cursor-pointer flex-1">
-                            {status === 'todo' ? 'To Do' : status === 'in-progress' ? 'In Progress' : status === 'review' ? 'Review' : 'Done'}
+                            {status === 'todo' ? 'To Do'
+                              : status === 'in-progress' ? 'In Progress'
+                                : status === 'on-hold' ? 'On Hold'
+                                  : status === 'in-review' ? 'In Review'
+                                    : 'Completed'}
                           </label>
                         </div>
                       ))}

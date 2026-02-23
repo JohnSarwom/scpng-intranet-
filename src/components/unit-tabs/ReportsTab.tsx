@@ -162,10 +162,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       // 1. Fetch Data
       // Note: Services usually fetch "all" for the context, we then filter by date here for the report.
       const [allProjects, allTasks, allRisks, allKRAs] = await Promise.all([
-        sharePointOpsService.getProjects('Unit', { unit: 'IT Unit', role: 'admin' }), // Hardcoding context for now or pass dynamic
-        sharePointOpsService.getTasks('Unit', { unit: 'IT Unit', role: 'admin' }),
-        sharePointOpsService.getRisks('Unit', { unit: 'IT Unit', role: 'admin' }),
-        sharePointOpsService.getKRAs('Unit', { unit: 'IT Unit', role: 'admin' }) // Using admin role to ensure we get data for report for now
+        sharePointOpsService.getProjects('Unit', { unit: 'IT Unit', division: 'Operations', email: user?.email || '', name: user?.email || '', role: 'admin' }),
+        sharePointOpsService.getTasks('Unit', { unit: 'IT Unit', division: 'Operations', email: user?.email || '', name: user?.email || '', role: 'admin' }),
+        sharePointOpsService.getRisks('Unit', { unit: 'IT Unit', division: 'Operations', email: user?.email || '', name: user?.email || '', role: 'admin' }),
+        sharePointOpsService.getKRAs('Unit', { unit: 'IT Unit', division: 'Operations', email: user?.email || '', name: user?.email || '', role: 'admin' })
       ]);
 
       // 2. Filter Data by Date Range (using Created or Modified or DueDate depending on report type)
@@ -185,14 +185,14 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
 
 
       // 3. Process Metrics
-      const completedTasks = filteredTasks.filter(t => t.status === 'done').length;
+      const completedTasks = filteredTasks.filter(t => t.status === 'completed').length;
       const totalTasks = filteredTasks.length;
       const taskCompletionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
-      const atRiskKPIs = filteredKRAs.filter(k => k.status === 'at-risk').length; // KRA status
-      const onTrackKPIs = filteredKRAs.filter(k => k.status === 'in-progress' || k.status === 'on-track').length;
+      const atRiskKPIs = filteredKRAs.filter(k => (k as any).status === 'at-risk').length; // KRA/Kra status normalization
+      const onTrackKPIs = filteredKRAs.filter(k => (k as any).status === 'in-progress' || (k as any).status === 'on-track').length;
 
-      const highRisks = filteredRisks.filter(r => r.impact === 'High' || r.impact === 'Critical').length;
+      const highRisks = filteredRisks.filter(r => r.impact === 'high' || r.impact === 'critical').length;
 
 
       // 4. Construct Report Sections
@@ -234,7 +234,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           title: 'Project Status',
           type: 'project',
           data: filteredProjects.map(p => ({
-            name: p.title,
+            name: p.name,
             status: p.status,
             progress: p.progress,
             manager: p.manager
@@ -252,7 +252,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           data: filteredRisks.map(r => ({
             title: r.title,
             impact: r.impact,
-            mitigation: r.mitigation || 'None'
+            mitigation: r.mitigationPlan || 'None'
           })),
           visualization: { type: 'table' }
         });
