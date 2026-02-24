@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { getGraphClient } from '@/services/graphService';
@@ -122,10 +122,12 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
 export function useSharePointKRAs(department?: string, scope: FilterScope = 'Division', context?: UserContext) {
     const getService = useOpsService();
     const { toast } = useToast();
+    const queryClient = useQueryClient();
 
+    const queryKey = ['sharePoint', 'kras', department, scope, context?.division, context?.unit, context?.email, context?.role];
     const query = useQuery({
         // Include department (which is derived from context) and scope to ensure refetch on context switch
-        queryKey: ['sharePoint', 'kras', department, scope, context?.division, context?.unit, context?.email, context?.role],
+        queryKey,
         queryFn: async () => {
             try {
                 const service = await getService();
@@ -210,7 +212,18 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
             try {
                 const service = await getService();
                 const updatedKra = await service.updateKRA(id, item);
-                query.refetch();
+
+                // Optimistically update the cache
+                queryClient.setQueryData(queryKey, (oldData: Kra[] | undefined) => {
+                    if (!oldData) return [];
+                    return oldData.map(kra => String(kra.id) === id ? { ...kra, ...updatedKra } : kra);
+                });
+
+                // Refetch in the background after indexing has caught up
+                setTimeout(() => {
+                    query.refetch();
+                }, 3000);
+
                 toast({ title: "Success", description: "KRA updated successfully" });
                 return updatedKra; // Return the updated KRA
             } catch (error: any) {
@@ -239,9 +252,11 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
 export function useSharePointKPIs(department?: string, context?: UserContext) {
     const getService = useOpsService();
     const { toast } = useToast();
+    const queryClient = useQueryClient();
 
+    const queryKey = ['sharePoint', 'kpis', department, context?.email, context?.role];
     const query = useQuery({
-        queryKey: ['sharePoint', 'kpis', department, context?.email, context?.role],
+        queryKey,
         queryFn: async () => {
             try {
                 const service = await getService();
@@ -298,7 +313,18 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
             try {
                 const service = await getService();
                 await service.updateKPI(id, item);
-                query.refetch();
+
+                // Optimistically update the cache to prevent UI flickering from stale SharePoint indexing
+                queryClient.setQueryData(queryKey, (oldData: Kpi[] | undefined) => {
+                    if (!oldData) return [];
+                    return oldData.map(kpi => String(kpi.id) === id ? { ...kpi, ...item } : kpi);
+                });
+
+                // Refetch in the background after indexing has likely caught up
+                setTimeout(() => {
+                    query.refetch();
+                }, 3000);
+
                 toast({ title: "Success", description: "KPI updated successfully" });
                 return true;
             } catch (error: any) {

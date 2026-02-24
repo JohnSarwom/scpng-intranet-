@@ -591,6 +591,7 @@ interface NewTasksTabProps {
   kras: Kra[];
   kpis: Kpi[];
   setViewMode?: (mode: ViewMode) => void;
+  onDataRefresh?: () => void;
 }
 
 export const TasksTab: React.FC<NewTasksTabProps> = ({
@@ -616,7 +617,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   currentUserEmail,
   kras,
   kpis,
-  setViewMode
+  setViewMode,
+  onDataRefresh
 }) => {
   const [boardData, setBoardData] = useState<BoardData>({});
   // Use props if provided, otherwise local state (though mostly we expect props from Unit.tsx now)
@@ -1408,14 +1410,14 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       newTags = currentTags.filter(t => t !== 'completed');
     }
 
-    const newStatus = !completed && (task?.status === 'completed' || task?.status === 'done') ? 'todo' : task?.status;
+    const newStatus = (completed ? 'completed' : (task?.status === 'completed' || task?.status === 'done') ? 'todo' : task?.status) as Task['status'];
 
     // 4. Create Optimistic Update
-    const updatedTask = {
+    const updatedTask: Task = {
       ...task,
       completed,
       tags: newTags,
-      status: newStatus
+      status: newStatus as any
     };
 
     optimisticUpdates.current.set(taskId, updatedTask);
@@ -1441,6 +1443,14 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       tags: newTags,
       status: newStatus
     }, { suppressToast: true }))
+      .then(() => {
+        if (task?.kpi_id || task?.kra_id) {
+          // Delay refresh slightly so SharePoint indexers have time to process the cascade update
+          setTimeout(() => {
+            onDataRefresh?.();
+          }, 2500);
+        }
+      })
       .catch((error) => {
         console.error("Failed to toggle completion", error);
         // Rollback

@@ -15,7 +15,7 @@ import { KRAStatusChart } from '@/components/dashboard/KRAStatusChart';
 import { ObjectivesProgressChart } from '@/components/dashboard/ObjectivesProgressChart';
 import { TrafficLightCard } from '@/components/dashboard/TrafficLightCard';
 import { calculateTaskTrends, calculateTrafficLightMetrics } from '@/utils/dashboardUtils';
-import { calculateKraProgress } from '@/utils/kpiUtils';
+import { calculateKraProgress, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils';
 import { SetupWizard } from '@/components/setup-wizard/SetupWizard';
 import { SetupWizardState as FullSetupWizardState } from '@/hooks/useSetupWizard';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -107,6 +107,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   tasks,
   kras,
   setupState,
+  objectives: objectivesFromProps,
   buckets = [],
   unitRoster,
   userContext
@@ -115,8 +116,12 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Use the objectives prop from Unit.tsx (unit-level objectives from SharePoint)
+  // Fallback to strategy data only if no prop objectives are available
   const { strategyData } = useStrategySharePoint();
-  const objectives = strategyData?.objectives || [];
+  const objectives = (objectivesFromProps && objectivesFromProps.length > 0)
+    ? objectivesFromProps
+    : (strategyData?.objectives || []);
 
   // Always show individual data only
   const viewScope: DashboardViewScope = 'individual';
@@ -331,12 +336,27 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     notStarted: allKpis.filter(k => k.status === 'not-started' || !k.status).length
   };
 
-  // Calculate Objective Statuses
+  // Calculate Objective Statuses — dynamically from linked KRAs
   const totalObjectives = scopedObjectives?.length || 0;
-  const completedObjectives = scopedObjectives?.filter(obj => obj.progress === 100).length || 0;
-  // Fallback to progress calculation logic if exact status isn't available
+
+  // Compute dynamic progress for each objective from its linked KRAs
+  const objectivesWithDynamicProgress = useMemo(() => {
+    return scopedObjectives.map(obj => {
+      const linkedKras = scopedKras.filter(kra =>
+        String((kra as any).objective_id) === String(obj.id) ||
+        String(kra.objectiveId) === String(obj.id)
+      );
+      const dynamicProgress = linkedKras.length > 0
+        ? calculateStrategicProgress(linkedKras, allKpis)
+        : (obj.progress || 0);
+      const dynamicStatus = calculateObjectiveStatus(obj, scopedKras);
+      return { ...obj, progress: dynamicProgress, status: dynamicStatus };
+    });
+  }, [scopedObjectives, scopedKras, allKpis]);
+
+  const completedObjectives = objectivesWithDynamicProgress.filter(obj => obj.progress === 100).length;
   const objectiveProgress = totalObjectives > 0
-    ? (scopedObjectives?.reduce((acc, obj) => acc + (obj.progress || 0), 0) || 0) / totalObjectives
+    ? objectivesWithDynamicProgress.reduce((acc, obj) => acc + obj.progress, 0) / totalObjectives
     : 0;
 
   const kpiStatusData = [
@@ -368,12 +388,26 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const trafficLightMetrics = React.useMemo(() => calculateTrafficLightMetrics(scopedTasks, projects, scopedObjectives), [scopedTasks, projects, scopedObjectives]);
 
   // --- Prepare KRA Chart Data ---
+  // KRA statuses from SharePoint map to: 'open', 'in-progress', 'closed'
+  // Additionally check raw status values that may come through unmapped
   const kraStatusCounts = {
-    onTrack: scopedKras.filter(k => (k.status as string) === 'on-track').length,
-    atRisk: scopedKras.filter(k => (k.status as string) === 'at-risk').length,
-    offTrack: scopedKras.filter(k => (k.status as string) === 'off-track').length,
-    completed: scopedKras.filter(k => (k.status as string) === 'completed' || (k.status as string) === 'closed').length,
-    pending: scopedKras.filter(k => !k.status || (k.status as string) === 'pending').length
+    onTrack: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'in-progress' || s === 'on-track';
+    }).length,
+    atRisk: scopedKras.filter(k => (k.status as string)?.toLowerCase() === 'at-risk').length,
+    offTrack: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'off-track' || s === 'behind';
+    }).length,
+    completed: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'completed' || s === 'closed' || s === 'done';
+    }).length,
+    open: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return !s || s === 'open' || s === 'pending' || s === 'not-started';
+    }).length
   };
 
   const kraChartData = [
@@ -381,16 +415,15 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     { status: 'Completed', count: kraStatusCounts.completed, color: '#3b82f6' },
     { status: 'At Risk', count: kraStatusCounts.atRisk, color: '#fbbf24' },
     { status: 'Off Track', count: kraStatusCounts.offTrack, color: '#ef4444' },
-    // Only show pending if > 0 to save space
-    ...(kraStatusCounts.pending > 0 ? [{ status: 'Pending', count: kraStatusCounts.pending, color: '#94a3b8' }] : [])
+    ...(kraStatusCounts.open > 0 ? [{ status: 'Open', count: kraStatusCounts.open, color: '#94a3b8' }] : [])
   ].filter(d => d.count > 0); // Hide zero values
 
   if (kraChartData.length === 0) {
     kraChartData.push({ status: 'No Data', count: 1, color: '#e2e8f0' });
   }
 
-  // --- Prepare Objectives Chart Data ---
-  const objectiveChartData = scopedObjectives.map(obj => ({
+  // --- Prepare Objectives Chart Data (using dynamic progress from KRAs) ---
+  const objectiveChartData = objectivesWithDynamicProgress.map(obj => ({
     title: obj.title,
     progress: obj.progress || 0
   })).sort((a, b) => b.progress - a.progress)
@@ -635,7 +668,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                   {Math.round(scopedKras.reduce((acc, kra) => acc + calculateKraProgress(kra, allKpis), 0) / (scopedKras.length || 1))}%
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {scopedKras.filter(kra => calculateKraProgress(kra, allKpis) === 100).length} completed
+                  {kpiStats.completed} of {allKpis.length} KPIs completed
                 </p>
                 <Progress
                   className="h-2 mt-2"

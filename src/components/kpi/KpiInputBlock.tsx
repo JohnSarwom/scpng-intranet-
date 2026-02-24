@@ -80,6 +80,24 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
       const progress = calculateKpiProgress(tempKpi);
       onChange('actual', progress);
 
+      // Auto-update status based on checklist completion
+      if (items.length > 0) {
+        const allChecked = items.every(item => item.checked);
+        const anyChecked = items.some(item => item.checked);
+
+        if (allChecked && formData.status !== 'completed') {
+          onChange('status', 'completed');
+        } else if (anyChecked && !allChecked) {
+          // If some but not all tasks are done, make sure status isn't Not Started or Completed
+          if (formData.status === 'not-started' || formData.status === 'completed') {
+            onChange('status', 'in-progress');
+          }
+        } else if (!anyChecked && formData.status === 'completed') {
+          // If nothing is done and it used to be completed, revert to in-progress
+          onChange('status', 'in-progress');
+        }
+      }
+
       // Also update target to 100 implicitly for checklist items? 
       // Or keep it user defined? Usually checklist implies 100% completion goal.
       if (formData.target !== 100) {

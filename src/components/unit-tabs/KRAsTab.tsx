@@ -76,6 +76,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from '@/lib/utils';
 import { Division } from '@/types';
+import { ChecklistItem } from '@/components/ChecklistSection';
 
 // Helper function to format dates (DD MMM YYYY)
 const formatDate = (dateString: string | undefined): string => {
@@ -187,6 +188,7 @@ interface KRAsTabProps {
   onDeleteKpi: (kpiId: string | number) => Promise<void>;
   strategicObjectives?: { id: string | number; title: string; deliverables?: string[] }[];
   canEdit?: boolean;
+  onEditTask?: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
 }
 
 export const KRAsTab: React.FC<KRAsTabProps> = ({
@@ -206,7 +208,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   onSaveKpi,
   onDeleteKpi,
   strategicObjectives = [],
-  canEdit = false
+  canEdit = false,
+  onEditTask
 }) => {
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
@@ -515,8 +518,44 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   const handleOpenEditKpiModal = (kraId: string | number, kpi: Kpi) => {
     const kraToEdit = kras.find(k => k.id === kraId);
     if (kraToEdit) {
+      // Merge linked tasks into the KPI's checklist for immediate display
+      const linkedTasks = tasks.filter(t => t.kpi_id === kpi.id?.toString());
+      const TASK_DONE_STATUSES = ['completed', 'done'];
+      const existingChecklist: ChecklistItem[] = kpi.checklist || [];
+
+      // Keep manual items, update/add task-linked items
+      const manualItems = existingChecklist.filter(item => !item.taskId);
+      const existingTaskItems = existingChecklist.filter(item => item.taskId);
+      const existingTaskIds = new Set(existingTaskItems.map(i => i.taskId));
+
+      // Update existing task-linked items
+      const updatedTaskItems = existingTaskItems
+        .filter(item => linkedTasks.some(t => String(t.id) === item.taskId))
+        .map(item => {
+          const task = linkedTasks.find(t => String(t.id) === item.taskId);
+          return task ? { ...item, text: task.title, checked: TASK_DONE_STATUSES.includes(task.status?.toLowerCase() || '') } : item;
+        });
+
+      // Add new task-linked items
+      const newTaskItems: ChecklistItem[] = linkedTasks
+        .filter(t => !existingTaskIds.has(String(t.id)))
+        .map(t => ({
+          id: `task-${t.id}`,
+          text: t.title,
+          checked: TASK_DONE_STATUSES.includes(t.status?.toLowerCase() || ''),
+          taskId: String(t.id),
+          isTaskLinked: true,
+        }));
+
+      const mergedChecklist = [...manualItems, ...updatedTaskItems, ...newTaskItems];
+      const mergedKpi = {
+        ...kpi,
+        checklist: mergedChecklist,
+        calculationType: (linkedTasks.length > 0 || mergedChecklist.length > 0) ? 'checklist' as const : (kpi.calculationType || 'manual' as const),
+      };
+
       setEditingKra(kraToEdit);
-      setEditingKpiDetails({ kraId: String(kraId), kpi });
+      setEditingKpiDetails({ kraId: String(kraId), kpi: mergedKpi });
       setIsKpiModalOpen(true);
     } else {
       console.error("Could not find parent KRA for KPI editing:", kraId);
@@ -651,13 +690,40 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
           assignees: kpi.assignees || [],
           description: kpi.description || null,
           comments: kpi.comments || null,
-          costAssociated: kpi.costAssociated || null
+          costAssociated: kpi.costAssociated || null,
+          checklist: kpi.checklist || [],
+          calculationType: kpi.calculationType || 'manual',
         };
 
         if (kpi.id) kpiPayload.id = kpi.id;
 
         try {
           await onSaveKpi(kpiPayload);
+
+          // --- NEW: Sync Task-Linked Checklist Items Back to Tasks ---
+          if (onEditTask && kpi.checklist && Array.isArray(kpi.checklist)) {
+            for (const item of kpi.checklist) {
+              if (item.isTaskLinked && item.taskId) {
+                // Find the existing task to compare
+                const linkedTask = tasks.find(t => String(t.id) === item.taskId);
+                if (linkedTask) {
+                  const TASK_DONE_STATUSES = ['completed', 'done'];
+                  const isCurrentlyComplete = TASK_DONE_STATUSES.includes(linkedTask.status?.toLowerCase() || '');
+
+                  // If the checklist state diverges from the task state, update the underlying task
+                  if (item.checked !== isCurrentlyComplete) {
+                    console.log(`[handleKpiFormSubmit] Syncing task ${item.taskId} completion status to ${item.checked}`);
+                    await Promise.resolve(onEditTask(item.taskId, {
+                      completed: item.checked,
+                      status: item.checked ? 'completed' : 'todo'
+                    }, { suppressToast: true })).catch(err => {
+                      console.error("[handleKpiFormSubmit] Failed to sync checklist item back to task:", err);
+                    });
+                  }
+                }
+              }
+            }
+          }
         } catch (err) {
           console.error("Failed to save KPI", err);
           // continue logic?

@@ -5,6 +5,7 @@
 
 import { Client } from '@microsoft/microsoft-graph-client';
 import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext } from '@/types';
+import { ChecklistItem } from '@/components/ChecklistSection';
 import { Report } from '@/types/reports';
 import { Logger } from '@/utils/logger';
 
@@ -393,6 +394,11 @@ export class SharePointOpsService {
         // console.log('📝 [SP Ops] Adding Task Payload:', JSON.stringify(payload, null, 2));
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
 
+        // Sync KPI checklist if task is linked to a KPI
+        if (task.kpi_id) {
+            await this.syncKPIChecklistFromTasks(task.kpi_id.toString(), { id: response.id, status: payload.fields.Status });
+        }
+
         return this.mapTask(response);
 
     }
@@ -454,14 +460,56 @@ export class SharePointOpsService {
 
         // ProjectId handled above
 
+        // Fetch old task data to detect KPI linkage changes
+        let oldKpiId: string | null = null;
+        try {
+            const oldTask = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`)
+                .expand('fields')
+                .get();
+            oldKpiId = oldTask.fields?.RelatedKPILookupId ? String(oldTask.fields.RelatedKPILookupId) : null;
+        } catch { /* proceed without old data */ }
+
         console.log(`📝 [SP Ops] Updating Task ${id} Payload:`, JSON.stringify({ fields }, null, 2));
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+
+        // Sync KPI checklist(s) after task update
+        const newKpiId = task.kpi_id !== undefined
+            ? (task.kpi_id ? String(task.kpi_id) : null)
+            : oldKpiId;
+
+        // If KPI linkage changed, sync both old and new KPIs
+        const overrideData = { id, status: fields.Status };
+
+        if (oldKpiId && newKpiId !== oldKpiId) {
+            await this.syncKPIChecklistFromTasks(oldKpiId, overrideData);
+        }
+        if (newKpiId) {
+            await this.syncKPIChecklistFromTasks(newKpiId, overrideData);
+        }
+
         return this.mapTask(response);
     }
 
     async deleteTask(id: string): Promise<void> {
         if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+
+        // Fetch task before deleting to get its KPI linkage
+        let kpiId: string | null = null;
+        try {
+            const taskItem = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`)
+                .expand('fields')
+                .get();
+            kpiId = taskItem.fields?.RelatedKPILookupId ? String(taskItem.fields.RelatedKPILookupId) : null;
+        } catch { /* proceed with deletion */ }
+
         await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).delete();
+
+        // Sync KPI checklist to remove the deleted task's checklist item
+        if (kpiId) {
+            await this.syncKPIChecklistFromTasks(kpiId);
+        }
     }
 
     // Helpers for mapping
@@ -776,6 +824,142 @@ export class SharePointOpsService {
     async deleteKPI(id: string): Promise<void> {
         if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
         await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).delete();
+    }
+
+    /**
+     * Syncs a KPI's checklist with its linked tasks from Operations_Tasks.
+     * - Adds new task-linked checklist items for newly linked tasks
+     * - Updates checked status based on task completion
+     * - Removes checklist items for unlinked/deleted tasks
+     * - Preserves manual (non-task) checklist items
+     * - Auto-sets KPI status to 'Completed' when all items checked
+     * - Auto-reverts KPI status if items become unchecked
+     * - Cascades to syncKRAProgress
+     * @param updatedTaskData Optional payload of the task that was just updated (to override stale Graph API fetch)
+     */
+    private async syncKPIChecklistFromTasks(kpiId: string, updatedTaskData?: { id: string, status?: string }): Promise<void> {
+        try {
+            if (!this.listIds['KPIS'] || !this.listIds['TASKS']) await this.initialize();
+
+            // 1. Fetch the KPI item
+            const kpiItem = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${kpiId}`)
+                .expand('fields')
+                .get();
+            const kpiFields = kpiItem.fields;
+
+            // 2. Parse existing checklist
+            let checklist: ChecklistItem[] = [];
+            try {
+                checklist = JSON.parse(kpiFields.ChecklistJSON || '[]');
+            } catch { checklist = []; }
+
+            // 3. Fetch all tasks and filter for this KPI
+            const taskResponse = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`)
+                .expand('fields')
+                .get();
+
+            const kpiIdNum = Number(kpiId);
+            const linkedTasks = (taskResponse.value || []).filter(
+                (t: any) => Number(t.fields?.RelatedKPILookupId) === kpiIdNum
+            );
+
+            // 4. Build updated checklist
+            const TASK_DONE_STATUSES = ['done', 'completed'];
+
+            // Update existing task-linked items & remove unlinked ones
+            const linkedTaskIds = new Set(linkedTasks.map((t: any) => String(t.id)));
+            checklist = checklist.filter(item => {
+                if (!item.taskId) return true; // Keep manual items
+                return linkedTaskIds.has(item.taskId); // Remove if task no longer linked
+            }).map(item => {
+                if (!item.taskId) return item; // Manual items unchanged
+                const matchingTask = linkedTasks.find((t: any) => String(t.id) === item.taskId);
+                if (!matchingTask) return item;
+
+                // Override stale Graph API fetch if this was the freshly updated task
+                const isUpdatedTask = updatedTaskData && String(matchingTask.id) === updatedTaskData.id;
+                const activeStatus = isUpdatedTask && updatedTaskData.status
+                    ? updatedTaskData.status
+                    : matchingTask.fields.Status;
+
+                return {
+                    ...item,
+                    text: matchingTask.fields.Title, // Keep title in sync
+                    checked: TASK_DONE_STATUSES.includes((activeStatus || '').toLowerCase())
+                };
+            });
+
+            // Add new task-linked items for tasks not yet in checklist
+            const existingTaskIds = new Set(
+                checklist.filter(i => i.taskId).map(i => i.taskId)
+            );
+            for (const task of linkedTasks) {
+                if (!existingTaskIds.has(String(task.id))) {
+                    const isUpdatedTask = updatedTaskData && String(task.id) === updatedTaskData.id;
+                    const activeStatus = isUpdatedTask && updatedTaskData.status
+                        ? updatedTaskData.status
+                        : task.fields.Status;
+
+                    checklist.push({
+                        id: `task-${task.id}`,
+                        text: task.fields.Title,
+                        checked: TASK_DONE_STATUSES.includes((activeStatus || '').toLowerCase()),
+                        taskId: String(task.id),
+                        isTaskLinked: true
+                    });
+                }
+            }
+
+            // 5. Determine KPI status
+            const allChecked = checklist.length > 0 && checklist.every(item => item.checked);
+            const anyChecked = checklist.some(item => item.checked);
+            const currentStatus = (kpiFields.Status || '').toLowerCase();
+            let newStatus = kpiFields.Status;
+
+            if (allChecked && checklist.length > 0) {
+                newStatus = 'Completed';
+            } else if (anyChecked && !allChecked) {
+                // If some but not all tasks are done, make sure status isn't Not Started or Completed
+                if (['not-started', 'not started', 'completed', 'done'].includes(currentStatus)) {
+                    newStatus = 'In Progress';
+                }
+            } else if (!anyChecked && checklist.length > 0) {
+                // Was completed but now nothing is checked — revert
+                if (['completed', 'done'].includes(currentStatus)) {
+                    newStatus = 'In Progress';
+                }
+            }
+
+            // 6. Update KPI in SharePoint
+            const updateFields: any = {
+                ChecklistJSON: JSON.stringify(checklist),
+            };
+
+            // Auto-set calculationType to checklist when tasks are linked
+            if (linkedTasks.length > 0) {
+                updateFields.CalculationType = 'checklist';
+            }
+
+            if (newStatus !== kpiFields.Status) {
+                updateFields.Status = newStatus;
+            }
+
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${kpiId}`)
+                .patch({ fields: updateFields });
+
+            console.log(`✅ [SP Ops] Synced KPI ${kpiId} checklist from tasks. ${linkedTasks.length} linked tasks, ${checklist.length} total items.`);
+
+            // 7. Cascade: sync KRA progress
+            const kraId = kpiFields.RelatedKRALookupId;
+            if (kraId) {
+                await this.syncKRAProgress(String(kraId));
+            }
+        } catch (error) {
+            console.error(`❌ [SP Ops] Failed to sync KPI ${kpiId} checklist from tasks:`, error);
+        }
     }
 
     /**
@@ -1196,7 +1380,7 @@ export class SharePointOpsService {
                 StartDate: report.date_range.start_date,
                 EndDate: report.date_range.end_date,
                 ContentJSON: JSON.stringify(report.content),
-                AIAnalysis: report.content.metadata.ai_generated || false,
+                AIAnalysis: (report.content.metadata as any).ai_generated || false,
                 Status: 'Generated'
             }
         };
@@ -1235,7 +1419,7 @@ export class SharePointOpsService {
 
     private mapReport(item: any): Report {
         const f = item.fields;
-        if (!f) return { id: item.id, name: 'Error: No fields', template_id: '', content: { sections: [], metadata: {} }, created_by: '', created_at: '', date_range: {}, ai_analysis: false };
+        if (!f) return { id: item.id, name: 'Error: No fields', template_id: '', content: { sections: [], metadata: { generated_at: '', version: '' } }, created_by: '', created_at: '', date_range: { start_date: '', end_date: '' }, ai_analysis: false };
 
         let content: any = { sections: [], metadata: { generated_at: '', version: '' } };
 

@@ -919,6 +919,7 @@ const Unit = () => {
                   currentUserEmail={userContext?.email}
                   kras={combinedKrasForTabs}
                   kpis={kpiState.data || []}
+                  onDataRefresh={handleRefreshAllData}
                 />
               )}
             </div>
@@ -962,6 +963,7 @@ const Unit = () => {
                 onDeleteKpi={handleDeleteKpi}
                 strategicObjectives={strategicObjectives}
                 canEdit={canEditStrategy}
+                onEditTask={taskState.update}
               />
             )}
           </TabsContent>

@@ -2,53 +2,73 @@
 
 ## Overview
 
-This document outlines the implementation of a new feature that allows for the seamless linking of daily tasks and operations with strategic Key Result Areas (KRAs) and Key Performance Indicators (KPIs). This functionality enhances visibility and alignment between day-to-day activities and the broader objectives of the organization.
+This feature enables seamless linking of daily tasks with strategic Key Result Areas (KRAs) and Key Performance Indicators (KPIs). When tasks are linked to KPIs, they automatically become checklist items inside the KPI, creating a live progress cascade from daily operations to strategic objectives.
+
+**Full documentation:** See [KRA_KPI_TASK_LINKING_AND_PROGRESS.md](../KRA_KPI_TASK_LINKING_AND_PROGRESS.md) for the complete technical reference including backend sync engine, progress calculations, dashboard fixes, and edge cases.
 
 ## Key Features
 
-1.  **Linking Tasks to KRAs/KPIs:**
-    *   When creating a new task or editing an existing one, users now have the option to link it to a specific KRA and KPI.
-    *   Two new dropdown menus have been added to the task dialog modal: "Link to KRA" and "Link to KPI".
-    *   The "Link to KPI" dropdown is dynamically populated based on the selected KRA, showing only the relevant KPIs.
-    *   This linking is optional, allowing users to continue creating standalone "daily op" tasks.
+### 1. Linking Tasks to KRAs/KPIs
+- When creating or editing a task, users can link it to a specific KRA and KPI via dropdown selectors in the Task Dialog
+- The "Link to KPI" dropdown is dynamically filtered based on the selected KRA
+- Linking is optional -- standalone daily tasks continue to work as before
 
-2.  **Visibility in KRA/KPI Tab:**
-    *   The main KRA/KPI table has been enhanced to display tasks that are linked to specific KPIs.
-    *   A new "Linked Tasks" column has been added to the table.
-    *   This column shows a count of the tasks linked to each KPI.
-    *   Clicking on the task count reveals a popover that lists the titles of all associated tasks, providing a quick overview without cluttering the main table.
+### 2. Task-to-KPI Checklist Sync (Automatic)
+- **When a task is linked to a KPI**, it automatically appears as a checklist item inside that KPI
+- **When a task is completed**, its checklist item auto-checks, advancing KPI progress
+- **When a task is reopened**, its checklist item unchecks, reverting KPI progress
+- **When a task is deleted or unlinked**, its checklist item is removed from the KPI
+- Manual checklist items can coexist alongside task-linked items
 
-## Technical Implementation
+### 3. Progress Cascade
+```
+Task completed --> KPI checklist item checked
+  --> All items checked? --> KPI status = "Completed"
+    --> KRA Progress = % of completed KPIs
+      --> Objective Progress = average of KRA progress
+        --> Dashboard cards & charts update live
+```
 
-### 1. Centralized Data Management
+### 4. Visibility in KRA/KPI Tab
+- The KRA/KPI table has a "Linked Tasks" column showing a count badge
+- Clicking the badge reveals a popover listing all linked task titles
+- When editing a KPI, linked tasks appear as blue-highlighted, non-deletable checklist items with a link icon
 
-*   To ensure data consistency and efficiency, the fetching of `tasks`, `kras`, and `kpis` has been centralized in the main `src/pages/Unit.tsx` component.
-*   This parent component now manages the state for this data and passes it down as props to the relevant child components (`TasksTab`, `KRAsTab`, etc.).
+### 5. Dashboard Consistency
+- All dashboard cards (KRA Progress, Objectives Summary, KPIs) and charts (KRA Status Distribution, Top Objectives Progress) use the same calculation logic
+- Objective progress is computed dynamically from linked KRAs (not stored values)
 
-### 2. Component Modifications
+## Technical Architecture
 
-*   **`src/pages/Unit.tsx`:**
-    *   Modified to pass `tasks` data to `KRAsTab`.
-    *   Modified to pass `kras` and `kpis` data to `TaskDialog`.
+### Backend: SharePoint Service (`src/services/sharePointOpsService.ts`)
+- `syncKPIChecklistFromTasks(kpiId)` -- Core sync engine
+- Hooked into `addTask()`, `updateTask()`, `deleteTask()`
+- Cascades to `syncKRAProgress()` automatically
 
-*   **`src/types/index.ts`:**
-    *   The global `Task` interface was updated to include two new optional fields: `kra_id: string` and `kpi_id: string`.
+### Frontend: Checklist UI (`src/components/ChecklistSection.tsx`)
+- Supports both manual and task-linked items
+- Task-linked items have blue styling, link icon, and are non-deletable
+- Progress bar shows combined completion percentage
 
-*   **`src/components/unit-tabs/TaskDialog.tsx`:**
-    *   The component's props were updated to accept `kras` and `kpis`.
-    *   New state variables (`selectedKraId`, `selectedKpiId`) were added to manage the user's selection.
-    *   The UI was updated with two new `<Select>` components for KRA and KPI selection.
-    *   The `handleSubmit` function was modified to include the `kra_id` and `kpi_id` in the submitted task data.
+### Calculations: Progress Utils (`src/utils/kpiUtils.ts`)
+- `calculateKpiProgress()` -- Status/checklist/target-actual based
+- `calculateKraProgress()` -- Strictly % of completed KPIs
+- `calculateStrategicProgress()` -- Average of KRA progress
+- `calculateObjectiveStatus()` -- All KPIs completed = Objective completed
 
-*   **`src/components/unit-tabs/KRAsTab.tsx`:**
-    *   The component's props were updated to accept the `tasks` array.
-    *   A new "Linked Tasks" column was added to the table.
-    *   Logic was implemented to filter the `tasks` array and display the count and titles of tasks linked to each KPI using a `<Popover>` component.
+### Dashboard: Overview Tab (`src/components/unit-tabs/OverviewTab.tsx`)
+- Uses dynamic progress calculations (not stored values)
+- KRA status matching handles all SharePoint status variants
+- Objectives sourced from Unit.tsx props (unit-level objectives)
 
-### 3. Type Safety
+## Files Modified
 
-*   The local `Task` interface in `TasksTab.tsx` was removed, and all components were updated to import the central `Task` type from `src/types/index.ts` to ensure type consistency across the application.
-
-## Future Work
-
-The next phase of this project will involve implementing the back-end logic to persist the `kra_id` and `kpi_id` relationships in the Supabase database when a task is created or updated.
+| File | Changes |
+|------|---------|
+| `src/services/sharePointOpsService.ts` | Added `syncKPIChecklistFromTasks()`; modified `addTask()`, `updateTask()`, `deleteTask()` |
+| `src/components/ChecklistSection.tsx` | Extended `ChecklistItem` with `taskId` and `isTaskLinked` fields |
+| `src/components/unit-tabs/KRAsTab.tsx` | Task-checklist merge on KPI edit; checklist/calculationType in save payload |
+| `src/components/kpi/KpiInputBlock.tsx` | Renders task-linked checklist items; measurement method toggle |
+| `src/components/unit-tabs/OverviewTab.tsx` | Fixed objective data source, KRA status matching, dynamic progress |
+| `src/utils/kpiUtils.ts` | Progress calculation functions (unchanged but documented) |
+| `src/types/index.ts` | Task interface with `kra_id` and `kpi_id` fields |
