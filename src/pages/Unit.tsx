@@ -206,7 +206,7 @@ const Unit = () => {
   const [isSettingUpLists, setIsSettingUpLists] = useState(false);
 
   // Active Tab State for the main page sections
-  const [activeTab, setActiveTab] = useState<string>("overview");
+  const [activeTab, setActiveTab] = useState<string>("tasks");
   const [kraSectionTab, setKraSectionTab] = useState<string>("kpis"); // Renamed from kraSectionTab
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -810,14 +810,14 @@ const Unit = () => {
       )}
 
       {!hasDataLoadingError && (
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="tasks" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <TabsList>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks/Daily Operations</TabsTrigger>
+              <TabsTrigger value="tasks">Tasks & Daily Operations</TabsTrigger>
               <TabsTrigger value="kras-objectives">KRAs & Objectives</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
               <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
 

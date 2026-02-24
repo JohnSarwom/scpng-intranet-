@@ -1,0 +1,31 @@
+﻿diff --git a/src/components/unit-tabs/KRAsTab.tsx b/src/components/unit-tabs/KRAsTab.tsx
+index 881c135..92fff60 100644
+--- a/src/components/unit-tabs/KRAsTab.tsx
++++ b/src/components/unit-tabs/KRAsTab.tsx
+@@ -1296,9 +1296,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
+ 
+                     <TableHeader>
+                       <TableRow>
++                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
+                         <TableHead className="w-[20%]">Strategic Alignment</TableHead>
+                         <TableHead className="w-[20%]">Key Deliverable</TableHead>
+-                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
+                         <TableHead className="w-[10%]">Goal Type</TableHead>
+                         <TableHead>Description</TableHead>
+                         <TableHead className="w-[10%]">Status</TableHead>
+@@ -1316,6 +1316,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
+                       ) : (
+                         objectivesData.map((objective) => (
+                           <TableRow key={objective.id}>
++                            <TableCell className="font-bold">{objective.title}</TableCell>
+                             <TableCell>
+                               {(() => {
+                                 // Try to resolve title from prop or lookup
+@@ -1338,7 +1339,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
+                                 <span className="text-muted-foreground text-xs">-</span>
+                               )}
+                             </TableCell>
+-                            <TableCell className="font-bold">{objective.title}</TableCell>
+                             <TableCell>
+                               <Badge
+                                 variant={objective.goalType === 'Org' ? 'default' : 'secondary'}

@@ -238,6 +238,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log(`[Metrics] TaskDialog Save Clicked at ${performance.now().toFixed(2)}ms`);
+    console.time('TaskDialog-SaveReaction');
 
     const taskData: Partial<Task> = {
       id: initialData?.id,
@@ -257,7 +259,23 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       kpi_id: selectedKpiId,
     };
     onSubmit(taskData);
+
+    console.log(`[Metrics] TaskDialog onSubmit Called at ${performance.now().toFixed(2)}ms`);
+    try { console.timeEnd('TaskDialog-SaveReaction'); } catch (e) { }
   };
+
+  // Performance metrics for Modal Open/Close
+  useEffect(() => {
+    if (isOpen) {
+      try { console.timeEnd('UI-Reaction-TaskDialog-Open'); } catch (e) { }
+      console.log(`[Metrics] TaskDialog (${initialData ? 'Edit' : 'Add'}) Opened at ${performance.now().toFixed(2)}ms`);
+      console.time(`TaskDialog-${initialData ? 'Edit' : 'Add'}-OpenDuration`);
+    } else {
+      console.log(`[Metrics] TaskDialog Closed at ${performance.now().toFixed(2)}ms`);
+      try { console.timeEnd(`TaskDialog-Add-OpenDuration`); } catch (e) { }
+      try { console.timeEnd(`TaskDialog-Edit-OpenDuration`); } catch (e) { }
+    }
+  }, [isOpen, initialData]);
 
   // Function to handle adding a new comment
   const handleAddComment = () => {

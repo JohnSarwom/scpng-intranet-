@@ -1296,9 +1296,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
                         <TableHead className="w-[20%]">Strategic Alignment</TableHead>
                         <TableHead className="w-[20%]">Key Deliverable</TableHead>
-                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
                         <TableHead className="w-[10%]">Goal Type</TableHead>
                         <TableHead>Description</TableHead>
                         <TableHead className="w-[10%]">Status</TableHead>
@@ -1309,13 +1309,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     <TableBody>
                       {objectivesData.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="h-24 text-center">
+                          <TableCell colSpan={8} className="h-24 text-center">
                             No Objectives defined yet. Use the "Add Objective" button.
                           </TableCell>
                         </TableRow>
                       ) : (
                         objectivesData.map((objective) => (
                           <TableRow key={objective.id}>
+                            <TableCell className="font-bold">{objective.title}</TableCell>
                             <TableCell>
                               {(() => {
                                 // Try to resolve title from prop or lookup
@@ -1338,7 +1339,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                 <span className="text-muted-foreground text-xs">-</span>
                               )}
                             </TableCell>
-                            <TableCell className="font-bold">{objective.title}</TableCell>
                             <TableCell>
                               <Badge
                                 variant={objective.goalType === 'Org' ? 'default' : 'secondary'}

@@ -1087,6 +1087,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   };
 
   const handleCreateTask = (groupId?: string) => {
+    console.log(`[Metrics] UI Reaction - Create Task Button Clicked at ${performance.now().toFixed(2)}ms`);
+    console.time('UI-Reaction-TaskDialog-Open');
     setEditingTask(null);
     if (setPreselectedGroup && groupId) {
       setPreselectedGroup(groupId);
@@ -1097,6 +1099,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   };
 
   const handleEditTask = (taskId: string) => {
+    console.log(`[Metrics] UI Reaction - Edit Task Button Clicked at ${performance.now().toFixed(2)}ms`);
+    console.time('UI-Reaction-TaskDialog-Open');
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       setEditingTask(task);
@@ -1115,6 +1119,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     if (!itemToDelete) return;
 
     if (itemToDelete.type === 'task') {
+      console.log(`[Metrics] UI Reaction - Delete Task Confirm Clicked at ${performance.now().toFixed(2)}ms`);
+      console.time('UI-Reaction-DeleteTask-Processing');
       const taskId = itemToDelete.id;
       const taskName = itemToDelete.name;
 
@@ -1155,6 +1161,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       const performDelete = async () => {
         try {
           await deleteTask(taskId);
+          console.log(`[Metrics] Delete Task API Completed at ${performance.now().toFixed(2)}ms`);
+          try { console.timeEnd('UI-Reaction-DeleteTask-Processing'); } catch (e) { }
 
           // STEP 3: Show success toast with Undo button
           toast({
@@ -2043,8 +2051,12 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         kras={kras}
         kpis={kpis}
         onSubmit={async (taskData) => {
+          console.log(`[Metrics] TaskDialog onSubmit triggered in TasksTab at ${performance.now().toFixed(2)}ms`);
+          console.time('TaskSubmit-Processing');
           if (editingTask) {
             await editTask(editingTask.id, taskData);
+            console.log(`[Metrics] Edit Task API Completed at ${performance.now().toFixed(2)}ms`);
+            try { console.timeEnd('TaskSubmit-Processing'); } catch (e) { }
             setIsDialogOpen(false);
           } else {
             // Create new task with optimistic UI
@@ -2109,6 +2121,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             // Fire API call in background — on success, the refetch will replace the temp task with real data
             try {
               await addTask(newTaskData);
+              console.log(`[Metrics] Add Task API Completed at ${performance.now().toFixed(2)}ms`);
+              try { console.timeEnd('TaskSubmit-Processing'); } catch (e) { }
               // The hook's background refetch (after ~1.2s) will replace the temp task with real data
             } catch (error) {
               // Rollback: remove optimistic task from board
