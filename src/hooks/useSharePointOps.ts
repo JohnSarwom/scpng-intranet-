@@ -2,24 +2,41 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { getGraphClient } from '@/services/graphService';
-import { Kra, Kpi, Project, Task, KRA, Objective, FilterScope, UserContext } from '@/types';
+import { Kra, Kpi, Project, Task, KRA, Objective, FilterScope, UserContext, TaskGroup } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
 import DivisionStaffMap from '@/utils/divisionStaffMap';
 
+// Singleton shared promise to prevent multiple concurrent initializations across React Query hooks
+let sharedOpsServicePromise: Promise<SharePointOpsService> | null = null;
+
 // Helper to get service instance
-const useOpsService = () => {
+export const useOpsService = () => {
     const { instance: msalInstance } = useMsal();
 
-    const getService = async () => {
-        const account = msalInstance.getActiveAccount();
-        if (!account) throw new Error('No active account');
+    const getService = (): Promise<SharePointOpsService> => {
+        if (sharedOpsServicePromise) {
+            return sharedOpsServicePromise;
+        }
 
-        const graphClient = await getGraphClient(msalInstance);
-        if (!graphClient) throw new Error('Failed to get Graph client');
+        sharedOpsServicePromise = (async () => {
+            try {
+                const account = msalInstance.getActiveAccount();
+                if (!account) throw new Error('No active account');
 
-        const service = new SharePointOpsService(graphClient);
-        await service.initialize();
-        return service;
+                const graphClient = await getGraphClient(msalInstance);
+                if (!graphClient) throw new Error('Failed to get Graph client');
+
+                const service = new SharePointOpsService(graphClient);
+                await service.initialize();
+                return service;
+            } catch (err) {
+                // Reset the singleton promise on failure so it can be retried
+                sharedOpsServicePromise = null;
+                throw err;
+            }
+        })();
+
+        return sharedOpsServicePromise;
     };
 
     return getService;
@@ -555,6 +572,94 @@ export function useSharePointRisks(department?: string, scope: FilterScope = 'Di
         add: async () => { },
         update: async () => { },
         remove: async () => { },
+        refresh: query.refetch
+    };
+}
+
+export function useSharePointTaskGroups() {
+    const getService = useOpsService();
+    const queryClient = useQueryClient();
+    const { toast } = useToast();
+
+    const queryKey = ['sharePoint', 'taskGroups'];
+    const query = useQuery({
+        queryKey,
+        queryFn: async () => {
+            try {
+                const service = await getService();
+                const data = await service.getTaskGroups();
+                console.log('✅ [useSharePointOps] Loaded Task Groups:', data.length);
+                return data;
+            } catch (err) {
+                console.error('❌ [useSharePointOps] Failed to fetch Task Groups', err);
+                return [];
+            }
+        }
+    });
+
+    return {
+        data: (query.data || []) as unknown as TaskGroup[],
+        loading: query.isLoading,
+        error: query.error as Error | null,
+        add: async (item: Partial<TaskGroup>) => {
+            try {
+                const service = await getService();
+                const newGroup = await service.addTaskGroup(item);
+
+                // Optimistically add to cache immediately so UI reflects the change
+                // without waiting for SharePoint indexing.
+                queryClient.setQueryData(queryKey, (oldData: TaskGroup[] | undefined) => {
+                    if (!oldData) return [newGroup];
+                    // Avoid duplicates in case refetch already picked it up
+                    if (oldData.some(g => String(g.id) === String(newGroup.id))) return oldData;
+                    return [...oldData, newGroup];
+                });
+
+                // Background refetch after SharePoint indexing has caught up
+                setTimeout(() => { query.refetch(); }, 3000);
+
+                return newGroup;
+            } catch (error: any) {
+                console.error('Failed to add Task Group', error);
+                throw error;
+            }
+        },
+        update: async (id: string, item: Partial<TaskGroup>) => {
+            try {
+                const service = await getService();
+                await service.updateTaskGroup(id, item);
+                queryClient.setQueryData(queryKey, (oldData: TaskGroup[] | undefined) => {
+                    if (!oldData) return [];
+                    return oldData.map(group => String(group.id) === id ? { ...group, ...item } : group);
+                });
+                setTimeout(() => { query.refetch(); }, 3000);
+                return true;
+            } catch (error: any) {
+                console.error('Failed to update Task Group', error);
+                throw error;
+            }
+        },
+        remove: async (id: string) => {
+            try {
+                const service = await getService();
+                await service.deleteTaskGroup(id);
+
+                // Optimistically remove from cache immediately so UI reflects the
+                // deletion without waiting for SharePoint indexing to catch up.
+                queryClient.setQueryData(queryKey, (oldData: TaskGroup[] | undefined) => {
+                    if (!oldData) return [];
+                    return oldData.filter(g => String(g.id) !== String(id));
+                });
+
+                // Background refetch after SharePoint indexing has caught up
+                setTimeout(() => { query.refetch(); }, 3000);
+
+                return true;
+            } catch (error: any) {
+                console.error('Failed to delete Task Group', error);
+                throw error;
+            }
+        },
         refresh: query.refetch
     };
 }

@@ -122,7 +122,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
       {renderSidebar && <MainSidebar handleSignOut={handleSignOut} isAdmin={isAdmin} userPermissions={roleUser?.permissions} isLoading={roleLoading} />}
 
       <div className={cn(
-        "animate-fade-in relative flex flex-col min-h-screen",
+        "animate-fade-in relative flex flex-col min-h-screen z-0",
         renderSidebar ? "ml-0 md:ml-20" : "ml-0",
         !hideNavAndFooter && "px-4 sm:px-6 lg:px-8 pb-4 sm:pb-6 lg:pb-8"
       )}>

@@ -44,7 +44,7 @@ const PersonalKPICards: React.FC = () => {
   // Aligned with Unit Page: Shows overall completion status
   const taskMetrics = useMemo(() => {
     const tasks = taskState.data || [];
-    if (tasks.length === 0) return { rate: 0, trend: 0 };
+    if (tasks.length === 0) return { rate: 0, trend: 0, total: 0, completed: 0 };
 
     // 1. Total Completion Rate (Main Metric)
     const totalTasks = tasks.length;
@@ -72,11 +72,11 @@ const PersonalKPICards: React.FC = () => {
     // normalized trend score for UI (0-10 scale)
     const trend = Math.min(10, Math.ceil(completedLast30Days / 2));
 
-    return { rate, trend };
+    return { rate, trend, total: totalTasks, completed: totalCompleted };
   }, [taskState.data]);
 
   // -- Efficiency Rate (Using KPIs) --
-  // Logic: Average of (Actual / Target * 100) for all KPIs
+  // Logic: Average of (Actual / Target * 100) for all KPIs, taking status into account for realism
   const efficiencyMetrics = useMemo(() => {
     // Filter KPIs to only include those linked to active KRAs (avoid orphaned data)
     const kras = kraState.data || [];
@@ -87,45 +87,68 @@ const PersonalKPICards: React.FC = () => {
       k.kra_id && validKraIds.has(String(k.kra_id))
     );
 
-    if (kpis.length === 0) return { rate: 0, trend: 0 };
+    if (kpis.length === 0) return { rate: 0, trend: 0, actual: 0, target: 0 };
 
     let totalEfficiency = 0;
     let validKpiCount = 0;
+    let totalActual = 0;
+    let totalTarget = 0;
+
+    const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
 
     kpis.forEach(kpi => {
-      const actual = Number(kpi.actual) || 0;
-      const target = Number(kpi.target) || 0;
+      // User requested: "stats here should be based on how many KPIs that were markek as complete"
+      // Therefore, instead of mathematical targets/actuals, we simply count completed ones.
+      const status = (kpi.status || '').trim().toLowerCase();
 
-      if (target > 0) {
-        // Calculate efficiency per KPI
-        let efficiency = (actual / target) * 100;
-
-        // Optional: Cap single KPI efficiency to avoid one outlier skewing the whole average too much?
-        // standard is usually uncapped average, or capped at 100.
-        // For now, leaving uncapped as per standard practice unless requested.
-
-        totalEfficiency += efficiency;
-        validKpiCount++;
+      if (COMPLETED_STATUSES.includes(status)) {
+        totalEfficiency += 100; // 100% efficient for a completed KPI
+        totalActual += 1;
+      } else {
+        totalEfficiency += 0;
       }
+
+      validKpiCount++;
+      totalTarget += 1; // Each KPI counts as 1 target
     });
 
-    if (validKpiCount === 0) return { rate: 0, trend: 0 };
+    if (validKpiCount === 0) return { rate: 0, trend: 0, actual: 0, target: 0 };
 
     const rate = Math.round(totalEfficiency / validKpiCount);
-    return { rate, trend: 2 };
+    return { rate, trend: 2, actual: totalActual, target: totalTarget };
   }, [kpiState.data, kraState.data]);
 
   // -- KRA Achievement Rate --
-  // Logic: Average of 'progress' field on KRAs
+  // Logic: Derived realistically from KPI completion statuses linked to active KRAs
   const kraMetrics = useMemo(() => {
     const kras = kraState.data || [];
-    if (kras.length === 0) return { rate: 0, trend: 0 };
+    const kpis = kpiState.data || [];
+    if (kras.length === 0) return { rate: 0, trend: 0, kraCount: 0 };
 
-    const totalProgress = kras.reduce((acc, kra) => acc + (Number((kra as any).progress) || 0), 0);
-    const rate = Math.round(totalProgress / kras.length);
+    const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
+    let totalKraProgress = 0;
 
-    return { rate, trend: 4 };
-  }, [kraState.data]);
+    kras.forEach(kra => {
+      const kraId = String(kra.id || kra.ID || '');
+      const kraKpis = kpis.filter(kpi => String(kpi.kra_id || '') === kraId);
+
+      let kraProgress = 0;
+      if (kraKpis.length > 0) {
+        const completedCount = kraKpis.filter(kpi =>
+          COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
+        ).length;
+        kraProgress = (completedCount / kraKpis.length) * 100;
+      } else {
+        // Fallback to static progress if no KPIs
+        kraProgress = Number((kra as any).progress) || 0;
+      }
+      totalKraProgress += kraProgress;
+    });
+
+    const rate = Math.round(totalKraProgress / kras.length);
+
+    return { rate, trend: 4, kraCount: kras.length };
+  }, [kraState.data, kpiState.data]);
 
 
   // 4. Data Construction for Cards
@@ -142,6 +165,7 @@ const PersonalKPICards: React.FC = () => {
       trendType: "increase" as const,
       trendLabel: "vs last month",
       color: "#83002A",
+      literalCalculation: `Completed: ${taskMetrics.completed} / ${taskMetrics.total} tasks`,
       info: {
         title: "Task Completion",
         description: "Overall task completion rate",
@@ -173,6 +197,7 @@ const PersonalKPICards: React.FC = () => {
       trendType: "increase" as const,
       trendLabel: "vs last quarter",
       color: "#5C001E",
+      literalCalculation: `${efficiencyMetrics.actual} / ${efficiencyMetrics.target} completed`,
       info: {
         title: "Efficiency Rate",
         description: "Performance against KPI targets",
@@ -204,6 +229,7 @@ const PersonalKPICards: React.FC = () => {
       trendType: "increase" as const,
       trendLabel: "vs last quarter",
       color: "#83002A",
+      literalCalculation: `${kraMetrics.rate}% avg across ${kraMetrics.kraCount} KRA${kraMetrics.kraCount === 1 ? '' : 's'}`,
       info: {
         title: "KRA Achievement",
         description: "Quarterly progress on key result areas",

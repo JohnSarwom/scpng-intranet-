@@ -23,10 +23,21 @@ const STRATEGY_CONFIG = {
     }
 };
 
+let cachedStrategySiteId: string = '';
+let cachedStrategyListIds: Record<string, string> = {};
+let globalStrategyInitPromise: Promise<void> | null = null;
+
 export class StrategyService {
     private client: Client;
-    private siteId: string = '';
-    private listIds: Record<string, string> = {};
+
+    get siteId() { return cachedStrategySiteId; }
+    set siteId(v) { cachedStrategySiteId = v; }
+
+    get listIds() { return cachedStrategyListIds; }
+    set listIds(v) { cachedStrategyListIds = v; }
+
+    get initializationPromise() { return globalStrategyInitPromise; }
+    set initializationPromise(v) { globalStrategyInitPromise = v; }
 
     constructor(client: Client) {
         this.client = client;
@@ -35,26 +46,35 @@ export class StrategyService {
     /**
      * Initialize service: get site ID and list IDs
      */
-    async initialize(): Promise<void> {
-        console.log('🔧 [StrategyService] Initializing SharePoint connection (New Schema)...');
+    initialize(): Promise<void> {
+        if (this.siteId && Object.keys(this.listIds).length > 0) return Promise.resolve();
 
-        try {
-            // Get Site ID
-            const site = await this.client
-                .api(`/sites/${STRATEGY_CONFIG.SITE_DOMAIN}:${STRATEGY_CONFIG.SITE_PATH}`)
-                .get();
+        if (this.initializationPromise) return this.initializationPromise;
 
-            this.siteId = site.id;
-            console.log(`✅ [StrategyService] Site ID obtained: ${this.siteId}`);
+        this.initializationPromise = (async () => {
+            console.log('🔧 [StrategyService] Initializing SharePoint connection (Global Module Cache)...');
 
-            // Get List IDs
-            await this.resolveListIds();
+            try {
+                // Get Site ID
+                const site = await this.client
+                    .api(`/sites/${STRATEGY_CONFIG.SITE_DOMAIN}:${STRATEGY_CONFIG.SITE_PATH}`)
+                    .get();
 
-            console.log('✅ [StrategyService] Initialization complete!');
-        } catch (error) {
-            console.error('❌ [StrategyService] Initialization FAILED', error);
-            throw error;
-        }
+                this.siteId = site.id;
+                console.log(`✅ [StrategyService] Site ID obtained: ${this.siteId}`);
+
+                // Get List IDs
+                await this.resolveListIds();
+
+                console.log('✅ [StrategyService] Initialization complete!');
+            } catch (error) {
+                console.error('❌ [StrategyService] Initialization FAILED', error);
+                this.initializationPromise = null;
+                throw error;
+            }
+        })();
+
+        return this.initializationPromise;
     }
 
     private async resolveListIds() {
@@ -99,7 +119,7 @@ export class StrategyService {
                 this.fetchAlignments().catch(e => { console.error('Error fetching alignments', e); return []; }),
                 this.fetchMilestones().catch(e => { console.error('Error fetching milestones', e); return []; }),
                 this.fetchRisks().catch(e => { console.error('Error fetching risks', e); return []; }),
-                this.fetchHierarchy().catch(e => { console.error('Error fetching hierarchy', e); return {}; })
+                this.fetchHierarchy().catch(e => { console.error('Error fetching hierarchy', e); return { structure: {}, details: [] }; })
             ]);
 
             // Build Organization Info

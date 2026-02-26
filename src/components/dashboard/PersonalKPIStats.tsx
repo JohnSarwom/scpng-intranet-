@@ -236,11 +236,11 @@ const PersonalKPIStats: React.FC = () => {
                     <span><strong>Productivity:</strong> Task completion vs assignments.</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#5C001E]"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#ff6b6b]"></div>
                     <span><strong>Efficiency:</strong> KPI target achievement rate.</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#9E3A5D]"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#5C001E]"></div>
                     <span><strong>KRA Success:</strong> Progress on long-term goals.</span>
                   </div>
                 </div>
@@ -272,13 +272,13 @@ const PersonalKPIStats: React.FC = () => {
                   <XAxis dataKey="name" />
                   <YAxis domain={[0, 100]} />
                   <Tooltip
-                    formatter={(value) => [`${value}%`, 'Score']}
+                    formatter={(value: number, name: string) => [`${value}%`, name]}
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
                   <Legend />
                   <Bar dataKey="productivity" name="Productivity" fill="#83002A" radius={[8, 8, 8, 8]} />
-                  <Bar dataKey="efficiency" name="Efficiency" fill="#5C001E" radius={[8, 8, 8, 8]} />
-                  <Bar dataKey="kraSuccess" name="KRA Success" fill="#9E3A5D" radius={[8, 8, 8, 8]} />
+                  <Bar dataKey="efficiency" name="Efficiency" fill="#ff6b6b" radius={[8, 8, 8, 8]} />
+                  <Bar dataKey="kraSuccess" name="KRA Success" fill="#5C001E" radius={[8, 8, 8, 8]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

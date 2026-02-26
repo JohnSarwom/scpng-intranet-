@@ -1,6 +1,6 @@
 // src/components/kpi/KpiInputBlock.tsx
 import React, { useState, useEffect } from 'react';
-import { Kpi, User } from '@/types/kpi';
+import { Kpi, User } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,8 @@ interface KpiInputBlockProps {
   users?: User[]; // Add users prop for assignee selection
   staffMembers?: StaffMember[]; // Add staffMembers prop
   container?: HTMLElement | null;
+  disabled?: boolean;
+  isReadOnly?: boolean;
 }
 
 // --- Assignee Selector Component replaced by GlobalAssigneeSelector ---
@@ -51,7 +53,7 @@ const getQuarter = (dateString: string | undefined): string => {
   }
 };
 
-const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onChange, onRemove, isOnlyBlock, users = [], staffMembers = [], container }) => {
+const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onChange, onRemove, isOnlyBlock, users = [], staffMembers = [], container, disabled = false, isReadOnly = false }) => {
   // Use DB format for values, but map to user-friendly labels
   const statusOptions: { value: Kpi['status']; label: string }[] = [
     { value: 'not-started', label: 'Not Started' },
@@ -70,51 +72,45 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
     }
   }, []);
 
+  const derivedStatus = React.useMemo(() => {
+    if (formData.calculationType === 'checklist') {
+      const items = formData.checklist || [];
+      if (items.length === 0) return 'not-started';
+      const allChecked = items.every(item => item.checked);
+      const anyChecked = items.some(item => item.checked);
+
+      if (allChecked) return 'completed';
+      if (anyChecked) return 'in-progress';
+      return 'not-started';
+    } else {
+      // Manual input logic
+      const target = Number(formData.target) || 0;
+      const actual = Number(formData.actual) || 0;
+
+      if (target > 0 && actual >= target) return 'completed';
+      if (actual > 0) return 'in-progress';
+      return 'not-started';
+    }
+  }, [formData.calculationType, formData.checklist, formData.target, formData.actual]);
+
+  // Sync derived status with parent form state
+  useEffect(() => {
+    if (formData.status !== derivedStatus) {
+      onChange('status', derivedStatus as any);
+    }
+  }, [derivedStatus, formData.status, onChange]);
+
   const handleChecklistChange = (items: ChecklistItem[]) => {
     onChange('checklist', items);
-
-    // Auto-calculate actual if in checklist mode
-    if (formData.calculationType === 'checklist') {
-      // Create temp KPI object to use utility
-      const tempKpi = { ...formData, checklist: items, calculationType: 'checklist' as const };
-      const progress = calculateKpiProgress(tempKpi);
-      onChange('actual', progress);
-
-      // Auto-update status based on checklist completion
-      if (items.length > 0) {
-        const allChecked = items.every(item => item.checked);
-        const anyChecked = items.some(item => item.checked);
-
-        if (allChecked && formData.status !== 'completed') {
-          onChange('status', 'completed');
-        } else if (anyChecked && !allChecked) {
-          // If some but not all tasks are done, make sure status isn't Not Started or Completed
-          if (formData.status === 'not-started' || formData.status === 'completed') {
-            onChange('status', 'in-progress');
-          }
-        } else if (!anyChecked && formData.status === 'completed') {
-          // If nothing is done and it used to be completed, revert to in-progress
-          onChange('status', 'in-progress');
-        }
-      }
-
-      // Also update target to 100 implicitly for checklist items? 
-      // Or keep it user defined? Usually checklist implies 100% completion goal.
-      if (formData.target !== 100) {
-        onChange('target', 100);
-      }
-    }
+    // Removed logic that overwrites the 'actual' and 'target' numeric fields
+    // so user data isn't lost when toggling between calculation types.
   };
 
   const handleTypeChange = (value: string) => {
     if (!value) return; // Prevent unselecting
     onChange('calculationType', value as 'manual' | 'checklist');
-
-    // Reset or Recalculate based on switch
-    if (value === 'checklist') {
-      onChange('target', 100); // Standardize target for checklist
-      handleChecklistChange(formData.checklist || []);
-    }
+    // Removed standardizing target to 100 and forcing checklist evaluation
+    // to preserve user input in manual fields.
   };
 
   // Update quarter when targetDate changes
@@ -132,7 +128,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
           size="icon"
           className="h-7 w-7 text-muted-foreground hover:text-destructive"
           onClick={() => onRemove(kpiIndex)}
-          disabled={isOnlyBlock} // Disable remove if it's the only block
+          disabled={disabled || isOnlyBlock} // Disable remove if it's the only block
           aria-label="Remove KPI"
         >
           <Trash2 className="h-4 w-4" />
@@ -147,6 +143,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             value={formData.name || ''}
             onChange={(e) => onChange('name', e.target.value)}
             placeholder="e.g., Average Resolution Time"
+            disabled={disabled}
             required
           />
         </div>
@@ -159,6 +156,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             value={formData.calculationType || 'manual'}
             onValueChange={handleTypeChange}
             className="justify-start"
+            disabled={disabled}
           >
             <ToggleGroupItem value="manual" aria-label="Manual Calculation" className="gap-2">
               <Calculator className="h-4 w-4" />
@@ -177,6 +175,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             <ChecklistSection
               items={formData.checklist || []}
               onChange={handleChecklistChange}
+              disabled={disabled}
             />
             <div className="text-xs text-muted-foreground">
               * Actual value is automatically calculated based on checklist completion. Target is set to 100%.
@@ -192,6 +191,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 value={formData.target ?? ''} // Use nullish coalescing for optional number
                 onChange={(e) => onChange('target', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 95"
+                disabled={disabled}
                 required
               />
             </div>
@@ -203,6 +203,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 value={formData.actual ?? ''} // Use nullish coalescing
                 onChange={(e) => onChange('actual', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 92"
+                disabled={disabled}
               />
             </div>
           </div>
@@ -218,6 +219,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             onChange={(e) => onChange('costAssociated', e.target.value ? parseFloat(e.target.value) : undefined)}
             placeholder="e.g., 1500.00"
             step="0.01" // Allow decimal input for currency
+            disabled={disabled}
           />
         </div>
 
@@ -230,6 +232,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
               type="date"
               value={formData.startDate?.substring(0, 10) || ''}
               onChange={(e) => onChange('startDate', e.target.value)}
+              disabled={disabled}
             />
           </div>
           <div className="grid gap-1.5">
@@ -242,6 +245,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 onChange={(e) => onChange('targetDate', e.target.value)}
                 min={formData.startDate?.substring(0, 10) || ''} // Prevent target date before start date
                 className="flex-1"
+                disabled={disabled}
               />
               {/* Display Calculated Quarter */}
               <Badge variant="outline" className="h-9 px-3 whitespace-nowrap">
@@ -251,25 +255,16 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
           </div>
         </div>
 
-        {/* Status Dropdown */}
+        {/* Status (Auto-calculated) */}
         <div className="grid gap-1.5">
-          <Label htmlFor={`kpi-status-${kpiIndex}`}>Status *</Label>
-          <Select
-            value={formData.status || 'not-started'} // Default to DB format
-            onValueChange={(value) => onChange('status', value as Kpi['status'])}
-            required
-          >
-            <SelectTrigger id={`kpi-status-${kpiIndex}`}>
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent container={container}>
-              {statusOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label} { /* Display user-friendly label */}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label htmlFor={`kpi-status-${kpiIndex}`}>Status</Label>
+          <Input
+            id={`kpi-status-${kpiIndex}`}
+            value={derivedStatus.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            readOnly
+            className="bg-muted text-muted-foreground"
+            title="Status is automatically calculated from Target and Actual values."
+          />
         </div>
 
         {/* Add Assignee Selector */}
@@ -293,6 +288,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             mode="multiple"
             placeholder="Select Assignees..."
             container={container}
+            disabled={disabled}
           />
         </div>
 
@@ -305,6 +301,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             onChange={(e) => onChange('description', e.target.value)}
             placeholder="Describe this KPI..."
             rows={2}
+            disabled={disabled}
           />
         </div>
 
@@ -317,6 +314,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             onChange={(e) => onChange('comments', e.target.value)}
             placeholder="Enter comments..."
             rows={2}
+            disabled={disabled}
           />
         </div>
       </CardContent>

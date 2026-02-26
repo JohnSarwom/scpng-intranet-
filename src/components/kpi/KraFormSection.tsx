@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Kra, User, Objective } from '@/types/kpi';
+import { Kra, User, Objective } from '@/types';
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,6 +31,7 @@ interface KraFormSectionProps {
   existingKraObjects?: Kra[]; // Full KRA objects for ID-based linking
   isAddingNew: boolean; // Add prop to know if we are adding a new KRA
   container?: HTMLElement | null;
+  disabled?: boolean;
 }
 
 // Simple MultiSelectChip component placeholder for Assignees
@@ -48,6 +49,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
   existingKraObjects = [], // Full KRA objects for ID-based linking
   isAddingNew, // Destructure the new prop
   container,
+  disabled = false,
 }) => {
 
   const { user } = useSupabaseAuth(); // Corrected auth hook usage
@@ -99,6 +101,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                 "w-full justify-between",
                 !formData.title && "text-muted-foreground"
               )}
+              disabled={disabled}
             >
               {formData.title || "Select or type a KRA title..."}
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -139,7 +142,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                             // Select existing KRA: link by ID and prefill fields
                             onChange('title', originalTitle);
                             onChange('id' as any, kra.id); // Link to existing KRA by ID
-                            if (kra.objective_id) onChange('objectiveId' as any, String(kra.objective_id));
+                            if (kra.objective_id) onChange('objective_id' as any, String(kra.objective_id));
                             if (kra.unit) onChange('unit', kra.unit);
                             if (kra.status) onChange('status', kra.status);
                             if (kra.description) onChange('description', kra.description);
@@ -191,8 +194,9 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
         <div className="grid gap-1.5">
           <Label htmlFor="kra-objective">Objective *</Label>
           <Select
-            value={formData.objectiveId?.toString() || ''}
-            onValueChange={(value) => onChange('objectiveId', value)}
+            value={formData.objective_id?.toString() || ''}
+            onValueChange={(value) => onChange('objective_id' as any, value)}
+            disabled={disabled}
             required
           >
             <SelectTrigger id="kra-objective">
@@ -243,6 +247,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             mode="single"
             placeholder="Select Owner..."
             container={container}
+            disabled={disabled}
           />
         </div>
 
@@ -253,7 +258,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             // Use unit field (department name string) for value
             value={formData.unit || ''}
             onValueChange={(value) => onChange('unit', value)}
-            disabled={isAddingNew && !!currentUserDepartment} // Disable if adding new and we have current department
+            disabled={disabled || (isAddingNew && !!currentUserDepartment)} // Disable if adding new and we have current department
             required
           >
             <SelectTrigger id="kra-unit">
@@ -282,22 +287,19 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           </Select>
         </div>
 
-        {/* Status Dropdown */}
+        {/* Status (Auto-calculated) */}
         <div className="grid gap-1.5">
           <Label htmlFor="kra-status">Status</Label>
-          <Select
-            value={formData.status || 'Open'}
-            onValueChange={(value) => onChange('status', value)}
-          >
-            <SelectTrigger id="kra-status">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent container={container}>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="in-progress">In Progress</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
+          <Input
+            id="kra-status"
+            value={(formData.status || 'open').charAt(0).toUpperCase() + (formData.status || 'open').slice(1).replace('-', ' ')}
+            readOnly
+            className="bg-muted text-muted-foreground"
+            title="Status is automatically calculated from linked KPIs."
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Automatically derived from KPIs.
+          </p>
         </div>
       </div>
 
@@ -323,6 +325,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           mode="multiple"
           placeholder="Select Assignees..."
           container={container}
+          disabled={disabled}
         />
       </div>
 
@@ -335,6 +338,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           onChange={(e) => onChange('description', e.target.value)}
           placeholder="Add any overall notes for this KRA..."
           rows={3}
+          disabled={disabled}
         />
       </div>
 

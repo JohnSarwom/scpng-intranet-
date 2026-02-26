@@ -51,6 +51,7 @@ const TestGround = () => {
     const [isPurgingOps, setIsPurgingOps] = useState(false);
     const [isSeedingOfficers, setIsSeedingOfficers] = useState(false);
     const [isSettingUpOrgHierarchy, setIsSettingUpOrgHierarchy] = useState(false);
+    const [isSettingUpTaskGroups, setIsSettingUpTaskGroups] = useState(false);
 
     const handleSeedOfficerData = async () => {
         setIsSeedingOfficers(true);
@@ -426,6 +427,54 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpOps(false);
+        }
+    };
+
+    const handleSetupTaskGroups = async () => {
+        setIsSettingUpTaskGroups(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Creating Task Groups List",
+                description: "This may take a minute...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+
+            const result = await setupService.setupTaskGroupsList();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Success!",
+                    description: "Task Groups list created successfully.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+
+        } catch (error: any) {
+            console.error('❌ [TestGround] Setup failed:', error);
+            setSetupResult({
+                success: false,
+                message: error.message || "Failed to create Task Groups list",
+                error
+            });
+            toast({
+                title: "❌ Setup Failed",
+                description: error.message || "Failed to create Task Groups list",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpTaskGroups(false);
         }
     };
 
@@ -1454,6 +1503,13 @@ const TestGround = () => {
                                         <p className="text-sm text-muted-foreground">Risks linked to Projects/KRAs</p>
                                     </div>
                                 </div>
+                                <div className="flex items-start gap-2">
+                                    <List className="h-4 w-4 mt-0.5 text-emerald-600" />
+                                    <div>
+                                        <p className="font-medium">Operations_TaskGroups</p>
+                                        <p className="text-sm text-muted-foreground">Groups of tasks independent of Projects</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -1476,6 +1532,25 @@ const TestGround = () => {
                                     <>
                                         <Settings className="h-5 w-5" />
                                         Create Operations Lists
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSetupTaskGroups}
+                                disabled={isSettingUpTaskGroups}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-emerald-600/50 text-emerald-700 hover:bg-emerald-50"
+                            >
+                                {isSettingUpTaskGroups ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-emerald-600" />
+                                        Creating Task Groups List...
+                                    </>
+                                ) : (
+                                    <>
+                                        <FolderKanban className="h-4 w-4 text-emerald-600" />
+                                        Create Task Groups List Only
                                     </>
                                 )}
                             </Button>

@@ -134,7 +134,7 @@ const DecommissionedAssets: React.FC = () => {
 
   // Handle filter changes
   const handleFilterChange = (key: string, value: string) => {
-    switch(key) {
+    switch (key) {
       case 'type':
         setTypeFilter(value);
         break;
@@ -152,26 +152,26 @@ const DecommissionedAssets: React.FC = () => {
 
   // Apply filters and sorting
   const filteredAssets = decommissionedAssets.filter(asset => {
-    const matchesSearch = 
-      searchTerm === '' || 
-      Object.values(asset).some(val => 
+    const matchesSearch =
+      searchTerm === '' ||
+      Object.values(asset).some(val =>
         val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
       );
-    
+
     const matchesType = typeFilter === 'all' || asset.type === typeFilter;
     const matchesReason = reasonFilter === 'all' || asset.reason === reasonFilter;
     const matchesUnit = unitFilter === 'all' || asset.unit === unitFilter;
     const matchesDivision = divisionFilter === 'all' || asset.division === divisionFilter;
-    
+
     return matchesSearch && matchesType && matchesReason && matchesUnit && matchesDivision;
   }).sort((a, b) => {
     const aValue = a[sortColumn as keyof typeof a];
     const bValue = b[sortColumn as keyof typeof b];
-    
+
     if (!aValue && !bValue) return 0;
     if (!aValue) return 1;
     if (!bValue) return -1;
-    
+
     const comparison = String(aValue).localeCompare(String(bValue));
     return sortDirection === 'asc' ? comparison : -comparison;
   });
@@ -215,59 +215,64 @@ const DecommissionedAssets: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Decommissioned Assets</h1>
-      </div>
-
-      <FilterGroup
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        filters={filterOptions}
-        onFilterChange={handleFilterChange}
-        onResetFilters={resetFilters}
-      />
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="responsive-table-container">
-            <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
-              <Table>
-                <DecommissionedAssetTableHeader
-                  onSort={handleSort}
-                  sortColumn={sortColumn}
-                  sortDirection={sortDirection}
-                />
-                <TableBody>
-                  {filteredAssets.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={12} className="h-24 text-center">
-                        No decommissioned assets found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredAssets.map((asset) => (
-                      <DecommissionedAssetTableRow
-                        key={asset.id}
-                        asset={asset}
-                        onView={handleViewAsset}
-                        onEdit={handleEditAsset}
-                        onDelete={handleDeleteAsset}
-                        formatDate={formatDate}
-                      />
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+    <Card className="w-full shadow-sm border">
+      <CardContent className="p-6 space-y-6">
+        <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Decommissioned Assets</h2>
+            <p className="text-muted-foreground">View assets that have been retired or removed from active use.</p>
           </div>
-        </CardContent>
-      </Card>
-      
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredAssets.length} of {decommissionedAssets.length} decommissioned assets
-      </div>
-    </div>
+        </div>
+
+        <FilterGroup
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          filters={filterOptions}
+          onFilterChange={handleFilterChange}
+          onResetFilters={resetFilters}
+        />
+
+        <Card>
+          <CardContent className="p-0">
+            <div className="responsive-table-container">
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+                <Table>
+                  <DecommissionedAssetTableHeader
+                    onSort={handleSort}
+                    sortColumn={sortColumn}
+                    sortDirection={sortDirection}
+                  />
+                  <TableBody>
+                    {filteredAssets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={12} className="h-24 text-center">
+                          No decommissioned assets found
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredAssets.map((asset) => (
+                        <DecommissionedAssetTableRow
+                          key={asset.id}
+                          asset={asset}
+                          onView={handleViewAsset}
+                          onEdit={handleEditAsset}
+                          onDelete={handleDeleteAsset}
+                          formatDate={formatDate}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredAssets.length} of {decommissionedAssets.length} decommissioned assets
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

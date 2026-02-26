@@ -73,6 +73,18 @@ export interface KRA {
   assignees?: User[];
 }
 
+export interface TaskGroup {
+  id: string;
+  name: string;
+  description?: string;
+  status: 'planned' | 'in-progress' | 'completed' | 'on-hold';
+  department?: string;
+  order?: number;
+  authorEmail?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -86,6 +98,7 @@ export interface Task {
   startDate?: Date;
   projectId?: string;
   projectName?: string;
+  groupId?: string;
   completionPercentage?: number;
   checklist?: ChecklistItem[];
   unit_id?: string;

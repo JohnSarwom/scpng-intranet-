@@ -4,7 +4,7 @@
  */
 
 import { Client } from '@microsoft/microsoft-graph-client';
-import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext } from '@/types';
+import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext, TaskGroup } from '@/types';
 import { ChecklistItem } from '@/components/ChecklistSection';
 import { Report } from '@/types/reports';
 import { Logger } from '@/utils/logger';
@@ -21,35 +21,60 @@ const OPS_CONFIG = {
         RISKS: 'Operations_Risks',
         OBJECTIVES: 'Unit_Objectives',
         REPORTS: 'Performance_Reports',
-        SETTINGS: 'System_View_Settings'
+        SETTINGS: 'System_View_Settings',
+        TASK_GROUPS: 'Operations_TaskGroups'
     }
 };
 
+let cachedSiteId: string = '';
+let cachedListIds: Record<string, string> = {};
+let globalInitializationPromise: Promise<void> | null = null;
+
 export class SharePointOpsService {
     private client: Client;
-    private siteId: string = '';
-    private listIds: Record<string, string> = {};
+
+    // Use getters/setters to seamlessly bridge to the module-level globals
+    // This ensures any `new SharePointOpsService(client)` shares the 
+    // exact same list metadata without needing to refactor the entire app.
+    get siteId() { return cachedSiteId; }
+    set siteId(v) { cachedSiteId = v; }
+
+    get listIds() { return cachedListIds; }
+    set listIds(v) { cachedListIds = v; }
+
+    get initializationPromise() { return globalInitializationPromise; }
+    set initializationPromise(v) { globalInitializationPromise = v; }
 
     constructor(client: Client) {
         this.client = client;
     }
 
-    async initialize(): Promise<void> {
-        console.log('🔧 [SharePointOpsService] Initializing...');
-        try {
-            // Get Site ID
-            const site = await this.client
-                .api(`/sites/${OPS_CONFIG.SITE_DOMAIN}:${OPS_CONFIG.SITE_PATH}`)
-                .get();
-            this.siteId = site.id;
+    initialize(): Promise<void> {
+        // If already initialized (siteId is populated), return
+        if (this.siteId && Object.keys(this.listIds).length > 0) return Promise.resolve();
 
-            // Get List IDs
-            await this.resolveListIds();
-            console.log('✅ [SharePointOpsService] Initialization complete');
-        } catch (error) {
-            console.error('❌ [SharePointOpsService] Init failed', error);
-            throw error;
-        }
+        if (this.initializationPromise) return this.initializationPromise;
+
+        this.initializationPromise = (async () => {
+            console.log('🔧 [SharePointOpsService] Initializing (Global Module Cache)...');
+            try {
+                // Get Site ID
+                const site = await this.client
+                    .api(`/sites/${OPS_CONFIG.SITE_DOMAIN}:${OPS_CONFIG.SITE_PATH}`)
+                    .get();
+                this.siteId = site.id;
+
+                // Get List IDs
+                await this.resolveListIds();
+                console.log('✅ [SharePointOpsService] Initialization complete');
+            } catch (error) {
+                console.error('❌ [SharePointOpsService] Init failed', error);
+                this.initializationPromise = null; // Reset on error
+                throw error;
+            }
+        })();
+
+        return this.initializationPromise;
     }
 
     private async resolveListIds() {
@@ -386,7 +411,8 @@ export class SharePointOpsService {
                 // Lookups
                 RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
                 RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
-                RelatedProjectLookupId: relatedProjectId
+                RelatedProjectLookupId: relatedProjectId,
+                RelatedTaskGroupLookupId: task.groupId ? Number(task.groupId) : null
             }
         };
 
@@ -456,6 +482,7 @@ export class SharePointOpsService {
         // Lookups
         if (task.kra_id !== undefined) fields.RelatedKRALookupId = task.kra_id ? Number(task.kra_id) : null;
         if (task.kpi_id !== undefined) fields.RelatedKPILookupId = task.kpi_id ? Number(task.kpi_id) : null;
+        if (task.groupId !== undefined) fields.RelatedTaskGroupLookupId = task.groupId ? Number(task.groupId) : null;
         // ProjectId handled above
 
         // ProjectId handled above
@@ -809,6 +836,17 @@ export class SharePointOpsService {
             // Sync KRA progress if linked (either passed in this update or already known)
             if (kpi.kra_id) {
                 await this.syncKRAProgress(kpi.kra_id.toString());
+            } else {
+                // Fetch the KPI to find its KRA ID if not provided in payload
+                try {
+                    const currentKpi = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).expand('fields').get();
+                    const kraId = currentKpi.fields?.RelatedKRALookupId;
+                    if (kraId) {
+                        await this.syncKRAProgress(kraId.toString());
+                    }
+                } catch (e) {
+                    console.warn(`[SP Ops] Could not fetch KRA ID for KPI ${id} sync`, e);
+                }
             }
 
             return this.mapKPI(response);
@@ -997,13 +1035,29 @@ export class SharePointOpsService {
             console.log(`[SP Ops] Syncing KRA ${kraId}: ${mappedKpis.length} KPIs found. Calculated progress: ${newProgress}%`);
 
             // 4. Update SharePoint KRA list
-            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).patch({
-                fields: {
-                    Progress: newProgress
-                }
-            });
+            const fields: any = { Progress: newProgress };
 
-            console.log(`✅ [SP Ops] Successfully synced KRA ${kraId} progress to SharePoint.`);
+            // If progress is 100%, also close the KRA status in the backend
+            if (newProgress === 100) {
+                fields.Status = 'Closed';
+            } else if (newProgress > 0) {
+                fields.Status = 'Open';
+            }
+
+            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).patch({ fields });
+
+            console.log(`✅ [SP Ops] Successfully synced KRA ${kraId} progress (${newProgress}%) and status (${fields.Status || 'Unchanged'}) to SharePoint.`);
+
+            // 5. Cascade to Objective
+            try {
+                const kraItem = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).expand('fields').get();
+                const objectiveId = kraItem.fields?.UnitObjectiveLookupId;
+                if (objectiveId) {
+                    await this.syncObjectiveProgress(objectiveId.toString());
+                }
+            } catch (e) {
+                console.warn(`[SP Ops] Could not cascade KRA ${kraId} sync to Objective`, e);
+            }
         } catch (error) {
             console.error(`❌ [SP Ops] Failed to sync KRA ${kraId} progress:`, error);
         }
@@ -1241,7 +1295,9 @@ export class SharePointOpsService {
         // 1. Prefer explicit Lookup ID if available
         // 2. Fall back to 'bucket:ID' found in Tags
         let projectId = f.RelatedProjectLookupId?.toString();
-        if (!projectId) {
+        let groupId = f.RelatedTaskGroupLookupId?.toString();
+        if (!projectId && !groupId) {
+            // legacy fallback
             projectId = this.getBucketIdFromTags(tags);
         }
 
@@ -1270,6 +1326,7 @@ export class SharePointOpsService {
             subtasks: f.SubtasksJSON ? JSON.parse(f.SubtasksJSON) : [],
             tags: tags,
             projectId: projectId, // Use our resolved ID
+            groupId: groupId,
             kra_id: f.RelatedKRALookupId?.toString(),
             kpi_id: f.RelatedKPILookupId?.toString(),
             unit_id: f.Department,
@@ -1445,5 +1502,124 @@ export class SharePointOpsService {
             ai_analysis: f.AIAnalysis,
             // ai_insights:  // Not storing this separately yet, might be in ContentJSON
         };
+    }
+    // --- Task Groups ---
+
+    async getTaskGroups(): Promise<TaskGroup[]> {
+        console.log(`📥 [SP Ops] Fetching Task Groups...`);
+        if (!this.siteId) await this.initialize();
+        if (!this.listIds['TASK_GROUPS']) {
+            console.warn('⚠️ [SP Ops] Task Groups list not found');
+            return [];
+        }
+
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`)
+                .expand('fields')
+                .get();
+
+            return response.value.map((item: any) => this.mapTaskGroup(item));
+        } catch (error) {
+            console.error('❌ [SP Ops] Failed to fetch Task Groups:', error);
+            throw error;
+        }
+    }
+
+    async addTaskGroup(group: Partial<TaskGroup>): Promise<TaskGroup> {
+        if (!this.listIds['TASK_GROUPS']) throw new Error('Task Groups list not found');
+        const payload = {
+            fields: {
+                Title: group.name,
+                Description: group.description || '',
+                Status: group.status === 'in-progress' ? 'In Progress' : (group.status === 'completed' ? 'Completed' : 'Planned'),
+                Department: group.department || '',
+                Order: group.order || 0
+            }
+        };
+
+        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`).post(payload);
+        return this.mapTaskGroup(response);
+    }
+
+    async updateTaskGroup(id: string, updates: Partial<TaskGroup>): Promise<TaskGroup> {
+        if (!this.listIds['TASK_GROUPS']) throw new Error('Task Groups list not found');
+        const fields: any = {};
+        if (updates.name !== undefined) fields.Title = updates.name;
+        if (updates.description !== undefined) fields.Description = updates.description;
+        if (updates.status !== undefined) fields.Status = updates.status === 'in-progress' ? 'In Progress' : (updates.status === 'completed' ? 'Completed' : 'Planned');
+        if (updates.department !== undefined) fields.Department = updates.department;
+        if (updates.order !== undefined) fields.Order = updates.order;
+
+        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items/${id}`).patch({ fields });
+        return this.mapTaskGroup(response);
+    }
+
+    async deleteTaskGroup(id: string): Promise<void> {
+        if (!this.listIds['TASK_GROUPS']) throw new Error('Task Groups list not found');
+        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items/${id}`).delete();
+    }
+
+    private mapTaskGroup(item: any): TaskGroup {
+        const f = item.fields;
+        return {
+            id: item.id,
+            name: f.Title,
+            description: f.Description || '',
+            status: (f.Status?.toLowerCase().replace(' ', '-') as any) || 'planned',
+            department: f.Department || '',
+            order: f.Order || 0,
+            authorEmail: item.createdBy?.user?.email || item.lastModifiedBy?.user?.email || '',
+            createdAt: item.createdDateTime,
+            updatedAt: item.lastModifiedDateTime,
+        };
+    }
+
+    /**
+     * Recalculates and updates the Progress and Status columns of a Unit Objective based on its linked KRAs.
+     */
+    private async syncObjectiveProgress(objectiveId: string): Promise<void> {
+        try {
+            if (!this.listIds['OBJECTIVES'] || !this.listIds['KRAS']) await this.initialize();
+
+            // 1. Fetch all KRAs linked to this Objective
+            const kraResponse = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
+                .expand('fields')
+                .get();
+
+            const objectiveIdNum = Number(objectiveId);
+            const linkedKras = (kraResponse.value || []).filter((item: any) => {
+                const lookupId = item.fields?.UnitObjectiveLookupId;
+                return Number(lookupId) === objectiveIdNum;
+            });
+
+            if (linkedKras.length === 0) return;
+
+            // 2. Calculate average progress
+            const totalProgress = linkedKras.reduce((sum, item) => sum + (item.fields?.Progress || 0), 0);
+            const avgProgress = Math.round(totalProgress / linkedKras.length);
+
+            // 3. Determine status
+            let status = 'Not Started';
+            if (avgProgress === 100) {
+                status = 'Completed';
+            } else if (avgProgress > 0) {
+                status = 'In Progress';
+            }
+
+            console.log(`[SP Ops] Syncing Objective ${objectiveId}: Avg Progress ${avgProgress}%, Status ${status}`);
+
+            // 4. Update SharePoint Objective list
+            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${objectiveId}`).patch({
+                fields: {
+                    Progress: avgProgress,
+                    Status: status
+                }
+            });
+
+            console.log(`✅ [SP Ops] Successfully synced Objective ${objectiveId} to SharePoint.`);
+        } catch (error) {
+            console.error(`❌ [SP Ops] Failed to sync Objective ${objectiveId}:`, error);
+        }
     }
 }

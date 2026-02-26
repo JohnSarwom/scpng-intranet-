@@ -33,7 +33,6 @@ import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import Notes from "./pages/Notes";
 import AssetManagementNew from './pages/AssetManagementNew';
-import Reports from './pages/Reports';
 import Tickets from './pages/Tickets';
 import AdminAssetsPage from './pages/AdminAssetsPage';
 import UILibrary from './pages/UILibrary';
@@ -219,12 +218,6 @@ const AppRoutes = () => {
       <Route path="/hr-profiles/edit/:employeeId" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'hr', action: 'edit' }]}>
           <EditEmployeeProfile />
-        </RoleProtectedRoute>
-      } />
-
-      <Route path="/reports" element={
-        <RoleProtectedRoute requiredPermissions={[{ resource: 'reports', action: 'read' }]}>
-          <Reports />
         </RoleProtectedRoute>
       } />
 

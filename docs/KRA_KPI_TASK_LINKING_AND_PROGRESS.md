@@ -45,19 +45,19 @@ KPI checklist items sync with linked tasks
 All checklist items checked? --> KPI status = "Completed"
   |                               |
   no                              v
-  |                         syncKRAProgress() fires
-  v                               |
-KPI stays at                      v
-current status              KRA Progress = (completed KPIs / total KPIs) * 100
-                                  |
-                                  v
-                            calculateStrategicProgress()
-                                  |
-                                  v
-                            Objective Progress = average of linked KRA progress
-                                  |
-                                  v
-                            Dashboard Overview cards & charts update live
+syncKRAProgress() recalculates
+  |  - KRA Progress = (completed KPIs / total KPIs) * 100
+  |  - If 100% -> KRA Status becomes "Closed"
+  |
+  v
+syncObjectiveProgress() fires
+  |
+  v
+Objective Progress = average of linked KRA progress
+  |  - If 100% -> Objective Status becomes "Completed"
+  |
+  v
+Dashboard Overview & Strategy cards update live (Dynamic Math)
 ```
 
 ### 1.2 Reverse Cascade (Task Reopened)
@@ -213,12 +213,20 @@ Otherwise -> return the objective's existing status
 
 ### 3.5 Progress Table Summary
 
-| Level | Formula | Source Function |
-|-------|---------|----------------|
-| **KPI Progress** | Status-based (100%) OR checklist % OR target/actual ratio | `calculateKpiProgress()` |
-| **KRA Progress** | `(completed KPIs / total KPIs) * 100` | `calculateKraProgress()` |
-| **Objective Progress** | Average of linked KRA progress values | `calculateStrategicProgress()` |
-| **Objective Status** | 'Completed' only if ALL linked KPIs are completed | `calculateObjectiveStatus()` |
+| Level | Formula | Source Function | Persistence (SharePoint) |
+|-------|---------|----------------|--------------------------|
+| **KPI Progress** | Status-based (100%) OR checklist % OR target/actual ratio | `calculateKpiProgress()` | Manual save / syncKPIChecklist |
+| **KRA Progress** | `(completed KPIs / total KPIs) * 100` | `calculateKraProgress()` | `syncKRAProgress()` |
+| **Objective Progress** | Average of linked KRA progress values | `calculateStrategicProgress()` | `syncObjectiveProgress()` |
+| **Objective Status** | 'Completed' only if ALL linked KPIs are completed | `calculateObjectiveStatus()` | `syncObjectiveProgress()` |
+
+### 3.6 Persistence Logic (Backend)
+To ensure the backend reflects the actual progress shown in the UI, a **Persistence Cascade** has been implemented in `SharePointOpsService.ts`:
+
+1.  **KRA Level**: `syncKRAProgress()` now explicitly sets the SharePoint `Status` field to **"Closed"** when progress hits 100%.
+2.  **Objective Level**: A new `syncObjectiveProgress()` method calculates the average of all KRAs linked to an objective. It then updates the **Unit_Objectives** list:
+    *   `Progress` = Average of linked KRAs
+    *   `Status` = **"Completed"** if 100%, otherwise **"In Progress"** (or preserved)
 
 ---
 
@@ -242,14 +250,26 @@ This method is the heart of the task-to-KPI linking system. When called with a K
    - Syncs the item text to match the task's current title
    - Sets `checked` based on task completion status (`'done'` or `'completed'`)
 5. **Adds** new checklist items for newly linked tasks (with `taskId` and `isTaskLinked: true`)
-6. **Determines** KPI status:
+7. **Determines** KPI status:
    - If ALL checklist items are checked -> sets status to `'Completed'`
    - If status was `'Completed'` but items became unchecked -> reverts to `'In Progress'`
-7. **Updates** the KPI in SharePoint:
+8. **Updates** the KPI in SharePoint:
    - Writes the merged `ChecklistJSON`
    - Sets `CalculationType` to `'checklist'` when tasks are linked
    - Updates `Status` if changed
-8. **Cascades** by calling `syncKRAProgress()` to update the parent KRA's progress
+9. **Cascades** by calling `syncKRAProgress()` to update the parent KRA.
+10. **Further Cascades** by calling `syncObjectiveProgress()` to update the parent Objective.
+
+### 4.2 The `syncObjectiveProgress()` Method
+
+**File:** `src/services/sharePointOpsService.ts`
+**Visibility:** `private async`
+
+Ensures that Unit Objectives in SharePoint stay in sync with their underlying KRAs:
+1. Fetches all KRAs linked to the Objective.
+2. Calculates average progress using `calculateStrategicProgress()`.
+3. Determines status using `calculateObjectiveStatus()`.
+4. Updates the `Progress` and `Status` fields in the `Unit_Objectives` list.
 
 ### 4.2 Hook Points — When Does Sync Fire?
 
@@ -400,7 +420,16 @@ When `calculationType === 'checklist'`, the checklist section renders with both 
 
 **Status: FULLY IMPLEMENTED**
 
-The Dashboard Overview (`src/components/unit-tabs/OverviewTab.tsx`) was updated to ensure all cards and charts use the same consistent logic as the KRA/KPI/Objective system.
+### 6.1 End-to-End Dynamic Math Alignment
+Both the **Unit Overview** and the **Strategy Dashboard** now use dynamic mathematical roll-ups instead of relying on stale SharePoint fields.
+
+**File:** `src/pages/Strategy.tsx`
+The `divisionHierarchy` memo was updated to recalculate objective progress on-the-fly:
+```typescript
+const dynamicProgress = calculateStrategicProgress(linkedKras, allKpis || []);
+const dynamicStatus = calculateObjectiveStatus(obj, linkedKras);
+```
+This ensures that if a user sees 0% progress on a KPI, the Division accordion correctly reflects that 0%, regardless of SharePoint background sync delays.
 
 ### 6.1 Objectives Summary Card — Data Source Fix
 

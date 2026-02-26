@@ -1,6 +1,6 @@
 KPI & PROGRESS CALCULATION LOGIC (2026 REFINEMENT):
 1. KPI Progress: Strictly status-based. 100% if status is "Completed", "Achieved", or "Done". 0% otherwise. Targets/Actuals do NOT affect progress percentage.
-2. KRA Progress: Average of completion % of all linked KPIs.
-3. Strategic Objective Progress: Average of progress % of all linked KRAs.
+3. Unit Objective Progress: Average of progress % of all linked KRAs (matched by objective_id).
+4. Strategic Objective Progress: Average of progress % of all linked Unit Objectives (matched by parentGoalId).
 4. Risk Detection: Objectives are "At Risk" if they are >20% behind their expected linear schedule (based on start/end dates) or have <25% progress without dates.
 5. Divisional Performance: Sourced dynamically from the Org_Hierarchy list. Aggregates Unit-level objectives and KRAs.

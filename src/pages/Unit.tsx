@@ -64,7 +64,8 @@ import {
   useSharePointKPIs,
   useSharePointProjects,
   useSharePointTasks,
-  useSharePointObjectives
+  useSharePointObjectives,
+  useSharePointTaskGroups
 } from '@/hooks/useSharePointOps';
 import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 import { useUnitRoster } from '@/hooks/useUnitRoster';
@@ -83,7 +84,6 @@ import { TasksTab, Bucket } from '@/components/unit-tabs/TasksTab';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
 import { StaffMetricsTab } from '@/components/unit-tabs/StaffMetricsTab';
-import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
 
 // Import skeleton
 import { KRADataGridSkeleton } from '@/components/skeletons/KRADataGridSkeleton';
@@ -198,9 +198,7 @@ const Unit = () => {
   const projectState = useSharePointProjects(targetDepartment, getScopeForComponent('Projects', 'Unit'), userContext);
   const kraState = useSharePointKRAs(targetDepartment, getScopeForComponent('KRAs', 'Division'), userContext);
   const kpiState = useSharePointKPIs(targetDepartment, userContext);
-
-
-  // SharePoint List Setup
+  const taskGroupState = useSharePointTaskGroups();
   const { instance: msalInstance } = useMsal();
 
   const [isSettingUpLists, setIsSettingUpLists] = useState(false);
@@ -237,6 +235,14 @@ const Unit = () => {
   // --- Permission Logic ---
   // Only Managers and Admins can Add/Edit/Delete KRAs and KPIs
   const canEditStrategy = useMemo(() => {
+    const role = roleUser?.role_name?.toLowerCase();
+    const isAdmin = roleUser?.is_admin || role === 'super_admin' || role === 'admin';
+    const isManager = role === 'manager';
+    return isAdmin || isManager;
+  }, [roleUser]);
+
+  // Only Managers and Admins can view Staff Metrics
+  const canViewStaffMetrics = useMemo(() => {
     const role = roleUser?.role_name?.toLowerCase();
     const isAdmin = roleUser?.is_admin || role === 'super_admin' || role === 'admin';
     const isManager = role === 'manager';
@@ -578,37 +584,34 @@ const Unit = () => {
   }, [kraState.data, objectivesData, kpiState.data]);
 
   // Determine if data loading is complete
-  const isDataLoading = objectivesLoading || taskState.loading || projectState.loading || kraState.loading || kpiState.loading;
+  const isDataLoading = objectivesLoading || taskState.loading || projectState.loading || kraState.loading || kpiState.loading || taskGroupState.loading;
   // Determine if there was an error
-  const hasDataLoadingError = objectivesError || taskState.error || projectState.error || kraState.error || kpiState.error;
+  const hasDataLoadingError = objectivesError || taskState.error || projectState.error || kraState.error || kpiState.error || taskGroupState.error;
 
   // Sync Custom Groups from SharePoint Projects & Handle Orphans
   // Optimized with useMemo to prevent excessive re-calculations
   const calculatedBuckets = useMemo(() => {
-    if (!projectState.data) return [];
+    if (!taskGroupState.data) return [];
 
-    // 1. Get custom groups (user-created)
-    const customGroups: Bucket[] = projectState.data
+    // 1. Get task groups
+    const customGroups: Bucket[] = taskGroupState.data
       .filter(p => {
-        if (!p.isCustomGroup) return false;
-
-        // Personal Custom Group Logic:
-        // 1. Creator always sees it
-        const isCreator = p.authorEmail?.toLowerCase() === userContext.email?.toLowerCase();
-        // 2. Admins see everything
+        // Task Group Logic:
+        // 1. Admins see everything
         const isAdmin = userContext.role === 'admin' || userContext.role === 'super_admin';
-        // 3. Assignees of tasks in this group see it
+        // 2. Assignees of tasks in this group see it
         const hasAssignedTask = taskState.data?.some(t =>
-          t.projectId === String(p.id) &&
+          t.groupId === String(p.id) &&
           (t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase() ||
             t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()))
         );
 
-        if (isCreator || isAdmin) {
+        if (isAdmin || hasAssignedTask) {
           return true;
         }
 
-        return false;
+        // 3. Fallback: if no tasks, still show it to everyone for now (or could use department match)
+        return true;
       })
       .map(p => ({
         id: String(p.id),
@@ -634,8 +637,8 @@ const Unit = () => {
     // Logger.debug(`🔍 [Virtual Bucket Debug] Checking ${taskState.data?.length || 0} tasks for orphans. User: ${userContext.email}, Unit: ${userContext.unit}`);
 
     const orphanedTasks = taskState.data?.filter(t => {
-      // Orphan condition 1: Has projectId but bucket is missing
-      const hasOrphanedProject = t.projectId && !allBucketIds.has(t.projectId) && t.projectId !== 'undefined';
+      // Orphan condition 1: Has groupId but bucket is missing
+      const hasOrphanedGroup = t.groupId && !allBucketIds.has(t.groupId) && t.groupId !== 'undefined';
 
       // Orphan condition 2: From another unit (cross-unit assignment)
       const isCrossUnit = t.unit_id && t.unit_id !== userContext.unit;
@@ -657,7 +660,7 @@ const Unit = () => {
         return false;
       }
 
-      const isOrphaned = hasOrphanedProject || isCrossUnit || isAssignedOrphan;
+      const isOrphaned = hasOrphanedGroup || isCrossUnit || isAssignedOrphan;
 
       return isOrphaned;
     }) || [];
@@ -692,7 +695,7 @@ const Unit = () => {
     }
 
     return uniqueBuckets;
-  }, [projectState.data, taskState.data, userContext.email, userContext.unit, userContext.role]);
+  }, [projectState.data, taskState.data, userContext.email, userContext.unit, userContext.role, taskGroupState.data]);
 
   // Only update state if buckets actually changed to avoid re-render loops
   useEffect(() => {
@@ -723,14 +726,15 @@ const Unit = () => {
 
   const handleDeleteGroup = async (groupId: string) => {
     // Custom groups - try to delete proper
-    if (projectState.remove) {
+    if (taskGroupState.remove) {
       try {
-        await projectState.remove(groupId);
+        await taskGroupState.remove(groupId);
         // Toast handled by mutation typically, but adding one here for feedback
         toast({ title: "Group Deleted", description: "The task group has been removed." });
       } catch (e) {
         console.error("Failed to delete custom group", e);
         toast({ title: "Error", description: "Failed to delete group", variant: "destructive" });
+        throw e;
       }
     }
   };
@@ -817,8 +821,9 @@ const Unit = () => {
               <TabsTrigger value="kras-objectives">KRAs & Objectives</TabsTrigger>
               <TabsTrigger value="projects">Projects</TabsTrigger>
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
+              {canViewStaffMetrics && (
+                <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
+              )}
             </TabsList>
 
             <div className="flex items-center gap-4">
@@ -863,18 +868,20 @@ const Unit = () => {
           </TabsContent>
 
           {/* Staff Metrics Tab */}
-          <TabsContent value="staff-metrics" className="space-y-8">
-            {isDataLoading ? (
-              <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Metrics...</div>
-            ) : (
-              <StaffMetricsTab
-                tasks={taskState.data}
-                kras={combinedKrasForOverview}
-                unitRoster={unitRoster}
-                userContext={userContext}
-              />
-            )}
-          </TabsContent>
+          {canViewStaffMetrics && (
+            <TabsContent value="staff-metrics" className="space-y-8">
+              {isDataLoading ? (
+                <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Metrics...</div>
+              ) : (
+                <StaffMetricsTab
+                  tasks={taskState.data}
+                  kras={combinedKrasForOverview}
+                  unitRoster={unitRoster}
+                  userContext={userContext}
+                />
+              )}
+            </TabsContent>
+          )}
 
           {/* Tasks/Daily Operations Tab */}
           <TabsContent value="tasks" className="h-[calc(100vh-200px)]">
@@ -903,7 +910,7 @@ const Unit = () => {
                   buckets={visibleBuckets}
                   setBuckets={setTaskBuckets}
                   deleteCustomGroup={handleDeleteGroup}
-                  addCustomGroup={projectState.add}
+                  addCustomGroup={taskGroupState.add}
                   staffMembers={staffMembers}
                   objectives={objectivesData}
                   setEditingTask={setEditingTask}
@@ -967,22 +974,12 @@ const Unit = () => {
               />
             )}
           </TabsContent>
-
-          {/* Reports Tab */}
-          <TabsContent value="reports" className="space-y-6">
-            <ReportsTab
-              tasks={taskState.data}
-              kras={combinedKrasForTabs}
-              projects={projectState.data}
-              objectives={objectivesData}
-            />
-          </TabsContent>
-        </Tabs>
+        </Tabs >
       )}
 
 
 
-    </PageLayout>
+    </PageLayout >
   );
 };
 

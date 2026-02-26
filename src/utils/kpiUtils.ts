@@ -91,6 +91,57 @@ export const calculateStrategicProgress = (kras: any[], kpis: Partial<Kpi>[] = [
 };
 
 /**
+ * Calculates the progress of a Strategic Objective by aggregating its linked Unit Objectives (Children).
+ * 
+ * @param goalId The ID of the Strategic Goal
+ * @param childObjectives Array of all Unit Objectives
+ * @param allKras Array of all KRAs (optional, for dynamic child progress)
+ * @param allKpis Array of all KPIs (optional, for dynamic child progress)
+ * @returns The average progress of the linked Unit Objectives as a percentage.
+ */
+export const calculateGoalProgressFromChildren = (
+    goalId: string | number,
+    childObjectives: any[],
+    allKras: any[] = [],
+    allKpis: any[] = []
+): number => {
+    if (!childObjectives || childObjectives.length === 0) return 0;
+
+    // Find all Unit Objectives linked to this goal
+    const linkedChildren = childObjectives.filter(child =>
+        String(child.parentGoalId) === String(goalId)
+    );
+
+    if (linkedChildren.length === 0) return 0;
+
+    const totalProgress = linkedChildren.reduce((sum, child) => {
+        let p = child.progress || 0;
+
+        // Try to get dynamic progress calculated from KRAs/KPIs
+        if (allKras.length > 0) {
+            const linkedKras = allKras.filter(k =>
+                String(k.objective_id) === String(child.id) ||
+                String(k.objectiveId) === String(child.id)
+            );
+            if (linkedKras.length > 0) {
+                p = calculateStrategicProgress(linkedKras, allKpis);
+            }
+        }
+
+        // The Unit Objectives table (KRAsTab.tsx) strictly displays the dynamic numerical progress,
+        // so we must NOT force p=100 just because the status string is 'completed', 
+        // to maintain consistency with the visual numbers the user sees visually (e.g. 0% + 50% = 25%).
+
+        console.log(`[kpiUtils] Goal ${goalId} -> Child ${child.id} (${child.title}): dynamic_p=${p}`);
+        return sum + p;
+    }, 0);
+
+    const avg = Math.round(totalProgress / linkedChildren.length);
+    console.log(`[kpiUtils] Goal ${goalId} -> Total children: ${linkedChildren.length}, Avg Progress: ${avg}%`);
+    return avg;
+};
+
+/**
  * Calculates the status of an Objective based on its linked KPIs.
  * If ALL linked KPIs are completed, the objective is considered 'Completed'.
  * Otherwise, it returns the original status.
@@ -107,7 +158,7 @@ export const calculateObjectiveStatus = (objective: any, kras: any[]): string =>
     );
 
     if (!linkedKras || linkedKras.length === 0) {
-        return objective.status || 'Not Started';
+        return 'Not Started';
     }
 
     // 2. Collect all KPIs from these KRAs
@@ -118,23 +169,10 @@ export const calculateObjectiveStatus = (objective: any, kras: any[]): string =>
         }
     });
 
-    // 3. If there are no KPIs defined yet, we can't auto-complete
-    if (allKpis.length === 0) {
-        return objective.status || 'Not Started';
-    }
+    // 3. Calculate dynamic mathematical progress 
+    const progress = calculateStrategicProgress(linkedKras, allKpis);
 
-    // 4. Check if ALL KPIs are completed
-    const allCompleted = allKpis.every(kpi =>
-        kpi.status === 'Completed' ||
-        kpi.status === 'Achieved' ||
-        kpi.status === 'Done' ||
-        kpi.status === 'completed'
-    );
-
-    if (allCompleted) {
-        return 'Completed';
-    }
-
-    // Default to original status
-    return objective.status || 'Not Started';
+    if (progress === 100) return 'Completed';
+    if (progress > 0) return 'In Progress';
+    return 'Not Started';
 };

@@ -6,6 +6,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/compon
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 import { Progress } from '@/components/ui/progress';
 import { Plus, Edit, Trash2 } from 'lucide-react';
@@ -19,10 +20,9 @@ import {
 import AddProjectModal from './modals/AddProjectModal';
 import EditProjectModal from './modals/EditProjectModal';
 import DeleteModal from './modals/DeleteModal';
-import { Project, Risk, Task } from '@/types';
+import { Project, Risk, Task, Objective } from '@/types';
 import { mockProjects } from '@/mockData/projects';
 import { StaffMember } from '@/types/staff';
-import { Objective } from '@/types/kpi';
 
 interface ProjectsTabProps {
   projects: Project[];
@@ -46,6 +46,9 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   objectives
 }) => {
   const { toast } = useToast();
+  const { user } = useSupabaseAuth();
+  const isStaff = user?.user_metadata?.role === 'staff_member';
+  const userEmail = user?.email;
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -75,10 +78,14 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
     return unique;
   }, [projects]);
 
-  const filteredProjects = displayProjects.filter(project =>
-    project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.manager.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProjects = displayProjects.filter(project => {
+    if (isStaff) {
+      const isAssignee = project.assignees?.some(a => a.email === userEmail);
+      if (!isAssignee) return false;
+    }
+    return project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      project.manager.toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   const handleEdit = (project: Project) => {
     setSelectedProject(project);

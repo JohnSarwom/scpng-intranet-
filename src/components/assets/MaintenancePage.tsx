@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -202,285 +202,287 @@ export function MaintenancePage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Maintenance</h1>
-        <TooltipWrapper content="Add new maintenance record">
-          <Button 
-            onClick={handleAddMaintenance}
-            className="bg-red-800 hover:bg-red-700"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Maintenance Record
-          </Button>
-        </TooltipWrapper>
-      </div>
-
-      <div className="flex flex-col space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <TooltipWrapper content="Search maintenance records">
-            <Input
-              placeholder="Search by asset, description, technician..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </TooltipWrapper>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <TooltipWrapper content="Filter by status">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </TooltipWrapper>
-
-          <TooltipWrapper content="Filter by type">
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="preventive">Preventive</SelectItem>
-                <SelectItem value="corrective">Corrective</SelectItem>
-                <SelectItem value="inspection">Inspection</SelectItem>
-              </SelectContent>
-            </Select>
-          </TooltipWrapper>
-
-          <TooltipWrapper content="Reset all filters">
-            <Button variant="outline" onClick={resetFilters} className="gap-1">
-              <RotateCcw className="h-4 w-4" /> Reset
+    <Card className="w-full shadow-sm border">
+      <CardContent className="p-6 space-y-6">
+        <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Maintenance</h2>
+            <p className="text-muted-foreground">Track and schedule maintenance operations for assets.</p>
+          </div>
+          <TooltipWrapper content="Add new maintenance record">
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Add Record
             </Button>
           </TooltipWrapper>
         </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="responsive-table-container">
-            <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-white border-b">
-                  <TableRow>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("assetName")}
-                    >
-                      <TooltipWrapper content="Click to sort by asset name">
-                        <div className="flex items-center">
-                          Asset Name {renderSortIndicator("assetName")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("assetId")}
-                    >
-                      <TooltipWrapper content="Click to sort by asset ID">
-                        <div className="flex items-center">
-                          Asset ID {renderSortIndicator("assetId")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("type")}
-                    >
-                      <TooltipWrapper content="Click to sort by maintenance type">
-                        <div className="flex items-center">
-                          Type {renderSortIndicator("type")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer max-w-[200px]"
-                      onClick={() => handleSort("description")}
-                    >
-                      <TooltipWrapper content="Click to sort by description">
-                        <div className="flex items-center">
-                          Description {renderSortIndicator("description")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("status")}
-                    >
-                      <TooltipWrapper content="Click to sort by status">
-                        <div className="flex items-center">
-                          Status {renderSortIndicator("status")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("scheduledDate")}
-                    >
-                      <TooltipWrapper content="Click to sort by scheduled date">
-                        <div className="flex items-center">
-                          Scheduled Date {renderSortIndicator("scheduledDate")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("completedDate")}
-                    >
-                      <TooltipWrapper content="Click to sort by completed date">
-                        <div className="flex items-center">
-                          Completed Date {renderSortIndicator("completedDate")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("technician")}
-                    >
-                      <TooltipWrapper content="Click to sort by technician">
-                        <div className="flex items-center">
-                          Technician {renderSortIndicator("technician")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("cost")}
-                    >
-                      <TooltipWrapper content="Click to sort by cost">
-                        <div className="flex items-center">
-                          Cost {renderSortIndicator("cost")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer max-w-[200px]"
-                      onClick={() => handleSort("notes")}
-                    >
-                      <TooltipWrapper content="Click to sort by notes">
-                        <div className="flex items-center">
-                          Notes {renderSortIndicator("notes")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRecords.length === 0 ? (
+        <div className="flex flex-col space-y-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <TooltipWrapper content="Search maintenance records">
+              <Input
+                placeholder="Search by asset, description, technician..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </TooltipWrapper>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <TooltipWrapper content="Filter by status">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                  <SelectItem value="in-progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </TooltipWrapper>
+
+            <TooltipWrapper content="Filter by type">
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="preventive">Preventive</SelectItem>
+                  <SelectItem value="corrective">Corrective</SelectItem>
+                  <SelectItem value="inspection">Inspection</SelectItem>
+                </SelectContent>
+              </Select>
+            </TooltipWrapper>
+
+            <TooltipWrapper content="Reset all filters">
+              <Button variant="outline" onClick={resetFilters} className="gap-1">
+                <RotateCcw className="h-4 w-4" /> Reset
+              </Button>
+            </TooltipWrapper>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            <div className="responsive-table-container">
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-white border-b">
                     <TableRow>
-                      <TableCell colSpan={11} className="h-24 text-center">
-                        No maintenance records found
-                      </TableCell>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("assetName")}
+                      >
+                        <TooltipWrapper content="Click to sort by asset name">
+                          <div className="flex items-center">
+                            Asset Name {renderSortIndicator("assetName")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("assetId")}
+                      >
+                        <TooltipWrapper content="Click to sort by asset ID">
+                          <div className="flex items-center">
+                            Asset ID {renderSortIndicator("assetId")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("type")}
+                      >
+                        <TooltipWrapper content="Click to sort by maintenance type">
+                          <div className="flex items-center">
+                            Type {renderSortIndicator("type")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer max-w-[200px]"
+                        onClick={() => handleSort("description")}
+                      >
+                        <TooltipWrapper content="Click to sort by description">
+                          <div className="flex items-center">
+                            Description {renderSortIndicator("description")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("status")}
+                      >
+                        <TooltipWrapper content="Click to sort by status">
+                          <div className="flex items-center">
+                            Status {renderSortIndicator("status")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("scheduledDate")}
+                      >
+                        <TooltipWrapper content="Click to sort by scheduled date">
+                          <div className="flex items-center">
+                            Scheduled Date {renderSortIndicator("scheduledDate")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("completedDate")}
+                      >
+                        <TooltipWrapper content="Click to sort by completed date">
+                          <div className="flex items-center">
+                            Completed Date {renderSortIndicator("completedDate")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("technician")}
+                      >
+                        <TooltipWrapper content="Click to sort by technician">
+                          <div className="flex items-center">
+                            Technician {renderSortIndicator("technician")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("cost")}
+                      >
+                        <TooltipWrapper content="Click to sort by cost">
+                          <div className="flex items-center">
+                            Cost {renderSortIndicator("cost")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer max-w-[200px]"
+                        onClick={() => handleSort("notes")}
+                      >
+                        <TooltipWrapper content="Click to sort by notes">
+                          <div className="flex items-center">
+                            Notes {renderSortIndicator("notes")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Asset: ${record.assetName}`}>
-                            {record.assetName}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Asset ID: ${record.assetId}`}>
-                            {record.assetId}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Maintenance type: ${record.type}`}>
-                            <span className={getTypeBadgeClass(record.type)}>
-                              {record.type.charAt(0).toUpperCase() + record.type.slice(1)}
-                            </span>
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <TooltipWrapper content={record.description}>
-                            {record.description}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Status: ${record.status}`}>
-                            <span className={getStatusBadgeClass(record.status)}>
-                              {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                            </span>
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Scheduled for: ${formatDate(record.scheduledDate)}`}>
-                            {formatDate(record.scheduledDate)}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={record.completedDate ? `Completed on: ${formatDate(record.completedDate)}` : 'Not completed yet'}>
-                            {record.completedDate ? formatDate(record.completedDate) : "N/A"}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={record.technician || 'No technician assigned'}>
-                            {record.technician || "N/A"}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={record.cost ? `$${record.cost.toFixed(2)}` : 'No cost recorded'}>
-                            {record.cost ? `$${record.cost.toFixed(2)}` : "N/A"}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <TooltipWrapper content={record.notes || 'No notes'}>
-                            {record.notes || "N/A"}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="text-right sticky right-0 bg-white z-10">
-                          <DropdownMenu>
-                            <TooltipWrapper content="Maintenance record actions">
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                            </TooltipWrapper>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewRecord(record)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditRecord(record)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteRecord(record)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRecords.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={11} className="h-24 text-center">
+                          No maintenance records found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredRecords.map((record) => (
+                        <TableRow key={record.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Asset: ${record.assetName}`}>
+                              {record.assetName}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Asset ID: ${record.assetId}`}>
+                              {record.assetId}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Maintenance type: ${record.type}`}>
+                              <span className={getTypeBadgeClass(record.type)}>
+                                {record.type.charAt(0).toUpperCase() + record.type.slice(1)}
+                              </span>
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            <TooltipWrapper content={record.description}>
+                              {record.description}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Status: ${record.status}`}>
+                              <span className={getStatusBadgeClass(record.status)}>
+                                {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                              </span>
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Scheduled for: ${formatDate(record.scheduledDate)}`}>
+                              {formatDate(record.scheduledDate)}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={record.completedDate ? `Completed on: ${formatDate(record.completedDate)}` : 'Not completed yet'}>
+                              {record.completedDate ? formatDate(record.completedDate) : "N/A"}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={record.technician || 'No technician assigned'}>
+                              {record.technician || "N/A"}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={record.cost ? `$${record.cost.toFixed(2)}` : 'No cost recorded'}>
+                              {record.cost ? `$${record.cost.toFixed(2)}` : "N/A"}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            <TooltipWrapper content={record.notes || 'No notes'}>
+                              {record.notes || "N/A"}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="text-right sticky right-0 bg-white z-10">
+                            <DropdownMenu>
+                              <TooltipWrapper content="Maintenance record actions">
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                              </TooltipWrapper>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewRecord(record)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditRecord(record)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteRecord(record)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredRecords.length} of {sampleRecords.length} maintenance records
-      </div>
-    </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredRecords.length} of {sampleRecords.length} maintenance records
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -200,277 +200,279 @@ export function InvoicesPage() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Invoices</h1>
-        <TooltipWrapper content="Add new invoice">
-          <Button 
-            onClick={handleAddInvoice}
-            className="bg-red-800 hover:bg-red-700"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Invoice
-          </Button>
-        </TooltipWrapper>
-      </div>
-
-      <div className="flex flex-col space-y-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <TooltipWrapper content="Search invoices">
-            <Input
-              placeholder="Search by invoice #, vendor, asset..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </TooltipWrapper>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <TooltipWrapper content="Filter by status">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="paid">Paid</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="overdue">Overdue</SelectItem>
-              </SelectContent>
-            </Select>
-          </TooltipWrapper>
-
-          <TooltipWrapper content="Filter by vendor">
-            <Select value={vendorFilter} onValueChange={setVendorFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Vendor" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Vendors</SelectItem>
-                {vendors.map((vendor) => (
-                  <SelectItem key={vendor} value={vendor}>
-                    {vendor}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </TooltipWrapper>
-
-          <TooltipWrapper content="Reset all filters">
-            <Button variant="outline" onClick={resetFilters} className="gap-1">
-              <RotateCcw className="h-4 w-4" /> Reset
-            </Button>
-          </TooltipWrapper>
-
-          <div className="flex-grow"></div>
-
-          <TooltipWrapper content="Download all invoices">
-            <Button variant="outline" onClick={handleDownloadAll} className="gap-1">
-              <Download className="h-4 w-4" /> Download All
+    <Card className="w-full shadow-sm border">
+      <CardContent className="p-6 space-y-6">
+        <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Invoices</h2>
+            <p className="text-muted-foreground">Manage asset-related invoices and financial records.</p>
+          </div>
+          <TooltipWrapper content="Add new invoice">
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> Add Invoice
             </Button>
           </TooltipWrapper>
         </div>
-      </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <div className="responsive-table-container">
-            <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
-              <Table>
-                <TableHeader className="sticky top-0 z-10 bg-white border-b">
-                  <TableRow>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("invoiceNumber")}
-                    >
-                      <TooltipWrapper content="Click to sort by invoice number">
-                        <div className="flex items-center">
-                          Invoice # {renderSortIndicator("invoiceNumber")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("vendorName")}
-                    >
-                      <TooltipWrapper content="Click to sort by vendor">
-                        <div className="flex items-center">
-                          Vendor {renderSortIndicator("vendorName")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("assetName")}
-                    >
-                      <TooltipWrapper content="Click to sort by asset">
-                        <div className="flex items-center">
-                          Asset {renderSortIndicator("assetName")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("assetId")}
-                    >
-                      <TooltipWrapper content="Click to sort by asset ID">
-                        <div className="flex items-center">
-                          Asset ID {renderSortIndicator("assetId")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("amount")}
-                    >
-                      <TooltipWrapper content="Click to sort by amount">
-                        <div className="flex items-center">
-                          Amount {renderSortIndicator("amount")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("issueDate")}
-                    >
-                      <TooltipWrapper content="Click to sort by issue date">
-                        <div className="flex items-center">
-                          Issue Date {renderSortIndicator("issueDate")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("dueDate")}
-                    >
-                      <TooltipWrapper content="Click to sort by due date">
-                        <div className="flex items-center">
-                          Due Date {renderSortIndicator("dueDate")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("status")}
-                    >
-                      <TooltipWrapper content="Click to sort by status">
-                        <div className="flex items-center">
-                          Status {renderSortIndicator("status")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead 
-                      className="font-medium cursor-pointer whitespace-nowrap"
-                      onClick={() => handleSort("paymentDate")}
-                    >
-                      <TooltipWrapper content="Click to sort by payment date">
-                        <div className="flex items-center">
-                          Payment Date {renderSortIndicator("paymentDate")}
-                        </div>
-                      </TooltipWrapper>
-                    </TableHead>
-                    <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredInvoices.length === 0 ? (
+        <div className="flex flex-col space-y-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <TooltipWrapper content="Search invoices">
+              <Input
+                placeholder="Search by invoice #, vendor, asset..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </TooltipWrapper>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <TooltipWrapper content="Filter by status">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Filter by Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
+                </SelectContent>
+              </Select>
+            </TooltipWrapper>
+
+            <TooltipWrapper content="Filter by vendor">
+              <Select value={vendorFilter} onValueChange={setVendorFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by Vendor" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Vendors</SelectItem>
+                  {vendors.map((vendor) => (
+                    <SelectItem key={vendor} value={vendor}>
+                      {vendor}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </TooltipWrapper>
+
+            <TooltipWrapper content="Reset all filters">
+              <Button variant="outline" onClick={resetFilters} className="gap-1">
+                <RotateCcw className="h-4 w-4" /> Reset
+              </Button>
+            </TooltipWrapper>
+
+            <div className="flex-grow"></div>
+
+            <TooltipWrapper content="Download all invoices">
+              <Button variant="outline" onClick={handleDownloadAll} className="gap-1">
+                <Download className="h-4 w-4" /> Download All
+              </Button>
+            </TooltipWrapper>
+          </div>
+        </div>
+
+        <Card>
+          <CardContent className="p-0">
+            <div className="responsive-table-container">
+              <div className="max-h-[calc(100vh-320px)] overflow-y-auto">
+                <Table>
+                  <TableHeader className="sticky top-0 z-10 bg-white border-b">
                     <TableRow>
-                      <TableCell colSpan={10} className="h-24 text-center">
-                        No invoices found
-                      </TableCell>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("invoiceNumber")}
+                      >
+                        <TooltipWrapper content="Click to sort by invoice number">
+                          <div className="flex items-center">
+                            Invoice # {renderSortIndicator("invoiceNumber")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("vendorName")}
+                      >
+                        <TooltipWrapper content="Click to sort by vendor">
+                          <div className="flex items-center">
+                            Vendor {renderSortIndicator("vendorName")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("assetName")}
+                      >
+                        <TooltipWrapper content="Click to sort by asset">
+                          <div className="flex items-center">
+                            Asset {renderSortIndicator("assetName")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("assetId")}
+                      >
+                        <TooltipWrapper content="Click to sort by asset ID">
+                          <div className="flex items-center">
+                            Asset ID {renderSortIndicator("assetId")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("amount")}
+                      >
+                        <TooltipWrapper content="Click to sort by amount">
+                          <div className="flex items-center">
+                            Amount {renderSortIndicator("amount")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("issueDate")}
+                      >
+                        <TooltipWrapper content="Click to sort by issue date">
+                          <div className="flex items-center">
+                            Issue Date {renderSortIndicator("issueDate")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("dueDate")}
+                      >
+                        <TooltipWrapper content="Click to sort by due date">
+                          <div className="flex items-center">
+                            Due Date {renderSortIndicator("dueDate")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("status")}
+                      >
+                        <TooltipWrapper content="Click to sort by status">
+                          <div className="flex items-center">
+                            Status {renderSortIndicator("status")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead
+                        className="font-medium cursor-pointer whitespace-nowrap"
+                        onClick={() => handleSort("paymentDate")}
+                      >
+                        <TooltipWrapper content="Click to sort by payment date">
+                          <div className="flex items-center">
+                            Payment Date {renderSortIndicator("paymentDate")}
+                          </div>
+                        </TooltipWrapper>
+                      </TableHead>
+                      <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
                     </TableRow>
-                  ) : (
-                    filteredInvoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Invoice #: ${invoice.invoiceNumber}`}>
-                            {invoice.invoiceNumber}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Vendor: ${invoice.vendorName}`}>
-                            {invoice.vendorName}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="max-w-[200px] truncate">
-                          <TooltipWrapper content={`Asset: ${invoice.assetName}`}>
-                            {invoice.assetName}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Asset ID: ${invoice.assetId}`}>
-                            {invoice.assetId}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Amount: ${formatCurrency(invoice.amount)}`}>
-                            {formatCurrency(invoice.amount)}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Issue Date: ${formatDate(invoice.issueDate)}`}>
-                            {formatDate(invoice.issueDate)}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Due Date: ${formatDate(invoice.dueDate)}`}>
-                            {formatDate(invoice.dueDate)}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={`Status: ${invoice.status}`}>
-                            <span className={getStatusBadgeClass(invoice.status)}>
-                              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                            </span>
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <TooltipWrapper content={invoice.paymentDate ? `Payment Date: ${formatDate(invoice.paymentDate)}` : 'Not paid yet'}>
-                            {invoice.paymentDate ? formatDate(invoice.paymentDate) : "N/A"}
-                          </TooltipWrapper>
-                        </TableCell>
-                        <TableCell className="text-right sticky right-0 bg-white z-10">
-                          <DropdownMenu>
-                            <TooltipWrapper content="Invoice actions">
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                            </TooltipWrapper>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewInvoice(invoice)}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteInvoice(invoice)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredInvoices.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="h-24 text-center">
+                          No invoices found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredInvoices.map((invoice) => (
+                        <TableRow key={invoice.id}>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Invoice #: ${invoice.invoiceNumber}`}>
+                              {invoice.invoiceNumber}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Vendor: ${invoice.vendorName}`}>
+                              {invoice.vendorName}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate">
+                            <TooltipWrapper content={`Asset: ${invoice.assetName}`}>
+                              {invoice.assetName}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Asset ID: ${invoice.assetId}`}>
+                              {invoice.assetId}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Amount: ${formatCurrency(invoice.amount)}`}>
+                              {formatCurrency(invoice.amount)}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Issue Date: ${formatDate(invoice.issueDate)}`}>
+                              {formatDate(invoice.issueDate)}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Due Date: ${formatDate(invoice.dueDate)}`}>
+                              {formatDate(invoice.dueDate)}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={`Status: ${invoice.status}`}>
+                              <span className={getStatusBadgeClass(invoice.status)}>
+                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                              </span>
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <TooltipWrapper content={invoice.paymentDate ? `Payment Date: ${formatDate(invoice.paymentDate)}` : 'Not paid yet'}>
+                              {invoice.paymentDate ? formatDate(invoice.paymentDate) : "N/A"}
+                            </TooltipWrapper>
+                          </TableCell>
+                          <TableCell className="text-right sticky right-0 bg-white z-10">
+                            <DropdownMenu>
+                              <TooltipWrapper content="Invoice actions">
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                              </TooltipWrapper>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewInvoice(invoice)}>
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  View
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditInvoice(invoice)}>
+                                  <Edit className="mr-2 h-4 w-4" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteInvoice(invoice)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredInvoices.length} of {sampleInvoices.length} invoices
-      </div>
-    </div>
+          </CardContent>
+        </Card>
+
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredInvoices.length} of {sampleInvoices.length} invoices
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -34,8 +34,6 @@ import { Badge } from '@/components/ui/badge';
 
 interface KRAInsightsTabProps {
   kras: Kra[];
-  viewScope: 'my' | 'department' | 'organization';
-  onScopeChange: (scope: 'my' | 'department' | 'organization') => void;
 }
 
 const getKraProgress = (kpis: Kpi[]): number => {
@@ -78,31 +76,25 @@ const statusColors: Record<string, string> = {
   'Behind': '#ef4444',
 };
 
-export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope, onScopeChange }) => {
+export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
   const validKras = Array.isArray(kras) ? kras : [];
   const { theme } = useTheme();
   const { user } = useSupabaseAuth();
 
-  // Computed Data based on Scope
-  const { activeKras, activeKpis, scopeLabel } = React.useMemo(() => {
+  // Computed Data based on Individual Scope
+  const { activeKras, activeKpis } = React.useMemo(() => {
     let krasResult = validKras;
     let kpisResult = validKras.flatMap(k => k.unitKpis || []);
-    let label = 'Organization';
 
-    if (viewScope === 'my' && user) {
+    if (user) {
       krasResult = validKras.filter(k => k.ownerId === user.id);
       // For KPIs, filtering by assignment
       kpisResult = validKras.flatMap(k => k.unitKpis || [])
         .filter(kpi => kpi.assignees?.some(a => a.email === user.email));
-      label = 'My';
-    } else if (viewScope === 'department' && user?.user_metadata?.unitName) {
-      krasResult = validKras.filter(k => k.unit === user.user_metadata.unitName);
-      kpisResult = krasResult.flatMap(k => k.unitKpis || []);
-      label = 'Department';
     }
 
-    return { activeKras: krasResult, activeKpis: kpisResult, scopeLabel: label };
-  }, [viewScope, validKras, user]);
+    return { activeKras: krasResult, activeKpis: kpisResult };
+  }, [validKras, user]);
 
   const kraStatusData = React.useMemo(() => {
     const statusCounts: Record<string, number> = {};
@@ -258,8 +250,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>{scopeLabel} KRA Status Overview</CardTitle>
-                  <CardDescription>Status distribution of KRAs ({scopeLabel.toLowerCase()})</CardDescription>
+                  <CardTitle>My KRA Status Overview</CardTitle>
+                  <CardDescription>Status distribution of My KRAs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
@@ -308,12 +300,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                    <p className="text-muted-foreground">No KRAs found in {scopeLabel} view.</p>
-                    {viewScope === 'my' && (
-                      <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
-                        View Organization Stats
-                      </Button>
-                    )}
+                    <p className="text-muted-foreground">No KRAs assigned to you.</p>
                   </div>
                 )}
               </div>
@@ -367,8 +354,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>{scopeLabel} KPI Status</CardTitle>
-                  <CardDescription>Status distribution of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
+                  <CardTitle>My KPI Status</CardTitle>
+                  <CardDescription>Status distribution of My KPIs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
@@ -402,12 +389,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                    <p className="text-muted-foreground">No KPIs found in {scopeLabel} view.</p>
-                    {viewScope === 'my' && (
-                      <Button variant="outline" size="sm" onClick={() => onScopeChange('organization')}>
-                        View Organization Stats
-                      </Button>
-                    )}
+                    <p className="text-muted-foreground">No KPIs assigned to you.</p>
                   </div>
                 )}
               </div>
@@ -461,8 +443,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>{scopeLabel} Completion Rate (6 Months)</CardTitle>
-                  <CardDescription>Average KPI completion rate over the last 6 months</CardDescription>
+                  <CardTitle>My Completion Rate (6 Months)</CardTitle>
+                  <CardDescription>My average KPI completion rate over the last 6 months</CardDescription>
                 </div>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
@@ -540,8 +522,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>KPI Distribution by Objective</CardTitle>
-                  <CardDescription>Top objectives by number of KPIs ({scopeLabel.toLowerCase()})</CardDescription>
+                  <CardTitle>My KPI Distribution by Objective</CardTitle>
+                  <CardDescription>Top objectives by number of My KPIs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
@@ -634,8 +616,8 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras, viewScope,
       {/* Priority KPIs Section */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle>Priority KPIs Needing Attention</CardTitle>
-          <CardDescription>KPIs ({scopeLabel.toLowerCase()}) that are at risk or behind</CardDescription>
+          <CardTitle>My Priority KPIs Needing Attention</CardTitle>
+          <CardDescription>My KPIs that are at risk or behind</CardDescription>
         </CardHeader>
         <CardContent>
           {priorityKpis.length > 0 ? (

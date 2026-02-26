@@ -28,7 +28,7 @@ import {
 import { UserAsset } from '@/types';
 import { toast } from "@/components/ui/use-toast";
 import DatePicker from '@/components/DatePicker';
-import { Upload, Check, ChevronsUpDown, Loader2, Paperclip, X } from 'lucide-react';
+import { Upload, Check, ChevronsUpDown, Loader2, Paperclip, X, PackagePlus } from 'lucide-react';
 import { Division as TypeDivision } from '@/types';
 import { Unit } from '@/data/units';
 import { cn } from '@/lib/utils';
@@ -344,297 +344,347 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseAndReset()}>
-      <DialogContent className="sm:max-w-[700px]">
-        <DialogHeader>
-          <DialogTitle>Add New Asset</DialogTitle>
+      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0">
+        <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/30">
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <PackagePlus className="h-5 w-5 text-primary" />
+            Add New Asset
+          </DialogTitle>
           <DialogDescription>
-            Fill in the details for the new asset. Fields marked with * are recommended.
+            Fill in the details for the new asset. Fields marked with * are required.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-          {/* Row 1: Name & Type */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Asset Name - Simple Input Field */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-name">Asset Name <span className="text-destructive">*</span></Label>
-              <Input
-                id="asset-name"
-                placeholder="e.g., Dell Latitude 5420"
-                value={newAsset.name || ''}
-                onChange={(e) => handleChange('name', e.target.value)}
-                className="w-full"
-              />
-            </div>
-            {/* Type Input - Text field in SharePoint */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-type">Type <span className="text-destructive">*</span></Label>
-              <Input
-                id="asset-type"
-                placeholder="e.g., Laptop, Desktop PC, Monitor"
-                value={newAsset.type || ''}
-                onChange={(e) => handleChange('type', e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
 
-          {/* Row: Brand, Model, Serial Number */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="asset-brand">Brand</Label>
-              <Input id="asset-brand" placeholder="e.g., Dell, Apple" value={newAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="asset-model">Model</Label>
-              <Input id="asset-model" placeholder="e.g., Latitude 7490, MacBook Pro" value={newAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="asset-serial-number">Serial Number</Label>
-              <Input id="asset-serial-number" placeholder="e.g., ABC12345" value={newAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} />
-            </div>
-          </div>
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+          {/* Section: Basic Information */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Basic Information</h3>
 
-          {/* UPDATED Row: Assigned To - Combobox or Input fallback */}
-          <div className="grid gap-2">
-            <Label htmlFor="asset-assigned-to">Assigned To <span className="text-destructive">*</span></Label>
-
-            {/* UPDATED Row: Assigned To - using GlobalAssigneeSelector */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-assigned-to">Assigned To <span className="text-destructive">*</span></Label>
-              <GlobalAssigneeSelector
-                selected={newAsset.assigned_to ? [{
-                  id: newAsset.assigned_to_email || 'temp-id',
-                  displayName: newAsset.assigned_to,
-                  givenName: '',
-                  surname: '',
-                  mail: newAsset.assigned_to_email || ''
-                }] : []}
-                onChange={(selected) => {
-                  const employee = selected[0]; // Single mode
-                  if (employee) {
-                    handleChange('assigned_to', employee.displayName);
-                  } else {
-                    handleChange('assigned_to', '');
-                  }
-                }}
-                mode="single"
-                placeholder="Select Staff Member..."
-              />
-            </div>
-          </div>
-
-          {/* Row 2: Unit & Division */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="asset-unit">Unit</Label>
-              <Select
-                value={newAsset.unit || ''}
-                onValueChange={(value) => handleChange('unit', value)}
-              >
-                <SelectTrigger id="asset-unit">
-                  <SelectValue placeholder="Select Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Select Unit</SelectItem>
-                  {units.map((unit) => (
-                    <SelectItem key={unit.id} value={unit.name}>
-                      {unit.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="asset-division">Division</Label>
-              <Select
-                value={newAsset.division || ''}
-                onValueChange={(value) => handleChange('division', value)}
-              >
-                <SelectTrigger id="asset-division">
-                  <SelectValue placeholder="Select Division" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Select Division</SelectItem>
-                  {divisions.map((division) => (
-                    <SelectItem key={division.id} value={division.name}>
-                      {division.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Row 4: Condition & Vendor */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Condition Input - Text field in SharePoint */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-condition">Condition</Label>
-              <Input
-                id="asset-condition"
-                placeholder="e.g., Excellent, Good, Fair, Poor"
-                value={newAsset.condition || ''}
-                onChange={(e) => handleChange('condition', e.target.value)}
-              />
-            </div>
-            {/* Vendor Input */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-vendor">Vendor</Label>
-              <Input
-                id="asset-vendor"
-                placeholder="e.g., Dell, HP, Lenovo"
-                value={newAsset.vendor || ''}
-                onChange={(e) => handleChange('vendor', e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Row 5: Purchase Date & Purchase Cost */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="asset-purchase-date">Purchase Date</Label>
-              <DatePicker date={newAsset.purchase_date ? new Date(newAsset.purchase_date) : undefined} setDate={(date) => handleDateChange('purchase_date', date)} />
-            </div>
-            {/* Purchase Cost Input with Visual Prefix */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-purchase-cost">Purchase Cost</Label>
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground">K</span>
+            {/* Row 1: Name & Type */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Asset Name - Simple Input Field */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-name" className="text-sm font-medium">Asset Name <span className="text-destructive">*</span></Label>
                 <Input
-                  id="asset-purchase-cost"
-                  type="number"
-                  step="0.01"
-                  placeholder="e.g., 1200.50"
-                  className="pl-7"
-                  value={newAsset.purchase_cost ?? ''}
-                  onChange={(e) => handleChange('purchase_cost', e.target.value)}
+                  id="asset-name"
+                  placeholder="e.g., Dell Latitude 5420"
+                  value={newAsset.name || ''}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  className="w-full bg-background/50 focus:bg-background transition-colors"
                 />
+              </div>
+              {/* Type Input - Text field in SharePoint */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-type" className="text-sm font-medium">Type <span className="text-destructive">*</span></Label>
+                <Input
+                  id="asset-type"
+                  placeholder="e.g., Laptop, Desktop PC, Monitor"
+                  value={newAsset.type || ''}
+                  onChange={(e) => handleChange('type', e.target.value)}
+                  className="w-full bg-background/50 focus:bg-background transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Row: Brand, Model, Serial Number */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="asset-brand" className="text-sm font-medium">Brand</Label>
+                <Input id="asset-brand" placeholder="e.g., Dell, Apple" value={newAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="asset-model" className="text-sm font-medium">Model</Label>
+                <Input id="asset-model" placeholder="e.g., Latitude 7490" value={newAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="asset-serial-number" className="text-sm font-medium">Serial Number</Label>
+                <Input id="asset-serial-number" placeholder="e.g., ABC12345" value={newAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
               </div>
             </div>
           </div>
 
-          {/* Row 6: Warranty Expiry & Expiry Date */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="asset-warranty">Warranty Expiry Date</Label>
-              <DatePicker date={newAsset.warranty_expiry_date ? new Date(newAsset.warranty_expiry_date) : undefined} setDate={(date) => handleDateChange('warranty_expiry_date', date)} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="asset-expiry-date">Expiry Date (e.g., Software)</Label>
-              <DatePicker date={newAsset.expiry_date ? new Date(newAsset.expiry_date) : undefined} setDate={(date) => handleDateChange('expiry_date', date)} />
-            </div>
-          </div>
+          <hr className="border-border/50" />
 
-          {/* Row 7: Life Expectancy & YTD Usage */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="asset-life">Life Expectancy (Years)</Label>
-              <Input id="asset-life" type="number" placeholder="e.g., 3" value={newAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="asset-ytd-usage">YTD Usage</Label>
-              <Input id="asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={newAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} />
-            </div>
-          </div>
+          {/* Section: Assignment & Location */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Assignment & Location</h3>
 
-          {/* Row 8: Invoice URL & Barcode URL */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Invoice URL Input + Upload Button */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-invoice-url">Invoice URL or Upload</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="asset-invoice-url"
-                  placeholder="https://... or click upload"
-                  value={newAsset.invoice_url || ''}
-                  onChange={(e) => {
-                    handleChange('invoice_url', e.target.value);
+            {/* UPDATED Row: Assigned To - Combobox or Input fallback */}
+            <div className="space-y-2">
+              {/* UPDATED Row: Assigned To - using GlobalAssigneeSelector */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-assigned-to" className="text-sm font-medium">Assigned To <span className="text-destructive">*</span></Label>
+                <GlobalAssigneeSelector
+                  selected={newAsset.assigned_to ? [{
+                    id: newAsset.assigned_to_email || 'temp-id',
+                    displayName: newAsset.assigned_to,
+                    givenName: '',
+                    surname: '',
+                    mail: newAsset.assigned_to_email || ''
+                  }] : []}
+                  onChange={(selected) => {
+                    const employee = selected[0]; // Single mode
+                    if (employee) {
+                      handleChange('assigned_to', employee.displayName);
+                    } else {
+                      handleChange('assigned_to', '');
+                    }
                   }}
+                  mode="single"
+                  placeholder="Select Staff Member..."
                 />
               </div>
             </div>
-            {/* Barcode URL Input */}
-            <div className="grid gap-2">
-              <Label htmlFor="asset-barcode-url">Barcode URL</Label>
-              <Input id="asset-barcode-url" placeholder="https://..." value={newAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} />
-            </div>
-          </div>
 
-          {/* Row 9: Notes */}
-          <div className="grid gap-2">
-            <Label htmlFor="asset-notes">Notes</Label>
-            <Textarea id="asset-notes" placeholder="Additional notes about the asset" value={newAsset.notes || ''} onChange={(e) => handleChange('notes', e.target.value)} />
-          </div>
-
-          {/* Row 10: Admin Comments */}
-          <div className="grid gap-2">
-            <Label htmlFor="asset-admin-comments">Admin Comments</Label>
-            <Textarea id="asset-admin-comments" placeholder="Internal comments" value={newAsset.admin_comments || ''} onChange={(e) => handleChange('admin_comments', e.target.value)} />
-          </div>
-
-          {/* Row 11: Image Upload */}
-          <div className="grid gap-2">
-            <Label htmlFor="asset-image">Asset Image (Optional)</Label>
-            <div className="flex items-center gap-2 p-3 border border-dashed rounded-md min-h-[80px]">
-              {!selectedFile && !newAsset.image_url && !isUploading && (
-                <label
-                  htmlFor="asset-image-input"
-                  className="flex flex-col items-center justify-center w-full h-full cursor-pointer text-muted-foreground hover:text-primary"
+            {/* Row 2: Unit & Division */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="asset-unit" className="text-sm font-medium">Unit</Label>
+                <Select
+                  value={newAsset.unit || ''}
+                  onValueChange={(value) => handleChange('unit', value)}
                 >
-                  <Upload className="h-8 w-8 mb-1" />
-                  <span>Click or drag to upload</span>
-                  <span className="text-xs">(PNG, JPG, GIF - Max 5MB)</span>
-                  <Input
-                    id="asset-image-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="sr-only" // Hide the default input, use label for interaction
-                    ref={fileInputRef}
-                    disabled={isUploading}
-                  />
-                </label>
-              )}
-              {isUploading && (
-                <div className="flex items-center justify-center w-full text-muted-foreground">
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  <span>Uploading {selectedFile?.name}...</span>
-                </div>
-              )}
-              {!isUploading && (selectedFile || newAsset.image_url) && (
-                <div className="flex items-center justify-between w-full bg-muted/50 p-2 rounded text-sm">
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <Paperclip className="h-4 w-4 flex-shrink-0" />
-                    <span className="truncate" title={selectedFile?.name || newAsset.image_url}>
-                      {selectedFile?.name || newAsset.image_url}
-                    </span>
-                  </div>
-                  <Button variant="ghost" size="icon" onClick={clearSelectedFile} className="h-6 w-6" title="Remove image">
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
+                  <SelectTrigger id="asset-unit" className="bg-background/50 focus:bg-background transition-colors">
+                    <SelectValue placeholder="Select Unit" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Select Unit</SelectItem>
+                    {units.map((unit) => (
+                      <SelectItem key={unit.id} value={unit.name}>
+                        {unit.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="asset-division" className="text-sm font-medium">Division</Label>
+                <Select
+                  value={newAsset.division || ''}
+                  onValueChange={(value) => handleChange('division', value)}
+                >
+                  <SelectTrigger id="asset-division" className="bg-background/50 focus:bg-background transition-colors">
+                    <SelectValue placeholder="Select Division" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="null">Select Division</SelectItem>
+                    {divisions.map((division) => (
+                      <SelectItem key={division.id} value={division.name}>
+                        {division.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            {uploadError && <p className="text-xs text-destructive mt-1">{uploadError}</p>}
           </div>
 
-          {/* Description */}
-          <div className="grid gap-2">
-            <Label htmlFor="description">Description / Specifications</Label>
-            <Textarea
-              id="description"
-              placeholder="Enter asset description or specs (e.g., CPU, RAM, Storage)..."
-              value={newAsset.description || ''}
-              onChange={(e) => handleChange('description', e.target.value)}
-              className="min-h-[80px]"
-            />
+          <hr className="border-border/50" />
+
+          {/* Section: Status & Financials */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Status & Financials</h3>
+
+            {/* Row 4: Condition & Vendor */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Condition Input - Text field in SharePoint */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-condition" className="text-sm font-medium">Condition</Label>
+                <Input
+                  id="asset-condition"
+                  placeholder="e.g., Excellent, Good, Fair, Poor"
+                  value={newAsset.condition || ''}
+                  onChange={(e) => handleChange('condition', e.target.value)}
+                  className="bg-background/50 focus:bg-background transition-colors"
+                />
+              </div>
+              {/* Vendor Input */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-vendor" className="text-sm font-medium">Vendor</Label>
+                <Input
+                  id="asset-vendor"
+                  placeholder="e.g., Dell, HP, Lenovo"
+                  value={newAsset.vendor || ''}
+                  onChange={(e) => handleChange('vendor', e.target.value)}
+                  className="bg-background/50 focus:bg-background transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Row 5: Purchase Date & Purchase Cost */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="asset-purchase-date" className="text-sm font-medium">Purchase Date</Label>
+                <div className="flex">
+                  <DatePicker date={newAsset.purchase_date ? new Date(newAsset.purchase_date) : undefined} setDate={(date) => handleDateChange('purchase_date', date)} />
+                </div>
+              </div>
+              {/* Purchase Cost Input with Visual Prefix */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-purchase-cost" className="text-sm font-medium">Purchase Cost</Label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-muted-foreground/70">K</span>
+                  <Input
+                    id="asset-purchase-cost"
+                    type="number"
+                    step="0.01"
+                    placeholder="e.g., 1200.50"
+                    className="pl-7 bg-background/50 focus:bg-background transition-colors"
+                    value={newAsset.purchase_cost ?? ''}
+                    onChange={(e) => handleChange('purchase_cost', e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 6: Warranty Expiry & Expiry Date */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="asset-warranty" className="text-sm font-medium">Warranty Expiry Date</Label>
+                <div className="flex">
+                  <DatePicker date={newAsset.warranty_expiry_date ? new Date(newAsset.warranty_expiry_date) : undefined} setDate={(date) => handleDateChange('warranty_expiry_date', date)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="asset-expiry-date" className="text-sm font-medium">Expected Expiry Date</Label>
+                <div className="flex">
+                  <DatePicker date={newAsset.expiry_date ? new Date(newAsset.expiry_date) : undefined} setDate={(date) => handleDateChange('expiry_date', date)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Row 7: Life Expectancy & YTD Usage */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="asset-life" className="text-sm font-medium">Life Expectancy (Years)</Label>
+                <Input id="asset-life" type="number" placeholder="e.g., 3" value={newAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} className="bg-background/50 focus:bg-background transition-colors" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="asset-ytd-usage" className="text-sm font-medium">YTD Usage</Label>
+                <Input id="asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={newAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+              </div>
+            </div>
           </div>
 
+          <hr className="border-border/50" />
+
+          {/* Section: Additional Details */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">Additional Details</h3>
+
+            {/* Row 8: Invoice URL & Barcode URL */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Invoice URL Input + Upload Button */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-invoice-url" className="text-sm font-medium">Invoice URL or Upload</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="asset-invoice-url"
+                    placeholder="https://... or click upload"
+                    value={newAsset.invoice_url || ''}
+                    onChange={(e) => {
+                      handleChange('invoice_url', e.target.value);
+                    }}
+                    className="bg-background/50 focus:bg-background transition-colors"
+                  />
+                </div>
+              </div>
+              {/* Barcode URL Input */}
+              <div className="space-y-2">
+                <Label htmlFor="asset-barcode-url" className="text-sm font-medium">Barcode URL</Label>
+                <Input id="asset-barcode-url" placeholder="https://..." value={newAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+              </div>
+            </div>
+
+            {/* Image Upload */}
+            <div className="space-y-2">
+              <Label htmlFor="asset-image" className="text-sm font-medium">Asset Image (Optional)</Label>
+              <div className="flex flex-col gap-2 p-4 border border-dashed rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors">
+                {!selectedFile && !newAsset.image_url && !isUploading && (
+                  <label
+                    htmlFor="asset-image-input"
+                    className="flex flex-col items-center justify-center w-full min-h-[100px] cursor-pointer text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Upload className="h-8 w-8 mb-2 opacity-80" />
+                    <span className="font-medium text-sm">Click or drag image to upload</span>
+                    <span className="text-xs opacity-70 mt-1">Supports PNG, JPG, GIF up to 5MB</span>
+                    <Input
+                      id="asset-image-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="sr-only" // Hide the default input, use label for interaction
+                      ref={fileInputRef}
+                      disabled={isUploading}
+                    />
+                  </label>
+                )}
+                {isUploading && (
+                  <div className="flex flex-col items-center justify-center w-full min-h-[100px] text-muted-foreground">
+                    <Loader2 className="h-8 w-8 mb-2 animate-spin text-primary" />
+                    <span className="text-sm font-medium">Uploading {selectedFile?.name}...</span>
+                  </div>
+                )}
+                {!isUploading && (selectedFile || newAsset.image_url) && (
+                  <div className="flex items-center justify-between w-full bg-background p-3 rounded-md border shadow-sm text-sm">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="p-2 bg-primary/10 rounded-full text-primary">
+                        <Paperclip className="h-4 w-4 flex-shrink-0" />
+                      </div>
+                      <span className="truncate font-medium" title={selectedFile?.name || newAsset.image_url}>
+                        {selectedFile?.name || 'Uploaded Image'}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={clearSelectedFile} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" title="Remove image">
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {uploadError && <p className="text-xs text-destructive mt-1 font-medium">{uploadError}</p>}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-sm font-medium">Description / Specifications</Label>
+              <Textarea
+                id="description"
+                placeholder="Enter asset description or specs (e.g., CPU, RAM, Storage)..."
+                value={newAsset.description || ''}
+                onChange={(e) => handleChange('description', e.target.value)}
+                className="min-h-[100px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+              />
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label htmlFor="asset-notes" className="text-sm font-medium">Notes</Label>
+              <Textarea
+                id="asset-notes"
+                placeholder="Additional contextual notes about the asset"
+                value={newAsset.notes || ''}
+                onChange={(e) => handleChange('notes', e.target.value)}
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+              />
+            </div>
+
+            {/* Admin Comments */}
+            <div className="space-y-2">
+              <Label htmlFor="asset-admin-comments" className="text-sm font-medium">Admin Comments</Label>
+              <Textarea
+                id="asset-admin-comments"
+                placeholder="Internal comments visible to admins"
+                value={newAsset.admin_comments || ''}
+                onChange={(e) => handleChange('admin_comments', e.target.value)}
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+              />
+            </div>
+          </div>
         </div>
 
         {/* ChecklistSection removed based on schema analysis */}
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-muted/30 sm:justify-end gap-2">
           <Button variant="outline" onClick={handleCloseAndReset}>Cancel</Button>
           <Button onClick={handleAddAsset} disabled={isUploading}>
             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

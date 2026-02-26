@@ -7,17 +7,16 @@ import {
   Trash2,
   PieChart
 } from 'lucide-react';
-import './AdminAssetsPage.css';
 import { useToast } from "@/hooks/use-toast";
 import { TooltipWrapper } from '@/components/ui/tooltip-wrapper';
 import { AssetDashboard } from '@/components/assets/AssetDashboard';
-import { AssetReportsPage } from '@/components/assets/AssetReportsPage';
 import { InvoicesPage } from '@/components/assets/InvoicesPage';
 import { MaintenancePage } from '@/components/assets/MaintenancePage';
 import AssetManagementNew from './AssetManagementNew';
 import DecommissionedAssets from './DecommissionedAssets';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import PageLayout from '@/components/layout/PageLayout';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 // Define the complete tab structure
 const allTabs = [
@@ -26,7 +25,7 @@ const allTabs = [
   { id: 'invoices', label: 'Invoices', icon: FileText, tooltip: 'Manage Asset Invoices' },
   { id: 'maintenance', label: 'Maintenance', icon: Wrench, tooltip: 'Asset Maintenance Records' },
   { id: 'decommissioned', label: 'Decommissioned', icon: Trash2, tooltip: 'View Decommissioned Assets' },
-  { id: 'reports', label: 'Reports', icon: PieChart, tooltip: 'Asset Reports and Analytics' }
+  { id: 'decommissioned', label: 'Decommissioned', icon: Trash2, tooltip: 'View Decommissioned Assets' }
 ];
 
 // Define tabs for regular users (only Assets tab)
@@ -78,20 +77,13 @@ const AdminAssetsPage: React.FC = () => {
   useEffect(() => {
     const allowedTabIds = tabs.map(tab => tab.id);
     if (!allowedTabIds.includes(activeTab)) {
-      // If current active tab is not allowed for user, switch to assets
-      // console.log(`[AdminAssetsPage] Current tab '${activeTab}' not allowed for role '${user?.role_name}'. Switching to 'assets'.`);
       setActiveTab('assets');
     }
   }, [tabs, activeTab, user?.role_name]);
 
-  const handleTabClick = (event: React.MouseEvent<HTMLAnchorElement>, tabId: string) => {
-    event.preventDefault();
-
-    // Check if the user has permission to access this tab
+  const handleTabChange = (value: string) => {
     const allowedTabIds = tabs.map(tab => tab.id);
-    if (!allowedTabIds.includes(tabId)) {
-      // If user tries to access restricted tab, redirect to assets
-      // console.warn(`User attempted to access restricted tab: ${tabId}. Redirecting to assets.`);
+    if (!allowedTabIds.includes(value)) {
       toast({
         title: "Access Restricted",
         description: "You don't have permission to access that section.",
@@ -100,12 +92,8 @@ const AdminAssetsPage: React.FC = () => {
       setActiveTab('assets');
       return;
     }
-
-    setActiveTab(tabId);
+    setActiveTab(value);
   };
-
-  // Find the label of the current active tab for the page title
-  const activeTabLabel = tabs.find(tab => tab.id === activeTab)?.label || 'Assets';
 
   // Toggle fullscreen mode
   const toggleFullscreen = () => {
@@ -143,10 +131,6 @@ const AdminAssetsPage: React.FC = () => {
         return canAccess('maintenance')
           ? <MaintenancePage />
           : <AssetManagementNew skipPageLayout={true} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} />;
-      case 'reports':
-        return canAccess('reports')
-          ? <AssetReportsPage />
-          : <AssetManagementNew skipPageLayout={true} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} />;
       case 'decommissioned':
         return canAccess('decommissioned')
           ? <DecommissionedAssets />
@@ -179,45 +163,39 @@ const AdminAssetsPage: React.FC = () => {
 
   return (
     <PageLayout hideNavAndFooter={isFullscreen}>
-      <div className="asset-registry-content">
-        {/* Top navigation bar with tabs */}
-        {!isFullscreen && (
-          <div className="top-nav-container">
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold">{activeTabLabel}</h1>
-              {/* Role indicator for admins */}
-              {(isAdmin || user?.role_name === 'super_admin' || user?.role_name === 'system_admin') && (
-                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full ml-2">
-                  Admin View
-                </span>
-              )}
+      <div className="space-y-6">
+        {/* Header removed from here to appear dynamically in tabs */}
+
+        <Tabs defaultValue="assets" value={activeTab} onValueChange={handleTabChange} className="w-full">
+          {!isFullscreen && (
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+              <div className="flex items-center gap-4">
+                <TabsList>
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                      <tab.icon size={16} />
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+                {/* Role indicator for admins */}
+                {(isAdmin || user?.role_name === 'super_admin' || user?.role_name === 'system_admin') && (
+                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                    Admin View
+                  </span>
+                )}
+              </div>
             </div>
+          )}
 
-            <nav className="top-tabs">
-              <ul className="flex space-x-2">
-                {tabs.map((tab) => (
-                  <li key={tab.id}>
-                    <TooltipWrapper content={tab.tooltip}>
-                      <a
-                        href={`#${tab.id}`}
-                        className={activeTab === tab.id ? 'active' : ''}
-                        onClick={(e) => handleTabClick(e, tab.id)}
-                      >
-                        <tab.icon size={18} className="mr-2" />
-                        {tab.label}
-                      </a>
-                    </TooltipWrapper>
-                  </li>
-                ))}
-              </ul>
-            </nav>
+          <div className={isFullscreen ? "" : "mt-6"}>
+            {tabs.map((tab) => (
+              <TabsContent key={tab.id} value={tab.id} className="mt-0">
+                {activeTab === tab.id && renderTabContent()}
+              </TabsContent>
+            ))}
           </div>
-        )}
-
-        {/* Tab Content */}
-        <div className={isFullscreen ? "tab-content" : "tab-content mt-6"}>
-          {renderTabContent()}
-        </div>
+        </Tabs>
       </div>
     </PageLayout>
   );

@@ -8,9 +8,20 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter,
+  SheetClose,
+} from "@/components/ui/sheet";
 import {
   Loader2, Plus, Edit, Trash2, List, LayoutGrid, Search, Download,
-  RotateCcw, Rows, MoreVertical, Info, ArrowUpDown, ArrowUp, ArrowDown
+  RotateCcw, Rows, MoreVertical, Info, ArrowUpDown, ArrowUp, ArrowDown, Filter, X
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { logger } from '@/lib/supabaseClient'; // Keep logger if used elsewhere
@@ -121,6 +132,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   const [filterUnit, setFilterUnit] = useState('all');
   const [filterDivision, setFilterDivision] = useState('all');
   const [filterVendor, setFilterVendor] = useState('all');
+  const [filterAssignedTo, setFilterAssignedTo] = useState('all');
 
   // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,6 +154,10 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   );
   const existingVendors = useMemo(() =>
     Array.from(new Set(assets.map(a => a.vendor).filter(Boolean) as string[])).sort(),
+    [assets]
+  );
+  const existingAssignedTo = useMemo(() =>
+    Array.from(new Set(assets.map(a => a.assigned_to).filter(Boolean) as string[])).sort(),
     [assets]
   );
 
@@ -181,10 +197,11 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
       const unitMatch = filterUnit === 'all' || (asset.unit && asset.unit === filterUnit);
       const divisionMatch = filterDivision === 'all' || (asset.division && asset.division === filterDivision);
       const vendorMatch = filterVendor === 'all' || (asset.vendor && asset.vendor === filterVendor);
+      const assignedToMatch = filterAssignedTo === 'all' || (asset.assigned_to && asset.assigned_to === filterAssignedTo);
 
-      return textMatch && typeMatch && conditionMatch && unitMatch && divisionMatch && vendorMatch;
+      return textMatch && typeMatch && conditionMatch && unitMatch && divisionMatch && vendorMatch && assignedToMatch;
     });
-  }, [assets, filterText, filterType, filterCondition, filterUnit, filterDivision, filterVendor]); // [Cursor] Update dependencies
+  }, [assets, filterText, filterType, filterCondition, filterUnit, filterDivision, filterVendor, filterAssignedTo]); // [Cursor] Update dependencies
 
   // console.log(`[AssetManagement] Filters: Text="${filterText}", Type="${filterType}", Condition="${filterCondition}", Unit="${filterUnit}", Division="${filterDivision}", Vendor="${filterVendor}"`);
   // console.log('[AssetManagement] Assets array AFTER filtering:', filteredAssets);
@@ -294,6 +311,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     setFilterUnit('all');
     setFilterDivision('all');
     setFilterVendor('all');
+    setFilterAssignedTo('all');
     // Reset sorting as well
     setSortColumn('name');
     setSortDirection('asc');
@@ -434,1036 +452,1174 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   // --- End User Email Check ---
 
   const mainContent = (
-    <div className="space-y-6">
-      {/* Header and Actions - Search on left, buttons on right */}
-      <div className="flex justify-between items-center gap-4"> {/* Updated classes */}
-        {/* Search Input - Moved here */}
-        <div className="relative w-full max-w-sm"> {/* Adjusted width */}
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Filter by name, type, vendor..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-            className="pl-8 w-full"
-          />
+    <Card className="w-full shadow-sm border">
+      <CardContent className="p-6 space-y-6 flex flex-col h-full">
+        {/* Fixed Header */}
+        <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Asset Registry</h2>
+            <p className="text-muted-foreground">Manage and track all organizational assets.</p>
+          </div>
         </div>
-        {/* Action Buttons Container */}
-        <div className="flex items-center gap-2 flex-shrink-0"> {/* Added flex-shrink-0 */}
-          {/* View Mode Toggle */}
-          <TooltipWrapper content="Switch between different view modes">
-            <ToggleGroup
-              type="single"
-              value={viewMode}
-              onValueChange={(value) => value && setViewMode(value as 'table' | 'card' | 'detailed-list')}
-              aria-label="View mode"
-              className="border rounded-md p-0.5"
-            >
-              <TooltipWrapper content="Table view - Display assets in a detailed table format">
-                <ToggleGroupItem value="table" aria-label="Table view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                  <List className="h-4 w-4" />
-                </ToggleGroupItem>
-              </TooltipWrapper>
-              <TooltipWrapper content="Card view - Display assets as individual cards">
-                <ToggleGroupItem value="card" aria-label="Card view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                  <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-              </TooltipWrapper>
-              <TooltipWrapper content="Detailed list view - Show all asset information in an expanded format">
-                <ToggleGroupItem value="detailed-list" aria-label="Detailed list view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                  <Rows className="h-4 w-4" />
-                </ToggleGroupItem>
-              </TooltipWrapper>
-            </ToggleGroup>
-          </TooltipWrapper>
-          {/* Add Asset Button */}
-          <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-            <DialogTrigger asChild>
-              <TooltipWrapper content="Add a new asset to the system">
-                <Button onClick={handleAddClick}>
-                  <Plus className="mr-2 h-4 w-4" /> Add Asset
-                </Button>
-              </TooltipWrapper>
-            </DialogTrigger>
-            {isAddModalOpen && (
-              <AddAssetModal
-                isOpen={isAddModalOpen}
-                onClose={handleCloseModals}
-                onAdd={handleSaveAdd}
-                divisions={divisions}
-                units={units}
-                staffMembers={staffMembers}
-                existingNames={existingNames}
-                existingTypes={existingTypes}
-                existingVendors={existingVendors}
+
+        {/* Header and Actions - Search on left, buttons on right */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          {/* Search Input & Inline Filters */}
+          <div className="flex flex-col md:flex-row items-center gap-2 w-full">
+            <div className="relative w-full flex-1">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search assets by name, ID, user, vendor..."
+                value={filterText}
+                onChange={(e) => setFilterText(e.target.value)}
+                className="pl-8 w-full bg-white dark:bg-gray-950 h-9"
               />
-            )}
-          </Dialog>
-          {/* More Options Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <TooltipWrapper content="More options - Export data and additional actions">
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <MoreVertical className="h-4 w-4" />
+            </div>
+            {/* Inline Type Filter */}
+            <div className="w-full md:w-36 hidden md:block">
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full h-9 bg-white dark:bg-gray-950">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {existingTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {/* Inline Unit Filter */}
+            <div className="w-full md:w-36 hidden md:block">
+              <Select value={filterUnit} onValueChange={setFilterUnit}>
+                <SelectTrigger className="w-full h-9 bg-white dark:bg-gray-950">
+                  <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Units</SelectItem>
+                  {[...new Set(assets.map(a => a.unit).filter(Boolean))].sort().map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Action Buttons Container */}
+          <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
+            {/* Filter Drawer */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2 bg-white dark:bg-gray-950 h-9">
+                  <Filter className="h-4 w-4" /> Filters {
+                    (filterCondition !== 'all' || filterDivision !== 'all' || filterVendor !== 'all' || filterAssignedTo !== 'all') && (
+                      <span className="flex h-2 w-2 rounded-full bg-primary" />
+                    )
+                  }
                 </Button>
-              </TooltipWrapper>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </DropdownMenuItem>
-              {/* Add more options here if needed */}
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px]">
+                <SheetHeader>
+                  <SheetTitle>Advanced Filters</SheetTitle>
+                  <SheetDescription>Narrow down your asset list by applying specific criteria.</SheetDescription>
+                </SheetHeader>
+                <div className="py-6 space-y-6">
+                  {/* Asset Info Group */}
+                  <div className="space-y-4">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Asset Info</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Show Type and Unit in drawer on mobile only */}
+                      <div className="space-y-2 md:hidden">
+                        <label className="text-sm font-medium">Type</label>
+                        <Select value={filterType} onValueChange={setFilterType}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Types" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            {existingTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2 md:hidden">
+                        <label className="text-sm font-medium">Unit</label>
+                        <Select value={filterUnit} onValueChange={setFilterUnit}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Units" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Units</SelectItem>
+                            {[...new Set(assets.map(a => a.unit).filter(Boolean))].sort().map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Condition</label>
+                        <Select value={filterCondition} onValueChange={setFilterCondition}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Conditions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Conditions</SelectItem>
+                            {[...new Set(assets.map(a => a.condition).filter(Boolean))].sort().map(cond => <SelectItem key={cond} value={cond}>{cond}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Vendor</label>
+                        <Select value={filterVendor} onValueChange={setFilterVendor}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Vendors" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Vendors</SelectItem>
+                            {existingVendors.map(vendor => <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Organization Group */}
+                  <div className="space-y-4 pt-2">
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Organization</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Division</label>
+                        <Select value={filterDivision} onValueChange={setFilterDivision}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="All Divisions" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Divisions</SelectItem>
+                            {[...new Set(assets.map(a => a.division).filter(Boolean))].sort().map(div => <SelectItem key={div} value={div}>{div}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Assigned To</label>
+                        <Select value={filterAssignedTo} onValueChange={setFilterAssignedTo}>
+                          <SelectTrigger className="w-full h-9">
+                            <SelectValue placeholder="Anyone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">Anyone</SelectItem>
+                            {existingAssignedTo.map(person => <SelectItem key={person} value={person}>{person}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-between items-center w-full gap-2">
+                  <Button variant="outline" onClick={handleResetFilters} className="w-full sm:w-auto">
+                    Reset All
+                  </Button>
+                  <SheetClose asChild>
+                    <Button type="button" className="w-full sm:w-auto">Apply Filters</Button>
+                  </SheetClose>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+
+            {/* View Mode Toggle */}
+            <TooltipWrapper content="Switch between different view modes">
+              <ToggleGroup
+                type="single"
+                value={viewMode}
+                onValueChange={(value) => value && setViewMode(value as 'table' | 'card' | 'detailed-list')}
+                aria-label="View mode"
+                className="border rounded-md p-0.5 bg-white dark:bg-gray-950 h-9"
+              >
+                <TooltipWrapper content="Table view - Display assets in a detailed table format">
+                  <ToggleGroupItem value="table" aria-label="Table view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                    <List className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </TooltipWrapper>
+                <TooltipWrapper content="Card view - Display assets as individual cards">
+                  <ToggleGroupItem value="card" aria-label="Card view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                    <LayoutGrid className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </TooltipWrapper>
+                <TooltipWrapper content="Detailed list view - Show all asset information in an expanded format">
+                  <ToggleGroupItem value="detailed-list" aria-label="Detailed list view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                    <Rows className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </TooltipWrapper>
+              </ToggleGroup>
+            </TooltipWrapper>
+
+            {/* Add Asset Button */}
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <TooltipWrapper content="Add a new asset to the system">
+                  <Button onClick={handleAddClick} className="h-9">
+                    <Plus className="mr-2 h-4 w-4" /> Add Asset
+                  </Button>
+                </TooltipWrapper>
+              </DialogTrigger>
+              {isAddModalOpen && (
+                <AddAssetModal
+                  isOpen={isAddModalOpen}
+                  onClose={handleCloseModals}
+                  onAdd={handleSaveAdd}
+                  divisions={divisions}
+                  units={units}
+                  staffMembers={staffMembers}
+                  existingNames={existingNames}
+                  existingTypes={existingTypes}
+                  existingVendors={existingVendors}
+                />
+              )}
+            </Dialog>
+
+            {/* More Options Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <TooltipWrapper content="More options - Export data and additional actions">
+                  <Button variant="outline" size="icon" className="h-9 w-9 bg-white dark:bg-gray-950">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </TooltipWrapper>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </DropdownMenuItem>
+                {/* Add more options here if needed */}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
 
-      {/* Filters Section - Improved Responsiveness (Search bar removed from here) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 items-center"> {/* Adjusted grid columns */}
-        {/* Filter Selects - Each takes one column */}
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            {[...new Set(assets.map(a => a.type).filter(Boolean))].sort().map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterCondition} onValueChange={setFilterCondition}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Conditions" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Conditions</SelectItem>
-            {[...new Set(assets.map(a => a.condition).filter(Boolean))].sort().map(cond => <SelectItem key={cond} value={cond}>{cond}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterUnit} onValueChange={setFilterUnit}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Units" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Units</SelectItem>
-            {[...new Set(assets.map(a => a.unit).filter(Boolean))].sort().map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterDivision} onValueChange={setFilterDivision}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Divisions" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Divisions</SelectItem>
-            {[...new Set(assets.map(a => a.division).filter(Boolean))].sort().map(div => <SelectItem key={div} value={div}>{div}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterVendor} onValueChange={setFilterVendor}>
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="All Vendors" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Vendors</SelectItem>
-            {[...new Set(assets.map(a => a.vendor).filter(Boolean))].sort().map(vendor => <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>)}
-          </SelectContent>
-        </Select>
-
-        {/* Reset Button - Positioned at the end */}
-        <TooltipWrapper content="Reset all filters and sorting to default values">
-          <Button
-            variant="ghost"
-            onClick={handleResetFilters}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground justify-self-start xl:justify-self-end"
-          >
-            <RotateCcw className="h-4 w-4" />
-            Reset
-          </Button>
-        </TooltipWrapper>
-      </div>
-
-      {/* Main Content Area */}
-      <Card>
-        <CardContent className="p-0 relative h-[70vh]"> {/* Removed overflow-auto from here */}
-          <div className="overflow-auto h-full"> {/* Added scroll container */}
-            {assetsLoading && (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <span className="ml-2 text-muted-foreground">Loading assets...</span>
-              </div>
+        {/* Active Filters Row */}
+        {(filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all') && (
+          <div className="flex flex-wrap items-center gap-2 mt-0">
+            <span className="text-sm text-muted-foreground font-medium mr-1">Active Filters:</span>
+            {filterType !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Type: {filterType}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterType('all')} />
+              </Badge>
             )}
-            {assetsError && (
-              <div className="text-center py-10 px-4 text-destructive flex items-center justify-center h-full">
-                <p>Error loading assets: {assetsError.message}</p>
-              </div>
+            {filterCondition !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Condition: {filterCondition}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterCondition('all')} />
+              </Badge>
             )}
-            {!assetsLoading && !assetsError && (
-              <>
-                {/* Table View - Enhanced with sticky headers and comprehensive tooltips */}
-                {viewMode === 'table' && (
-                  <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-20 shadow-md">
-                      <tr>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 w-[60px] border-r border-gray-200 dark:border-gray-600">
-                          <TooltipWrapper content="Asset image - Click asset row to view full details">
-                            <div className="flex items-center justify-center">
-                              <span>Img</span>
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[200px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('name')}>
-                          <TooltipWrapper content="Asset name - Click to sort alphabetically">
-                            <div className="flex items-center">
-                              <span>Name</span>
-                              <SortIndicator column="name" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 w-[50px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('id')}>
-                          <TooltipWrapper content="Unique asset identifier - Click to sort by ID">
-                            <div className="flex items-center">
-                              <span>ID</span>
-                              <SortIndicator column="id" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('type')}>
-                          <TooltipWrapper content="Asset category/type - Click to sort by type">
-                            <div className="flex items-center">
-                              <span>Type</span>
-                              <SortIndicator column="type" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[100px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('condition')}>
-                          <TooltipWrapper content="Current asset condition - Click to sort by condition">
-                            <div className="flex items-center">
-                              <span>Condition</span>
-                              <SortIndicator column="condition" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('assigned_to')}>
-                          <TooltipWrapper content="Person currently assigned this asset - Click to sort by assignee">
-                            <div className="flex items-center">
-                              <span>Assigned To</span>
-                              <SortIndicator column="assigned_to" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[200px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('assigned_to_email')}>
-                          <TooltipWrapper content="Email of assigned person - Click to sort by email">
-                            <div className="flex items-center">
-                              <span>Email</span>
-                              <SortIndicator column="assigned_to_email" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('unit')}>
-                          <TooltipWrapper content="Organizational unit - Click to sort by unit">
-                            <div className="flex items-center">
-                              <span>Unit</span>
-                              <SortIndicator column="unit" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[200px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('division')}>
-                          <TooltipWrapper content="Division within organization - Click to sort by division">
-                            <div className="flex items-center">
-                              <span>Division</span>
-                              <SortIndicator column="division" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[200px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('description')}>
-                          <TooltipWrapper content="Asset description - Click to sort by description">
-                            <div className="flex items-center">
-                              <span>Description</span>
-                              <SortIndicator column="description" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('assigned_date')}>
-                          <TooltipWrapper content="Date asset was assigned - Click to sort by assigned date">
-                            <div className="flex items-center">
-                              <span>Assigned Date</span>
-                              <SortIndicator column="assigned_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('purchase_date')}>
-                          <TooltipWrapper content="Date asset was purchased - Click to sort by purchase date">
-                            <div className="flex items-center">
-                              <span>Purchased Date</span>
-                              <SortIndicator column="purchase_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="px-4 py-3 bg-gray-100 dark:bg-gray-700 min-w-[150px] border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('last_updated')}>
-                          <TooltipWrapper content="Last modification date - Click to sort by last updated">
-                            <div className="flex items-center">
-                              <span>Last Updated</span>
-                              <SortIndicator column="last_updated" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="sticky right-0 px-4 py-3 bg-gray-100 dark:bg-gray-700 w-[100px] text-right z-30 shadow-lg">
-                          <TooltipWrapper content="Available actions for this asset">
-                            <div className="flex items-center justify-end">
-                              <span>Actions</span>
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
+            {filterUnit !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Unit: {filterUnit}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterUnit('all')} />
+              </Badge>
+            )}
+            {filterDivision !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Division: {filterDivision}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterDivision('all')} />
+              </Badge>
+            )}
+            {filterVendor !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Vendor: {filterVendor}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterVendor('all')} />
+              </Badge>
+            )}
+            {filterAssignedTo !== 'all' && (
+              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
+                Assigned To: {filterAssignedTo}
+                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterAssignedTo('all')} />
+              </Badge>
+            )}
+            <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0">
+              Clear all
+            </Button>
+          </div>
+        )}
+
+        {/* Main Content Area */}
+        <div className="border rounded-md w-full bg-background">
+          <div className="p-0 relative h-[65vh] flex flex-col">
+            <div className="overflow-auto flex-1 w-full custom-scrollbar">
+              {assetsLoading && (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Loading assets...</span>
+                </div>
+              )}
+              {assetsError && (
+                <div className="text-center py-10 px-4 text-destructive flex items-center justify-center h-full">
+                  <p>Error loading assets: {assetsError.message}</p>
+                </div>
+              )}
+              {!assetsLoading && !assetsError && (
+                <>
+                  {/* Table View - Enhanced with sticky headers and comprehensive tooltips */}
+                  {viewMode === 'table' && (
+                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                      <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground w-[60px]">
+                            <TooltipWrapper content="Asset image - Click asset row to view full details">
+                              <div className="flex items-center justify-center">
+                                <span>Img</span>
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('name')}>
+                            <TooltipWrapper content="Asset name - Click to sort alphabetically">
+                              <div className="flex items-center">
+                                <span>Name</span>
+                                <SortIndicator column="name" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground w-[50px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('id')}>
+                            <TooltipWrapper content="Unique asset identifier - Click to sort by ID">
+                              <div className="flex items-center">
+                                <span>ID</span>
+                                <SortIndicator column="id" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('type')}>
+                            <TooltipWrapper content="Asset category/type - Click to sort by type">
+                              <div className="flex items-center">
+                                <span>Type</span>
+                                <SortIndicator column="type" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[100px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('condition')}>
+                            <TooltipWrapper content="Current asset condition - Click to sort by condition">
+                              <div className="flex items-center">
+                                <span>Condition</span>
+                                <SortIndicator column="condition" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_to')}>
+                            <TooltipWrapper content="Person currently assigned this asset - Click to sort by assignee">
+                              <div className="flex items-center">
+                                <span>Assigned To</span>
+                                <SortIndicator column="assigned_to" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_to_email')}>
+                            <TooltipWrapper content="Email of assigned person - Click to sort by email">
+                              <div className="flex items-center">
+                                <span>Email</span>
+                                <SortIndicator column="assigned_to_email" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('unit')}>
+                            <TooltipWrapper content="Organizational unit - Click to sort by unit">
+                              <div className="flex items-center">
+                                <span>Unit</span>
+                                <SortIndicator column="unit" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('division')}>
+                            <TooltipWrapper content="Division within organization - Click to sort by division">
+                              <div className="flex items-center">
+                                <span>Division</span>
+                                <SortIndicator column="division" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('description')}>
+                            <TooltipWrapper content="Asset description - Click to sort by description">
+                              <div className="flex items-center">
+                                <span>Description</span>
+                                <SortIndicator column="description" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_date')}>
+                            <TooltipWrapper content="Date asset was assigned - Click to sort by assigned date">
+                              <div className="flex items-center">
+                                <span>Assigned Date</span>
+                                <SortIndicator column="assigned_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('purchase_date')}>
+                            <TooltipWrapper content="Date asset was purchased - Click to sort by purchase date">
+                              <div className="flex items-center">
+                                <span>Purchased Date</span>
+                                <SortIndicator column="purchase_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('last_updated')}>
+                            <TooltipWrapper content="Last modification date - Click to sort by last updated">
+                              <div className="flex items-center">
+                                <span>Last Updated</span>
+                                <SortIndicator column="last_updated" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-right text-muted-foreground w-[100px] sticky right-0 bg-white dark:bg-gray-800 z-10">
+                            <TooltipWrapper content="Available actions for this asset">
+                              <div className="flex items-center justify-end">
+                                <span>Actions</span>
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedAssets.length > 0 ? (
+                          paginatedAssets.map(asset => (
+                            <tr key={asset.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+                              {/* Image Cell */}
+                              <td className="p-4 align-middle cursor-pointer" onClick={() => handleInfoClick(asset)}>
+                                <TooltipWrapper content={`${asset.name || 'Unknown Asset'} - Click to view full details`}>
+                                  <Avatar className="h-9 w-9">
+                                    <AvatarImage src={asset.image_url || undefined} alt={asset.name} />
+                                    <AvatarFallback>{asset.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Name Cell */}
+                              <td className="p-4 align-middle font-medium text-gray-900 whitespace-nowrap dark:text-white cursor-pointer" onClick={() => handleInfoClick(asset)}>
+                                <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
+                                  <HighlightMatch text={asset.name || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* ID Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
+                                  <HighlightMatch text={asset.id || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Type Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
+                                  <HighlightMatch text={asset.type || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Condition Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Current Condition: ${asset.condition || 'N/A'}`}>
+                                  <span className={cn(
+                                    "px-2 py-1 rounded-full text-xs font-medium",
+                                    asset.condition === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                                      asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                                        asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
+                                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                                  )}>
+                                    <HighlightMatch text={asset.condition || 'N/A'} searchTerm={filterText} />
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Assigned To Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
+                                  <HighlightMatch text={asset.assigned_to || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Email Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Email: ${asset.assigned_to_email || 'N/A'}`}>
+                                  <HighlightMatch text={asset.assigned_to_email || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Unit Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
+                                  <HighlightMatch text={asset.unit || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Division Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
+                                  <HighlightMatch text={asset.division || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Description Cell */}
+                              <td className="p-4 align-middle max-w-xs truncate">
+                                <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
+                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Assigned Date Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Assigned Date: ${formatDate(asset.assigned_date) || 'N/A'}`}>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {formatDate(asset.assigned_date) || 'N/A'}
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Purchase Date Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Purchase Date: ${formatDate(asset.purchase_date) || 'N/A'}`}>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {formatDate(asset.purchase_date) || 'N/A'}
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Last Updated Cell */}
+                              <td className="p-4 align-middle">
+                                <TooltipWrapper content={`Last Updated: ${formatDate(asset.last_updated) || 'N/A'}`}>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                                    {formatDate(asset.last_updated) || 'N/A'}
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Actions Cell - sticky right */}
+                              <td className="p-4 align-middle sticky right-0 bg-white dark:bg-gray-800 text-right z-10 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <span className="sr-only">Open menu</span>
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="z-50">
+                                    <DropdownMenuItem onClick={() => handleInfoClick(asset)}>
+                                      <Info className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEditClick(asset)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={14} className="h-24 text-center text-gray-500 dark:text-gray-400"> {/* Adjusted colSpan */}
+                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                                ? `No assets found matching the current filters.`
+                                : "No assets were found."}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* End Table View */}
+
+                  {/* Card View */}
+                  {viewMode === 'card' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4"> {/* Keep padding for card view */}
                       {paginatedAssets.length > 0 ? (
                         paginatedAssets.map(asset => (
-                          <tr key={asset.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
-                            {/* Image Cell */}
-                            <td className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => handleInfoClick(asset)}>
-                              <TooltipWrapper content={`${asset.name || 'Unknown Asset'} - Click to view full details`}>
-                                <Avatar className="h-9 w-9">
-                                  <AvatarImage src={asset.image_url || undefined} alt={asset.name} />
-                                  <AvatarFallback>{asset.name?.charAt(0).toUpperCase()}</AvatarFallback>
-                                </Avatar>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Name Cell */}
-                            <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap dark:text-white cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => handleInfoClick(asset)}>
-                              <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
-                                <HighlightMatch text={asset.name || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* ID Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
-                                <HighlightMatch text={asset.id || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Type Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
-                                <HighlightMatch text={asset.type || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Condition Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Current Condition: ${asset.condition || 'N/A'}`}>
-                                <span className={cn(
-                                  "px-2 py-1 rounded-full text-xs font-medium",
-                                  asset.condition === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                                    asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                                      asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
-                                        'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                                )}>
-                                  <HighlightMatch text={asset.condition || 'N/A'} searchTerm={filterText} />
-                                </span>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Assigned To Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
-                                <HighlightMatch text={asset.assigned_to || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Email Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Email: ${asset.assigned_to_email || 'N/A'}`}>
-                                <HighlightMatch text={asset.assigned_to_email || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Unit Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
-                                <HighlightMatch text={asset.unit || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Division Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
-                                <HighlightMatch text={asset.division || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Description Cell */}
-                            <td className="px-4 py-3 max-w-xs truncate">
-                              <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
-                                <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </td>
-                            {/* Assigned Date Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Assigned Date: ${formatDate(asset.assigned_date) || 'N/A'}`}>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {formatDate(asset.assigned_date) || 'N/A'}
-                                </span>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Purchase Date Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Purchase Date: ${formatDate(asset.purchase_date) || 'N/A'}`}>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {formatDate(asset.purchase_date) || 'N/A'}
-                                </span>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Last Updated Cell */}
-                            <td className="px-4 py-3">
-                              <TooltipWrapper content={`Last Updated: ${formatDate(asset.last_updated) || 'N/A'}`}>
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {formatDate(asset.last_updated) || 'N/A'}
-                                </span>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Actions Cell - sticky right */}
-                            <td className="sticky right-0 px-4 py-3 bg-white dark:bg-gray-800 text-right z-20 shadow-lg"> {/* Enhanced background and shadow */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span className="sr-only">Open menu</span>
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="z-50">
-                                  <DropdownMenuItem onClick={() => handleInfoClick(asset)}>
-                                    <Info className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleEditClick(asset)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
+                          <AssetCard
+                            key={asset.id}
+                            asset={asset}
+                            onClick={() => handleInfoClick(asset)}
+                            onEdit={() => handleEditClick(asset)}
+                            onDelete={() => handleDeleteClick(asset)}
+                          />
                         ))
                       ) : (
-                        <tr>
-                          <td colSpan={14} className="h-24 text-center text-gray-500 dark:text-gray-400"> {/* Adjusted colSpan */}
-                            {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
-                              ? `No assets found matching the current filters.`
-                              : "No assets were found."}
-                          </td>
-                        </tr>
+                        <div className="col-span-full text-center py-10 px-4 text-muted-foreground">
+                          {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                            ? `No assets found matching the current filters.`
+                            : "No assets were found."}
+                        </div>
                       )}
-                    </tbody>
-                  </table>
-                )}
-                {/* End Table View */}
-
-                {/* Card View */}
-                {viewMode === 'card' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4"> {/* Keep padding for card view */}
-                    {paginatedAssets.length > 0 ? (
-                      paginatedAssets.map(asset => (
-                        <AssetCard
-                          key={asset.id}
-                          asset={asset}
-                          onClick={() => handleInfoClick(asset)}
-                          onEdit={() => handleEditClick(asset)}
-                          onDelete={() => handleDeleteClick(asset)}
-                        />
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-10 px-4 text-muted-foreground">
-                        {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
-                          ? `No assets found matching the current filters.`
-                          : "No assets were found."}
-                      </div>
-                    )}
-                  </div>
-                )}
-                {/* End Card View */}
-
-                {/* Detailed List View - Enhanced with sticky headers and comprehensive tooltips */}
-                {viewMode === 'detailed-list' && (
-                  <table className="w-full text-xs text-left text-gray-500 dark:text-gray-400 min-w-max">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-100 dark:bg-gray-700 dark:text-gray-400 sticky top-0 z-20 shadow-md">
-                      <tr>
-                        <th scope="col" className="sticky left-0 bg-gray-100 dark:bg-gray-700 z-10 w-[50px] h-auto py-2 px-2 border-r border-gray-200 dark:border-gray-600">
-                          <TooltipWrapper content="Asset image - Click asset row to view full details">
-                            <div className="flex items-center justify-center">
-                              <span>Img</span>
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="sticky left-[50px] bg-gray-100 dark:bg-gray-700 z-10 min-w-[150px] h-auto py-2 px-2 border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('name')}>
-                          <TooltipWrapper content="Asset name - Click to sort alphabetically">
-                            <div className="flex items-center">
-                              <span>Name</span>
-                              <SortIndicator column="name" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('id')}>
-                          <TooltipWrapper content="Unique asset identifier - Click to sort by ID">
-                            <div className="flex items-center">
-                              <span>ID</span>
-                              <SortIndicator column="id" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('type')}>
-                          <TooltipWrapper content="Asset category/type - Click to sort by type">
-                            <div className="flex items-center">
-                              <span>Type</span>
-                              <SortIndicator column="type" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('brand')}>
-                          <TooltipWrapper content="Asset brand/manufacturer - Click to sort by brand">
-                            <div className="flex items-center">
-                              <span>Brand</span>
-                              <SortIndicator column="brand" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('model')}>
-                          <TooltipWrapper content="Asset model - Click to sort by model">
-                            <div className="flex items-center">
-                              <span>Model</span>
-                              <SortIndicator column="model" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('serial_number')}>
-                          <TooltipWrapper content="Asset serial number - Click to sort by serial number">
-                            <div className="flex items-center">
-                              <span>Serial Number</span>
-                              <SortIndicator column="serial_number" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('asset_id')}>
-                          <TooltipWrapper content="Asset ID - Click to sort by asset ID">
-                            <div className="flex items-center">
-                              <span>Asset ID</span>
-                              <SortIndicator column="asset_id" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('condition')}>
-                          <TooltipWrapper content="Current asset condition - Click to sort by condition">
-                            <div className="flex items-center">
-                              <span>Condition</span>
-                              <SortIndicator column="condition" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('assigned_to')}>
-                          <TooltipWrapper content="Person currently assigned this asset - Click to sort by assignee">
-                            <div className="flex items-center">
-                              <span>Assigned To</span>
-                              <SortIndicator column="assigned_to" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('assigned_to_email')}>
-                          <TooltipWrapper content="Email of assigned person - Click to sort by email">
-                            <div className="flex items-center">
-                              <span>Email</span>
-                              <SortIndicator column="assigned_to_email" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('unit')}>
-                          <TooltipWrapper content="Organizational unit - Click to sort by unit">
-                            <div className="flex items-center">
-                              <span>Unit</span>
-                              <SortIndicator column="unit" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('division')}>
-                          <TooltipWrapper content="Division within organization - Click to sort by division">
-                            <div className="flex items-center">
-                              <span>Division</span>
-                              <SortIndicator column="division" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('description')}>
-                          <TooltipWrapper content="Asset description - Click to sort by description">
-                            <div className="flex items-center">
-                              <span>Description</span>
-                              <SortIndicator column="description" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('assigned_date')}>
-                          <TooltipWrapper content="Date asset was assigned - Click to sort by assigned date">
-                            <div className="flex items-center">
-                              <span>Assigned Date</span>
-                              <SortIndicator column="assigned_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('purchase_date')}>
-                          <TooltipWrapper content="Date asset was purchased - Click to sort by purchase date">
-                            <div className="flex items-center">
-                              <span>Purchase Date</span>
-                              <SortIndicator column="purchase_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('purchase_cost')}>
-                          <TooltipWrapper content="Cost of asset purchase - Click to sort by purchase cost">
-                            <div className="flex items-center">
-                              <span>Purchase Cost</span>
-                              <SortIndicator column="purchase_cost" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('vendor')}>
-                          <TooltipWrapper content="Asset vendor/supplier - Click to sort by vendor">
-                            <div className="flex items-center">
-                              <span>Vendor</span>
-                              <SortIndicator column="vendor" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('warranty_expiry_date')}>
-                          <TooltipWrapper content="Warranty expiration date - Click to sort by warranty expiry">
-                            <div className="flex items-center">
-                              <span>Warranty Expiry</span>
-                              <SortIndicator column="warranty_expiry_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('expiry_date')}>
-                          <TooltipWrapper content="Asset expiration date - Click to sort by expiry date">
-                            <div className="flex items-center">
-                              <span>Expiry Date</span>
-                              <SortIndicator column="expiry_date" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('life_expectancy_years')}>
-                          <TooltipWrapper content="Expected asset lifespan in years - Click to sort by life expectancy">
-                            <div className="flex items-center">
-                              <span>Life Exp (Yrs)</span>
-                              <SortIndicator column="life_expectancy_years" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('depreciated_value')}>
-                          <TooltipWrapper content="Current depreciated value - Click to sort by depreciated value">
-                            <div className="flex items-center">
-                              <span>Depreciated Value</span>
-                              <SortIndicator column="depreciated_value" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('ytd_usage')}>
-                          <TooltipWrapper content="Year-to-date usage information - Click to sort by YTD usage">
-                            <div className="flex items-center">
-                              <span>YTD Usage</span>
-                              <SortIndicator column="ytd_usage" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('notes')}>
-                          <TooltipWrapper content="Additional notes about the asset - Click to sort by notes">
-                            <div className="flex items-center">
-                              <span>Notes</span>
-                              <SortIndicator column="notes" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('last_updated')}>
-                          <TooltipWrapper content="Last modification date - Click to sort by last updated">
-                            <div className="flex items-center">
-                              <span>Last Updated</span>
-                              <SortIndicator column="last_updated" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('last_updated_by')}>
-                          <TooltipWrapper content="Person who last updated this asset - Click to sort by updated by">
-                            <div className="flex items-center">
-                              <span>Updated By</span>
-                              <SortIndicator column="last_updated_by" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('created_at')}>
-                          <TooltipWrapper content="Asset creation date - Click to sort by created at">
-                            <div className="flex items-center">
-                              <span>Created At</span>
-                              <SortIndicator column="created_at" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('created_by')}>
-                          <TooltipWrapper content="Person who created/uploaded this asset - Click to sort by created by">
-                            <div className="flex items-center">
-                              <span>Created By</span>
-                              <SortIndicator column="created_by" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('admin_comments')}>
-                          <TooltipWrapper content="Administrative comments - Click to sort by admin comments">
-                            <div className="flex items-center">
-                              <span>Admin Comments</span>
-                              <SortIndicator column="admin_comments" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <TableHead className="sticky top-0 h-auto py-2 px-2 bg-background border-r border-border cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('invoice_url')}>
-                          <TooltipWrapper content="Invoice document URL - Click to sort by invoice URL">
-                            <div className="flex items-center">
-                              <span>Invoice URL</span>
-                              <SortIndicator column="invoice_url" />
-                            </div>
-                          </TooltipWrapper>
-                        </TableHead>
-                        <th scope="col" className="sticky top-0 h-auto py-2 px-2 bg-gray-100 dark:bg-gray-700 border-r border-gray-200 dark:border-gray-600 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors" onClick={() => handleSort('barcode_url')}>
-                          <TooltipWrapper content="Barcode document URL - Click to sort by barcode URL">
-                            <div className="flex items-center">
-                              <span>Barcode URL</span>
-                              <SortIndicator column="barcode_url" />
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                        <th scope="col" className="sticky right-0 bg-gray-100 dark:bg-gray-700 z-30 text-right min-w-[100px] h-auto py-2 px-2 shadow-lg">
-                          <TooltipWrapper content="Available actions for this asset">
-                            <div className="flex items-center justify-end">
-                              <span>Actions</span>
-                            </div>
-                          </TooltipWrapper>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedAssets.length === 0 ? (
-                        <tr>
-                          <td colSpan={32} className="h-16 text-center text-muted-foreground py-1 px-2">
-                            {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
-                              ? `No assets found matching the current filters.`
-                              : "No assets were found."}
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedAssets.map((asset) => (
-                          <tr key={asset.id} className="h-auto hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors bg-white dark:bg-gray-800 border-b dark:border-gray-700">
-                            {/* Image Cell */}
-                            <td className="sticky left-0 bg-white dark:bg-gray-800 z-10 py-2 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors" onClick={() => handleInfoClick(asset)}>
-                              <TooltipWrapper content={`${asset.name || 'Unknown Asset'} - Click to view full details`}>
-                                <Avatar className="h-8 w-8">
-                                  <AvatarImage src={asset.image_url || undefined} alt={asset.name} />
-                                  <AvatarFallback>{asset.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-                                </Avatar>
-                              </TooltipWrapper>
-                            </td>
-                            {/* Name Cell */}
-                            <TableCell className="sticky left-[50px] bg-background z-10 font-medium py-2 px-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleInfoClick(asset)}>
-                              <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
-                                <HighlightMatch text={asset.name} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* ID Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
-                                <HighlightMatch text={asset.id} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Type Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
-                                <HighlightMatch text={asset.type} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Brand Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Brand: ${asset.brand || 'N/A'}`}>
-                                <HighlightMatch text={asset.brand || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Model Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Model: ${asset.model || 'N/A'}`}>
-                                <HighlightMatch text={asset.model || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Serial Number Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Serial Number: ${asset.serial_number || 'N/A'}`}>
-                                <HighlightMatch text={asset.serial_number || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Asset ID Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Asset ID: ${asset.asset_id || 'N/A'}`}>
-                                <HighlightMatch text={asset.asset_id || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Condition Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Current Condition: ${asset.condition || 'N/A'}`}>
-                                <span className={cn(
-                                  "px-2 py-1 rounded-full text-xs font-medium",
-                                  asset.condition === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                                    asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                                      asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
-                                        'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                                )}>
-                                  <HighlightMatch text={asset.condition} searchTerm={filterText} />
-                                </span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Assigned To Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
-                                <HighlightMatch text={asset.assigned_to} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Email Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Email: ${asset.assigned_to_email || 'N/A'}`}>
-                                <span className="text-sm">{asset.assigned_to_email || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Unit Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
-                                <HighlightMatch text={asset.unit} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Division Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
-                                <HighlightMatch text={asset.division} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Description Cell */}
-                            <TableCell className="py-2 px-2 max-w-[150px] truncate">
-                              <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
-                                <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Assigned Date Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Assigned Date: ${formatDate(asset.assigned_date) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.assigned_date) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Purchase Date Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Purchase Date: ${formatDate(asset.purchase_date) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.purchase_date) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Purchase Cost Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Purchase Cost: ${asset.purchase_cost != null ? `$${asset.purchase_cost.toFixed(2)}` : 'N/A'}`}>
-                                <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                                  {asset.purchase_cost != null ? `$${asset.purchase_cost.toFixed(2)}` : 'N/A'}
-                                </span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Vendor Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Vendor: ${asset.vendor || 'N/A'}`}>
-                                <HighlightMatch text={asset.vendor} searchTerm={filterText} />
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Warranty Expiry Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Warranty Expiry: ${formatDate(asset.warranty_expiry_date) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.warranty_expiry_date) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Expiry Date Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Expiry Date: ${formatDate(asset.expiry_date) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.expiry_date) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Life Expectancy Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Life Expectancy: ${asset.life_expectancy_years ?? 'N/A'} years`}>
-                                <span className="text-sm">{asset.life_expectancy_years ?? 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Depreciated Value Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Depreciated Value: ${asset.depreciated_value != null ? `$${asset.depreciated_value.toFixed(2)}` : 'N/A'}`}>
-                                <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                                  {asset.depreciated_value != null ? `$${asset.depreciated_value.toFixed(2)}` : 'N/A'}
-                                </span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* YTD Usage Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`YTD Usage: ${asset.ytd_usage || 'N/A'}`}>
-                                <span className="text-sm">{asset.ytd_usage || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Notes Cell */}
-                            <TableCell className="py-2 px-2 max-w-[150px] truncate">
-                              <TooltipWrapper content={`Notes: ${asset.notes || 'No notes available'}`}>
-                                <span className="text-sm text-muted-foreground">{asset.notes || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Last Updated Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Last Updated: ${formatDate(asset.last_updated) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.last_updated) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Updated By Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Updated By: ${asset.last_updated_by || 'N/A'}`}>
-                                <span className="text-sm">{asset.last_updated_by || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Created At Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Created At: ${formatDate(asset.created_at) || 'N/A'}`}>
-                                <span className="text-sm text-muted-foreground">{formatDate(asset.created_at) || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Created By Cell */}
-                            <TableCell className="py-2 px-2">
-                              <TooltipWrapper content={`Created By: ${asset.created_by || 'N/A'}`}>
-                                <span className="text-sm">{asset.created_by || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Admin Comments Cell */}
-                            <TableCell className="py-2 px-2 max-w-[150px] truncate">
-                              <TooltipWrapper content={`Admin Comments: ${asset.admin_comments || 'No admin comments'}`}>
-                                <span className="text-sm text-muted-foreground">{asset.admin_comments || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Invoice URL Cell */}
-                            <TableCell className="py-2 px-2 max-w-[150px] truncate">
-                              <TooltipWrapper content={`Invoice URL: ${asset.invoice_url || 'No invoice URL'}`}>
-                                <span className="text-sm text-blue-600 dark:text-blue-400">{asset.invoice_url || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Barcode URL Cell */}
-                            <TableCell className="py-2 px-2 max-w-[150px] truncate">
-                              <TooltipWrapper content={`Barcode URL: ${asset.barcode_url || 'No barcode URL'}`}>
-                                <span className="text-sm text-blue-600 dark:text-blue-400">{asset.barcode_url || 'N/A'}</span>
-                              </TooltipWrapper>
-                            </TableCell>
-                            {/* Actions Cell */}
-                            <TableCell className="sticky right-0 bg-background z-20 text-right py-2 px-2 shadow-lg">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700">
-                                    <span className="sr-only">Open menu</span>
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="z-50">
-                                  <DropdownMenuItem onClick={() => handleInfoClick(asset)}>
-                                    <Info className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleEditClick(asset)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                )}
-                {/* End Detailed List View */}
-              </> /* Closing Fragment for !loading && !error */
-            )}
-            {/* Pagination Controls (Now directly inside CardContent, after the conditional content) */}
-            {!assetsLoading && !assetsError && totalPages > 1 && (
-              <div className="sticky bottom-0 bg-background flex items-center justify-between border-t p-4 flex-shrink-0 z-40"> {/* Made pagination sticky */}
-                <span className="text-sm text-muted-foreground">
-                  Showing {paginatedAssets.length} of {sortedAssets.length} assets
-                  {sortColumn && (
-                    <span className="ml-2 text-blue-600 dark:text-blue-400">
-                      (sorted by {sortColumn} {sortDirection === 'asc' ? '↑' : '↓'})
-                    </span>
+                    </div>
                   )}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm font-medium">
-                    Page {currentPage} of {totalPages}
+                  {/* End Card View */}
+
+                  {/* Detailed List View - Enhanced with sticky headers and comprehensive tooltips */}
+                  {viewMode === 'detailed-list' && (
+                    <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-max">
+                      <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+                        <tr className="border-b border-gray-200 dark:border-gray-700">
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground w-[50px] sticky left-0 bg-white dark:bg-gray-800 z-20">
+                            <TooltipWrapper content="Asset image - Click asset row to view full details">
+                              <div className="flex items-center justify-center">
+                                <span>Img</span>
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] sticky left-[50px] bg-white dark:bg-gray-800 z-20 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('name')}>
+                            <TooltipWrapper content="Asset name - Click to sort alphabetically">
+                              <div className="flex items-center">
+                                <span>Name</span>
+                                <SortIndicator column="name" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[100px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('id')}>
+                            <TooltipWrapper content="Unique asset identifier - Click to sort by ID">
+                              <div className="flex items-center">
+                                <span>ID</span>
+                                <SortIndicator column="id" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('type')}>
+                            <TooltipWrapper content="Asset category/type - Click to sort by type">
+                              <div className="flex items-center">
+                                <span>Type</span>
+                                <SortIndicator column="type" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('brand')}>
+                            <TooltipWrapper content="Asset brand/manufacturer - Click to sort by brand">
+                              <div className="flex items-center">
+                                <span>Brand</span>
+                                <SortIndicator column="brand" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('model')}>
+                            <TooltipWrapper content="Asset model - Click to sort by model">
+                              <div className="flex items-center">
+                                <span>Model</span>
+                                <SortIndicator column="model" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('serial_number')}>
+                            <TooltipWrapper content="Asset serial number - Click to sort by serial number">
+                              <div className="flex items-center">
+                                <span>Serial Number</span>
+                                <SortIndicator column="serial_number" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('asset_id')}>
+                            <TooltipWrapper content="Asset ID - Click to sort by asset ID">
+                              <div className="flex items-center">
+                                <span>Asset ID</span>
+                                <SortIndicator column="asset_id" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[100px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('condition')}>
+                            <TooltipWrapper content="Current asset condition - Click to sort by condition">
+                              <div className="flex items-center">
+                                <span>Condition</span>
+                                <SortIndicator column="condition" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_to')}>
+                            <TooltipWrapper content="Person currently assigned this asset - Click to sort by assignee">
+                              <div className="flex items-center">
+                                <span>Assigned To</span>
+                                <SortIndicator column="assigned_to" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_to_email')}>
+                            <TooltipWrapper content="Email of assigned person - Click to sort by email">
+                              <div className="flex items-center">
+                                <span>Email</span>
+                                <SortIndicator column="assigned_to_email" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('unit')}>
+                            <TooltipWrapper content="Organizational unit - Click to sort by unit">
+                              <div className="flex items-center">
+                                <span>Unit</span>
+                                <SortIndicator column="unit" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('division')}>
+                            <TooltipWrapper content="Division within organization - Click to sort by division">
+                              <div className="flex items-center">
+                                <span>Division</span>
+                                <SortIndicator column="division" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[200px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('description')}>
+                            <TooltipWrapper content="Asset description - Click to sort by description">
+                              <div className="flex items-center">
+                                <span>Description</span>
+                                <SortIndicator column="description" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('assigned_date')}>
+                            <TooltipWrapper content="Date asset was assigned - Click to sort by assigned date">
+                              <div className="flex items-center">
+                                <span>Assigned Date</span>
+                                <SortIndicator column="assigned_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('purchase_date')}>
+                            <TooltipWrapper content="Date asset was purchased - Click to sort by purchase date">
+                              <div className="flex items-center">
+                                <span>Purchase Date</span>
+                                <SortIndicator column="purchase_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('purchase_cost')}>
+                            <TooltipWrapper content="Cost of asset purchase - Click to sort by purchase cost">
+                              <div className="flex items-center">
+                                <span>Purchase Cost</span>
+                                <SortIndicator column="purchase_cost" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('vendor')}>
+                            <TooltipWrapper content="Asset vendor/supplier - Click to sort by vendor">
+                              <div className="flex items-center">
+                                <span>Vendor</span>
+                                <SortIndicator column="vendor" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('warranty_expiry_date')}>
+                            <TooltipWrapper content="Warranty expiration date - Click to sort by warranty expiry">
+                              <div className="flex items-center">
+                                <span>Warranty Expiry</span>
+                                <SortIndicator column="warranty_expiry_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('expiry_date')}>
+                            <TooltipWrapper content="Asset expiration date - Click to sort by expiry date">
+                              <div className="flex items-center">
+                                <span>Expiry Date</span>
+                                <SortIndicator column="expiry_date" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('life_expectancy_years')}>
+                            <TooltipWrapper content="Expected asset lifespan in years - Click to sort by life expectancy">
+                              <div className="flex items-center">
+                                <span>Life Exp (Yrs)</span>
+                                <SortIndicator column="life_expectancy_years" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('depreciated_value')}>
+                            <TooltipWrapper content="Current depreciated value - Click to sort by depreciated value">
+                              <div className="flex items-center">
+                                <span>Depreciated Value</span>
+                                <SortIndicator column="depreciated_value" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('ytd_usage')}>
+                            <TooltipWrapper content="Year-to-date usage information - Click to sort by YTD usage">
+                              <div className="flex items-center">
+                                <span>YTD Usage</span>
+                                <SortIndicator column="ytd_usage" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('notes')}>
+                            <TooltipWrapper content="Additional notes about the asset - Click to sort by notes">
+                              <div className="flex items-center">
+                                <span>Notes</span>
+                                <SortIndicator column="notes" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('last_updated')}>
+                            <TooltipWrapper content="Last modification date - Click to sort by last updated">
+                              <div className="flex items-center">
+                                <span>Last Updated</span>
+                                <SortIndicator column="last_updated" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('last_updated_by')}>
+                            <TooltipWrapper content="Person who last updated this asset - Click to sort by updated by">
+                              <div className="flex items-center">
+                                <span>Updated By</span>
+                                <SortIndicator column="last_updated_by" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('created_at')}>
+                            <TooltipWrapper content="Asset creation date - Click to sort by created at">
+                              <div className="flex items-center">
+                                <span>Created At</span>
+                                <SortIndicator column="created_at" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('created_by')}>
+                            <TooltipWrapper content="Person who created/uploaded this asset - Click to sort by created by">
+                              <div className="flex items-center">
+                                <span>Created By</span>
+                                <SortIndicator column="created_by" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('admin_comments')}>
+                            <TooltipWrapper content="Administrative comments - Click to sort by admin comments">
+                              <div className="flex items-center">
+                                <span>Admin Comments</span>
+                                <SortIndicator column="admin_comments" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('invoice_url')}>
+                            <TooltipWrapper content="Invoice document URL - Click to sort by invoice URL">
+                              <div className="flex items-center">
+                                <span>Invoice URL</span>
+                                <SortIndicator column="invoice_url" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-left text-muted-foreground min-w-[150px] cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors" onClick={() => handleSort('barcode_url')}>
+                            <TooltipWrapper content="Barcode document URL - Click to sort by barcode URL">
+                              <div className="flex items-center">
+                                <span>Barcode URL</span>
+                                <SortIndicator column="barcode_url" />
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                          <th scope="col" className="h-12 px-4 text-sm font-medium text-right text-muted-foreground w-[100px] sticky right-0 bg-white dark:bg-gray-800 z-20">
+                            <TooltipWrapper content="Available actions for this asset">
+                              <div className="flex items-center justify-end">
+                                <span>Actions</span>
+                              </div>
+                            </TooltipWrapper>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedAssets.length === 0 ? (
+                          <tr>
+                            <td colSpan={32} className="h-16 text-center text-muted-foreground py-1 px-2">
+                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                                ? `No assets found matching the current filters.`
+                                : "No assets were found."}
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedAssets.map((asset) => (
+                            <tr key={asset.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+                              {/* Image Cell */}
+                              <td className="p-4 align-middle w-[50px] sticky left-0 z-10 bg-white group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-800/50 cursor-pointer transition-colors" onClick={() => handleInfoClick(asset)}>
+                                <TooltipWrapper content={`${asset.name || 'Unknown Asset'} - Click to view full details`}>
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarImage src={asset.image_url || undefined} alt={asset.name} />
+                                    <AvatarFallback>{asset.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                                  </Avatar>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Name Cell */}
+                              <td className="p-4 align-middle min-w-[150px] font-medium text-gray-900 whitespace-nowrap dark:text-white sticky left-[50px] bg-white group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-800/50 z-10 cursor-pointer transition-colors" onClick={() => handleInfoClick(asset)}>
+                                <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
+                                  <HighlightMatch text={asset.name} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* ID Cell */}
+                              <td className="p-4 align-middle min-w-[100px]">
+                                <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
+                                  <HighlightMatch text={asset.id} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Type Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
+                                  <HighlightMatch text={asset.type} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Brand Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Brand: ${asset.brand || 'N/A'}`}>
+                                  <HighlightMatch text={asset.brand || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Model Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Model: ${asset.model || 'N/A'}`}>
+                                  <HighlightMatch text={asset.model || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Serial Number Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Serial Number: ${asset.serial_number || 'N/A'}`}>
+                                  <HighlightMatch text={asset.serial_number || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Asset ID Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Asset ID: ${asset.asset_id || 'N/A'}`}>
+                                  <HighlightMatch text={asset.asset_id || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Condition Cell */}
+                              <td className="p-4 align-middle min-w-[100px]">
+                                <TooltipWrapper content={`Current Condition: ${asset.condition || 'N/A'}`}>
+                                  <span className={cn(
+                                    "px-2 py-1 rounded-full text-xs font-medium",
+                                    asset.condition === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
+                                      asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
+                                        asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
+                                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
+                                  )}>
+                                    <HighlightMatch text={asset.condition} searchTerm={filterText} />
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Assigned To Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
+                                  <HighlightMatch text={asset.assigned_to} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Email Cell */}
+                              <td className="p-4 align-middle min-w-[200px]">
+                                <TooltipWrapper content={`Email: ${asset.assigned_to_email || 'N/A'}`}>
+                                  <span className="text-sm">{asset.assigned_to_email || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Unit Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
+                                  <HighlightMatch text={asset.unit} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Division Cell */}
+                              <td className="p-4 align-middle min-w-[200px]">
+                                <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
+                                  <HighlightMatch text={asset.division} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Description Cell */}
+                              <td className="p-4 align-middle max-w-[200px] truncate">
+                                <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
+                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Assigned Date Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Assigned Date: ${formatDate(asset.assigned_date) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.assigned_date) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Purchase Date Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Purchase Date: ${formatDate(asset.purchase_date) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.purchase_date) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Purchase Cost Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Purchase Cost: ${asset.purchase_cost != null ? `$${asset.purchase_cost.toFixed(2)}` : 'N/A'}`}>
+                                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
+                                    {asset.purchase_cost != null ? `$${asset.purchase_cost.toFixed(2)}` : 'N/A'}
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Vendor Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Vendor: ${asset.vendor || 'N/A'}`}>
+                                  <HighlightMatch text={asset.vendor} searchTerm={filterText} />
+                                </TooltipWrapper>
+                              </td>
+                              {/* Warranty Expiry Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Warranty Expiry: ${formatDate(asset.warranty_expiry_date) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.warranty_expiry_date) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Expiry Date Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Expiry Date: ${formatDate(asset.expiry_date) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.expiry_date) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Life Expectancy Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Life Expectancy: ${asset.life_expectancy_years ?? 'N/A'} years`}>
+                                  <span className="text-sm">{asset.life_expectancy_years ?? 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Depreciated Value Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Depreciated Value: ${asset.depreciated_value != null ? `$${asset.depreciated_value.toFixed(2)}` : 'N/A'}`}>
+                                  <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                                    {asset.depreciated_value != null ? `$${asset.depreciated_value.toFixed(2)}` : 'N/A'}
+                                  </span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* YTD Usage Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`YTD Usage: ${asset.ytd_usage || 'N/A'}`}>
+                                  <span className="text-sm">{asset.ytd_usage || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Notes Cell */}
+                              <td className="p-4 align-middle max-w-[150px] truncate">
+                                <TooltipWrapper content={`Notes: ${asset.notes || 'No notes available'}`}>
+                                  <span className="text-sm text-muted-foreground">{asset.notes || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Last Updated Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Last Updated: ${formatDate(asset.last_updated) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.last_updated) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Updated By Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Updated By: ${asset.last_updated_by || 'N/A'}`}>
+                                  <span className="text-sm">{asset.last_updated_by || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Created At Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Created At: ${formatDate(asset.created_at) || 'N/A'}`}>
+                                  <span className="text-sm text-muted-foreground">{formatDate(asset.created_at) || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Created By Cell */}
+                              <td className="p-4 align-middle min-w-[150px]">
+                                <TooltipWrapper content={`Created By: ${asset.created_by || 'N/A'}`}>
+                                  <span className="text-sm">{asset.created_by || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Admin Comments Cell */}
+                              <td className="p-4 align-middle max-w-[150px] truncate">
+                                <TooltipWrapper content={`Admin Comments: ${asset.admin_comments || 'No admin comments'}`}>
+                                  <span className="text-sm text-muted-foreground">{asset.admin_comments || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Invoice URL Cell */}
+                              <td className="p-4 align-middle max-w-[150px] truncate">
+                                <TooltipWrapper content={`Invoice URL: ${asset.invoice_url || 'No invoice URL'}`}>
+                                  <span className="text-sm text-blue-600 dark:text-blue-400">{asset.invoice_url || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Barcode URL Cell */}
+                              <td className="p-4 align-middle max-w-[150px] truncate">
+                                <TooltipWrapper content={`Barcode URL: ${asset.barcode_url || 'No barcode URL'}`}>
+                                  <span className="text-sm text-blue-600 dark:text-blue-400">{asset.barcode_url || 'N/A'}</span>
+                                </TooltipWrapper>
+                              </td>
+                              {/* Actions Cell */}
+                              <td className="p-4 align-middle sticky right-0 bg-white dark:bg-gray-800 text-right z-10 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <span className="sr-only">Open menu</span>
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="z-50">
+                                    <DropdownMenuItem onClick={() => handleInfoClick(asset)}>
+                                      <Info className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleEditClick(asset)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                      <Trash2 className="mr-2 h-4 w-4" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  )}
+                  {/* End Detailed List View */}
+                </> /* Closing Fragment for !loading && !error */
+              )}
+              {/* Pagination Controls (Now directly inside CardContent, after the conditional content) */}
+              {!assetsLoading && !assetsError && totalPages > 1 && (
+                <div className="sticky bottom-0 bg-background flex items-center justify-between border-t p-4 flex-shrink-0 z-40"> {/* Made pagination sticky */}
+                  <span className="text-sm text-muted-foreground">
+                    Showing {paginatedAssets.length} of {sortedAssets.length} assets
+                    {sortColumn && (
+                      <span className="ml-2 text-blue-600 dark:text-blue-400">
+                        (sorted by {sortColumn} {sortDirection === 'asc' ? '↑' : '↓'})
+                      </span>
+                    )}
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Next
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div> {/* Close scroll container */}
-        </CardContent>
-      </Card>
+              )}
+            </div> {/* Close scroll container */}
+          </div>
+        </div>
 
-      {/* Modals */}
-      {isEditModalOpen && selectedAsset && (
-        <EditAssetModal
-          isOpen={isEditModalOpen}
-          onClose={handleCloseModals}
-          onEdit={handleSaveEdit}
-          asset={selectedAsset}
-          onDelete={() => handleDeleteClick(selectedAsset)}
-          divisions={divisions}
-          units={units}
-          staffMembers={staffMembers}
-          existingNames={existingNames}
-          existingTypes={existingTypes}
-          existingVendors={existingVendors}
+        {/* Modals */}
+        {isEditModalOpen && selectedAsset && (
+          <EditAssetModal
+            isOpen={isEditModalOpen}
+            onClose={handleCloseModals}
+            onEdit={handleSaveEdit}
+            asset={selectedAsset}
+            onDelete={() => handleDeleteClick(selectedAsset)}
+            divisions={divisions}
+            units={units}
+            staffMembers={staffMembers}
+            existingNames={existingNames}
+            existingTypes={existingTypes}
+            existingVendors={existingVendors}
+          />
+        )}
+
+        {selectedAsset && isDeleteModalOpen && (
+          <DeleteModal
+            open={isDeleteModalOpen}
+            onOpenChange={setIsDeleteModalOpen}
+            onDelete={handleConfirmDelete}
+            title="Delete Asset"
+            description={`Are you sure you want to delete the asset "${selectedAsset?.name || "this asset"}"? This action cannot be undone.`}
+          />
+        )}
+
+        {/* --- Render Quick Asset Info Modal --- */}
+        <AssetInfoModal
+          asset={selectedAssetForInfo}
+          isOpen={isQuickInfoModalOpen}
+          onClose={() => { // Only close the quick modal here
+            setIsQuickInfoModalOpen(false);
+            // Optionally clear selectedAssetForInfo if you don't want the full modal to open after closing quick view directly
+            // setSelectedAssetForInfo(null); 
+          }}
         />
-      )}
-
-      {selectedAsset && isDeleteModalOpen && (
-        <DeleteModal
-          open={isDeleteModalOpen}
-          onOpenChange={setIsDeleteModalOpen}
-          onDelete={handleConfirmDelete}
-          title="Delete Asset"
-          description={`Are you sure you want to delete the asset "${selectedAsset?.name || "this asset"}"? This action cannot be undone.`}
-        />
-      )}
-
-      {/* --- Render Quick Asset Info Modal --- */}
-      <AssetInfoModal
-        asset={selectedAssetForInfo}
-        isOpen={isQuickInfoModalOpen}
-        onClose={() => { // Only close the quick modal here
-          setIsQuickInfoModalOpen(false);
-          // Optionally clear selectedAssetForInfo if you don't want the full modal to open after closing quick view directly
-          // setSelectedAssetForInfo(null); 
-        }}
-      />
-      {/* --- End Quick Asset Info Modal --- */}
-    </div>
+        {/* --- End Quick Asset Info Modal --- */}
+      </CardContent>
+    </Card>
   );
 
   return skipPageLayout ? mainContent : <PageLayout>{mainContent}</PageLayout>;

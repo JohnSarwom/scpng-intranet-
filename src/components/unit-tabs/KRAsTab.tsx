@@ -32,7 +32,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
+import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2, Eye } from 'lucide-react';
 import StatusBadge from '@/components/common/StatusBadge';
 import { calculateObjectiveStatus, calculateStrategicProgress } from '@/utils/kpiUtils';
 import KRATimelineTab from '@/components/KRATimelineTab';
@@ -214,6 +214,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
   const { user } = useSupabaseAuth();
+  const isStaff = userContext?.role === 'staff_member';
   const [isKpiModalOpen, setIsKpiModalOpen] = useState(false);
   const [viewScope, setViewScope] = useState<'my' | 'department' | 'organization'>('my');
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -238,24 +239,10 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  // Smart default: Fallback logic for Scope
+  // Enforce "My" scope permanently
   React.useEffect(() => {
-    if (!user) return;
-    const validKras = Array.isArray(kras) ? kras : [];
-    const hasPersonalKras = validKras.some(k => k.ownerId === user.id);
-    const hasAssignedKpis = validKras.flatMap(k => k.unitKpis || [])
-      .some(k => k.assignees?.some(a => a.email === user.email));
-
-    if (!hasPersonalKras && !hasAssignedKpis) {
-      if (user.user_metadata?.unitName) {
-        setViewScope('department');
-      } else {
-        setViewScope('organization');
-      }
-    } else {
-      setViewScope('my');
-    }
-  }, [kras, user?.id]);
+    setViewScope('my');
+  }, []);
 
   const [timelineViewMode, setTimelineViewMode] = useState<'quarters' | 'months' | 'weeks'>('quarters');
 
@@ -268,6 +255,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     status: 'all',
   });
   const [isObjectiveModalOpen, setIsObjectiveModalOpen] = useState(false);
+  const [isSavingObjective, setIsSavingObjective] = useState(false);
   const [editingObjective, setEditingObjective] = useState<Objective | undefined>(undefined);
 
 
@@ -901,13 +889,17 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       return;
     }
 
+    setIsSavingObjective(true);
+
     const objId = editingObjective?.id ? Number(editingObjective.id) : undefined;
+
+    const calculatedStatus = calculateObjectiveStatus(editingObjective || newObjectiveData, kras);
 
     const objectivePayload: any = {
       ...(objId ? { id: objId } : {}),
       title: newObjectiveData.title,
       description: newObjectiveData.description,
-      status: newObjectiveData.status,
+      status: calculatedStatus,
       progress: newObjectiveData.progress,
       year: newObjectiveData.year,
       startDate: newObjectiveData.startDate,
@@ -928,6 +920,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     } catch (error) {
       console.error('[handleSaveObjective] Parent component failed to save:', error);
       // Toast is handled by parent
+    } finally {
+      setIsSavingObjective(false);
     }
   };
 
@@ -986,9 +980,9 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
         <Card className={cn("mt-0", isFullScreen ? "border-0 shadow-none h-full" : "")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="space-y-0.5">
-              <CardTitle>KRAs / KPIs / Objectives</CardTitle>
+              <CardTitle>{isStaff ? 'KRAs / KPIs' : 'KRAs / KPIs / Objectives'}</CardTitle>
               <CardDescription>
-                Track performance, manage objectives, and view timelines.
+                {isStaff ? 'Track performance and view timelines.' : 'Track performance, manage objectives, and view timelines.'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -1011,7 +1005,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               <div className="flex justify-between items-center mb-4">
                 <TabsList>
                   <TabsTrigger value="kpis">KRA/KPIs</TabsTrigger>
-                  <TabsTrigger value="objectives">Objectives</TabsTrigger>
+                  {!isStaff && <TabsTrigger value="objectives">Objectives</TabsTrigger>}
                   <TabsTrigger value="timeline">Timeline</TabsTrigger>
                   <TabsTrigger value="insights">Insights</TabsTrigger>
                 </TabsList>
@@ -1045,24 +1039,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   </div>
                 )}
 
-                {activeTab === 'insights' && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground mr-2">View Scope:</span>
-                    <Select
-                      value={viewScope}
-                      onValueChange={(val: 'my' | 'department' | 'organization') => setViewScope(val)}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Scope" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="my">My Data</SelectItem>
-                        <SelectItem value="department">Department</SelectItem>
-                        <SelectItem value="organization">Organization</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+
               </div>
 
 
@@ -1206,7 +1183,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                               <TableCell className="align-top text-right sticky right-0 bg-background border-l px-2 py-1 whitespace-nowrap align-middle border-b">
                                 <div className="flex justify-end items-center space-x-1 bg-background">
 
-                                  {canEdit && (
+                                  {canEdit ? (
                                     <>
                                       {kpi && kpi.id && kpi.name !== '-' && (
                                         <TooltipProvider delayDuration={100}>
@@ -1277,6 +1254,27 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                           <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {kpi && kpi.id && kpi.name !== '-' && (
+                                        <TooltipProvider delayDuration={100}>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="p-1 h-auto"
+                                                onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
+                                                aria-label="View KPI"
+                                              >
+                                                <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                              </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent className="z-[100]">View KPI</TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
                                     </>
                                   )}
                                 </div>
@@ -1403,7 +1401,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               </TabsContent>
 
               <TabsContent value="insights">
-                <KRAInsightsTab kras={kras} viewScope={viewScope} onScopeChange={setViewScope} />
+                <KRAInsightsTab kras={kras} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -1422,6 +1420,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
           userContext={userContext}
           editingKpi={editingKpiDetails}
           container={isFullScreen ? containerRef.current : null}
+          isReadOnly={!canEdit}
         />
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
@@ -1440,6 +1439,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   <Select
                     value={newObjectiveData.parentGoalId?.toString() || 'none'}
                     onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
+                    disabled={isSavingObjective}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Align with Strategic Objective..." />
@@ -1489,6 +1489,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                         value={newObjectiveData.linkedDeliverable || ''}
                         onValueChange={(val) => handleObjectiveFormChange('linkedDeliverable', val)}
                         className="flex flex-col space-y-2 mt-2"
+                        disabled={isSavingObjective}
                       >
                         {deliverables.map((del, idx) => (
                           <div key={idx} className="flex items-center space-x-2">
@@ -1515,6 +1516,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   value={newObjectiveData.title || ''}
                   onChange={(e) => handleObjectiveFormChange('title', e.target.value)}
                   className="col-span-3"
+                  disabled={isSavingObjective}
                   required
                 />
               </div>
@@ -1527,6 +1529,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   onChange={(e) => handleObjectiveFormChange('year', e.target.value)}
                   className="col-span-3"
                   placeholder="e.g. 2024"
+                  disabled={isSavingObjective}
                 />
               </div>
 
@@ -1541,6 +1544,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                         role="combobox"
                         aria-expanded={isOwnerPopoverOpen}
                         className="w-full justify-between"
+                        disabled={isSavingObjective}
                       >
                         {newObjectiveData.owner || "Select Owner..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1601,21 +1605,17 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               {/* Row 4: Status & Progress */}
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">Status</Label>
-                <Select
-                  value={newObjectiveData.status}
-                  onValueChange={(val) => handleObjectiveFormChange('status', val)}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent container={isFullScreen ? containerRef.current : null}>
-                    <SelectItem value="Not Started">Not Started</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                    <SelectItem value="Deferred">Deferred</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="col-span-3">
+                  <Input
+                    value={calculateObjectiveStatus(editingObjective || newObjectiveData, kras)}
+                    readOnly
+                    className="bg-muted text-muted-foreground"
+                    title="Status is automatically calculated from linked KRAs and KPIs."
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Status is automatically calculated from linked KRAs and KPIs progress.
+                  </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
@@ -1623,6 +1623,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                 <Select
                   value={newObjectiveData.goalType}
                   onValueChange={(val) => handleObjectiveFormChange('goalType', val)}
+                  disabled={isSavingObjective}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Select Goal Type" />
@@ -1672,9 +1673,12 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
             </div>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button" variant="outline">Cancel</Button>
+                <Button type="button" variant="outline" disabled={isSavingObjective}>Cancel</Button>
               </DialogClose>
-              <Button type="button" onClick={handleSaveObjective}>Save Objective</Button>
+              <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1">
+                {isSavingObjective ? <Loader2 size={16} className="animate-spin" /> : null}
+                <span>{isSavingObjective ? 'Saving...' : 'Save Objective'}</span>
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

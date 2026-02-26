@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, User as UserIcon, Send, PaperclipIcon, LinkIcon, Repeat, Trash2, PlusCircle } from 'lucide-react';
+import { CalendarIcon, User as UserIcon, Send, PaperclipIcon, LinkIcon, Repeat, Trash2, PlusCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ import DateRangePicker from '@/components/ui/DateRangePicker';
 import { StaffMember } from '@/types/staff';
 import { Task, Kra, Kpi, User } from '@/types';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 // Define the shape of a comment
 interface Comment {
@@ -49,7 +50,7 @@ interface StatusOption {
 interface TaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (taskData: Partial<Task>) => void;
+  onSubmit: (taskData: Partial<Task>) => void | Promise<void>;
   initialData?: Partial<Task> | null; // For editing
   statuses?: StatusOption[]; // Available status options
   defaultStatus?: string | null; // Added prop for default status on create
@@ -107,6 +108,17 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const [selectedKraId, setSelectedKraId] = useState<string | undefined>(undefined);
   const [selectedKpiId, setSelectedKpiId] = useState<string | undefined>(undefined);
   const [selectedAssignees, setSelectedAssignees] = useState<User[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Authentication & Roles
+  const { user: authUser } = useRoleBasedAuth();
+  const isManagerOrAdmin = authUser?.is_admin || authUser?.role_name === 'manager' || authUser?.role_name === 'admin' || authUser?.role_name === 'super_admin';
+
+  // Make KPIs dynamically filtered
+  const visibleKpis = React.useMemo(() => {
+    if (isManagerOrAdmin) return kpis;
+    return kpis.filter(kpi => kpi.assignees?.some(a => a.email?.toLowerCase() === authUser?.user_email?.toLowerCase()));
+  }, [kpis, isManagerOrAdmin, authUser]);
 
   // Ensure we have buckets to show
   const effectiveBuckets = buckets.length > 0 ? buckets : DEFAULT_BUCKETS;
@@ -236,14 +248,26 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   }, [initialData, isOpen, defaultStatus, defaultGroup, buckets, effectiveBuckets]); // Added buckets dependency
 
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      toast({ title: "Validation Error", description: "Task title is required", variant: "destructive" });
+      return;
+    }
+
     console.log(`[Metrics] TaskDialog Save Clicked at ${performance.now().toFixed(2)}ms`);
     console.time('TaskDialog-SaveReaction');
 
+    const inferredKraId = selectedKpiId && selectedKpiId !== 'none'
+      ? kpis.find(k => k.id.toString() === selectedKpiId)?.kra_id?.toString() || selectedKraId
+      : selectedKraId;
+
     const taskData: Partial<Task> = {
       id: initialData?.id,
-      title,
+      title: trimmedTitle,
       description,
       priority,
       status: status as Task['status'],
@@ -255,13 +279,18 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       recurrence: recurrence,
       subtasks: subtasks,
       tags: initialData?.tags, // Pass existing tags so service can update bucket tag
-      kra_id: selectedKraId,
+      kra_id: inferredKraId,
       kpi_id: selectedKpiId,
     };
-    onSubmit(taskData);
 
-    console.log(`[Metrics] TaskDialog onSubmit Called at ${performance.now().toFixed(2)}ms`);
-    try { console.timeEnd('TaskDialog-SaveReaction'); } catch (e) { }
+    setIsSubmitting(true);
+    try {
+      await onSubmit(taskData);
+      console.log(`[Metrics] TaskDialog onSubmit Called at ${performance.now().toFixed(2)}ms`);
+    } finally {
+      setIsSubmitting(false);
+      try { console.timeEnd('TaskDialog-SaveReaction'); } catch (e) { }
+    }
   };
 
   // Performance metrics for Modal Open/Close
@@ -337,7 +366,10 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
         <div className="flex-grow overflow-y-auto px-6 pt-4">
           <form onSubmit={handleSubmit} id="task-form">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 pb-4">
+            <div
+              className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 pb-4 transition-opacity duration-200"
+              style={isSubmitting ? { opacity: 0.6, pointerEvents: 'none' } : {}}
+            >
               <div className="sm:col-span-2 space-y-1">
                 <Label htmlFor="title">Title*</Label>
                 <Input
@@ -444,11 +476,11 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   }))}
                   onChange={(employees) => {
                     const mappedUsers: User[] = employees.map(e => ({
-                      id: e.id,
-                      name: e.displayName,
-                      email: e.mail,
+                      id: e.id || Date.now().toString(),
+                      name: e.displayName || 'Unknown User',
+                      email: e.mail || '',
                       // Fallback logic for avatar if needed
-                      initials: e.displayName.charAt(0)
+                      initials: (e.displayName || 'U').charAt(0).toUpperCase()
                     }));
 
                     setSelectedAssignees(mappedUsers);
@@ -466,36 +498,18 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="kra">Link to KRA</Label>
-                <Select value={selectedKraId} onValueChange={setSelectedKraId}>
-                  <SelectTrigger id="kra" className="py-3 px-4 rounded-lg">
-                    <SelectValue placeholder="Select a KRA" />
-                  </SelectTrigger>
-                  <SelectContent container={container}>
-                    <SelectItem value="none">None</SelectItem>
-                    {kras.map((kra) => (
-                      <SelectItem key={kra.id} value={kra.id.toString()}>
-                        {kra.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
                 <Label htmlFor="kpi">Link to KPI</Label>
-                <Select value={selectedKpiId} onValueChange={setSelectedKpiId} disabled={!selectedKraId || selectedKraId === 'none'}>
+                <Select value={selectedKpiId} onValueChange={setSelectedKpiId}>
                   <SelectTrigger id="kpi" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select a KPI" />
                   </SelectTrigger>
                   <SelectContent container={container}>
                     <SelectItem value="none">None</SelectItem>
-                    {kpis
-                      .filter((kpi) => kpi.kra_id?.toString() === selectedKraId)
-                      .map((kpi) => (
-                        <SelectItem key={kpi.id} value={kpi.id.toString()}>
-                          {kpi.name}
-                        </SelectItem>
-                      ))}
+                    {visibleKpis.map((kpi) => (
+                      <SelectItem key={kpi.id} value={kpi.id.toString()}>
+                        {kpi.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -598,8 +612,17 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
         </div>
 
         <DialogFooter className="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700/50 flex-shrink-0">
-          <Button type="button" variant="outline" onClick={onClose} className="px-6 py-2 rounded-lg">Cancel</Button>
-          <Button type="submit" form="task-form" className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg">{initialData ? 'Save Changes' : 'Create Task'}</Button>
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 rounded-lg">Cancel</Button>
+          <Button type="submit" form="task-form" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg">
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {initialData ? 'Saving...' : 'Creating...'}
+              </>
+            ) : (
+              initialData ? 'Save Changes' : 'Create Task'
+            )}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -30,6 +30,7 @@ interface MetricCardProps {
     description: string;
     content: React.ReactNode;
   };
+  literalCalculation?: string;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
@@ -41,7 +42,8 @@ const MetricCard: React.FC<MetricCardProps> = ({
   trendType,
   trendLabel,
   color,
-  info
+  info,
+  literalCalculation
 }) => {
   const trendColor = trendType === 'increase'
     ? 'text-intranet-success bg-green-50'
@@ -74,10 +76,15 @@ const MetricCard: React.FC<MetricCardProps> = ({
         </div>
       </div>
 
-      <div className="mt-4">
-        <span className={`inline-block px-2 py-1 rounded-full text-xs ${trendColor}`}>
-          {trendSign}{Math.abs(trend)}% {trendLabel}
-        </span>
+      <div className="mt-4 flex justify-between items-center">
+        <div className="text-xs text-[#B76E79]">
+          {literalCalculation && <span>{literalCalculation}</span>}
+        </div>
+        <div>
+          <span className={`inline-block px-2 py-1 rounded-full text-xs ${trendColor}`}>
+            {trendSign}{Math.abs(trend)}% {trendLabel}
+          </span>
+        </div>
       </div>
     </div>
   );

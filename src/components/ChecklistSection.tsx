@@ -16,9 +16,10 @@ export interface ChecklistItem {
 interface ChecklistSectionProps {
   items: ChecklistItem[];
   onChange: (items: ChecklistItem[]) => void;
+  disabled?: boolean;
 }
 
-const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange }) => {
+const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange, disabled }) => {
   const [newItemText, setNewItemText] = useState('');
 
   const handleAddItem = () => {
@@ -75,6 +76,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange }) 
               id={`check-${item.id}`}
               checked={item.checked}
               onCheckedChange={() => handleToggleCheck(item.id)}
+              disabled={disabled}
             />
             {item.isTaskLinked && (
               <Link2 className="h-3 w-3 text-blue-500 shrink-0" />
@@ -91,6 +93,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange }) 
                 size="icon"
                 className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => handleDeleteItem(item.id)}
+                disabled={disabled}
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -106,8 +109,9 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange }) 
           onChange={(e) => setNewItemText(e.target.value)}
           onKeyDown={handleKeyDown}
           className="flex-grow"
+          disabled={disabled}
         />
-        <Button size="sm" onClick={handleAddItem} disabled={!newItemText.trim()}>
+        <Button size="sm" onClick={handleAddItem} disabled={disabled || !newItemText.trim()}>
           <Plus className="h-4 w-4 mr-1" /> Add
         </Button>
       </div>

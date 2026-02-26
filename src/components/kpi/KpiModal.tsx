@@ -7,14 +7,15 @@ import KpiInputBlock from './KpiInputBlock';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Loader2 } from 'lucide-react';
+import { KraStatus } from '@/types';
 
 // Update interface
 interface KpiModalProps {
   isOpen: boolean;
   onClose: () => void;
   kraData?: Kra | null; // Allow null for explicit clearing
-  onSubmit: (formData: Kra) => void; // Function to handle form submission
+  onSubmit: (formData: Kra) => Promise<void>; // Function to handle form submission
   // Props needed for dropdowns/data fetching within the modal:
   users?: User[];
   staffMembers?: StaffMember[]; // Add staffMembers prop for assignees
@@ -25,6 +26,7 @@ interface KpiModalProps {
   userContext?: { division: string; unit: string; name: string; email: string };
   editingKpi?: { kraId: string; kpi: Partial<Kpi> }; // New prop for single KPI editing
   container?: HTMLElement | null; // Add container prop
+  isReadOnly?: boolean; // New prop for read-only view mode
 }
 
 const KpiModal: React.FC<KpiModalProps> = ({
@@ -41,10 +43,12 @@ const KpiModal: React.FC<KpiModalProps> = ({
   userContext,
   editingKpi,
   container,
+  isReadOnly = false,
 }) => {
   // Initialize state based on whether we are editing or adding
   const [formData, setFormData] = useState<Partial<Kra>>({});
   const [kpiBlocks, setKpiBlocks] = useState<Partial<Kpi>[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Determine if we are adding a new KRA
   const isAddingNew = !kraData?.id;
@@ -110,14 +114,14 @@ const KpiModal: React.FC<KpiModalProps> = ({
 
         setFormData({
           title: '',
-          objectiveId: undefined,
+          objective_id: undefined,
           unitId: defaultUnitId, // Set ID if found
           unit: defaultUnitName, // Set Name from context
           startDate: '',
           targetDate: '',
           description: '', // Reset description/comments
           owner: undefined,
-          status: 'open',
+          status: 'open' as KraStatus,
         });
         // Ensure default KPI block has assignees array
         setKpiBlocks([{ assignees: [] }]);
@@ -151,16 +155,26 @@ const KpiModal: React.FC<KpiModalProps> = ({
     setKpiBlocks(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = (event?: React.FormEvent) => {
+  const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault();
+    setIsSubmitting(true);
 
     const finalKpiBlocks = kpiBlocks.filter(kpi => kpi.name).map(kpi => {
       const { tempId, ...rest } = kpi;
       return rest;
     });
 
-    // Ensure unit (department name) is included in submission data
-    // Only use a real ID (from editing or existing KRA selection); don't generate temp IDs
+    // Calculate KRA Status based on final KPIs
+    let calculatedKraStatus = 'open';
+    if (finalKpiBlocks.length > 0) {
+      const completedKpis = finalKpiBlocks.filter(k => ['completed', 'achieved', 'done'].includes((k.status || '').toLowerCase())).length;
+      if (completedKpis === finalKpiBlocks.length) {
+        calculatedKraStatus = 'closed';
+      } else if (completedKpis > 0) {
+        calculatedKraStatus = 'in-progress';
+      }
+    }
+
     const completeFormData = {
       ...formData,
       id: formData.id || kraData?.id || undefined,
@@ -169,26 +183,30 @@ const KpiModal: React.FC<KpiModalProps> = ({
       department: formData.unit, // Map unit to department as assumed by sharePointOpsService
       unitId: formData.unitId, // Keep unitId if still needed for other purposes
       title: formData.title || 'Untitled KRA',
-      objective_id: formData.objective_id || formData.objectiveId,
+      objective_id: formData.objective_id || (formData as any).objectiveId,
       startDate: formData.startDate || '',
       targetDate: formData.targetDate || '',
       owner: formData.owner,
       description: formData.description, // Include description
-      status: formData.status || kraData?.status || 'open',
+      status: calculatedKraStatus as KraStatus,
     } as Partial<Kra>;
 
     console.log("Modal Submit:", completeFormData);
-    onSubmit(completeFormData as Kra);
+    try {
+      await onSubmit(completeFormData as Kra);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col" container={container}>
         <DialogHeader>
-          <DialogTitle>{editingKpi ? 'Edit KPI' : (kraData ? 'Edit KRA' : 'Add New KRA')}</DialogTitle>
+          <DialogTitle>{editingKpi ? (isReadOnly ? 'View KPI' : 'Edit KPI') : (kraData ? 'Edit KRA' : 'Add New KRA')}</DialogTitle>
           <DialogDescription>
             {editingKpi
-              ? 'Update the details for this KPI.'
+              ? (isReadOnly ? 'View the details for this KPI.' : 'Update the details for this KPI.')
               : (kraData ? 'Update the details for this Key Result Area and its KPIs.' : 'Create a new Key Result Area with its associated KPIs.')}
           </DialogDescription>
         </DialogHeader>
@@ -200,7 +218,16 @@ const KpiModal: React.FC<KpiModalProps> = ({
             {!editingKpi && (
               <>
                 <KraFormSection
-                  formData={formData}
+                  formData={{
+                    ...formData, status: (() => {
+                      const validKpis = kpiBlocks.filter(k => k.name);
+                      if (validKpis.length === 0) return 'open';
+                      const completedCount = validKpis.filter(k => ['completed', 'achieved', 'done'].includes((k.status || '').toLowerCase())).length;
+                      if (completedCount === 0) return 'open';
+                      if (completedCount === validKpis.length) return 'closed';
+                      return 'in-progress';
+                    })() as KraStatus
+                  }}
                   onChange={handleKraChange}
                   users={users}
                   staffMembers={staffMembers}
@@ -210,6 +237,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   existingKraObjects={existingKraObjects}
                   isAddingNew={isAddingNew}
                   container={container}
+                  disabled={isSubmitting || isReadOnly}
                 />
                 <Separator />
               </>
@@ -230,10 +258,12 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   users={users}
                   staffMembers={staffMembers}
                   container={container}
+                  disabled={isSubmitting || isReadOnly}
+                  isReadOnly={isReadOnly}
                 />
               ))}
               {!editingKpi && (
-                <Button type="button" variant="outline" size="sm" onClick={handleAddKpi} className="mt-2">
+                <Button type="button" variant="outline" size="sm" onClick={handleAddKpi} className="mt-2" disabled={isSubmitting}>
                   <PlusCircle className="mr-2 h-4 w-4" /> Add KPI
                 </Button>
               )}
@@ -244,11 +274,16 @@ const KpiModal: React.FC<KpiModalProps> = ({
         {/* Footer remains fixed at the bottom */}
         <DialogFooter className="mt-auto pt-4 border-t">
           <DialogClose asChild>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+              {isReadOnly ? 'Close' : 'Cancel'}
+            </Button>
           </DialogClose>
-          <Button type="button" onClick={() => handleSubmit()}>
-            {isAddingNew ? 'Add KRA' : 'Save Changes'}
-          </Button>
+          {!isReadOnly && (
+            <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isAddingNew ? (isSubmitting ? 'Adding...' : 'Add KRA') : (isSubmitting ? 'Saving...' : 'Save Changes')}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

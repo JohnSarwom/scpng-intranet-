@@ -82,6 +82,14 @@ const QuickFormsAccess: React.FC = () => {
       estimatedTime: '10-15 min',
       icon: Computer,
     },
+    {
+      id: 'it-procurement-request',
+      title: 'IT Procurement',
+      description: 'Request new software or hardware purchases',
+      category: 'IT' as const,
+      estimatedTime: '15-20 min',
+      icon: Computer,
+    },
   ];
 
   const handleFormClick = (formId: string) => {
@@ -93,14 +101,14 @@ const QuickFormsAccess: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
+    <Card className="bg-white rounded-xl shadow-sm animate-fade-in h-full flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-lg font-semibold">
           <FileText className="h-5 w-5 text-intranet-primary" />
           Quick Forms Access
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-between">
         <div className="space-y-1">
           {quickForms.map((form) => (
             <QuickFormItem

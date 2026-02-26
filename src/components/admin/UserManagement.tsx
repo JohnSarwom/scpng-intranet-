@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Trash, UserPlus, Save, X, Bell, Settings as SettingsIcon, Check } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Bell, Settings as SettingsIcon, Check, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole, PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
@@ -160,6 +160,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   value={newUser.user_name}
                   onChange={e => setNewUser({ ...newUser, user_name: e.target.value })}
                   placeholder="Full Name"
+                  disabled={isProcessing}
                 />
               </div>
               <div>
@@ -168,6 +169,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   value={newUser.user_email}
                   onChange={e => setNewUser({ ...newUser, user_email: e.target.value })}
                   placeholder="email@scpng.gov.pg"
+                  disabled={isProcessing}
                 />
               </div>
               <div>
@@ -176,6 +178,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   value={newUser.role_name}
                   onChange={e => setNewUser({ ...newUser, role_name: e.target.value })}
                   className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                  disabled={isProcessing}
                 >
                   <option value="staff_member">Staff Member</option>
                   <option value="manager">Manager</option>
@@ -191,6 +194,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     setNewUser({ ...newUser, unit_name: e.target.value });
                   }}
                   className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                  disabled={isProcessing}
                 >
                   <option value="">Select Unit</option>
                   {mockUnits.map(unit => (
@@ -207,6 +211,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                         id={`new-grp-${group.id}`}
                         checked={(newUser.groups || []).includes(group.title)}
                         onCheckedChange={() => toggleGroup(group.title, false)}
+                        disabled={isProcessing}
                       />
                       <Label htmlFor={`new-grp-${group.id}`}>{group.title}</Label>
                     </div>
@@ -216,12 +221,12 @@ const UserManagement: React.FC<UserManagementProps> = ({
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelEdit} className="flex items-center gap-1">
+              <Button variant="outline" onClick={cancelEdit} className="flex items-center gap-1" disabled={isProcessing}>
                 <X size={16} />
                 <span>Cancel</span>
               </Button>
               <Button onClick={saveNewUser} disabled={isProcessing} className="flex items-center gap-1">
-                <Save size={16} />
+                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                 <span>{isProcessing ? 'Saving...' : 'Save'}</span>
               </Button>
             </div>
@@ -249,6 +254,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                         <Input
                           value={editingUser.user_name}
                           onChange={e => setEditingUser({ ...editingUser, user_name: e.target.value })}
+                          disabled={isProcessing}
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -262,6 +268,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                           value={editingUser.role_name}
                           onChange={e => setEditingUser({ ...editingUser, role_name: e.target.value })}
                           className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                          disabled={isProcessing}
                         >
                           <option value="staff_member">Staff Member</option>
                           <option value="manager">Manager</option>
@@ -274,6 +281,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                           value={editingUser.unit_name || ''}
                           onChange={e => setEditingUser({ ...editingUser, unit_name: e.target.value })}
                           className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                          disabled={isProcessing}
                         >
                           <option value="">Select Unit</option>
                           {mockUnits.map(unit => (
@@ -284,7 +292,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Popover>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" disabled={isProcessing}>
                               {editingUser.groups?.length ? `${editingUser.groups.length} Groups` : 'Select Groups'}
                             </Button>
                           </PopoverTrigger>
@@ -296,6 +304,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                                     id={`edit-grp-${user.id}-${group.id}`}
                                     checked={(editingUser.groups || []).includes(group.title)}
                                     onCheckedChange={() => toggleGroup(group.title, true)}
+                                    disabled={isProcessing}
                                   />
                                   <Label htmlFor={`edit-grp-${user.id}-${group.id}`}>{group.title}</Label>
                                 </div>
@@ -306,9 +315,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <Button onClick={saveUserChanges} disabled={isProcessing} size="sm" variant="ghost" className="text-green-600 dark:text-green-400 mr-2">
-                          <Save size={16} />
+                          {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                         </Button>
-                        <Button onClick={cancelEdit} size="sm" variant="ghost" className="text-gray-600 dark:text-gray-400">
+                        <Button onClick={cancelEdit} size="sm" disabled={isProcessing} variant="ghost" className="text-gray-600 dark:text-gray-400">
                           <X size={16} />
                         </Button>
                       </td>
@@ -342,20 +351,20 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">
-                          <Button onClick={() => handleEditUser(user)} size="sm" variant="ghost" className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                          <Button onClick={() => handleEditUser(user)} size="sm" variant="ghost" disabled={isProcessing} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
                             <Pencil size={16} />
                           </Button>
                           {onGeneratePassword && (
-                            <Button onClick={() => onGeneratePassword(user)} size="sm" variant="ghost" className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300">
+                            <Button onClick={() => onGeneratePassword(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300">
                               <SettingsIcon size={16} />
                             </Button>
                           )}
                           {onConfigureEmail && (
-                            <Button onClick={() => onConfigureEmail(user)} size="sm" variant="ghost" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                            <Button onClick={() => onConfigureEmail(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                               <Bell size={16} />
                             </Button>
                           )}
-                          <Button onClick={() => handleDeleteUser(user.user_email)} size="sm" variant="ghost" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                          <Button onClick={() => handleDeleteUser(user.user_email)} size="sm" disabled={isProcessing} variant="ghost" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                             <Trash size={16} />
                           </Button>
                         </div>

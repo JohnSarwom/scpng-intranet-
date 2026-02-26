@@ -3024,6 +3024,62 @@ export class SharePointListSetupService {
             return { success: false, message: error.message, count: 0 };
         }
     }
+    /**
+     * Create Operations_TaskGroups (Dedicated list for groups/buckets)
+     */
+    private async createTaskGroupsList() {
+        const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Operations_TaskGroups'").get();
+        if (check.value && check.value.length > 0) return check.value[0];
+
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Operations_TaskGroups',
+                columns: [
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'Status', choice: { choices: ['Planned', 'In Progress', 'Completed', 'On Hold'] } },
+                    { name: 'Department', text: {} },
+                    { name: 'Order', number: { decimalPlaces: 'none' } }
+                ],
+                list: { template: 'genericList' }
+            });
+        return list;
+    }
+
+    /**
+     * Setup Operations_TaskGroups and update Operations_Tasks with a lookup
+     */
+    async setupTaskGroupsList(): Promise<{ success: boolean; message: string; details?: any }> {
+        console.log('🚀 [Setup] Starting Task Groups separation setup...');
+        try {
+            // 1. Create TaskGroups List
+            console.log('📝 [Setup] Creating Operations_TaskGroups list...');
+            const taskGroupsList = await this.createTaskGroupsList();
+            console.log('✅ [Setup] Operations_TaskGroups ensured/created (ID: ' + taskGroupsList.id + ')');
+
+            // 2. Find Operations_Tasks list and ensure the Lookup column exists
+            const tasksListCheck = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .filter("displayName eq 'Operations_Tasks'")
+                .select('id')
+                .get();
+
+            if (!tasksListCheck.value || tasksListCheck.value.length === 0) {
+                console.warn('⚠️ [Setup] Operations_Tasks list not found. Standalone Task Groups list created.');
+                return { success: true, message: 'Task Groups list created, but Tasks list not found to link.', details: taskGroupsList };
+            }
+
+            const tasksListId = tasksListCheck.value[0].id;
+            console.log('🔗 [Setup] Ensuring RelatedTaskGroup lookup on Operations_Tasks...');
+            await this.addLookupColumn(tasksListId, 'RelatedTaskGroup', taskGroupsList.id, 'Title');
+            console.log('✅ [Setup] Lookup column ensured.');
+
+            return { success: true, message: 'Operations_TaskGroups created and linked to Operations_Tasks successfully!', details: taskGroupsList };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to setup Task Groups:', error);
+            return { success: false, message: `Failed to setup Task Groups: ${error.message}`, details: error };
+        }
+    }
 }
 
 // ==========================================

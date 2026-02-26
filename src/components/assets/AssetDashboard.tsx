@@ -406,434 +406,444 @@ export function AssetDashboard() {
   const DONUT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
-    <div className="space-y-6">
-      {/* Top Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Total Asset Value Card */}
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total asset value</CardTitle>
-            <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
-          </CardHeader>
-          <CardContent>
-            <TooltipWrapper content="Total purchase cost of all active assets (excluding Decommissioned/Sold)">
-              <div className="text-2xl font-bold mb-1">
-                {renderTotalValue()}
-                <span className="text-muted-foreground text-sm font-normal">.00</span>
-              </div>
-            </TooltipWrapper>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center text-sm font-medium text-emerald-600">
-                <ChevronUp className="mr-1 h-4 w-4" />
-                -
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Compared to last month (TBD)
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <TooltipWrapper content="Total count of active assets (excluding Decommissioned/Sold)">
-                <div className="flex items-center text-muted-foreground">
-                  <LayoutList className="mr-1 h-4 w-4" />
-                  <span>{renderTotalAssets()} assets</span>
-                </div>
-              </TooltipWrapper>
-              <div className="flex items-center text-muted-foreground">
-                <Bell className="mr-1 h-4 w-4" />
-                <span>{renderCategoryCount()} categories</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <Card className="w-full shadow-sm border">
+      <CardContent className="p-6 space-y-6">
+        {/* Fixed Header */}
+        <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
+            <p className="text-muted-foreground">Overview of asset metrics and key performance indicators.</p>
+          </div>
+        </div>
 
-        {/* New Acquisitions Card */}
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">New acquisitions (30d)</CardTitle>
-            <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
-          </CardHeader>
-          <CardContent>
-            <TooltipWrapper content="Sum of purchase cost for active assets acquired in the last 30 days">
-              <div className="text-2xl font-bold mb-1">
-                {renderRecentAcquisitionValue()}
-                <span className="text-muted-foreground text-sm font-normal">.00</span>
-              </div>
-            </TooltipWrapper>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center text-sm font-medium text-emerald-600">
-                <ChevronUp className="mr-1 h-4 w-4" />
-                {0}%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Compared to last period (TBD)
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <TooltipWrapper content="Count of active assets acquired in the last 30 days">
-                <div className="flex items-center text-muted-foreground">
-                  <LayoutList className="mr-1 h-4 w-4" />
-                  <span>{renderRecentAcquisitionCount()} assets</span>
-                </div>
-              </TooltipWrapper>
-              <div className="flex items-center text-muted-foreground">
-                <Bell className="mr-1 h-4 w-4" />
-                <TooltipWrapper content="Count of distinct asset types acquired in the last 30 days">
-                  <span>{renderRecentAcquisitionCategories()} categories</span>
-                </TooltipWrapper>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Depreciation Card */}
-        <Card className="overflow-hidden">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Depreciation</CardTitle>
-            <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
-          </CardHeader>
-          <CardContent>
-            <TooltipWrapper content="Sum of the 'depreciated_value' column for all active assets">
-              <div className="text-2xl font-bold mb-1">
-                {renderTotalDepreciationValue()}
-                <span className="text-muted-foreground text-sm font-normal">.00</span>
-              </div>
-            </TooltipWrapper>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center text-sm font-medium text-red-600">
-                <ArrowDownRight className="mr-1 h-4 w-4" />
-                {0}%
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Compared to last month (TBD)
-              </div>
-            </div>
-            <div className="mt-4 flex items-center justify-between text-sm">
-              <div className="flex items-center text-muted-foreground">
-                <LayoutList className="mr-1 h-4 w-4" />
-                <TooltipWrapper content="Placeholder - Transaction count not available from this view">
-                  <span>- transactions</span>
-                </TooltipWrapper>
-              </div>
-              <div className="flex items-center text-muted-foreground">
-                <Bell className="mr-1 h-4 w-4" />
-                <TooltipWrapper content="Placeholder - Category count not available from this view">
-                  <span>- categories</span>
-                </TooltipWrapper>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        {/* Asset Value Overview Chart - Span 8/12 columns on md+ */}
-        <Card className="overflow-hidden md:col-span-8">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium">Total asset value overview</CardTitle>
-            <div className="flex items-center space-x-2">
-              <div className="flex items-center space-x-1">
-                <div className="h-3 w-3 rounded-full bg-primary"></div>
-                <span className="text-xs">This month</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="h-3 w-3 rounded-full bg-gray-300"></div>
-                <span className="text-xs">Same period last month</span>
-              </div>
-              <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
-                Total value <ChevronRight className="ml-1 h-3 w-3" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Conditional Rendering for Chart */}
-            {loadingChart ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
-              </div>
-            ) : error ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
-                <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
-              </div>
-            ) : timeSeriesData.length === 0 ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                <p className="text-sm text-muted-foreground">No time series data available.</p>
-              </div>
-            ) : (
-              <div className="h-[250px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={timeSeriesData}
-                    margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
-                    <XAxis
-                      dataKey="report_date"
-                      tickFormatter={formatDateTick}
-                      tick={{ fontSize: 12 }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrencyTick}
-                      tick={{ fontSize: 12 }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={80} // Adjust width for labels like K100k
-                    />
-                    <RechartsTooltip
-                      contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
-                      formatter={formatTooltipCurrency}
-                      labelFormatter={formatDateTick}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="cumulative_purchase_cost"
-                      stroke="#8884d8"
-                      fillOpacity={1}
-                      fill="url(#colorValue)"
-                      name="Total Value"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Statistics / Depreciation Donut Chart - Span 4/12 columns on md+ */}
-        <Card className="overflow-hidden md:col-span-4">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base font-medium">Depreciation by Type</CardTitle>
-            <div className="flex items-center space-x-2">
-              <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
-                Details <ChevronRight className="ml-1 h-3 w-3" />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Conditional Rendering for Donut Chart */}
-            {loadingDonut ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
-              </div>
-            ) : error ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
-                <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
-              </div>
-            ) : depreciationByTypeData.length === 0 ? (
-              <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                <p className="text-sm text-muted-foreground">No depreciation data to display.</p>
-                {/* Optionally show total depreciation value even if breakdown is empty */}
-                <div className="absolute text-center">
-                  <p className="text-xl font-bold mt-2">{renderTotalDepreciationValue()}</p>
-                  <p className="text-xs text-muted-foreground">Total Depreciation</p>
-                </div>
-              </div>
-            ) : (
-              <div className="h-[250px] w-full relative"> {/* Added relative positioning */}
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <RechartsTooltip
-                      contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
-                      formatter={(value: number, name: string) => [`${formatCurrency(value)}`, name]}
-                    />
-                    <Pie
-                      data={depreciationByTypeData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      // label={renderCustomizedLabel} // Could add labels if needed
-                      innerRadius={60} // Make it a donut
-                      outerRadius={80}
-                      fill="#8884d8"
-                      paddingAngle={5}
-                      dataKey="total_depreciated_value_for_type"
-                      nameKey="asset_type"
-                    >
-                      {depreciationByTypeData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    {/* Adjust Legend position */}
-                    <Legend
-                      layout="horizontal" // Changed to horizontal
-                      verticalAlign="bottom" // Changed to bottom
-                      align="center" // Changed to center
-                      iconSize={10}
-                      wrapperStyle={{ fontSize: '12px', lineHeight: '1.5', marginTop: '10px' }} // Add margin top
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                {/* Center Text - Display total depreciation from summary */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                  <p className="text-2xl font-bold">{renderTotalDepreciationValue()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Total Depreciation</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Section: Charts and New Info Cards */}
-      {/* Corrected Grid Layout for Bottom Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:col-span-2 lg:col-span-3 xl:col-span-4"> {/* Span full width */}
-        {/* Left Column: Monthly Acquisition Cost Chart */}
-        {/* Corrected lg span to 2 */}
-        <Card className="lg:col-span-2 h-full flex flex-col">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            {/* Updated Title */}
-            <CardTitle className="text-sm font-medium">Monthly Acquisition Cost</CardTitle>
-            {/* Updated Filter Button (still placeholder) */}
-            <TooltipWrapper content="Select time period (future feature)">
-              <Button variant="outline" size="sm" className="h-7 text-xs px-2 py-1 cursor-not-allowed opacity-50">
-                This year
-                <ChevronRight className="h-3 w-3 ml-1" />
-              </Button>
-            </TooltipWrapper>
-          </CardHeader>
-          <CardContent className="pl-2 pr-4 relative flex-grow"> {/* Adjust height and padding */}
-            {/* Use renamed loading state */}
-            {loadingMonthlyAcquisitionChart ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" />Loading Chart...</div>
-              /* Use renamed error state */
-            ) : monthlyAcquisitionChartError ? (
-              <div className="flex items-center justify-center h-full text-red-600">{monthlyAcquisitionChartError}</div>
-              /* Use renamed data state */
-            ) : monthlyAcquisitionData.length > 0 ? (
-              <>
-                {/* Adjusted ResponsiveContainer height - no need for bottom text */}
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    /* Use renamed data state */
-                    data={monthlyAcquisitionData}
-                    margin={{ top: 25, right: 5, left: 20, bottom: 5 }} // Adjusted margins
-                    barCategoryGap="20%" // Space between groups
-                  >
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tickFormatter={formatCurrencyTick}
-                      tick={{ fontSize: 11 }}
-                      tickLine={false}
-                      axisLine={false}
-                      domain={[0, 'dataMax + 1000']}
-                      width={50} // Give YAxis some space
-                    />
-                    <RechartsTooltip
-                      contentStyle={{ fontSize: 12, borderRadius: '4px', border: '1px solid #ccc' }}
-                      /* Updated formatter for single value */
-                      formatter={(value: number | null) => [value !== null ? formatCurrency(value) : 'N/A', 'Acquisition Cost']}
-                      cursor={{ fill: 'rgba(206, 206, 206, 0.2)' }}
-                    />
-                    {/* Simplified Legend for single bar */}
-                    <Legend
-                      verticalAlign="top"
-                      align="right"
-                      height={30}
-                      iconSize={10}
-                      wrapperStyle={{ fontSize: '12px', paddingBottom: '10px', top: '-5px' }}
-                      payload={[{ value: 'Acquisition Cost', type: 'square', color: '#8884d8' }]} // Define legend item
-                    />
-                    {/* Single Bar for Acquisition */}
-                    <Bar dataKey="total_acquisition" fill="#8884d8" name="Acquisition Cost" radius={[4, 4, 0, 0]} /> {/* Using primary color */}
-                  </BarChart>
-                </ResponsiveContainer>
-                {/* REMOVED Budget Comparison Text */}
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">No acquisition data for this year</div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Right Column: Stacked Cards */}
-        {/* Corrected lg span to 1 and removed other spans */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
-          <Card> {/* Recently Assigned Assets */}
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Assigned Assets</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {loadingAssigned ? (
-                <div className="flex items-center justify-center h-20 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
-                </div>
-              ) : assignedError ? (
-                <div className="text-red-600 text-xs p-2 text-center">Error: {assignedError}</div>
-              ) : recentlyAssignedAssets.length > 0 ? (
-                recentlyAssignedAssets.map(asset => (
-                  <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
-                      <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-xs">
-                      <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
-                      <p className="text-muted-foreground">To: {asset.assigned_to || 'N/A'}</p>
-                    </div>
-                    <TooltipWrapper content={`Assigned on ${formatDate(asset.assigned_date)}`}>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatRelativeTime(asset.assigned_date)}
-                      </span>
-                    </TooltipWrapper>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-4">No assets assigned recently.</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card> {/* Recently Damaged Assets */}
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Damaged Assets</CardTitle></CardHeader>
-            <CardContent className="space-y-3">
-              {loadingDamaged ? (
-                <div className="flex items-center justify-center h-20 text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
-                </div>
-              ) : damagedError ? (
-                <div className="text-red-600 text-xs p-2 text-center">Error: {damagedError}</div>
-              ) : recentlyDamagedAssets.length > 0 ? (
-                recentlyDamagedAssets.map(asset => (
-                  <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
-                      <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 text-xs">
-                      <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
-                      <p className="text-muted-foreground">Assigned: {asset.assigned_to || 'N/A'}</p> {/* Shows who had it when damaged */}
-                    </div>
-                    <TooltipWrapper content={`Marked damaged on ${formatDate(asset.last_updated)}`}>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatRelativeTime(asset.last_updated)}
-                      </span>
-                    </TooltipWrapper>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-muted-foreground text-center py-4">No recently damaged assets found.</p>
-              )}
-            </CardContent>
-          </Card>
-          <Card> {/* Upcoming Maintenance */}
-            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Upcoming Maintenance</CardTitle></CardHeader>
+        {/* Top Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Total Asset Value Card */}
+          <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total asset value</CardTitle>
+              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+            </CardHeader>
             <CardContent>
-              {/* ... (Static Placeholder Content for Maintenance) ... */}
+              <TooltipWrapper content="Total purchase cost of all active assets (excluding Decommissioned/Sold)">
+                <div className="text-2xl font-bold mb-1">
+                  {renderTotalValue()}
+                  <span className="text-muted-foreground text-sm font-normal">.00</span>
+                </div>
+              </TooltipWrapper>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center text-sm font-medium text-emerald-600">
+                  <ChevronUp className="mr-1 h-4 w-4" />
+                  -
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Compared to last month (TBD)
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <TooltipWrapper content="Total count of active assets (excluding Decommissioned/Sold)">
+                  <div className="flex items-center text-muted-foreground">
+                    <LayoutList className="mr-1 h-4 w-4" />
+                    <span>{renderTotalAssets()} assets</span>
+                  </div>
+                </TooltipWrapper>
+                <div className="flex items-center text-muted-foreground">
+                  <Bell className="mr-1 h-4 w-4" />
+                  <span>{renderCategoryCount()} categories</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* New Acquisitions Card */}
+          <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">New acquisitions (30d)</CardTitle>
+              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+            </CardHeader>
+            <CardContent>
+              <TooltipWrapper content="Sum of purchase cost for active assets acquired in the last 30 days">
+                <div className="text-2xl font-bold mb-1">
+                  {renderRecentAcquisitionValue()}
+                  <span className="text-muted-foreground text-sm font-normal">.00</span>
+                </div>
+              </TooltipWrapper>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center text-sm font-medium text-emerald-600">
+                  <ChevronUp className="mr-1 h-4 w-4" />
+                  {0}%
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Compared to last period (TBD)
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <TooltipWrapper content="Count of active assets acquired in the last 30 days">
+                  <div className="flex items-center text-muted-foreground">
+                    <LayoutList className="mr-1 h-4 w-4" />
+                    <span>{renderRecentAcquisitionCount()} assets</span>
+                  </div>
+                </TooltipWrapper>
+                <div className="flex items-center text-muted-foreground">
+                  <Bell className="mr-1 h-4 w-4" />
+                  <TooltipWrapper content="Count of distinct asset types acquired in the last 30 days">
+                    <span>{renderRecentAcquisitionCategories()} categories</span>
+                  </TooltipWrapper>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Depreciation Card */}
+          <Card className="overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Depreciation</CardTitle>
+              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+            </CardHeader>
+            <CardContent>
+              <TooltipWrapper content="Sum of the 'depreciated_value' column for all active assets">
+                <div className="text-2xl font-bold mb-1">
+                  {renderTotalDepreciationValue()}
+                  <span className="text-muted-foreground text-sm font-normal">.00</span>
+                </div>
+              </TooltipWrapper>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center text-sm font-medium text-red-600">
+                  <ArrowDownRight className="mr-1 h-4 w-4" />
+                  {0}%
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Compared to last month (TBD)
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm">
+                <div className="flex items-center text-muted-foreground">
+                  <LayoutList className="mr-1 h-4 w-4" />
+                  <TooltipWrapper content="Placeholder - Transaction count not available from this view">
+                    <span>- transactions</span>
+                  </TooltipWrapper>
+                </div>
+                <div className="flex items-center text-muted-foreground">
+                  <Bell className="mr-1 h-4 w-4" />
+                  <TooltipWrapper content="Placeholder - Category count not available from this view">
+                    <span>- categories</span>
+                  </TooltipWrapper>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          {/* Asset Value Overview Chart - Span 8/12 columns on md+ */}
+          <Card className="overflow-hidden md:col-span-8">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-medium">Total asset value overview</CardTitle>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className="h-3 w-3 rounded-full bg-primary"></div>
+                  <span className="text-xs">This month</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <div className="h-3 w-3 rounded-full bg-gray-300"></div>
+                  <span className="text-xs">Same period last month</span>
+                </div>
+                <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
+                  Total value <ChevronRight className="ml-1 h-3 w-3" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Conditional Rendering for Chart */}
+              {loadingChart ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
+                  <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
+                </div>
+              ) : error ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
+                  <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
+                </div>
+              ) : timeSeriesData.length === 0 ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
+                  <p className="text-sm text-muted-foreground">No time series data available.</p>
+                </div>
+              ) : (
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={timeSeriesData}
+                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                          <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
+                      <XAxis
+                        dataKey="report_date"
+                        tickFormatter={formatDateTick}
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tickFormatter={formatCurrencyTick}
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={80} // Adjust width for labels like K100k
+                      />
+                      <RechartsTooltip
+                        contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
+                        formatter={formatTooltipCurrency}
+                        labelFormatter={formatDateTick}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="cumulative_purchase_cost"
+                        stroke="#8884d8"
+                        fillOpacity={1}
+                        fill="url(#colorValue)"
+                        name="Total Value"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Statistics / Depreciation Donut Chart - Span 4/12 columns on md+ */}
+          <Card className="overflow-hidden md:col-span-4">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base font-medium">Depreciation by Type</CardTitle>
+              <div className="flex items-center space-x-2">
+                <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
+                  Details <ChevronRight className="ml-1 h-3 w-3" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Conditional Rendering for Donut Chart */}
+              {loadingDonut ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
+                  <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
+                </div>
+              ) : error ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
+                  <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
+                </div>
+              ) : depreciationByTypeData.length === 0 ? (
+                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
+                  <p className="text-sm text-muted-foreground">No depreciation data to display.</p>
+                  {/* Optionally show total depreciation value even if breakdown is empty */}
+                  <div className="absolute text-center">
+                    <p className="text-xl font-bold mt-2">{renderTotalDepreciationValue()}</p>
+                    <p className="text-xs text-muted-foreground">Total Depreciation</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[250px] w-full relative"> {/* Added relative positioning */}
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <RechartsTooltip
+                        contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
+                        formatter={(value: number, name: string) => [`${formatCurrency(value)}`, name]}
+                      />
+                      <Pie
+                        data={depreciationByTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        // label={renderCustomizedLabel} // Could add labels if needed
+                        innerRadius={60} // Make it a donut
+                        outerRadius={80}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="total_depreciated_value_for_type"
+                        nameKey="asset_type"
+                      >
+                        {depreciationByTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      {/* Adjust Legend position */}
+                      <Legend
+                        layout="horizontal" // Changed to horizontal
+                        verticalAlign="bottom" // Changed to bottom
+                        align="center" // Changed to center
+                        iconSize={10}
+                        wrapperStyle={{ fontSize: '12px', lineHeight: '1.5', marginTop: '10px' }} // Add margin top
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center Text - Display total depreciation from summary */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <p className="text-2xl font-bold">{renderTotalDepreciationValue()}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Total Depreciation</p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom Section: Charts and New Info Cards */}
+        {/* Corrected Grid Layout for Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:col-span-2 lg:col-span-3 xl:col-span-4"> {/* Span full width */}
+          {/* Left Column: Monthly Acquisition Cost Chart */}
+          {/* Corrected lg span to 2 */}
+          <Card className="lg:col-span-2 h-full flex flex-col">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              {/* Updated Title */}
+              <CardTitle className="text-sm font-medium">Monthly Acquisition Cost</CardTitle>
+              {/* Updated Filter Button (still placeholder) */}
+              <TooltipWrapper content="Select time period (future feature)">
+                <Button variant="outline" size="sm" className="h-7 text-xs px-2 py-1 cursor-not-allowed opacity-50">
+                  This year
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              </TooltipWrapper>
+            </CardHeader>
+            <CardContent className="pl-2 pr-4 relative flex-grow"> {/* Adjust height and padding */}
+              {/* Use renamed loading state */}
+              {loadingMonthlyAcquisitionChart ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" />Loading Chart...</div>
+                /* Use renamed error state */
+              ) : monthlyAcquisitionChartError ? (
+                <div className="flex items-center justify-center h-full text-red-600">{monthlyAcquisitionChartError}</div>
+                /* Use renamed data state */
+              ) : monthlyAcquisitionData.length > 0 ? (
+                <>
+                  {/* Adjusted ResponsiveContainer height - no need for bottom text */}
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      /* Use renamed data state */
+                      data={monthlyAcquisitionData}
+                      margin={{ top: 25, right: 5, left: 20, bottom: 5 }} // Adjusted margins
+                      barCategoryGap="20%" // Space between groups
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tickFormatter={formatCurrencyTick}
+                        tick={{ fontSize: 11 }}
+                        tickLine={false}
+                        axisLine={false}
+                        domain={[0, 'dataMax + 1000']}
+                        width={50} // Give YAxis some space
+                      />
+                      <RechartsTooltip
+                        contentStyle={{ fontSize: 12, borderRadius: '4px', border: '1px solid #ccc' }}
+                        /* Updated formatter for single value */
+                        formatter={(value: number | null) => [value !== null ? formatCurrency(value) : 'N/A', 'Acquisition Cost']}
+                        cursor={{ fill: 'rgba(206, 206, 206, 0.2)' }}
+                      />
+                      {/* Simplified Legend for single bar */}
+                      <Legend
+                        verticalAlign="top"
+                        align="right"
+                        height={30}
+                        iconSize={10}
+                        wrapperStyle={{ fontSize: '12px', paddingBottom: '10px', top: '-5px' }}
+                        payload={[{ value: 'Acquisition Cost', type: 'square', color: '#8884d8' }]} // Define legend item
+                      />
+                      {/* Single Bar for Acquisition */}
+                      <Bar dataKey="total_acquisition" fill="#8884d8" name="Acquisition Cost" radius={[4, 4, 0, 0]} /> {/* Using primary color */}
+                    </BarChart>
+                  </ResponsiveContainer>
+                  {/* REMOVED Budget Comparison Text */}
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">No acquisition data for this year</div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Right Column: Stacked Cards */}
+          {/* Corrected lg span to 1 and removed other spans */}
+          <div className="lg:col-span-1 flex flex-col gap-4">
+            <Card> {/* Recently Assigned Assets */}
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Assigned Assets</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {loadingAssigned ? (
+                  <div className="flex items-center justify-center h-20 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
+                  </div>
+                ) : assignedError ? (
+                  <div className="text-red-600 text-xs p-2 text-center">Error: {assignedError}</div>
+                ) : recentlyAssignedAssets.length > 0 ? (
+                  recentlyAssignedAssets.map(asset => (
+                    <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
+                        <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-xs">
+                        <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
+                        <p className="text-muted-foreground">To: {asset.assigned_to || 'N/A'}</p>
+                      </div>
+                      <TooltipWrapper content={`Assigned on ${formatDate(asset.assigned_date)}`}>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatRelativeTime(asset.assigned_date)}
+                        </span>
+                      </TooltipWrapper>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">No assets assigned recently.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card> {/* Recently Damaged Assets */}
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Damaged Assets</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                {loadingDamaged ? (
+                  <div className="flex items-center justify-center h-20 text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
+                  </div>
+                ) : damagedError ? (
+                  <div className="text-red-600 text-xs p-2 text-center">Error: {damagedError}</div>
+                ) : recentlyDamagedAssets.length > 0 ? (
+                  recentlyDamagedAssets.map(asset => (
+                    <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
+                        <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-xs">
+                        <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
+                        <p className="text-muted-foreground">Assigned: {asset.assigned_to || 'N/A'}</p> {/* Shows who had it when damaged */}
+                      </div>
+                      <TooltipWrapper content={`Marked damaged on ${formatDate(asset.last_updated)}`}>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatRelativeTime(asset.last_updated)}
+                        </span>
+                      </TooltipWrapper>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-4">No recently damaged assets found.</p>
+                )}
+              </CardContent>
+            </Card>
+            <Card> {/* Upcoming Maintenance */}
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Upcoming Maintenance</CardTitle></CardHeader>
+              <CardContent>
+                {/* ... (Static Placeholder Content for Maintenance) ... */}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

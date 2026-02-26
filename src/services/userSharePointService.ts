@@ -31,85 +31,92 @@ export class UserSharePointService {
     private listId: string | null = null;
     private groupsListId: string | null = null;
     private permissionsColumnName: string = 'Permissions'; // Default fallback
+    private initializationPromise: Promise<void> | null = null;
 
     constructor(client: Client) {
         this.client = client;
     }
 
-    async initialize(): Promise<void> {
-        if (this.siteId && this.listId && this.groupsListId) return;
+    initialize(): Promise<void> {
+        if (this.siteId && this.listId && this.groupsListId) return Promise.resolve();
 
-        try {
-            // Get Site ID
-            const site = await this.client
-                .api(`/sites/${SITE_DOMAIN}:${SITE_PATH}`)
-                .get();
+        if (this.initializationPromise) return this.initializationPromise;
 
-            if (!site || !site.id) {
-                throw new Error(`Site not found at ${SITE_DOMAIN}:${SITE_PATH}`);
-            }
+        this.initializationPromise = (async () => {
+            try {
+                // Get Site ID
+                const site = await this.client
+                    .api(`/sites/${SITE_DOMAIN}:${SITE_PATH}`)
+                    .get();
 
-            this.siteId = site.id;
-
-            // Get List IDs
-            // Get List IDs
-            // Note: Complex OData filters on displayName can sometimes fail or be unsupported depending on the environment.
-            // Fetching top lists and filtering in memory is safer.
-            const lists = await this.client
-                .api(`/sites/${this.siteId}/lists`)
-                .select('id,displayName,name')
-                .top(200) // Fetch top 200 lists to be safe
-                .get();
-
-            console.log('[UserSharePointService] Available lists:', lists.value.map((l: any) => `${l.displayName} (${l.name})`));
-
-            // Try to find by displayName first, then by internal name (case-insensitive)
-            const findList = (name: string) => lists.value.find((l: any) =>
-                l.displayName === name ||
-                l.name === name ||
-                l.displayName?.toLowerCase() === name.toLowerCase() ||
-                l.name?.toLowerCase() === name.toLowerCase()
-            );
-
-            const userRolesList = findList(USER_ROLES_LIST_NAME);
-            const groupsList = findList(PERMISSION_GROUPS_LIST_NAME);
-
-            if (!userRolesList) {
-                throw new Error(`List '${USER_ROLES_LIST_NAME}' not found. Please create it first.`);
-            }
-
-            // Groups list is optional for now to prevent breaking existing setup if not created yet
-            if (groupsList) {
-                this.groupsListId = groupsList.id;
-            } else {
-                console.warn(`List '${PERMISSION_GROUPS_LIST_NAME}' not found. Group permissions will be disabled.`);
-            }
-
-            // Dynamically find the internal name for "Permissions" column
-            if (this.groupsListId) {
-                try {
-                    const columns = await this.client
-                        .api(`/sites/${this.siteId}/lists/${this.groupsListId}/columns`)
-                        .select('name,displayName')
-                        .get();
-
-                    const permCol = columns.value.find((c: any) => c.displayName === 'Permissions');
-                    if (permCol) {
-                        this.permissionsColumnName = permCol.name;
-                        console.log(`[UserSharePointService] Resolved 'Permissions' column to internal name: ${this.permissionsColumnName}`);
-                    } else {
-                        console.warn("[UserSharePointService] Could not find column with display name 'Permissions', using default.");
-                    }
-                } catch (colError) {
-                    console.error("[UserSharePointService] Failed to fetch columns:", colError);
+                if (!site || !site.id) {
+                    throw new Error(`Site not found at ${SITE_DOMAIN}:${SITE_PATH}`);
                 }
-            }
 
-            this.listId = userRolesList.id;
-        } catch (error) {
-            console.error('Failed to initialize UserSharePointService:', error);
-            throw error;
-        }
+                this.siteId = site.id;
+
+                // Get List IDs
+                // Note: Complex OData filters on displayName can sometimes fail or be unsupported depending on the environment.
+                // Fetching top lists and filtering in memory is safer.
+                const lists = await this.client
+                    .api(`/sites/${this.siteId}/lists`)
+                    .select('id,displayName,name')
+                    .top(200) // Fetch top 200 lists to be safe
+                    .get();
+
+                console.log('[UserSharePointService] Available lists:', lists.value.map((l: any) => `${l.displayName} (${l.name})`));
+
+                // Try to find by displayName first, then by internal name (case-insensitive)
+                const findList = (name: string) => lists.value.find((l: any) =>
+                    l.displayName === name ||
+                    l.name === name ||
+                    l.displayName?.toLowerCase() === name.toLowerCase() ||
+                    l.name?.toLowerCase() === name.toLowerCase()
+                );
+
+                const userRolesList = findList(USER_ROLES_LIST_NAME);
+                const groupsList = findList(PERMISSION_GROUPS_LIST_NAME);
+
+                if (!userRolesList) {
+                    throw new Error(`List '${USER_ROLES_LIST_NAME}' not found. Please create it first.`);
+                }
+
+                // Groups list is optional for now to prevent breaking existing setup if not created yet
+                if (groupsList) {
+                    this.groupsListId = groupsList.id;
+                } else {
+                    console.warn(`List '${PERMISSION_GROUPS_LIST_NAME}' not found. Group permissions will be disabled.`);
+                }
+
+                // Dynamically find the internal name for "Permissions" column
+                if (this.groupsListId) {
+                    try {
+                        const columns = await this.client
+                            .api(`/sites/${this.siteId}/lists/${this.groupsListId}/columns`)
+                            .select('name,displayName')
+                            .get();
+
+                        const permCol = columns.value.find((c: any) => c.displayName === 'Permissions');
+                        if (permCol) {
+                            this.permissionsColumnName = permCol.name;
+                            console.log(`[UserSharePointService] Resolved 'Permissions' column to internal name: ${this.permissionsColumnName}`);
+                        } else {
+                            console.warn("[UserSharePointService] Could not find column with display name 'Permissions', using default.");
+                        }
+                    } catch (colError) {
+                        console.error("[UserSharePointService] Failed to fetch columns:", colError);
+                    }
+                }
+
+                this.listId = userRolesList.id;
+            } catch (error) {
+                console.error('Failed to initialize UserSharePointService:', error);
+                this.initializationPromise = null; // Reset on failure
+                throw error;
+            }
+        })();
+
+        return this.initializationPromise;
     }
 
     private mapFromSharePoint(item: any): UserRole {

@@ -64,6 +64,11 @@ interface GlobalAssigneeSelectorProps {
      * Optional container to render the popover in (useful for full-screen mode)
      */
     container?: HTMLElement | null;
+
+    /**
+     * Whether the selector is disabled
+     */
+    disabled?: boolean;
 }
 
 export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
@@ -74,7 +79,8 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
     className,
     children,
     hideSelectedBadges = false,
-    container
+    container,
+    disabled = false
 }) => {
     const [open, setOpen] = useState(false);
     const { employees, isLoading, isInitialized } = useEmployees();
@@ -104,6 +110,7 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
 
     const handleRemove = (e: React.MouseEvent, employeeId: string) => {
         e.stopPropagation();
+        if (disabled) return;
         const newSelection = selected.filter(s => s.id !== employeeId);
         onChange(newSelection);
     };
@@ -146,6 +153,7 @@ export const GlobalAssigneeSelector: React.FC<GlobalAssigneeSelectorProps> = ({
                             role="combobox"
                             aria-expanded={open}
                             className={cn("w-full justify-between font-normal text-left", className)}
+                            disabled={disabled}
                         >
                             {mode === 'single' ? (
                                 selected.length > 0 ? selected[0].displayName : placeholder

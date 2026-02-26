@@ -28,7 +28,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import TaskCard from '@/components/unit-tabs/TaskCard';
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { StaffMember } from '@/types/staff';
-import { Objective, Kra, Kpi, Task, Project } from '@/types';
+import { Objective, Kra, Kpi, Task, Project, TaskGroup } from '@/types';
 import {
   DndContext,
   DragEndEvent,
@@ -579,7 +579,7 @@ interface NewTasksTabProps {
   viewMode: ViewMode;
   buckets?: Bucket[];
   setBuckets?: React.Dispatch<React.SetStateAction<Bucket[]>>;
-  addCustomGroup?: (project: Partial<Project>) => Promise<Project>;
+  addCustomGroup?: (group: Partial<TaskGroup>) => Promise<TaskGroup>;
   deleteCustomGroup?: (id: string) => Promise<void>;
   onRenameGroup?: (groupId: string, newTitle: string) => void;
   currentUnit?: string;
@@ -623,6 +623,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const [boardData, setBoardData] = useState<BoardData>({});
   // Use props if provided, otherwise local state (though mostly we expect props from Unit.tsx now)
   const [localBuckets, setLocalBuckets] = useState<Bucket[]>([]);
+  // Track if we need to show the virtual uncategorized bucket
+  const [hasOrphanedTasks, setHasOrphanedTasks] = useState(false);
 
   const activeBuckets = buckets || localBuckets;
   const setActiveBuckets = setBuckets || setLocalBuckets;
@@ -636,6 +638,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const [isAddingGroup, setIsAddingGroup] = useState<boolean>(false);
   const [newGroupName, setNewGroupName] = useState<string>('');
   const [isCreatingGroup, setIsCreatingGroup] = useState<boolean>(false);
+  const [isDeletingItem, setIsDeletingItem] = useState<boolean>(false);
   const [activeNewGroupId, setActiveNewGroupId] = useState<string | null>(null);
 
   const [insertAfterGroupId, setInsertAfterGroupId] = useState<string | null>(null);
@@ -695,8 +698,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
    */
   const optimisticUpdates = useRef<Map<string, Task>>(new Map());
 
-  useEffect(() => {
-    // 0. Filter tasks based on search query AND filters
+  const filteredAndDeduplicatedTasks = useMemo(() => {
     let tasksToProcess = tasks;
 
     // Search Query
@@ -733,6 +735,26 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       tasksToProcess = tasksToProcess.filter(t => t.projectId && selectedGroups.includes(t.projectId));
     }
 
+    // 🛡️ DEDUPLICATION GUARD
+    const uniqueTasks = new Map<string, Task>();
+    const duplicateIds = new Set<string>();
+
+    tasksToProcess.forEach(task => {
+      if (uniqueTasks.has(task.id)) {
+        duplicateIds.add(task.id);
+      } else {
+        uniqueTasks.set(task.id, task);
+      }
+    });
+
+    if (duplicateIds.size > 0 && process.env.NODE_ENV === 'development') {
+      console.warn(`[TasksTab] Found ${duplicateIds.size} duplicate task IDs. Duplicates removed to prevent bugs.`);
+    }
+
+    return Array.from(uniqueTasks.values());
+  }, [tasks, searchQuery, selectedPriorities, selectedStatuses, selectedAssignees, selectedGroups]);
+
+  useEffect(() => {
     // Initialize board data structure
     const newBoardData: BoardData = {};
 
@@ -741,38 +763,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       newBoardData[bucket.id] = [];
     });
 
-    // 🛡️ DEDUPLICATION GUARD
-    // Filter out duplicate tasks (same ID) which cause critical drag-and-drop bugs (ghosting, auto-migration)
-    const uniqueTasks = new Map<string, Task>();
-    const duplicateIds = new Set<string>();
-
-    tasksToProcess.forEach(task => {
-      if (uniqueTasks.has(task.id)) {
-        duplicateIds.add(task.id);
-        if (process.env.NODE_ENV === 'development') {
-          console.warn(`[TasksTab] Duplicate task ID ignored: ${task.id} ("${task.title}")`);
-        }
-      } else {
-        uniqueTasks.set(task.id, task);
-      }
-    });
-
-    if (duplicateIds.size > 0) {
-      console.error(`[TasksTab] Found ${duplicateIds.size} duplicate task IDs. Duplicates removed to prevent bugs.`);
-    }
-
-    const processedTasks = Array.from(uniqueTasks.values());
-
     // Clean up stale optimistic updates for tasks that no longer exist
-    // This prevents "zombie" tasks from persisting or moving unexpectedly
-    const currentTaskIds = new Set(uniqueTasks.keys());
+    const currentTaskIds = new Set(filteredAndDeduplicatedTasks.map(t => t.id));
     optimisticUpdates.current.forEach((_, id) => {
       if (!currentTaskIds.has(id)) {
         optimisticUpdates.current.delete(id);
       }
     });
 
-    processedTasks.forEach(task => {
+    filteredAndDeduplicatedTasks.forEach(task => {
       // 1. Priority: Explicit Group (Project ID) assignment
       // MOVED TO TOP: This ensures that if a user manually assigns a Group, the task stays there regardless of Status or Unit.
       if (task.projectId) {
@@ -783,10 +782,18 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           newBoardData[projectBucket.id].push(task);
           return; // Successfully assigned to explicit group
         } else {
-          console.log(`⚠️ [TasksTab] Orphaned Project: Task '${task.title}' has projectId '${task.projectId}' but bucket not found or active. Active Buckets:`, activeBuckets.map(b => b.id));
+          // 🚨 Orphaned Task Logic:
+          // The task has a projectId, but the bucket is not in activeBuckets.
+          // We will place it in the 'uncategorized' virtual bucket instead of dropping it or crashing.
+          console.warn(`⚠️ [TasksTab] Orphaned Project: Task '${task.title}' has projectId '${task.projectId}' but bucket not found. Moving to Uncategorized.`);
+          if (!newBoardData['uncategorized-virtual']) {
+            newBoardData['uncategorized-virtual'] = [];
+          }
+          newBoardData['uncategorized-virtual'].push(task);
+          return; // Successfully handled the orphaned task
         }
 
-        // 🚨 Virtual Bucket Fallback:
+        // 🚨 Virtual Bucket Fallback (Legacy / Edge Cases):
         // If task has a projectId but the bucket is missing (e.g. shared from another unit),
         // and we have a 'Shared Projects' virtual bucket, put it there.
         // 🔒 SHARED GROUP FIX: Only if NOT created by me
@@ -849,16 +856,16 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       // If we found the task in stale data
       if (currentColumnId) {
         // Compare with optimistic expectation
-        const intendedColumnId = optimisticTask.projectId || optimisticTask.status || ''; // Simplification
+        const intendedColumnId = optimisticTask.groupId || optimisticTask.status || ''; // Simplification
 
-        // Actually, we trust optimisticTask.projectId matches the bucket ID we put it in.
+        // Actually, we trust optimisticTask.groupId matches the bucket ID we put it in.
         // We need to move it from currentColumnId to the optimistic column.
 
         // NOTE: In boardData logic above, we placed tasks based on their PROPS data.
         // So 'currentColumnId' is where the SERVER thinks it is.
         // We want to force it to where WE think it is.
 
-        const targetColumnId = optimisticTask.projectId; // This should be the bucket ID
+        const targetColumnId = optimisticTask.groupId; // This should be the bucket ID
 
         if (targetColumnId && newBoardData[targetColumnId]) {
           // If server data matches optimistic data, we are good! Accessing props task...
@@ -892,8 +899,12 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       }
     });
 
+    // Check if we populated the uncategorized virtual bucket with any orphaned tasks
+    // By checking length > 0, the column will automatically hide itself when emptied
+    setHasOrphanedTasks(!!newBoardData['uncategorized-virtual'] && newBoardData['uncategorized-virtual'].length > 0);
+
     setBoardData(newBoardData);
-  }, [tasks, activeBuckets, currentUnit, searchQuery, selectedPriorities, selectedStatuses, selectedAssignees, selectedGroups]);
+  }, [filteredAndDeduplicatedTasks, activeBuckets, currentUnit]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -963,7 +974,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     // Check if moved to a different column
     if (sourceColumnId !== destinationColumnId) {
       // 1. Optimistic Update: Update local state immediately
-      const updatedTask = { ...taskToMove!, projectId: destinationColumnId };
+      const updatedTask = { ...taskToMove!, groupId: destinationColumnId };
 
       // Store in ref to persist across prop updates
       optimisticUpdates.current.set(activeId, updatedTask);
@@ -995,7 +1006,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       // We do NOT await this, letting it happen in background.
       const performUpdate = async () => {
         try {
-          await editTask(activeId, { projectId: destinationColumnId }, { suppressToast: true });
+          await editTask(activeId, { groupId: destinationColumnId }, { suppressToast: true });
 
           // Success confirmed by backend
           const taskTitle = taskToMove?.title || 'Task';
@@ -1006,7 +1017,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             title: "Task Moved",
             description: `Moved "${taskTitle}" to ${destTitle}`,
             action: (
-              <ToastAction altText="Undo" onClick={() => editTask(activeId, { projectId: sourceColumnId }, { suppressToast: false })}>
+              <ToastAction altText="Undo" onClick={() => editTask(activeId, { groupId: sourceColumnId }, { suppressToast: false })}>
                 Undo
               </ToastAction>
             ),
@@ -1230,22 +1241,27 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       const groupId = itemToDelete.id;
 
       if (deleteCustomGroup) {
+        setIsDeletingItem(true);
         try {
           await deleteCustomGroup(groupId);
+          // Only close modal and rely on prop updates if successful
+          setItemToDelete(null);
         } catch (e) {
           console.error("Failed to delete group from backend", e);
-          toast({ title: "Error", description: "Failed to delete group from server, but removing locally.", variant: "destructive" });
+          // The error toast is handled by Unit.tsx
+        } finally {
+          setIsDeletingItem(false);
         }
+      } else {
+        // Fallback for local-only state (e.g. mock data)
+        setActiveBuckets(prev => prev.filter(b => b.id !== groupId));
+        setBoardData(prev => {
+          const newBoardData = { ...prev };
+          delete newBoardData[groupId];
+          return newBoardData;
+        });
+        setItemToDelete(null);
       }
-
-      setActiveBuckets(prev => prev.filter(b => b.id !== groupId));
-      setBoardData(prev => {
-        const newBoardData = { ...prev };
-        delete newBoardData[groupId];
-        return newBoardData;
-      });
-
-      setItemToDelete(null);
     }
   };
 
@@ -1282,25 +1298,14 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           }
         }
 
-        const newProject = await addCustomGroup({
+        const newGroup = await addCustomGroup({
           name: trimmedName,
-          isCustomGroup: true,
           status: 'in-progress',
           order: order
         });
 
-        const newBucket: Bucket = { id: String(newProject.id), title: trimmedName, order: order };
-
-        setActiveBuckets(prev => {
-          const updated = [...prev];
-          updated.splice(insertIndex, 0, newBucket);
-          return updated;
-        });
-
-        setBoardData(prev => ({ ...prev, [newBucket.id]: [] }));
-
-        // Trigger validation/scroll
-        setActiveNewGroupId(newBucket.id);
+        // Trigger validation/scroll using the fresh ID directly from backend
+        setActiveNewGroupId(String(newGroup.id));
         setIsAddingGroup(false);
         setNewGroupName('');
         setInsertAfterGroupId(null);
@@ -1345,19 +1350,70 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     setInsertAfterGroupId(null);
   };
 
-  const handleToggleComplete = (taskId: string, completed: boolean) => {
-    // 1. Find the task in boardData to get current state
+  const applyTaskUpdate = (
+    taskId: string,
+    updates: Partial<Task>,
+    successMessage: { title: string; description: string },
+    errorMessage: { title: string; description: string }
+  ) => {
     let task: Task | undefined;
     Object.values(boardData).forEach(col => {
       const found = col.find(t => t.id === taskId);
       if (found) task = found;
     });
 
-    if (!task) return;
+    if (!task) return null;
 
     const originalTask = { ...task };
+    const updatedTask = { ...task, ...updates };
 
-    // 2. Logic for recurrence (kept from original)
+    // Optimistic cache
+    optimisticUpdates.current.set(taskId, updatedTask);
+
+    // Force local UI render 
+    setBoardData(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(key => {
+        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
+      });
+      return next;
+    });
+
+    toast(successMessage);
+
+    Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
+      .then(() => {
+        if ((updates.completed !== undefined || updates.status !== undefined) && (task?.kpi_id || task?.kra_id)) {
+          // Delay refresh slightly so SharePoint indexers have time to process the cascade update
+          setTimeout(() => {
+            onDataRefresh?.();
+          }, 2500);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to update task", error);
+        optimisticUpdates.current.delete(taskId);
+        setBoardData(prev => {
+          const next = { ...prev };
+          Object.keys(next).forEach(key => {
+            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
+          });
+          return next;
+        });
+        toast({ ...errorMessage, variant: "destructive" });
+      });
+
+    return task;
+  };
+
+  const handleToggleComplete = (taskId: string, completed: boolean) => {
+    let task: Task | undefined;
+    Object.values(boardData).forEach(col => {
+      const found = col.find(t => t.id === taskId);
+      if (found) task = found;
+    });
+    if (!task) return;
+
     if (task && completed && task.recurrence && task.recurrence !== 'none') {
       const now = new Date();
       let newStartDate: Date | undefined;
@@ -1404,10 +1460,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       }
     }
 
-    // 3. Calculate new tags and status
     const currentTags = task?.tags || [];
     let newTags: string[];
-
     if (completed) {
       if (!currentTags.includes('completed')) {
         newTags = [...currentTags, 'completed'];
@@ -1420,73 +1474,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
     const newStatus = (completed ? 'completed' : (task?.status === 'completed' || task?.status === 'done') ? 'todo' : task?.status) as Task['status'];
 
-    // 4. Create Optimistic Update
-    const updatedTask: Task = {
-      ...task,
-      completed,
-      tags: newTags,
-      status: newStatus as any
-    };
-
-    optimisticUpdates.current.set(taskId, updatedTask);
-
-    // 5. Force Local Update Immediately
-    setBoardData(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
-      });
-      return next;
-    });
-
-    // 6. Immediate Success Toast
-    toast({
-      title: completed ? "Task Completed" : "Task Reopened",
-      description: completed ? "Task has been marked as complete." : "Task has been marked as incomplete."
-    });
-
-    // 7. Persist with Rollback
-    Promise.resolve(editTask(taskId, {
-      completed,
-      tags: newTags,
-      status: newStatus
-    }, { suppressToast: true }))
-      .then(() => {
-        if (task?.kpi_id || task?.kra_id) {
-          // Delay refresh slightly so SharePoint indexers have time to process the cascade update
-          setTimeout(() => {
-            onDataRefresh?.();
-          }, 2500);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to toggle completion", error);
-        // Rollback
-        optimisticUpdates.current.delete(taskId);
-        setBoardData(prev => {
-          const next = { ...prev };
-          Object.keys(next).forEach(key => {
-            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
-          });
-          return next;
-        });
-        toast({ title: "Update Failed", description: "Could not update task status. Changes reverted.", variant: "destructive" });
-      });
+    applyTaskUpdate(
+      taskId,
+      { completed, tags: newTags, status: newStatus },
+      { title: completed ? "Task Completed" : "Task Reopened", description: completed ? "Task has been marked as complete." : "Task has been marked as incomplete." },
+      { title: "Update Failed", description: "Could not update task status. Changes reverted." }
+    );
   };
 
   const handleAssigneeChange = (taskId: string, assignee: StaffMember) => {
-    // 1. Find the current task
-    let task: Task | undefined;
-    Object.values(boardData).forEach(col => {
-      const found = col.find(t => t.id === taskId);
-      if (found) task = found;
-    });
-
-    if (!task) return;
-
-    const originalTask = { ...task };
-
-    // Prepare updates
     let updates: Partial<Task> = {};
     const assigneeName = assignee?.name || assignee?.email || "Unknown";
 
@@ -1496,55 +1492,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       updates = { assignee: assignee.email, assignees: [assignee] };
     }
 
-    // 2. Create optimistic update
-    const updatedTask = { ...task, ...updates };
-    optimisticUpdates.current.set(taskId, updatedTask);
-
-    // 3. Force local update immediately
-    setBoardData(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
-      });
-      return next;
-    });
-
-    // 4. Immediate Success Toast
-    toast({
-      title: "Assignee Updated",
-      description: assignee && assignee.email ? `Task assigned to ${assigneeName}` : "Task unassigned"
-    });
-
-    // 5. Persist with Rollback
-    Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
-      .catch((error) => {
-        console.error("Failed to update assignee", error);
-        // Rollback
-        optimisticUpdates.current.delete(taskId);
-        setBoardData(prev => {
-          const next = { ...prev };
-          Object.keys(next).forEach(key => {
-            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
-          });
-          return next;
-        });
-        toast({ title: "Update Failed", description: "Could not update assignee. Changes reverted.", variant: "destructive" });
-      });
+    applyTaskUpdate(
+      taskId,
+      updates,
+      { title: "Assignee Updated", description: assignee && assignee.email ? `Task assigned to ${assigneeName}` : "Task unassigned" },
+      { title: "Update Failed", description: "Could not update assignee. Changes reverted." }
+    );
   };
 
   const handleAssigneesChange = (taskId: string, assignees: StaffMember[]) => {
-    // 1. Find the current task
-    let task: Task | undefined;
-    Object.values(boardData).forEach(col => {
-      const found = col.find(t => t.id === taskId);
-      if (found) task = found;
-    });
-
-    if (!task) return;
-
-    const originalTask = { ...task };
-
-    // Prepare updates
     let updates: Partial<Task> = {};
     if (!assignees || assignees.length === 0) {
       updates = { assignee: undefined, assignees: [] };
@@ -1552,142 +1508,36 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       updates = { assignee: assignees[0].email, assignees: assignees };
     }
 
-    // 2. Create optimistic update
-    const updatedTask = { ...task, ...updates };
-    optimisticUpdates.current.set(taskId, updatedTask);
-
-    // 3. Force local update immediately
-    setBoardData(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
-      });
-      return next;
-    });
-
-    // 4. Immediate Success Toast
-    toast({
-      title: "Assignees Updated",
-      description: "Task assignees have been updated."
-    });
-
-    // 5. Persist with Rollback
-    Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
-      .catch((error) => {
-        console.error("Failed to update assignees", error);
-        // Rollback
-        optimisticUpdates.current.delete(taskId);
-        setBoardData(prev => {
-          const next = { ...prev };
-          Object.keys(next).forEach(key => {
-            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
-          });
-          return next;
-        });
-        toast({ title: "Update Failed", description: "Could not update assignees. Changes reverted.", variant: "destructive" });
-      });
+    applyTaskUpdate(
+      taskId,
+      updates,
+      { title: "Assignees Updated", description: "Task assignees have been updated." },
+      { title: "Update Failed", description: "Could not update assignees. Changes reverted." }
+    );
   };
 
   const handlePriorityChange = (taskId: string, priority: 'low' | 'medium' | 'high' | 'urgent') => {
-    // 1. Find the current task
-    let task: Task | undefined;
-    Object.values(boardData).forEach(col => {
-      const found = col.find(t => t.id === taskId);
-      if (found) task = found;
-    });
-
-    if (!task) return;
-
-    const originalTask = { ...task };
-
-    // 2. Create optimistic update
-    const updatedTask = { ...task, priority };
-    optimisticUpdates.current.set(taskId, updatedTask);
-
-    // 3. Force local update immediately
-    setBoardData(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
-      });
-      return next;
-    });
-
-    // 4. Immediate Success Toast
-    toast({
-      title: "Priority Updated",
-      description: `Task priority set to ${priority}.`
-    });
-
-    // 5. Persist with Rollback
-    Promise.resolve(editTask(taskId, { priority }, { suppressToast: true }))
-      .catch((error) => {
-        console.error("Failed to update priority", error);
-        // Rollback
-        optimisticUpdates.current.delete(taskId);
-        setBoardData(prev => {
-          const next = { ...prev };
-          Object.keys(next).forEach(key => {
-            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
-          });
-          return next;
-        });
-        toast({ title: "Update Failed", description: "Could not update priority. Changes reverted.", variant: "destructive" });
-      });
+    applyTaskUpdate(
+      taskId,
+      { priority },
+      { title: "Priority Updated", description: `Task priority set to ${priority}.` },
+      { title: "Update Failed", description: "Could not update priority. Changes reverted." }
+    );
   };
 
   const handleStatusChange = (taskId: string, status: string) => {
-    // 1. Find the current task
-    let task: Task | undefined;
-    Object.values(boardData).forEach(col => {
-      const found = col.find(t => t.id === taskId);
-      if (found) task = found;
-    });
-
-    if (!task) return;
-
-    const originalTask = { ...task };
-
-    // 2. Create optimistic update
-    const updatedTask = { ...task, status: status as Task['status'] };
-    optimisticUpdates.current.set(taskId, updatedTask);
-
-    // 3. Force local update immediately
-    setBoardData(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(key => {
-        next[key] = next[key].map(t => t.id === taskId ? updatedTask : t);
-      });
-      return next;
-    });
-
-    // 4. Immediate Success Toast
-    // Map status to user-friendly text
     const statusLabel = status === 'todo' ? 'To Do'
       : status === 'in-progress' ? 'In Progress'
         : status === 'on-hold' ? 'On Hold'
           : status === 'in-review' || status === 'review' ? 'In Review'
             : 'Completed';
-    toast({
-      title: "Status Updated",
-      description: `Task moved to ${statusLabel}.`
-    });
 
-    // 5. Persist with Rollback
-    Promise.resolve(editTask(taskId, { status: status as Task['status'] }, { suppressToast: true }))
-      .catch((error) => {
-        console.error("Failed to update status", error);
-        // Rollback
-        optimisticUpdates.current.delete(taskId);
-        setBoardData(prev => {
-          const next = { ...prev };
-          Object.keys(next).forEach(key => {
-            next[key] = next[key].map(t => t.id === taskId ? originalTask : t);
-          });
-          return next;
-        });
-        toast({ title: "Update Failed", description: "Could not update status. Changes reverted.", variant: "destructive" });
-      });
+    applyTaskUpdate(
+      taskId,
+      { status: status as Task['status'] },
+      { title: "Status Updated", description: `Task moved to ${statusLabel}.` },
+      { title: "Update Failed", description: "Could not update status. Changes reverted." }
+    );
   };
 
   return (
@@ -1890,6 +1740,42 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                   ref={scrollContainerRef}
                   className="flex-1 overflow-x-auto overflow-y-auto kanban-scrollbar px-4 pb-4 pt-4 flex items-start space-x-6 w-full h-full"
                 >
+                  {/* Virtual Column for Orphaned Tasks */}
+                  {hasOrphanedTasks && (
+                    <div
+                      key="uncategorized-virtual"
+                      id="board-lane-uncategorized-virtual"
+                      className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full relative"
+                    >
+                      {/* Visual indicator that this is a system column */}
+                      <div className="absolute -top-3 left-0 right-0 flex justify-center z-10">
+                        <Badge variant="destructive" className="shadow-sm border-white">
+                          ⚠️ Uncategorized Tasks
+                        </Badge>
+                      </div>
+                      <BoardLane
+                        id="uncategorized-virtual"
+                        title="Uncategorized (Missing Group)"
+                        tasks={boardData['uncategorized-virtual'] || []}
+                        staffMembers={staffMembers}
+                        onAddTask={() => { }} // Disable adding directly to uncategorized
+                        onEditTask={handleEditTask}
+                        onEdit={() => { }} // Disable renaming
+                        onDeleteTask={handleDeleteTask}
+                        onDeleteGroup={() => { }} // Disable deleting the column
+                        onRenameGroup={onRenameGroup || ((id, title) => { })}
+                        onToggleComplete={handleToggleComplete}
+                        onPriorityChange={handlePriorityChange}
+                        onAssigneeChange={handleAssigneeChange}
+                        onAssigneesChange={handleAssigneesChange}
+                        onStatusChange={handleStatusChange}
+                        dropTargetInfo={{ columnId: null, overItemId: null, isBottomHalf: false }}
+                        onInsertAfter={() => { }} // Disable inserting after
+                        container={isFullScreen ? containerRef.current : null}
+                      />
+                    </div>
+                  )}
+
                   {activeBuckets.map(bucket => (
                     <div
                       key={bucket.id}
@@ -1931,7 +1817,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                           placeholder="Group name"
                           autoFocus
                           className="mb-2"
-                          onKeyDown={(e) => e.key === 'Enter' && handleSaveNewGroup()}
+                          disabled={isCreatingGroup}
+                          onKeyDown={(e) => e.key === 'Enter' && !isCreatingGroup && handleSaveNewGroup()}
                         />
                         <div className="flex space-x-2">
                           <Button size="sm" onClick={handleSaveNewGroup} className="flex-1" disabled={isCreatingGroup}>
@@ -2032,9 +1919,10 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setItemToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteItem} className={buttonVariants({ variant: "destructive" })}>
-              Yes, Delete
+            <AlertDialogCancel onClick={() => setItemToDelete(null)} disabled={isDeletingItem}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteItem} className={buttonVariants({ variant: "destructive" })} disabled={isDeletingItem}>
+              {isDeletingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isDeletingItem ? "Deleting..." : "Yes, Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

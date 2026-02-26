@@ -8,9 +8,23 @@ import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 import { Loader2 } from 'lucide-react';
 import { StrategicItem } from '@/mockData/strategyData';
 import { TaskCompletionDonut } from './TaskCompletionDonut';
+import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps';
+import { Objective } from '@/types';
+import { calculateGoalProgressFromChildren } from '@/utils/kpiUtils';
 
 const OrganizationalOverview = () => {
   const { strategyData, isLoading } = useStrategySharePoint();
+
+  // Fetch ALL KRAs for dynamic progress calculation
+  const { data: allKras } = useSharePointKRAs(undefined, 'All', undefined);
+  // Fetch ALL KPIs for dynamic KRA progress calculation
+  const { data: allKpis } = useSharePointKPIs(undefined, undefined);
+  // Fetch ALL unit-level objectives for the live division hierarchy (admin bypass)
+  const { data: allUnitObjectives, loading: isLoadingHierarchy } = useSharePointObjectives(
+    undefined,
+    'All',
+    { division: '', unit: '', email: '', name: '', role: 'super_admin' }
+  );
 
   // SCPNG 2025 Strategic Work Plan Data
   const orgMission = "To reform and regulate the capital markets ensuring they remain fair, efficient, and transparent, while protecting investors and reducing systemic risk through active enforcement and modernization.";
@@ -25,14 +39,26 @@ const OrganizationalOverview = () => {
   ];
 
   // Use dynamic objectives or empty array if loading/undefined
-  const objectives = strategyData?.objectives || [];
+  const baseObjectives = strategyData?.objectives || [];
+
+  const objectives = baseObjectives.map((obj: any) => {
+    // Calculate progress directly from child unit-level objectives
+    const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || []);
+
+    if (childProgress > 0) {
+      return { ...obj, progress: childProgress };
+    }
+
+    // Fallback to stored/manual progress
+    return obj;
+  });
 
   // Calculate overall progress
   const totalProgress = objectives.reduce((acc, obj) => acc + (obj.progress || 0), 0);
   const averageProgress = objectives.length > 0 ? Math.round(totalProgress / objectives.length) : 0;
 
   return (
-    <Card className="bg-gradient-to-br from-card to-muted/80 shadow-md animate-fade-in rounded-xl flex-1 h-full border-none">
+    <Card className="bg-gradient-to-br from-card to-muted/80 shadow-sm animate-fade-in rounded-xl flex-1 h-full">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-xl font-bold">
           <Compass className="h-5 w-5 text-intranet-primary" />
@@ -103,8 +129,8 @@ const OrganizationalOverview = () => {
                     />
                   </div>
 
-                  <div className="flex flex-col gap-3 min-h-[150px] overflow-y-auto pr-1 custom-scrollbar">
-                    {objectives.slice(0, 4).map((objective: StrategicItem, index: number) => (
+                  <div className="flex flex-col gap-3 min-h-[150px] max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">
+                    {objectives.map((objective: StrategicItem, index: number) => (
                       <div key={objective.id || index} className="space-y-1.5">
                         <div className="flex justify-between text-[11px] font-semibold">
                           <span className="flex-1 mr-2 text-gray-700 dark:text-gray-200 line-clamp-1">{objective.title}</span>

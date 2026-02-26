@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Plus, Trash2, Check, Lock, Pencil } from 'lucide-react';
+import { Shield, Plus, Trash2, Check, Lock, Pencil, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
@@ -148,6 +148,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                   value={newGroup.title}
                   onChange={e => setNewGroup({ ...newGroup, title: e.target.value })}
                   placeholder="e.g. IT Group"
+                  disabled={isProcessing}
                 />
               </div>
               <div className="space-y-2">
@@ -156,6 +157,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                   value={newGroup.description}
                   onChange={e => setNewGroup({ ...newGroup, description: e.target.value })}
                   placeholder="Description of the group"
+                  disabled={isProcessing}
                 />
               </div>
             </div>
@@ -176,6 +178,7 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                         checked={isChecked}
                         onCheckedChange={() => togglePermission(resource.id)}
                         id={`perm-${resource.id}`}
+                        disabled={isProcessing}
                       />
                       <Label htmlFor={`perm-${resource.id}`} className="cursor-pointer font-medium">
                         {resource.label}
@@ -187,8 +190,9 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
             </div>
 
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => { setNewGroup(null); setEditingGroupId(null); }}>Cancel</Button>
+              <Button variant="outline" onClick={() => { setNewGroup(null); setEditingGroupId(null); }} disabled={isProcessing}>Cancel</Button>
               <Button onClick={saveNewGroup} disabled={isProcessing}>
+                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isProcessing ? 'Saving...' : (editingGroupId ? 'Save Changes' : 'Create Group')}
               </Button>
             </div>
@@ -230,11 +234,11 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4 pt-2 border-t">
-                <Button size="sm" variant="ghost" onClick={() => handleEditGroup(group)}>
+                <Button size="sm" variant="ghost" onClick={() => handleEditGroup(group)} disabled={isProcessing}>
                   <Pencil className="h-4 w-4 mr-1" />
                   <span className="text-xs">Edit</span>
                 </Button>
-                <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteGroup(group.id as string)}>
+                <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600 hover:bg-red-50" disabled={isProcessing} onClick={() => handleDeleteGroup(group.id as string)}>
                   <Trash2 className="h-4 w-4 mr-1" />
                   <span className="text-xs">Delete</span>
                 </Button>
