@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { FormRenderer } from '@/components/forms/FormRenderer';
+import { FormLayoutWrapper } from '@/components/forms/FormLayoutWrapper';
 import { ITRequestPaper } from '@/components/forms/ITRequestPaper';
 import { itRequestTemplate } from '@/config/formTemplates';
 import { FormSubmission } from '@/types/forms';
@@ -11,7 +13,6 @@ import { useSharePointUpload } from '@/hooks/useSharePointUpload';
 import { toast } from 'sonner';
 
 const ITRequestPage: React.FC = () => {
-  const [isPaperView, setIsPaperView] = useState(false);
   const { user } = useSupabaseAuth();
   const { contacts } = useMicrosoftContacts();
   const { addSharePointListItem, isLoading: isSubmitting } = useSharePointUpload();
@@ -80,28 +81,30 @@ const ITRequestPage: React.FC = () => {
 
   return (
     <FormProvider {...form}>
-      <div className="mb-4">
-        <Button onClick={() => setIsPaperView(false)} variant={!isPaperView ? 'default' : 'outline'}>
-          Digital Form
-        </Button>
-        <Button onClick={() => setIsPaperView(true)} variant={isPaperView ? 'default' : 'outline'} className="ml-2">
-          Paper Form
-        </Button>
-      </div>
-
-      {isPaperView ? (
-        <ITRequestPaper submission={mockSubmission} />
-      ) : (
-        <FormRenderer
-          template={itRequestTemplate}
-          mode="fill"
-          onSubmit={handleFormSubmit}
-          onSave={handleFormSave}
-          onCancel={() => window.history.back()}
-        />
-      )}
+      <FormLayoutWrapper
+        title="IT Request"
+        template={itRequestTemplate}
+        digitalContent={
+          <FormRenderer
+            template={itRequestTemplate}
+            mode="fill"
+            onSubmit={handleFormSubmit}
+            onSave={handleFormSave}
+            onCancel={() => window.history.back()}
+          />
+        }
+        paperContent={
+          <ITRequestPaper submission={mockSubmission} />
+        }
+        trackingContent={
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Feature coming soon. Track your IT requests directly right here.
+            </CardContent>
+          </Card>
+        }
+      />
     </FormProvider>
   );
 };
-
 export default ITRequestPage;

@@ -3,6 +3,7 @@ import { FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FormRenderer } from '@/components/forms/FormRenderer';
+import { FormLayoutWrapper } from '@/components/forms/FormLayoutWrapper';
 import LeaveApplicationPaper from '@/components/forms/LeaveApplicationPaper';
 import PrintLeaveApplicationModal from '@/components/forms/PrintLeaveApplicationModal';
 import { leaveApplicationTemplate } from '@/config/formTemplates';
@@ -25,7 +26,6 @@ const SHAREPOINT_SITEPATH = "/sites/scpngintranet";
 const SHAREPOINT_LIST_NAME = "Staff Leave Requests";
 
 const LeaveApplicationPage: React.FC = () => {
-  const [viewMode, setViewMode] = useState<'digital' | 'paper'>('digital');
   const [printModalOpen, setPrintModalOpen] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<LeaveRequest | null>(null);
   const { user } = useRoleBasedAuth();
@@ -164,154 +164,147 @@ const LeaveApplicationPage: React.FC = () => {
   return (
     <FormProvider {...methods}>
       {error && <p className="text-sm text-destructive text-right mb-4">{error}</p>}
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'digital' | 'paper')} className="w-full">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Leave Application</h1>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => inspectListColumns && inspectListColumns('Staff Leave Requests')}
-            >
-              Debug Schema
-            </Button>
-            <TabsList>
-              <TabsTrigger value="digital">Digital Form</TabsTrigger>
-              <TabsTrigger value="paper">Paper Form</TabsTrigger>
-              <TabsTrigger value="tracking">My Applications</TabsTrigger>
-            </TabsList >
-          </div >
-        </div >
+      <FormLayoutWrapper
+        title="Leave Application"
+        template={leaveApplicationTemplate}
+        onDebugSchema={() => inspectListColumns && inspectListColumns('Staff Leave Requests')}
+        digitalContent={
+          <>
 
-        <TabsContent value="digital">
-          {/* Leave Balances Summary */}
-          {leaveBalances.length > 0 && (
-            <Card className="mb-6 bg-blue-50 border-blue-100">
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-semibold text-blue-900">Your Leave Balances</h3>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {leaveBalances.map((balance) => (
-                    <div key={balance.id} className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
-                      <p className="text-xs text-muted-foreground font-medium uppercase">{balance.leaveType}</p>
-                      <div className="flex items-end gap-1 mt-1">
-                        <span className={`text-xl font-bold ${balance.available < 5 ? 'text-red-600' : 'text-green-600'}`}>
-                          {balance.available}
-                        </span>
-                        <span className="text-xs text-muted-foreground mb-1">days</span>
+            {/* Leave Balances Summary */}
+            {leaveBalances.length > 0 && (
+              <Card className="mb-6 bg-blue-50 border-blue-100">
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    <h3 className="font-semibold text-blue-900">Your Leave Balances</h3>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {leaveBalances.map((balance) => (
+                      <div key={balance.id} className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                        <p className="text-xs text-muted-foreground font-medium uppercase">{balance.leaveType}</p>
+                        <div className="flex items-end gap-1 mt-1">
+                          <span className={`text-xl font-bold ${balance.available < 5 ? 'text-red-600' : 'text-green-600'}`}>
+                            {balance.available}
+                          </span>
+                          <span className="text-xs text-muted-foreground mb-1">days</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <FormRenderer template={leaveApplicationTemplate} mode="fill" onSubmit={onSubmit} />
-        </TabsContent>
-        <TabsContent value="paper">
-          <form onSubmit={methods.handleSubmit(onSubmit)}>
-            <LeaveApplicationPaper />
-          </form>
-        </TabsContent>
-
-        <TabsContent value="tracking">
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">My Leave Applications</h2>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Live updates enabled</span>
-                {dataUpdatedAt && (
-                  <span className="text-xs">
-                    • Last updated: {format(new Date(dataUpdatedAt), 'HH:mm:ss')}
-                  </span>
-                )}
-              </div>
-            </div>
-            {myApplications.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  No leave applications found.
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
-            ) : (
-              myApplications.map((app) => {
-                const hasChanged = changedAppIds.has(app.id);
-                return (
-                  <Card
-                    key={app.id}
-                    className={`overflow-hidden transition-all duration-300 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
-                      }`}
-                  >
-                    <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
-                      <div>
-                        <h3 className="font-semibold text-lg">{app.leaveType} Leave</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Submitted on {app.createdDate ? format(new Date(app.createdDate), 'PPP') : 'Unknown'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePrintApplication(app)}
-                          className="flex items-center gap-2"
-                        >
-                          <Printer className="h-4 w-4" />
-                          Print Form
-                        </Button>
-                        <div className="text-right">
-                          <div className="font-medium">Request ID</div>
-                          <div className="text-sm text-muted-foreground">#{app.id}</div>
-                        </div>
-                      </div>
-                    </div>
-                    <CardContent className="pt-6">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            )}
+
+            <FormRenderer template={leaveApplicationTemplate} mode="fill" onSubmit={onSubmit} />
+          </>
+        }
+        paperContent={
+          <>
+
+            <form onSubmit={methods.handleSubmit(onSubmit)}>
+              <LeaveApplicationPaper />
+            </form>
+          </>
+        }
+        trackingContent={
+          <>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">My Leave Applications</h2>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <span>Live updates enabled</span>
+                  {dataUpdatedAt && (
+                    <span className="text-xs">
+                      • Last updated: {format(new Date(dataUpdatedAt), 'HH:mm:ss')}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {myApplications.length === 0 ? (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    No leave applications found.
+                  </CardContent>
+                </Card>
+              ) : (
+                myApplications.map((app) => {
+                  const hasChanged = changedAppIds.has(app.id);
+                  return (
+                    <Card
+                      key={app.id}
+                      className={`overflow-hidden transition-all duration-300 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
+                        }`}
+                    >
+                      <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
                         <div>
-                          <span className="text-sm font-medium text-muted-foreground">Duration</span>
-                          <p className="mt-1">
-                            {format(new Date(app.startDate), 'MMM d, yyyy')} - {format(new Date(app.endDate), 'MMM d, yyyy')}
+                          <h3 className="font-semibold text-lg">{app.leaveType} Leave</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Submitted on {app.createdDate ? format(new Date(app.createdDate), 'PPP') : 'Unknown'}
                           </p>
-                          <p className="text-sm text-muted-foreground">({app.daysRequested} days)</p>
                         </div>
-                        <div>
-                          <span className="text-sm font-medium text-muted-foreground">Reason</span>
-                          <p className="mt-1">{app.reason || 'No reason provided'}</p>
-                        </div>
-                        <div>
-                          <span className="text-sm font-medium text-muted-foreground">Status</span>
-                          <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${app.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                              app.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'}`}>
-                            {app.status}
+                        <div className="flex items-center gap-4">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePrintApplication(app)}
+                            className="flex items-center gap-2"
+                          >
+                            <Printer className="h-4 w-4" />
+                            Print Form
+                          </Button>
+                          <div className="text-right">
+                            <div className="font-medium">Request ID</div>
+                            <div className="text-sm text-muted-foreground">#{app.id}</div>
                           </div>
                         </div>
                       </div>
+                      <CardContent className="pt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                          <div>
+                            <span className="text-sm font-medium text-muted-foreground">Duration</span>
+                            <p className="mt-1">
+                              {format(new Date(app.startDate), 'MMM d, yyyy')} - {format(new Date(app.endDate), 'MMM d, yyyy')}
+                            </p>
+                            <p className="text-sm text-muted-foreground">({app.daysRequested} days)</p>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-muted-foreground">Reason</span>
+                            <p className="mt-1">{app.reason || 'No reason provided'}</p>
+                          </div>
+                          <div>
+                            <span className="text-sm font-medium text-muted-foreground">Status</span>
+                            <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                          ${app.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                                app.status === 'Rejected' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'}`}>
+                              {app.status}
+                            </div>
+                          </div>
+                        </div>
 
-                      <div className="border-t pt-6">
-                        <h4 className="text-sm font-medium text-muted-foreground mb-4">Application Progress</h4>
-                        <LeaveApplicationTracker
-                          currentStage={app.stage || 'Submitted'}
-                          status={app.status}
-                          dates={{
-                            submitted: app.createdDate,
-                            managerAction: app.approvedDate, // Placeholder
-                          }}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </div>
-        </TabsContent>
-      </Tabs >
+                        <div className="border-t pt-6">
+                          <h4 className="text-sm font-medium text-muted-foreground mb-4">Application Progress</h4>
+                          <LeaveApplicationTracker
+                            currentStage={app.stage || 'Submitted'}
+                            status={app.status}
+                            dates={{
+                              submitted: app.createdDate,
+                              managerAction: app.approvedDate, // Placeholder
+                            }}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+          </>
+        }
+      />
 
       {/* Print Modal */}
       {selectedApplication && (

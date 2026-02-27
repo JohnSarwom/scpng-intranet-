@@ -5,6 +5,9 @@ import { FormRenderer } from '@/components/forms/FormRenderer';
 import { defaultFormTemplates, leaveApplicationTemplate, assetRequestTemplate, itSupportTemplate, trainingRequestTemplate, itRequestTemplate } from '@/config/formTemplates';
 import LeaveApplicationPage from '@/components/forms/LeaveApplicationPage';
 import ITRequestPage from '@/components/forms/ITRequestPage';
+import AssetRequestPage from '@/components/forms/AssetRequestPage';
+import ITSupportPage from '@/components/forms/ITSupportPage';
+import TrainingRequestPage from '@/components/forms/TrainingRequestPage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const formTemplates = [
@@ -43,27 +46,27 @@ const FillFormPage: React.FC = () => {
 
   return (
     <PageLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle>{template.title}</CardTitle>
-          <CardDescription>{template.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {template.id === 'leave-application' ? (
-            <LeaveApplicationPage />
-          ) : template.id === 'it-equipment-access-request' ? (
-            <ITRequestPage />
-          ) : (
-            <FormRenderer
-              template={template}
-              mode="fill"
-              onSubmit={handleFormSubmit}
-              onSave={handleFormSave}
-              onCancel={() => window.history.back()}
-            />
-          )}
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-5xl mx-auto">
+        {template.id === 'leave-application' ? (
+          <LeaveApplicationPage />
+        ) : template.id === 'it-equipment-access-request' ? (
+          <ITRequestPage />
+        ) : template.id === 'asset-request' ? (
+          <AssetRequestPage />
+        ) : template.id === 'it-support-request' ? (
+          <ITSupportPage />
+        ) : template.id === 'training-request' ? (
+          <TrainingRequestPage />
+        ) : (
+          <FormRenderer
+            template={template}
+            mode="fill"
+            onSubmit={handleFormSubmit}
+            onSave={handleFormSave}
+            onCancel={() => window.history.back()}
+          />
+        )}
+      </div>
     </PageLayout>
   );
 };

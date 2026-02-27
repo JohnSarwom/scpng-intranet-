@@ -79,15 +79,15 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   // Calculate form completion percentage
   const calculateProgress = useCallback(() => {
     if (!visibleSections) return 0;
-    
+
     const allFields = visibleSections.flatMap(section => section.fields);
     const requiredFields = allFields.filter(field => field.required);
     const filledRequiredFields = requiredFields.filter(field => {
       const value = watchedData[field.name];
       return value !== undefined && value !== null && value !== '';
     });
-    
-    return requiredFields.length > 0 
+
+    return requiredFields.length > 0
       ? Math.round((filledRequiredFields.length / requiredFields.length) * 100)
       : 100;
   }, [visibleSections, watchedData]);
@@ -211,7 +211,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
       case 'notEquals':
         return dependentValue !== value;
       case 'contains':
-        return Array.isArray(dependentValue) 
+        return Array.isArray(dependentValue)
           ? dependentValue.includes(value)
           : String(dependentValue || '').includes(value);
       case 'isEmpty':
@@ -251,203 +251,127 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
 
   return (
     <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
-      {/* Form Header */}
+      {/* Error Alert */}
+
+
+      {/* Error Alert */}
+      {submitError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{submitError}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Current Section */}
       <Card>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-2">
-                <CardTitle className="text-2xl">{template.title}</CardTitle>
-                <CardDescription>{template.description}</CardDescription>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>Estimated time: {template.estimatedTime}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge()}
-                {mode === 'fill' && (
-                  <Badge variant="outline">
-                    Version {template.version}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            {showProgress && mode === 'fill' && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Form completion</span>
-                  <span>{progress}%</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-              </div>
-            )}
-
-            {/* Section navigation */}
-            {visibleSections.length > 1 && (
-              <div className="flex items-center justify-center space-x-2 pt-4">
-                {visibleSections.map((section, index) => (
-                  <div
-                    key={section.id}
+        <CardHeader>
+          <CardTitle>{currentSectionData.title}</CardTitle>
+          {currentSectionData.description && (
+            <CardDescription>{currentSectionData.description}</CardDescription>
+          )}
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmitForm)}>
+            <div className="grid gap-6">
+              {currentSectionData.fields
+                .filter(shouldShowField)
+                .map((field) => (
+                  <FormField
+                    key={field.id}
+                    field={field}
+                    disabled={mode === 'readonly'}
                     className={cn(
-                      "flex items-center",
-                      index < visibleSections.length - 1 && "flex-1"
+                      field.width === 'half' && "md:col-span-1",
+                      field.width === 'third' && "md:col-span-1",
+                      field.width === 'quarter' && "md:col-span-1",
+                      "col-span-2"
                     )}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => setCurrentSection(index)}
-                      disabled={mode !== 'fill'}
-                      className={cn(
-                        "w-8 h-8 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors",
-                        index === currentSection
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : index < currentSection
-                          ? "border-green-500 bg-green-500 text-white"
-                          : "border-muted bg-background text-muted-foreground",
-                        mode === 'fill' && "hover:border-primary cursor-pointer"
-                      )}
-                    >
-                      {index < currentSection ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        index + 1
-                      )}
-                    </button>
-                    {index < visibleSections.length - 1 && (
-                      <div
-                        className={cn(
-                          "flex-1 h-0.5 mx-2",
-                          index < currentSection ? "bg-green-500" : "bg-muted"
-                        )}
-                      />
-                    )}
-                  </div>
+                  />
                 ))}
-              </div>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Navigation and Actions */}
+      <Card>
+        <CardContent className="flex items-center justify-between pt-6">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={prevSection}
+              disabled={isFirstSection || !canProceed}
+            >
+              Previous
+            </Button>
+
+            {!isLastSection && (
+              <Button
+                type="button"
+                onClick={nextSection}
+                disabled={!canProceed}
+              >
+                Next
+              </Button>
             )}
-          </CardHeader>
-        </Card>
+          </div>
 
-        {/* Error Alert */}
-        {submitError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{submitError}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Current Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{currentSectionData.title}</CardTitle>
-            {currentSectionData.description && (
-              <CardDescription>{currentSectionData.description}</CardDescription>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <form onSubmit={handleSubmit(onSubmitForm)}>
-              <div className="grid gap-6">
-                {currentSectionData.fields
-                  .filter(shouldShowField)
-                  .map((field) => (
-                    <FormField
-                      key={field.id}
-                      field={field}
-                      disabled={mode === 'readonly'}
-                      className={cn(
-                        field.width === 'half' && "md:col-span-1",
-                        field.width === 'third' && "md:col-span-1",
-                        field.width === 'quarter' && "md:col-span-1",
-                        "col-span-2"
-                      )}
-                    />
-                  ))}
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Navigation and Actions */}
-        <Card>
-          <CardContent className="flex items-center justify-between pt-6">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            {mode === 'fill' && onSave && (
               <Button
                 type="button"
                 variant="outline"
-                onClick={prevSection}
-                disabled={isFirstSection || !canProceed}
+                onClick={handleSave}
+                disabled={isSaving || isSubmitting}
               >
-                Previous
+                {isSaving ? (
+                  <>
+                    <Save className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Draft
+                  </>
+                )}
               </Button>
-              
-              {!isLastSection && (
-                <Button
-                  type="button"
-                  onClick={nextSection}
-                  disabled={!canProceed}
-                >
-                  Next
-                </Button>
-              )}
-            </div>
+            )}
 
-            <div className="flex items-center gap-2">
-              {mode === 'fill' && onSave && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSave}
-                  disabled={isSaving || isSubmitting}
-                >
-                  {isSaving ? (
-                    <>
-                      <Save className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Draft
-                    </>
-                  )}
-                </Button>
-              )}
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            )}
 
-              {onCancel && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-              )}
-
-              {mode === 'fill' && isLastSection && onSubmit && (
-                <Button
-                  type="submit"
-                  onClick={handleSubmit(onSubmitForm)}
-                  disabled={isSubmitting || !isValid}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Send className="h-4 w-4 mr-2 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Submit Form
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            {mode === 'fill' && isLastSection && onSubmit && (
+              <Button
+                type="submit"
+                onClick={handleSubmit(onSubmitForm)}
+                disabled={isSubmitting || !isValid}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Send className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit Form
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
