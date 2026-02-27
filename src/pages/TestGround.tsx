@@ -1127,6 +1127,58 @@ const TestGround = () => {
             setIsSettingUpProfiles(false);
         }
     };
+    const [isSettingUpOfficerProfiles, setIsSettingUpOfficerProfiles] = useState(false);
+    const [isSeedingOfficerProfiles, setIsSeedingOfficerProfiles] = useState(false);
+
+    const handleSetupOfficerProfilesList = async () => {
+        setIsSettingUpOfficerProfiles(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🚀 Creating Officer Profiles List", description: "This may take a minute..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupOfficerProfilesList();
+            setSetupResult(result);
+            if (result.success) {
+                toast({ title: "✅ Success!", description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error(error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({ title: "❌ Setup Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSettingUpOfficerProfiles(false);
+        }
+    };
+
+    const handleSeedOfficerProfilesList = async () => {
+        setIsSeedingOfficerProfiles(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🌱 Seeding Officer Profiles Data", description: "Pushing hardcoded mock data to SharePoint..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedOfficerProfilesList();
+            setSetupResult(result);
+            if (result.success) {
+                toast({ title: "✅ Success!", description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error(error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({ title: "❌ Seeding Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSeedingOfficerProfiles(false);
+        }
+    };
 
     return (
         <PageLayout>
@@ -1332,6 +1384,60 @@ const TestGround = () => {
                                     <>
                                         <Users className="h-7 w-7" />
                                         Synchronize Org Hierarchy
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Officer Profiles Setup Card */}
+                <Card className="border-2 border-indigo-500/20 mb-6">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-indigo-600" />
+                            Officer Profiles Data Migration (Org Chart)
+                        </CardTitle>
+                        <CardDescription>
+                            Create the Strategy_Officer_Profiles list and seed it with the hardcoded mock data for the Org Chart Modal.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupOfficerProfilesList}
+                                disabled={isSettingUpOfficerProfiles}
+                                size="lg"
+                                className="w-full gap-2 bg-indigo-600 hover:bg-indigo-700"
+                            >
+                                {isSettingUpOfficerProfiles ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                        Creating Officer Profiles List...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-5 w-5" />
+                                        Create Officer Profiles List
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSeedOfficerProfilesList}
+                                disabled={isSeedingOfficerProfiles || isSettingUpOfficerProfiles}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-indigo-600/50 text-indigo-700 hover:bg-indigo-50"
+                            >
+                                {isSeedingOfficerProfiles ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-indigo-600" />
+                                        Seeding Data...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Play className="h-4 w-4 text-indigo-600" />
+                                        Seed Officer Profiles Data
                                     </>
                                 )}
                             </Button>

@@ -48,6 +48,11 @@ export const useEmployeePhotos = () => {
         return await photoService.getEmployeePhotos(email);
     }, [photoService]);
 
+    const getPhotoByFilename = useCallback(async (email: string, filename: string, modified?: string) => {
+        if (!photoService || !email || !filename) return { profileUrl: undefined };
+        return await photoService.getPhotoByFilename(email, filename, modified);
+    }, [photoService]);
+
     const uploadPhoto = useCallback(async (file: File, email: string, type: 'profile' | 'modal' = 'profile'): Promise<string | null> => {
         if (!photoService) return null;
         try {
@@ -63,6 +68,7 @@ export const useEmployeePhotos = () => {
         getEmployeePhotos,
         getPhotoWithThumbnail,
         getPhotosForEmails,
+        getPhotoByFilename,
         uploadPhoto,
         isInitialized
     };

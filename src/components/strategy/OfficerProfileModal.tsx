@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import {
     X, User, AtSign, Briefcase, Activity,
     Mail, Phone, MapPin, Clock, Building2,
-    ChevronRight, Share2, Printer, Flag
+    ChevronRight, Share2, Printer, Flag, FileText
 } from 'lucide-react';
 
 export interface OfficerProfile {
@@ -23,6 +23,10 @@ export interface OfficerProfile {
     directReports: number;
     officeExtension: string | null;
     timezone: string;
+    statutoryDuty?: string;
+    photoUrl?: string; // Blob URL for local display (thumbnail)
+    modalUrl?: string; // Blob URL for local display (high res)
+    profileImageUrl?: string; // Raw URL or filename from SharePoint
 }
 
 interface OfficerProfileModalProps {
@@ -49,24 +53,39 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-            <DialogContent className="max-w-[900px] p-0 overflow-hidden rounded-2xl border-0 gap-0 [&>button]:hidden flex flex-col md:flex-row h-auto !min-h-0 max-h-[90vh]">
+            <DialogContent className="max-w-[960px] p-0 overflow-hidden rounded-2xl border-0 gap-0 [&>button]:hidden flex flex-col md:flex-row h-auto !min-h-0 max-h-[90vh]">
                 <DialogTitle className="sr-only">{officer.name} Profile</DialogTitle>
                 {/* Left Panel - Photo / Avatar */}
-                <div className="w-[340px] bg-gradient-to-b from-[#600018] to-[#400010] flex flex-col relative flex-shrink-0">
-                    {/* Large avatar area */}
-                    <div className="flex-1 flex items-center justify-center p-8">
-                        <div className="w-48 h-48 rounded-full bg-[#800020] border-4 border-white/20 flex items-center justify-center shadow-2xl">
-                            <span className="text-white text-5xl font-bold">{initials}</span>
+                <div className="w-[340px] bg-[#400010] flex flex-col relative flex-shrink-0 overflow-hidden">
+                    {/* Background Image Area */}
+                    {(officer.modalUrl || officer.photoUrl) ? (
+                        <>
+                            <div className="absolute inset-0">
+                                <img
+                                    src={officer.modalUrl || officer.photoUrl}
+                                    alt={officer.name}
+                                    className="w-full h-full object-cover"
+                                />
+                                {/* Overlay to ensure text readability */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/10"></div>
+                            </div>
+                            <div className="flex-1"></div>
+                        </>
+                    ) : (
+                        <div className="flex-1 bg-gradient-to-b from-[#600018] to-[#400010] flex items-center justify-center p-8">
+                            <div className="w-48 h-48 rounded-full bg-[#800020] border-4 border-white/20 flex items-center justify-center shadow-2xl relative z-10">
+                                <span className="text-white text-5xl font-bold">{initials}</span>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Bottom overlay with employee info */}
-                    <div className="bg-black/40 px-6 py-4 flex items-center justify-between">
+                    <div className="bg-black/40 backdrop-blur-md px-6 py-4 flex items-center justify-between relative z-10 border-t border-white/10">
                         <div>
-                            <p className="text-[10px] uppercase tracking-widest text-white/50 font-medium">Employee ID</p>
-                            <p className="text-white font-bold text-sm">{officer.employeeId}</p>
+                            <p className="text-[10px] uppercase tracking-widest text-white/70 font-medium">Employee ID</p>
+                            <p className="text-white font-bold text-sm tracking-wide">{officer.employeeId}</p>
                         </div>
-                        <div>
+                        <div className="text-right">
                             <p className="text-[10px] uppercase tracking-widest text-white/50 font-medium">Joined</p>
                             <p className="text-white font-bold text-sm">{officer.joinedDate}</p>
                         </div>
@@ -85,12 +104,13 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
 
                     {/* Tabs */}
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
-                        <TabsList className="bg-transparent border-b border-gray-200 rounded-none h-auto p-0 px-6 pt-3 justify-start gap-0">
+                        <TabsList className="bg-transparent border-b border-gray-200 rounded-none h-auto p-0 px-4 pt-3 flex-wrap justify-start gap-0">
                             {[
                                 { value: 'about', label: 'About', icon: User },
                                 { value: 'contact', label: 'Contact', icon: AtSign },
                                 { value: 'experience', label: 'Experience', icon: Briefcase },
                                 { value: 'activity', label: 'Activity', icon: Activity },
+                                { value: 'statutory-duty', label: 'Statutory Duty', icon: FileText },
                             ].map(tab => (
                                 <TabsTrigger
                                     key={tab.value}
@@ -108,6 +128,19 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
 
                         {/* About Tab */}
                         <TabsContent value="about" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-6">
+                            {/* Header Info */}
+                            <div className="border-b border-gray-100 pb-5 mb-5 space-y-2">
+                                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{officer.name}</h2>
+                                <h3 className="text-lg font-semibold text-[#800020] uppercase tracking-wide">{officer.jobTitle}</h3>
+                                {(officer.division || officer.unit) && (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
+                                        {officer.division && <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-700">{officer.division}</span>}
+                                        {officer.division && officer.unit && <span className="text-gray-300">•</span>}
+                                        {officer.unit && <span>{officer.unit}</span>}
+                                    </div>
+                                )}
+                            </div>
+
                             {/* Professional Summary */}
                             <div>
                                 <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-2">
@@ -297,6 +330,26 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
                                 <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                                 <p className="text-sm text-gray-400">No recent activity to display</p>
                             </div>
+                        </TabsContent>
+
+                        {/* Statutory Duty Tab */}
+                        <TabsContent value="statutory-duty" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4 h-full">
+                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                                <span className="w-1 h-5 bg-[#800020] rounded-full"></span>
+                                Statutory Duty
+                            </h3>
+                            {officer.statutoryDuty ? (
+                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                                        {officer.statutoryDuty}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 flex-1 flex flex-col items-center justify-center">
+                                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                    <p className="text-sm text-gray-400">No statutory duties documented for this profile</p>
+                                </div>
+                            )}
                         </TabsContent>
                     </Tabs>
 

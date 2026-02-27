@@ -3080,6 +3080,111 @@ export class SharePointListSetupService {
             return { success: false, message: `Failed to setup Task Groups: ${error.message}`, details: error };
         }
     }
+
+    /**
+     * Set up Strategy_Officer_Profiles list
+     */
+    async setupOfficerProfilesList(): Promise<{ success: boolean; message: string; details?: any }> {
+        console.log('🚀 [Setup] Starting Officer Profiles list setup...');
+        try {
+            const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Strategy_Officer_Profiles'").get();
+            let list;
+            if (check.value && check.value.length > 0) {
+                list = check.value[0];
+                console.log('✅ [Setup] Strategy_Officer_Profiles already exists (ID: ' + list.id + ')');
+            } else {
+                console.log('📝 [Setup] Creating Strategy_Officer_Profiles list...');
+                list = await this.client
+                    .api(`/sites/${this.siteId}/lists`)
+                    .post({
+                        displayName: 'Strategy_Officer_Profiles',
+                        columns: [
+                            { name: 'JobTitle', text: {} },
+                            { name: 'Email', text: {} },
+                            { name: 'Phone', text: {} },
+                            { name: 'EmployeeId', text: {} },
+                            { name: 'JoinedDate', text: {} },
+                            { name: 'Division', text: {} },
+                            { name: 'Unit', text: {} },
+                            { name: 'ProfileSummary', text: { allowMultipleLines: true } },
+                            { name: 'Skills', text: { allowMultipleLines: true } },
+                            { name: 'ReportsToName', text: {} },
+                            { name: 'ReportsToTitle', text: {} },
+                            { name: 'DirectReports', number: { decimalPlaces: 'none' } },
+                            { name: 'OfficeExtension', text: {} },
+                            { name: 'Timezone', text: {} },
+                            { name: 'StatutoryDuty', text: { allowMultipleLines: true } },
+                            { name: 'ProfileImageUrl', text: {} }
+                        ],
+                        list: { template: 'genericList' }
+                    });
+                console.log('✅ [Setup] Strategy_Officer_Profiles created (ID: ' + list.id + ')');
+            }
+            return { success: true, message: 'Strategy_Officer_Profiles list created/verified successfully!', details: list };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to setup Officer Profiles list:', error);
+            return { success: false, message: `Failed to setup list: ${error.message}`, details: error };
+        }
+    }
+
+    /**
+     * Seed Officer Profiles List with initial mock data
+     */
+    async seedOfficerProfilesList(): Promise<{ success: boolean; message: string; details?: any }> {
+        console.log('🌱 [Seeding] Starting Officer Profiles seeding...');
+        try {
+            const listCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Strategy_Officer_Profiles'").select('id').get();
+
+            if (!listCheck.value || listCheck.value.length === 0) {
+                return { success: false, message: 'Strategy_Officer_Profiles list not found. Please create it first.' };
+            }
+            const listId = listCheck.value[0].id;
+
+            // Dynamic import to avoid circular dependencies
+            const { MOCK_OFFICER_PROFILES } = await import('../mockData/mockOfficerProfiles');
+
+            let addedCount = 0;
+            let errorCount = 0;
+            for (const profile of MOCK_OFFICER_PROFILES) {
+                try {
+                    const fields: any = { Title: profile.name };
+                    if (profile.jobTitle) fields.JobTitle = profile.jobTitle;
+                    if (profile.email) fields.Email = profile.email;
+                    if (profile.phone) fields.Phone = profile.phone;
+                    if (profile.employeeId) fields.EmployeeId = profile.employeeId;
+                    if (profile.joinedDate) fields.JoinedDate = profile.joinedDate;
+                    if (profile.division) fields.Division = profile.division;
+                    if (profile.unit) fields.Unit = profile.unit;
+                    if (profile.summary) fields.ProfileSummary = profile.summary;
+                    if (profile.skills) fields.Skills = JSON.stringify(profile.skills);
+                    if (profile.reportsTo) fields.ReportsToName = profile.reportsTo;
+                    if (profile.reportsToTitle) fields.ReportsToTitle = profile.reportsToTitle;
+                    if (profile.directReports !== undefined && profile.directReports !== null) fields.DirectReports = profile.directReports;
+                    if (profile.officeExtension) fields.OfficeExtension = profile.officeExtension;
+                    if (profile.timezone) fields.Timezone = profile.timezone;
+                    if (profile.statutoryDuty) fields.StatutoryDuty = profile.statutoryDuty;
+
+                    await this.client
+                        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                        .post({ fields });
+
+                    addedCount++;
+                } catch (err: any) {
+                    console.error(`❌ [Seeding] Failed to seed officer ${profile.name}:`, err);
+                    errorCount++;
+                }
+            }
+
+            if (errorCount > 0) {
+                return { success: false, message: `Seeded ${addedCount} profiles, but ${errorCount} failed. Check console for details.`, details: { count: addedCount, errors: errorCount } };
+            }
+
+            return { success: true, message: `Successfully seeded ${addedCount} officer profiles.`, details: { count: addedCount } };
+        } catch (error: any) {
+            console.error('❌ [Seeding] Failed to seed Officer Profiles:', error);
+            return { success: false, message: `Failed to seed profiles: ${error.message}`, details: error };
+        }
+    }
 }
 
 // ==========================================

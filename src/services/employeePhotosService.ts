@@ -147,6 +147,77 @@ export class EmployeePhotosService {
         }
     }
 
+    async getPhotoByFilename(email: string, filename: string, modified?: string): Promise<{ profileUrl?: string; modalUrl?: string }> {
+        if (!filename) return {};
+        await this.initialize();
+        if (!EmployeePhotosService.assetsDriveId) return {};
+
+        const cacheKeyProfile = `${email}_profile_fallback`;
+        const cacheKeyModal = `${email}_modal_fallback`;
+        let profileUrl = undefined;
+        let modalUrl = undefined;
+
+        const promises: Promise<void>[] = [];
+
+        // 1. Fetch Profile Thumbnail (Medium)
+        promises.push((async () => {
+            try {
+                const cached = await photoCache.getPhoto(cacheKeyProfile);
+                if (cached && (!modified || cached.modified === modified)) {
+                    profileUrl = URL.createObjectURL(cached.blob);
+                    return;
+                }
+            } catch (e) { }
+
+            try {
+                const blob = await this.client
+                    .api(`/sites/${EmployeePhotosService.siteId}/drives/${EmployeePhotosService.assetsDriveId}/root:/${PROFILE_IMAGES_FOLDER}/${filename}:/thumbnails/0/medium/content`)
+                    .responseType('blob' as any)
+                    .get();
+                profileUrl = URL.createObjectURL(blob);
+                try {
+                    await photoCache.putPhoto(cacheKeyProfile, { blob, timestamp: Date.now(), modified });
+                } catch (e) { }
+            } catch (e) {
+                // If thumbnail fails, try to fetch full content for profileUrl as backup
+                try {
+                    const blob = await this.client
+                        .api(`/sites/${EmployeePhotosService.siteId}/drives/${EmployeePhotosService.assetsDriveId}/root:/${PROFILE_IMAGES_FOLDER}/${filename}:/content`)
+                        .responseType('blob' as any)
+                        .get();
+                    profileUrl = URL.createObjectURL(blob);
+                    await photoCache.putPhoto(cacheKeyProfile, { blob, timestamp: Date.now(), modified });
+                } catch (e2) { }
+            }
+        })());
+
+        // 2. Fetch Modal Image (Full Content)
+        promises.push((async () => {
+            try {
+                const cached = await photoCache.getPhoto(cacheKeyModal);
+                if (cached && (!modified || cached.modified === modified)) {
+                    modalUrl = URL.createObjectURL(cached.blob);
+                    return;
+                }
+            } catch (e) { }
+
+            try {
+                const blob = await this.client
+                    .api(`/sites/${EmployeePhotosService.siteId}/drives/${EmployeePhotosService.assetsDriveId}/root:/${PROFILE_IMAGES_FOLDER}/${filename}:/content`)
+                    .responseType('blob' as any)
+                    .get();
+                modalUrl = URL.createObjectURL(blob);
+                try {
+                    await photoCache.putPhoto(cacheKeyModal, { blob, timestamp: Date.now(), modified });
+                } catch (e) { }
+            } catch (e) { }
+        })());
+
+        await Promise.all(promises);
+
+        return { profileUrl, modalUrl };
+    }
+
     /**
      * Helper to process a SharePoint list item and fetch the actual image blobs
      */
