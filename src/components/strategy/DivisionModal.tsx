@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, Building2, AtSign, MapPin, Users, Network, Shield, TrendingUp, Globe, Rocket, Award, Scale, BookOpen, Briefcase, FileSearch, ShieldAlert, Share2, Printer, Flag, Edit, Save, Ban, Loader2, Plus, Trash2, Pencil } from 'lucide-react';
+import { X, Building2, AtSign, MapPin, Users, Network, Shield, TrendingUp, Globe, Rocket, Award, Scale, BookOpen, Briefcase, FileSearch, ShieldAlert, Share2, Printer, Flag, Edit, Save, Ban, Loader2 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
@@ -11,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
-import { compressImage } from '@/lib/utils';
 
 export interface MockDivisionData {
     id: string;
@@ -39,9 +40,22 @@ export interface MockDivisionData {
         description: string;
         icon: 'rocket' | 'award';
     }>;
-    statutoryDuties?: string[];
+    statutoryDuties?: string;
     divisionImage?: string;
 }
+
+// Static division image mapping - images stored in public/images/divisions/
+const DIVISION_IMAGE_MAP: Record<string, string> = {
+    'Corporate Services Division': '/images/divisions/CSD_Vertical_B.jpg',
+    'Licensing, Market & Supervision Division': '/images/divisions/LIS Division_Vertical_B.jpg',
+    'Legal Services Division': '/images/divisions/LSD_Vertical_B.jpg',
+    'Research & Publication Division': '/images/divisions/RP_Vertical_B.jpg',
+    'Executive Division': '/images/divisions/E_Division_Vertical_Banner.jpg',
+};
+
+const getDivisionImagePath = (divisionName: string): string | null => {
+    return DIVISION_IMAGE_MAP[divisionName] || null;
+};
 
 const getIcon = (iconName: string) => {
     switch (iconName) {
@@ -80,70 +94,8 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
     const [isSaving, setIsSaving] = useState(false);
     const [formData, setFormData] = useState<MockDivisionData | null>(null);
 
-    // Division Image State
-    const [divisionImageUrl, setDivisionImageUrl] = useState<string | null>(null);
-    const [isUploadingImage, setIsUploadingImage] = useState(false);
-
-    // Load division image when modal opens
-    useEffect(() => {
-        if (!isOpen) {
-            setDivisionImageUrl(null);
-            return;
-        }
-        if (!division?.divisionImage) {
-            console.log('📷 [DivisionModal] No divisionImage field on division:', division?.divisionName, '- field value:', division?.divisionImage);
-            setDivisionImageUrl(null);
-            return;
-        }
-
-        console.log('📷 [DivisionModal] Loading image for:', division.divisionName, '- filename:', division.divisionImage);
-
-        let cancelled = false;
-        const loadImage = async () => {
-            try {
-                const graphClient = await getGraphClient(msalInstance);
-                if (!graphClient || cancelled) return;
-                const service = new DivisionService(graphClient);
-                const url = await service.getDivisionImageUrl(division.divisionImage!);
-                console.log('📷 [DivisionModal] Image loaded:', url ? 'success' : 'null');
-                if (!cancelled) setDivisionImageUrl(url);
-            } catch (e) {
-                console.warn('📷 [DivisionModal] Failed to load division image:', e);
-            }
-        };
-        loadImage();
-
-        return () => { cancelled = true; };
-    }, [isOpen, division?.divisionImage, msalInstance]);
-
-    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file || !division) return;
-
-        setIsUploadingImage(true);
-        try {
-            const compressedFile = await compressImage(file, 1280, 0.7);
-
-            // Optimistic UI: show image immediately
-            const objectUrl = URL.createObjectURL(compressedFile);
-            setDivisionImageUrl(objectUrl);
-
-            const graphClient = await getGraphClient(msalInstance);
-            if (!graphClient) throw new Error('No Graph Client');
-
-            const service = new DivisionService(graphClient);
-            await service.uploadDivisionImage(division.id, compressedFile, division.divisionName);
-
-            toast({ title: 'Success', description: 'Division image updated!' });
-            queryClient.invalidateQueries({ queryKey: ['strategyDivisions'] });
-        } catch (error: any) {
-            console.error('Division image upload failed:', error);
-            toast({ title: 'Error', description: error.message || 'Failed to upload image', variant: 'destructive' });
-        } finally {
-            setIsUploadingImage(false);
-            event.target.value = '';
-        }
-    };
+    // Static division image - resolved from division name
+    const divisionImageUrl = division ? getDivisionImagePath(division.divisionName) : null;
 
     const handleEditToggle = () => {
         if (!isEditing && division) {
@@ -160,21 +112,38 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
             if (!graphClient) throw new Error("No Graph Client");
 
             const service = new DivisionService(graphClient);
-            await service.updateDivision(division.id, {
-                location: formData.location,
-                missionStatement: formData.missionStatement,
-                primaryContact: formData.primaryContact,
-                director: formData.director,
-                statutoryDuties: formData.statutoryDuties,
-            });
+            const isDemo = division.id === 'demo';
+
+            if (isDemo) {
+                await service.addDivision({
+                    divisionName: formData.divisionName,
+                    branch: formData.branch,
+                    location: formData.location,
+                    missionStatement: formData.missionStatement,
+                    primaryContact: formData.primaryContact,
+                    director: formData.director,
+                    statutoryDuties: formData.statutoryDuties,
+                });
+            } else {
+                await service.updateDivision(division.id, {
+                    location: formData.location,
+                    missionStatement: formData.missionStatement,
+                    primaryContact: formData.primaryContact,
+                    director: formData.director,
+                    statutoryDuties: formData.statutoryDuties,
+                });
+            }
 
             toast({
                 title: "Success",
-                description: "Division updated successfully",
+                description: isDemo ? "Division created and saved successfully" : "Division updated successfully",
             });
 
             queryClient.invalidateQueries({ queryKey: ["strategyDivisions"] });
             setIsEditing(false);
+            if (isDemo) {
+                onClose(); // Close to refresh with new live data
+            }
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -199,29 +168,8 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
         });
     };
 
-    const handleDutyChange = (index: number, value: string) => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            const newArray = [...(prev.statutoryDuties || [])];
-            newArray[index] = value;
-            return { ...prev, statutoryDuties: newArray };
-        });
-    };
-
-    const addDuty = () => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            return { ...prev, statutoryDuties: [...(prev.statutoryDuties || []), ""] };
-        });
-    };
-
-    const removeDuty = (index: number) => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            const newArray = [...(prev.statutoryDuties || [])];
-            newArray.splice(index, 1);
-            return { ...prev, statutoryDuties: newArray };
-        });
+    const handleDutyChange = (value: string) => {
+        setFormData(prev => prev ? { ...prev, statutoryDuties: value } : prev);
     };
 
     // Derived state for display
@@ -261,7 +209,7 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
                             <Dialog.Panel className="relative transform overflow-hidden rounded-xl bg-gray-50 text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col md:flex-row min-h-[500px] h-full max-h-[90vh] p-0">
 
                                 {/* Left Sidebar - outer wrapper clips overflow, inner scrolls */}
-                                <div className="w-full md:w-80 bg-[#800020] text-white relative flex-shrink-0 overflow-hidden group/sidebar">
+                                <div className="w-full md:w-80 bg-[#800020] text-white relative flex-shrink-0 overflow-hidden">
                                     {/* Fixed background image layer - covers full sidebar */}
                                     {divisionImageUrl && (
                                         <>
@@ -275,128 +223,117 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
                                         </>
                                     )}
 
-                                    {/* Pencil upload icon - fixed position within sidebar */}
-                                    <label
-                                        htmlFor="division-image-upload"
-                                        className="absolute top-4 right-4 p-2.5 bg-black/40 hover:bg-black/60 backdrop-blur-sm rounded-full cursor-pointer z-50 transition-all duration-200 opacity-0 group-hover/sidebar:opacity-100"
-                                        title={divisionImageUrl ? "Change Division Image" : "Add Division Image"}
-                                    >
-                                        {isUploadingImage ? (
-                                            <Loader2 className="w-5 h-5 text-white animate-spin" />
-                                        ) : (
-                                            <Pencil className="w-5 h-5 text-white" />
-                                        )}
-                                    </label>
-                                    <input
-                                        type="file"
-                                        id="division-image-upload"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        disabled={isUploadingImage}
-                                    />
 
                                     {/* Scrollable content layer */}
                                     <div className="relative z-10 p-8 flex flex-col h-full overflow-y-auto overflow-x-hidden custom-scrollbar">
 
-                                    {!divisionImageUrl && (
-                                        <Building2 className="absolute -bottom-10 -right-10 w-64 h-64 text-white opacity-5 pointer-events-none" />
-                                    )}
-
-                                    <div className="mb-8 relative z-10">
-                                        <div className="w-16 h-16 bg-white/10 rounded-xl mb-6 flex items-center justify-center backdrop-blur-sm border border-white/20">
-                                            <Building2 className="w-8 h-8 text-white" />
-                                        </div>
-                                        <h2 className="text-3xl font-bold tracking-tight mb-2 leading-tight">
-                                            {currentData.divisionName}
-                                        </h2>
-                                        <p className="text-[#FDF5E6] text-sm uppercase tracking-wider font-semibold opacity-90">
-                                            {currentData.branch}
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-6 mt-4 flex-1 relative z-10">
-                                        <div className="flex items-start gap-4">
-                                            <AtSign className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
-                                            <div className="w-full">
-                                                <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Primary Contact</p>
-                                                {isEditing ? (
-                                                    <Input
-                                                        value={currentData.primaryContact.email}
-                                                        onChange={(e) => handleNestedChange('primaryContact', 'email', e.target.value)}
-                                                        className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
-                                                    />
-                                                ) : (
-                                                    <p className="text-sm font-medium">{currentData.primaryContact.email}</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-start gap-4">
-                                            <MapPin className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
-                                            <div className="w-full">
-                                                <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Location</p>
-                                                {isEditing ? (
-                                                    <Input
-                                                        value={currentData.location}
-                                                        onChange={(e) => setFormData(prev => prev ? { ...prev, location: e.target.value } : prev)}
-                                                        className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
-                                                    />
-                                                ) : (
-                                                    <p className="text-sm font-medium leading-snug">{currentData.location}</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-start gap-4">
-                                            <Users className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
-                                            <div>
-                                                <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Total Staff</p>
-                                                <p className="text-sm font-medium">{currentData.totalStaff} Employees</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Quote Box */}
-                                    <div className="mt-8 bg-black/20 rounded-lg p-5 border border-white/10 relative z-10 backdrop-blur-sm">
-                                        {isEditing ? (
-                                            <div className="space-y-3">
-                                                <div>
-                                                    <Label className="text-xs text-white/70">Director Name</Label>
-                                                    <Input
-                                                        value={currentData.director.name}
-                                                        onChange={(e) => handleNestedChange('director', 'name', e.target.value)}
-                                                        className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white focus-visible:ring-1 focus-visible:ring-white"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <Label className="text-xs text-white/70">Quote</Label>
-                                                    <Textarea
-                                                        value={currentData.director.quote}
-                                                        onChange={(e) => handleNestedChange('director', 'quote', e.target.value)}
-                                                        className="min-h-[60px] p-2 text-sm bg-white/10 border-white/20 text-white focus-visible:ring-1 focus-visible:ring-white custom-scrollbar"
-                                                    />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <p className="text-sm italic text-[#FDF5E6] mb-3 leading-relaxed">
-                                                    "{currentData.director.quote}"
-                                                </p>
-                                                <p className="text-sm font-bold text-white">
-                                                    — {currentData.director.name}
-                                                </p>
-                                            </>
+                                        {!divisionImageUrl && (
+                                            <Building2 className="absolute -bottom-10 -right-10 w-64 h-64 text-white opacity-5 pointer-events-none" />
                                         )}
-                                    </div>
 
-                                    {/* Bottom Info */}
-                                    <div className="mt-auto pt-8 flex items-center justify-between text-[#FDF5E6] font-medium">
-                                        <div>
-                                            <p className="text-[10px] uppercase tracking-widest opacity-60 mb-1 leading-none">ID Code</p>
-                                            <p className="text-sm">DIV-{currentData.id}</p>
+                                        <div className="mb-8 relative z-10">
+                                            <div className="w-16 h-16 bg-white/10 rounded-xl mb-6 flex items-center justify-center backdrop-blur-sm border border-white/20">
+                                                <Building2 className="w-8 h-8 text-white" />
+                                            </div>
+                                            <h2 className="text-3xl font-bold tracking-tight mb-2 leading-tight">
+                                                {currentData.divisionName}
+                                            </h2>
+                                            <p className="text-[#FDF5E6] text-sm uppercase tracking-wider font-semibold opacity-90">
+                                                {currentData.branch}
+                                            </p>
                                         </div>
-                                    </div>
+
+                                        <div className="space-y-6 mt-4 flex-1 relative z-10">
+                                            <div className="flex items-start gap-4">
+                                                <AtSign className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
+                                                <div className="w-full">
+                                                    <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Primary Contact</p>
+                                                    {isEditing ? (
+                                                        <Input
+                                                            value={currentData.primaryContact.email}
+                                                            onChange={(e) => handleNestedChange('primaryContact', 'email', e.target.value)}
+                                                            className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-medium">{currentData.primaryContact.email}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start gap-4">
+                                                <MapPin className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
+                                                <div className="w-full">
+                                                    <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Location</p>
+                                                    {isEditing ? (
+                                                        <Input
+                                                            value={currentData.location}
+                                                            onChange={(e) => setFormData(prev => prev ? { ...prev, location: e.target.value } : prev)}
+                                                            className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-medium leading-snug">{currentData.location}</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start gap-4">
+                                                <Users className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
+                                                <div className="w-full">
+                                                    <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Total Staff</p>
+                                                    {isEditing ? (
+                                                        <Input
+                                                            type="number"
+                                                            value={currentData.totalStaff}
+                                                            onChange={(e) => setFormData(prev => prev ? { ...prev, totalStaff: parseInt(e.target.value) || 0 } : prev)}
+                                                            className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
+                                                        />
+                                                    ) : (
+                                                        <p className="text-sm font-medium">{currentData.totalStaff} Employees</p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Quote Box */}
+                                        <div className="mt-8 bg-black/20 rounded-lg p-5 border border-white/10 relative z-10 backdrop-blur-sm">
+                                            {isEditing ? (
+                                                <div className="space-y-3">
+                                                    <div>
+                                                        <Label className="text-xs text-white/70">Director Name</Label>
+                                                        <Input
+                                                            value={currentData.director.name}
+                                                            onChange={(e) => handleNestedChange('director', 'name', e.target.value)}
+                                                            className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white focus-visible:ring-1 focus-visible:ring-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label className="text-xs text-white/70">Quote</Label>
+                                                        <Textarea
+                                                            value={currentData.director.quote}
+                                                            onChange={(e) => handleNestedChange('director', 'quote', e.target.value)}
+                                                            className="min-h-[60px] p-2 text-sm bg-white/10 border-white/20 text-white focus-visible:ring-1 focus-visible:ring-white custom-scrollbar"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <p className="text-sm italic text-[#FDF5E6] mb-3 leading-relaxed">
+                                                        "{currentData.director.quote}"
+                                                    </p>
+                                                    <p className="text-sm font-bold text-white">
+                                                        — {currentData.director.name}
+                                                    </p>
+                                                </>
+                                            )}
+                                        </div>
+
+                                        {/* Bottom Info */}
+                                        <div className="mt-auto pt-8 flex items-center justify-between text-[#FDF5E6] font-medium">
+                                            <div>
+                                                <p className="text-[10px] uppercase tracking-widest opacity-60 mb-1 leading-none">ID Code</p>
+                                                <p className="text-sm">DIV-{currentData.id}</p>
+                                            </div>
+                                        </div>
                                     </div>{/* end scrollable content */}
                                 </div>{/* end sidebar */}
 
@@ -519,64 +456,41 @@ const DivisionModal: React.FC<DivisionModalProps> = ({ isOpen, onClose, division
                                                 )}
                                             </TabsContent>
 
-                                            <TabsContent value="duty" className="m-0 focus-visible:outline-none max-w-3xl">
+                                            <TabsContent value="duty" className="m-0 focus-visible:outline-none">
                                                 <div className="mb-8">
                                                     <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">Statutory Duties</h2>
                                                     <p className="text-[#800020] font-bold text-sm uppercase tracking-wider mt-2">{currentData.divisionName}</p>
                                                 </div>
 
-                                                <div className="space-y-6">
-                                                    {isEditing ? (
-                                                        <div className="space-y-4">
-                                                            {(currentData.statutoryDuties || []).map((duty, idx) => (
-                                                                <div key={idx} className="flex gap-3 items-start">
-                                                                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 shrink-0 mt-1">
-                                                                        <Scale className="w-4 h-4 text-gray-500" />
-                                                                    </div>
-                                                                    <Textarea
-                                                                        value={duty}
-                                                                        onChange={(e) => handleDutyChange(idx, e.target.value)}
-                                                                        className="flex-1 min-h-[60px] text-sm"
-                                                                        placeholder="Enter duty description..."
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => removeDuty(idx)}
-                                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1 shrink-0"
-                                                                        title="Remove duty"
-                                                                    >
-                                                                        <Trash2 className="w-5 h-5" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                            <button
-                                                                onClick={addDuty}
-                                                                className="flex items-center gap-2 text-sm font-medium text-[#800020] hover:bg-red-50 px-4 py-2 rounded-lg transition-colors border border-dashed border-[#800020]/30 w-full justify-center"
-                                                            >
-                                                                <Plus className="w-4 h-4" />
-                                                                Add Statutory Duty
-                                                            </button>
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <p className="text-xs text-gray-500">
+                                                            Supports markdown formatting: **bold**, *italic*, #### headings, bullet lists, numbered lists.
+                                                        </p>
+                                                        <Textarea
+                                                            value={currentData.statutoryDuties || ''}
+                                                            onChange={(e) => handleDutyChange(e.target.value)}
+                                                            className="w-full min-h-[400px] text-sm font-mono leading-relaxed resize-y"
+                                                            placeholder="Paste or type statutory duties content here. Markdown formatting is supported..."
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    currentData.statutoryDuties && currentData.statutoryDuties.trim().length > 0 ? (
+                                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                                                            <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                    {currentData.statutoryDuties}
+                                                                </ReactMarkdown>
+                                                            </div>
                                                         </div>
                                                     ) : (
-                                                        currentData.statutoryDuties && currentData.statutoryDuties.length > 0 ? (
-                                                            currentData.statutoryDuties.map((duty, idx) => (
-                                                                <div key={idx} className="flex gap-4 items-start bg-gray-50 border border-gray-100 p-5 rounded-xl">
-                                                                    <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100 shrink-0 mt-1">
-                                                                        <Scale className="w-5 h-5 text-[#800020]" />
-                                                                    </div>
-                                                                    <p className="text-gray-700 leading-relaxed text-sm">
-                                                                        {duty}
-                                                                    </p>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                                <Scale className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                                                <h5 className="text-gray-900 font-medium mb-1">No duties specified</h5>
-                                                                <p className="text-gray-500 text-sm">Statutory duties for this division have not been documented yet.</p>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
+                                                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                            <Scale className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                                            <h5 className="text-gray-900 font-medium mb-1">No duties specified</h5>
+                                                            <p className="text-gray-500 text-sm">Statutory duties for this division have not been documented yet.</p>
+                                                        </div>
+                                                    )
+                                                )}
                                             </TabsContent>
                                         </div>
 

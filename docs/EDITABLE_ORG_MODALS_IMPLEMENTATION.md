@@ -30,7 +30,7 @@ const [formData, setFormData] = useState<MockDivisionData | MockUnitData | null>
 The modals were refactored to conditionally render layout elements:
 *   **Text Inputs & Textareas:** Imported from `shadcn/ui`, `Input` and `Textarea` replace standard `<p>` tags during edit mode.
 *   **Nested Object Handlers:** `manager`, `director`, and `primaryContact` are nested objects requiring precise state updates. A `handleNestedChange` utility function ensures safe, immutable updates.
-*   **Array Handlers:** The `statutoryDuties` required specific array manipulation functions (`handleDutyChange`, `addDuty`, `removeDuty`) allowing admins to directly type into specific array elements or delete them outright using a trash icon.
+*   **Markdown Rich Text (Statutory Duties):** The `statutoryDuties` field is now a single Markdown string (previously `string[]`). In edit mode, a large monospace textarea is provided for pasting formatted content. In view mode, `react-markdown` with `remark-gfm` renders the content with proper headings, bold, italic, and lists. See `docs/STATUTORY_DUTIES_MARKDOWN_SUPPORT.md` for full details.
 
 ### 3.4. SharePoint Services Layer Integration
 Both `DivisionService.ts` and `UnitService.ts` implement `updateDivision(id, payload)` and `updateUnit(id, payload)` methods using the Microsoft Graph Client.
@@ -44,7 +44,7 @@ To ensure the `OrgChart` parent component reflects the changes immediately after
 
 ## 4. Challenges Addressed
 *   **Deep State Mutations:** Managing nested objects (like `manager.name`) requires careful state-setting logic to prevent data loss across other fields.
-*   **Complex Types:** Ensuring seamless serialization of JSON string arrays (like `statutoryDuties`) between the frontend form arrays and the SharePoint string fields. Tested to ensure edits map securely.
+*   **Backward Compatibility:** The `statutoryDuties` field was migrated from `string[]` (JSON-serialized) to plain `string` (Markdown). A `parseStatutoryDuties()` helper in both services ensures legacy JSON data is correctly converted on read.
 *   **Role Security:** Making sure non-administrators absolutely cannot access the editing elements. The UI completely hides the triggers, and backend mutations require Graph tokens validating the patch action.
 
 ## 5. Next Steps / Future Enhancements

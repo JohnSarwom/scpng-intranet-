@@ -286,7 +286,10 @@ export function serializeStrategyContext(
     kpis: any[],
     milestones: any[],
     unitObjectives: any[] = [],
-    orgHierarchy: any[] = []
+    orgHierarchy: any[] = [],
+    divisions: any[] = [],
+    units: any[] = [],
+    officerProfiles: any[] = []
 ): string {
     // Compute aggregate stats
     const totalObjs = objectives.length;
@@ -323,6 +326,9 @@ export function serializeStrategyContext(
         `- Total KPIs: ${kpis.length}`,
         `- Total Milestones: ${milestones.length}`,
         `- Org Hierarchy: ${uniqueDivisions.length} Divisions, ${uniqueUnits.length} Units (${orgHierarchy.length} entries from Org_Hierarchy list)`,
+        `- Strategy Divisions (from Strategy_Divisions list): ${divisions.length}`,
+        `- Strategy Units (from Strategy_Units list): ${units.length}`,
+        `- Staff Profiles (from Strategy_Officer_Profiles list): ${officerProfiles.length}`,
     ].join('\n');
 
     const objSummary = objectives.map((o, i) =>
@@ -351,6 +357,24 @@ export function serializeStrategyContext(
         ).join('\n')
         : '(No org hierarchy data available)';
 
+    const divisionsSummary = divisions.length > 0
+        ? divisions.map((d: any, i: number) =>
+            `${i + 1}. "${d.divisionName || 'N/A'}" — Branch: ${d.branch || 'N/A'}, Director: ${d.director?.name || 'N/A'}${d.location ? `, Location: ${d.location}` : ''}${d.missionStatement ? `, Mission: ${d.missionStatement}` : ''}${d.primaryContact?.email ? `, Contact: ${d.primaryContact.email}` : ''}${d.subDepartments?.length ? `, Sub-departments: ${d.subDepartments.map((s: any) => s.name || s).join(', ')}` : ''}`
+        ).join('\n')
+        : '(No divisions data available)';
+
+    const unitsSummary = units.length > 0
+        ? units.map((u: any, i: number) =>
+            `${i + 1}. "${u.unitName || 'N/A'}" — Parent Division: ${u.parentDivision || 'N/A'}, Manager: ${u.manager?.name || 'N/A'}${u.location ? `, Location: ${u.location}` : ''}${u.missionStatement ? `, Mission: ${u.missionStatement}` : ''}${u.primaryContact?.email ? `, Contact: ${u.primaryContact.email}` : ''}${u.coreFunctions?.length ? `, Core Functions: ${u.coreFunctions.map((f: any) => f.name || f).join(', ')}` : ''}`
+        ).join('\n')
+        : '(No units data available)';
+
+    const profilesSummary = officerProfiles.length > 0
+        ? officerProfiles.map((p: any, i: number) =>
+            `${i + 1}. "${p.name || 'N/A'}" — Title: ${p.jobTitle || 'N/A'}, Division: ${p.division || 'N/A'}, Unit: ${p.unit || 'N/A'}, Email: ${p.email || 'N/A'}${p.employeeId ? `, Employee ID: ${p.employeeId}` : ''}${p.reportsTo?.name ? `, Reports To: ${p.reportsTo.name}` : ''}${p.directReports ? `, Direct Reports: ${p.directReports}` : ''}${p.skills?.length ? `, Skills: ${p.skills.join(', ')}` : ''}${p.statutoryDuty ? `, Statutory Duty: ${p.statutoryDuty}` : ''}`
+        ).join('\n')
+        : '(No staff profiles data available)';
+
     return [
         summary,
         '',
@@ -373,5 +397,17 @@ export function serializeStrategyContext(
         `ORGANIZATIONAL HIERARCHY (${orgHierarchy.length} entries, ${uniqueDivisions.length} Divisions, ${uniqueUnits.length} Units) — from Org_Hierarchy SharePoint list:`,
         `This data represents the official SCPNG organizational structure with divisions, units, and their heads.`,
         hierarchySummary,
+        '',
+        `STRATEGY DIVISIONS (${divisions.length} items) — from Strategy_Divisions SharePoint list:`,
+        `Detailed division profiles including directors, mission statements, sub-departments, and achievements.`,
+        divisionsSummary,
+        '',
+        `STRATEGY UNITS (${units.length} items) — from Strategy_Units SharePoint list:`,
+        `Detailed unit profiles including managers, core functions, and mission statements.`,
+        unitsSummary,
+        '',
+        `STAFF PROFILES (${officerProfiles.length} items) — from Strategy_Officer_Profiles SharePoint list:`,
+        `Officer profiles with job titles, divisions, units, skills, reporting lines, and statutory duties.`,
+        profilesSummary,
     ].join('\n');
 }

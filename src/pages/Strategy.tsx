@@ -25,6 +25,9 @@ import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import EditStrategicObjectiveModal from '@/components/strategy/EditStrategicObjectiveModal';
 import StrategyAnalytics from '@/components/strategy/StrategyAnalytics';
 import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps'; // Import KRA, KPI and Objectives hooks
+import { useDivisions } from '@/hooks/useDivisions';
+import { useUnits } from '@/hooks/useUnits';
+import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { Objective } from '@/types';
 import { calculateGoalProgressFromChildren, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils'; // Import calculation utility
 
@@ -220,6 +223,11 @@ const Strategy = () => {
         'All',
         { division: '', unit: '', email: '', name: '', role: 'super_admin' }
     );
+
+    // Fetch Strategy_Divisions, Strategy_Units, and Officer Profiles for AI Chat context
+    const { data: allDivisions = [] } = useDivisions();
+    const { data: allUnits = [] } = useUnits();
+    const { data: allOfficerProfiles = [] } = useOfficerProfiles();
 
     // Build dynamic Division → Unit → Key Deliverable → Objectives hierarchy from live objectives data
     // IMPORTANT: This useMemo MUST be before any early returns to satisfy Rules of Hooks
@@ -1154,6 +1162,9 @@ const Strategy = () => {
                             kpis={allKpis || []}
                             unitObjectives={allUnitObjectives || []}
                             orgHierarchy={(strategyData as any)?.hierarchyDetails || []}
+                            divisions={allDivisions}
+                            units={allUnits}
+                            officerProfiles={allOfficerProfiles}
                         />
                     </TabsContent>
 

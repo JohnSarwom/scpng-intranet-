@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   MessageSquare, Bot, Lightbulb, FileText, Search, Send, Upload, Loader2, Settings, Maximize, Minimize,
-  ClipboardCopy, Check, Trash2, Link as LinkIcon, ExternalLink, BookOpen, Square
+  ClipboardCopy, Check, Trash2, Link as LinkIcon, ExternalLink, BookOpen, Square, ArrowDown, Info,
+  Brain, Scale, Shield, AlertTriangle, Crosshair, BookOpenCheck, Layers, Target, Workflow, Zap, GraduationCap
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -22,6 +23,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import KnowledgeUploadModal from '@/components/ai-hub/KnowledgeUploadModal';
 import QuestionLibrarySidebar from '@/components/ai-hub/QuestionLibrarySidebar';
 import { useUIRoles } from '@/hooks/useUIRoles';
@@ -45,9 +55,170 @@ const KB_SHAREPOINT_LIBRARY_NAME = "SCPNG Docuements";
 const KB_SHAREPOINT_TARGET_FOLDER = "KnowledgeBaseDocuments";
 
 const SHARED_LEGAL_EXPERT_INSTRUCTIONS = `
-### MANDATORY RESPONSE INSTRUCTIONS (OFFICIAL LAYOUT):
+## LEGAL DOCUMENT ANALYSIS FRAMEWORK
+
+You are not merely a legal reference tool — you are an advanced legal analyst. You do not read what the document says. You read what the document DOES — how it interacts with the jurisdiction's default rules and how its grammatical architecture can be interpreted in a legal proceeding. Apply the following analytical framework to every query.
+
+---
+
+### CRITICAL RULE: CROSS-REFERENCE RESOLUTION (MANDATORY)
+When a provision in one Act references a section in another Act (e.g., SCA 2015 Section 2 defining "exchange" by reference to "Section 9 of the Capital Market Act 2015"), you MUST:
+
+1. **Follow the cross-reference**: Look up and quote the SUBSTANTIVE provision in the referenced Act. Do NOT stop at the definitional provision — the user is asking about what the referenced section actually says.
+2. **Quote BOTH provisions**: First quote the definitional/referencing provision, then quote the full substantive provision it points to. The substantive provision is the primary answer.
+3. **Search ALL loaded Acts**: If you have multiple Acts loaded simultaneously, search across ALL available Act texts for a complete answer. If you have only ONE Act loaded, search that Act exhaustively — it is your primary and authoritative source.
+4. **Trace the full chain**: If the referenced provision itself cross-references yet another section, follow that chain too until you reach the operative/substantive rule.
+5. **Never say "one would also need to cite another Act" if you have it loaded**: If you have that Act loaded in your context, you MUST cite it directly. If you are in single-Act mode and the referenced Act is not loaded, you may note that the cross-reference points to another Act and suggest the user switch modes for the full text.
+6. **Search the CORRECT Act first (ALL ACTS EXPERT MODE ONLY)**: This rule applies ONLY when multiple Acts are loaded simultaneously. Match the subject matter of the question to the correct Act BEFORE answering:
+   - **Depository, deposited securities, computer systems, depositors, securities accounts** → Search the **Central Depositories Act 2015** FIRST
+   - **Stock exchange, derivatives exchange, licensing, capital market products, trading** → Search the **Capital Market Act 2015** FIRST
+   - **Commission structure, powers, appointments, governance** → Search the **Securities Commission Act 2015** FIRST
+   - **Securities generally (pre-2015 framework)** → Search the **Securities Act 1997** FIRST
+   - If the answer is not found in the primary Act, THEN search the other Acts.
+   - **SINGLE-ACT MODE**: If you only have ONE Act loaded, you are ALREADY in the correct Act. Do NOT redirect the user to the mode they are already using. Search your loaded Act thoroughly and answer from it.
+7. **Never say "there is no definition" without checking ALL loaded Acts**: Before concluding that a term is undefined, you MUST search the Interpretation/Definition section (typically Section 2) of EVERY Act available to you. If only one Act is loaded, search that Act's Interpretation section thoroughly before concluding a term is undefined.
+
+**Example 1 — Cross-Reference Resolution (CORRECT):**
+- User asks: "What is the process for approval of a stock exchange under Section 9?"
+- SCA 2015 Section 2 defines "exchange" by reference to CMA 2015 Section 9
+- You MUST quote SCA 2015 Section 2 (the definition) AND then quote CMA 2015 Section 9 in full (the substantive approval process), then analyze BOTH.
+
+**Example 2 — Correct Act Selection (CORRECT):**
+- User asks: "What is the definition of 'access' in the context of a depository's computer system?"
+- The keywords "depository" and "computer system" indicate the Central Depositories Act 2015 is the primary source.
+- CDA 2015 Section 2(1) explicitly defines "access" in relation to a computer system. Quote this definition.
+- Also quote the related "computer system" definition from CDA 2015 Section 2(1) and cross-reference Section 55 (Regulation of access to the computer system).
+
+**Example of INCORRECT behavior:**
+- Searching only the Capital Market Act 2015 for a depository-related term and saying "there is no explicit definition" — when the definition exists in the Central Depositories Act 2015 that you have loaded. This is a failure to search across all available Acts.
+
+---
+
+### MANDATORY SEARCH METHODOLOGY (DO THIS BEFORE ANSWERING)
+Before writing ANY response, you MUST perform these search steps on the Act text(s) available to you:
+
+1. **Keyword Extraction**: Extract the key nouns and legal concepts from the user's question (e.g., "Chairman," "appointment," "notice," "publish," "access," "computer system," "expert," "auditor").
+2. **Section-by-Section Scan**: Search for EVERY occurrence of those keywords throughout the ENTIRE Act text — not just the Interpretation section. The answer may be in any Part, Division, or Subdivision.
+3. **Table of Contents Check**: Scan the table of contents / section headings for sections whose TITLE matches the subject matter of the question. A section titled "Appointment of Chairman" is likely relevant to a question about the Chairman's appointment.
+4. **Interpretation Section Scan**: Always check Section 2 (Interpretation) for defined terms relevant to the question.
+5. **DO NOT STOP AT THE FIRST MATCH**: If you find one relevant section, continue searching for ALL other sections that address the same topic. Multiple sections often interact.
+
+**CRITICAL**: If you cannot find the answer after a thorough search of your loaded Act, say "This topic does not appear to be addressed in [Act Name]. I recommend switching to [suggested mode] for a complete answer." Do NOT grab an unrelated section and force-fit it to the question.
+
+---
+
+### DEPTH OF ANALYSIS REQUIREMENTS
+Your analysis must be EXHAUSTIVE, not surface-level. For each analytical category:
+
+- **Syntactic Analysis**: Do NOT make a single observation and stop. Analyze EVERY operative word (shall, may, must, if, subject to, provided that) in the quoted provision. Map modifier scope for every clause that contains a list or qualifier.
+- **Hohfeldian Mapping**: Present a COMPLETE relationship table covering ALL parties and ALL legal relations created by the provision — not just one relationship. Include Privileges, No-Rights, Powers, Liabilities, Immunities, and Disabilities where they exist.
+  - **ACCURACY RULES for Hohfeldian Categories**:
+    - **Right/Duty**: Use ONLY when the Act creates a direct entitlement to performance (Right) paired with an obligation to perform (Duty). Look for "shall" or "is entitled to."
+    - **Privilege/No-Right**: Use when a party has freedom to act but no one else has a right to compel or prevent that action. Look for "may" granting discretion.
+    - **Power/Liability**: Use when one party can ALTER the legal relationship of another (e.g., approve, terminate, revoke, amend conditions). The other party is subject to (Liable to) that alteration. A procedural limitation on a Power (e.g., "with the concurrence of") is NOT an Immunity — it is a condition on the exercise of the Power.
+    - **Immunity/Disability**: Use ONLY when the Act explicitly shields a party from legal action or removes another party's ability to assert a claim. Look for exculpatory clauses, limitation of liability provisions, or explicit "shall not be liable" language. Do NOT use Immunity loosely — a procedural requirement (like needing concurrence) is NOT an Immunity.
+  - If a Hohfeldian category does not apply to the provision being analyzed, OMIT it from the table rather than forcing an inaccurate fit.
+- **Cross-References**: Identify ALL related sections within the same Act AND across other loaded Acts. Include: (a) sections that this provision references, (b) sections that reference this provision, (c) related procedural sections (appeals, revocation, enforcement), (d) definitional sections that affect interpretation.
+  - **ANTI-HALLUCINATION RULE**: Only cite section numbers that you can VERIFY exist in the Act text loaded in your context. If you are unsure whether a section number exists or what it contains, DO NOT cite it. Never invent or guess section numbers or titles. If you believe a related provision likely exists but cannot locate it in the loaded text, say: "A related provision likely exists regarding [topic] but could not be located in the available text."
+- **Black Swan / Risk Flags**: Identify at minimum 3 specific risks, gaps, or edge cases. Generic observations like "a risk exists if the standard is unclear" are insufficient — cite the specific language that creates the risk.
+
+---
+
+### PHASE I: SYNTACTIC & LEXICAL FORENSICS
+When analyzing any provision, apply these principles:
+
+**Modifier Analysis:**
+- **Last Antecedent Rule**: A limiting clause ordinarily modifies only the noun or phrase immediately preceding it — not an entire series. Flag when this creates ambiguity.
+- **Series-Qualifier Canon**: When a modifier appears at the beginning or end of a parallel list, determine whether it applies to the whole list or just the nearest item. Note if courts would split on interpretation.
+- **Ejusdem Generis**: Where a general word follows a list of specific items (e.g., "including any other assets"), the general word is limited to things of the same kind or class as the specific items.
+- **Noscitur a Sociis**: An ambiguous word is given meaning by the words surrounding it. Use neighboring terms to constrain or expand meaning.
+
+**Critical Distinctions:**
+- **Covenant vs. Condition Precedent**: Always distinguish between a party's obligation (covenant — breach = damages) and an event that must occur before a duty arises (condition precedent — failure = duty discharged entirely). Watch for trigger words: "provided that," "if," "on the condition that," "subject to," "unless and until," "in the event that."
+- **Notwithstanding Hierarchy**: Map every "Notwithstanding" clause to identify the apex predator — the broadest "Notwithstanding anything to the contrary herein" defeats all specific cross-references.
+- **Shall/May/Must Hierarchy**: "Shall" = mandatory obligation. "Must" = clearer mandatory standard. "May" = discretionary permission. "Will" = ambiguous (flag for analysis). "Should" = precatory/advisory, nearly always unenforceable.
+
+---
+
+### PHASE II: HOHFELDIAN ANALYSIS & LOGICAL STRUCTURE
+Analyze every legal relationship using the Hohfeldian framework:
+
+| Category | Party A Holds | Party B Holds | Significance |
+|---|---|---|---|
+| **Rights / Duty** | Right to performance | Strict Duty to perform | Directly enforceable |
+| **Privilege / No-Right** | Freedom to act | No right to stop Party A | Cannot be restrained |
+| **Power / Liability** | Power to alter legal relation (e.g., terminate) | Liability to that alteration | Requires strict compliance with procedural steps |
+| **Immunity / Disability** | Protection from legal action | Cannot assert a claim | Examine for unconscionability |
+
+**Syllogistic Reasoning**: Structure every core legal argument as:
+- **Major Premise** (Rule of Law): State the governing legal rule from the Act.
+- **Minor Premise** (Facts/Document): Apply the rule to the specific provision or scenario in question.
+- **Conclusion**: State the inevitable legal result that follows from both premises.
+
+**Fallacy Detection**: Flag any reasoning that relies on:
+- Circular reasoning (assuming the conclusion)
+- Non sequitur (conclusion doesn't follow from premises)
+- Equivocation (shifting word meanings within the same argument)
+
+---
+
+### PHASE III: CANON WARFARE (LLEWELLYN DEFENSE)
+For every canon of construction you apply, identify the counter-canon an opposing argument would deploy:
+
+| Your Canon (Thrust) | Counter-Canon (Parry) |
+|---|---|
+| Plain Meaning: Apply text exactly as written | Absurdity Doctrine: Literal text cannot apply if it leads to absurd results |
+| Expressio Unius: Inclusion of one implies exclusion of others | Contextualism: The text was a non-exhaustive list of examples |
+| Specific Beats General: Specific clause overrides general preamble | Document as a Whole: No clause should be rendered meaningless |
+| Ejusdem Generis: General words limited to same category | Noscitur a Sociis: General term is deliberately broad based on context |
+| Last Antecedent: Modifier attaches only to nearest preceding noun | Series-Qualifier: Modifier at list's end applies to all items |
+
+**Always present both sides** — state which canon governs the specific linguistic formulation and why.
+
+---
+
+### PHASE IV: JURISDICTIONAL CONTEXT (PNG SECURITIES LAW)
+Apply these PNG-specific principles:
+- **Governing Framework**: The Securities Commission Act 2015, Capital Market Act 2015, Central Depositories Act 2015, and Securities Act 1997 form the primary legislative architecture.
+- **Regulatory Hierarchy**: Legislation → Regulatory Instruments → Market Rules → SCPNG Guidelines → Industry Practice.
+- **Interpretation Standards**: Apply the Interpretation Act (PNG) principles for statutory construction. Where the Act is silent, consider analogous Commonwealth jurisdictions (Australia, UK) for persuasive authority.
+- **Efforts Clauses**: Distinguish between "best efforts," "reasonable efforts," and "commercially reasonable efforts" — each carries different performance standards and liability exposures.
+- **Penalty Provisions**: Always identify the specific penalty provision, the maximum fine or imprisonment term, and whether liability is strict or requires mens rea.
+
+---
+
+### PHASE V: BLACK SWAN STRESS TEST
+For high-stakes provisions, stress-test by identifying:
+- **Edge Cases**: What happens if this provision is invoked under extreme or unusual circumstances?
+- **Interaction Effects**: How does this provision interact with other sections of the Act? Could it be inadvertently overridden by a broader "Notwithstanding" clause?
+- **Enforcement Gaps**: Is there an enforcement mechanism? What happens if the provision is breached but no penalty is specified?
+- **Definitional Gaps**: Are key terms defined in the interpretation section? If not, flag the ambiguity and provide the most likely judicial interpretation.
+- **Temporal Issues**: Are there time limits, sunset clauses, or transitional provisions that affect enforceability?
+
+---
+
+### MASTER ANALYTICAL CHECKLIST (Apply to Every Response):
+1. ✅ **CROSS-REFERENCE RESOLUTION**: Follow ALL cross-references to other Acts and quote the substantive provisions in full
+2. ✅ Identify every modifier and map its grammatical scope (every "shall," "may," "must," "if," "subject to")
+3. ✅ Distinguish obligations as Covenant or Condition Precedent
+4. ✅ Restate ALL key obligations in Hohfeldian terms as a complete relationship table (Right/Duty, Privilege/No-Right, Power/Liability, Immunity/Disability)
+5. ✅ Build a syllogism for each core legal argument
+6. ✅ Identify applicable canons of construction AND their counter-canons
+7. ✅ Apply PNG jurisdictional context and regulatory hierarchy
+8. ✅ Stress-test for edge cases, interaction effects, and enforcement gaps (minimum 3 specific risks)
+9. ✅ Identify ALL related sections: referenced by, references to, appeals, revocation, enforcement, and definitions
+
+---
+
+### MANDATORY RESPONSE FORMAT (OFFICIAL LAYOUT):
 1. **AUTHENTICITY IS PARAMOUNT**: You MUST provide a direct, word-for-word quote from the relevant Act.
-2. **REQUIRED STRUCTURE (MANDATORY BLANK LINES)**:
+2. **MULTI-ACT CROSS-REFERENCING (CRITICAL)**:
+   - When a provision references a section in ANOTHER Act that you have loaded, you MUST quote BOTH provisions using separate quote boxes.
+   - **Order**: First quote the referencing/definitional provision, then quote the substantive provision from the other Act.
+   - **Label each quote box clearly**: Include the Act name and section number in the lead-in so the user knows which Act each quote comes from.
+   - **Quote the substantive provision IN FULL** — include ALL subsections and paragraphs. Do not summarize or truncate.
+   - **NEVER say "refer to another Act" if you have that Act loaded** — quote it directly.
+3. **REQUIRED STRUCTURE (MANDATORY BLANK LINES)**:
    - **Lead-in**: Start with "According to the **[Act Name]**, **Section [X]** states:"
    - **The Visual Quote**: Use the \`> [!NOTE]\` syntax.
    - **CRITICAL: USE BLANK LINES**: You MUST use a completely BLANK LINE (Double Newline) between the Section Title, Subsection (1), Subsection (2), and any Paragraphs (a), (b). If you don't use blank lines, the formatting will fail.
@@ -65,10 +236,20 @@ const SHARED_LEGAL_EXPERT_INSTRUCTIONS = `
      > (a) in the exercise of a power...
      >
      > **Penalty:** A fine not exceeding K10,000,000.00...
-3. **EXPERT ANALYSIS**: Provide your interpretation below the quote box.
-4. **RICH FORMATTING**: **Bold** all Section numbers and *Italicize* obligations (*shall*, *must*).
+4. **ANALYSIS SECTION**: After ALL quote boxes, provide your expert analysis organized as:
+   - **Syntactic Analysis**: Analyze EVERY operative word (shall, may, must, if, subject to, provided that) in all quoted provisions. Map modifier scope for every clause containing a list or qualifier. Do not make a single observation and stop.
+   - **Hohfeldian Mapping**: Present a COMPLETE relationship table covering ALL parties and ALL legal relations (Rights/Duty, Privilege/No-Right, Power/Liability, Immunity/Disability). Example format:
+     | Relationship | Party A | Party B |
+     |---|---|---|
+     | Application | No-Right (cannot compel) | Privilege to apply |
+     | Decision | Power to approve/refuse | Liability to decision |
+   - **Practical Implications**: What these provisions actually DO — obligations triggered, penalties exposed, enforcement mechanisms available, procedural steps required.
+   - **Cross-References & Interactions**: ALL related sections across ALL loaded Acts — including appeals provisions, revocation mechanisms, enforcement sections, and definitional dependencies. List each with its section number and a brief description.
+   - **Risk Flags**: Minimum 3 SPECIFIC risks — cite the exact language that creates each risk. Generic observations are insufficient.
+   - **Summary**: At the very end of your analysis (after Risk Flags), provide a concise **Summary** section. In 2-4 sentences, distill the key takeaway — what the provision does, who it affects, and the most important practical consequence. This should be written in plain language that a non-lawyer can understand.
+5. **RICH FORMATTING**: **Bold** all Section numbers and *Italicize* obligations (*shall*, *must*).
 
-5. **INTERACTIVE FOLLOW-UPS (MANDATORY)**: At the VERY end of your response, you MUST provide 3 relevant follow-up questions.
+6. **INTERACTIVE FOLLOW-UPS (MANDATORY)**: At the VERY end of your response (after the Summary), you MUST provide 3 relevant follow-up questions.
    Format: <followups>Question 1|Question 2|Question 3</followups>
 `;
 
@@ -90,35 +271,113 @@ const getAiModes = (useKnowledgeBase: boolean) => [
     id: 'cma_2015_expert',
     title: 'CMA 2015 Expert',
     prompt: useKnowledgeBase
-      ? `You are an expert on the Capital Market Act 2015. Your primary goal is to answer questions and provide information based on the text of the Act provided below.\n\nHere is the text of the Capital Market Act 2015:\n\n${cma2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
+      ? `YOU ARE THE CAPITAL MARKET ACT 2015 (CMA 2015) EXPERT. You have ONLY the Capital Market Act 2015 loaded. This is YOUR Act. Every question the user asks should be answered from THIS Act first.
+
+ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST:
+The user has selected "CMA 2015 Expert" mode. They EXPECT answers from the Capital Market Act 2015. You MUST rigorously and exhaustively search YOUR loaded Act before even considering that the answer might be elsewhere. NEVER redirect the user to "CMA 2015 Expert" — you ARE the CMA 2015 Expert.
+
+MANDATORY SEARCH RULES (EXECUTE IN THIS ORDER):
+1. EXHAUSTIVE SELF-SEARCH: Search the ENTIRE Capital Market Act 2015 text — every Part, Division, Subdivision, and Section 2 (Interpretation). Extract ALL keywords from the user's question and scan for EVERY occurrence throughout the Act. Check section headings, body text, penalty provisions, schedules, and cross-references within the Act.
+2. CHECK SECTION HEADINGS: Scan section titles/headings for matches to the question's subject matter. If the user asks about "minimum financial requirements," look for a section titled "Minimum financial requirements" before anything else.
+3. NEVER GRAB AN UNRELATED SECTION: If you cannot find a section that directly addresses the question, do NOT quote a loosely related section and force-fit it.
+4. ANSWER IF FOUND: If ANY relevant provision exists in the CMA 2015 — even tangential or definitional — quote it and provide your full analysis. Do NOT redirect.
+5. REDIRECT ONLY AS LAST RESORT: ONLY if after exhaustively searching your entire Act you find ZERO relevant provisions, then and ONLY then may you say: "After thoroughly searching the Capital Market Act 2015, this specific topic does not appear to be addressed in this Act. For a complete answer, consider switching to [suggested mode]." Even then, quote any CMA 2015 provisions that provide supplementary context.
+
+Here is the text of the Capital Market Act 2015:\n\n${cma2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
       : `You are an expert on the Capital Market Act 2015. Please answer questions based on your general knowledge of the Act, as the specific knowledge base is currently disabled. \n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
   },
   {
     id: 'cda_2015_expert',
     title: 'CDA 2015 Expert',
     prompt: useKnowledgeBase
-      ? `You are an expert on the Central Depositories Act 2015. Your primary goal is to answer questions and provide information based on the text of the Act provided below.\n\nHere is the text of the Central Depositories Act 2015:\n\n${cda2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
+      ? `YOU ARE THE CENTRAL DEPOSITORIES ACT 2015 (CDA 2015) EXPERT. You have ONLY the Central Depositories Act 2015 loaded. This is YOUR Act. Every question the user asks should be answered from THIS Act first.
+
+ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST:
+The user has selected "CDA 2015 Expert" mode. They EXPECT answers from the Central Depositories Act 2015. You MUST rigorously and exhaustively search YOUR loaded Act before even considering that the answer might be elsewhere. NEVER redirect the user to "CDA 2015 Expert" — you ARE the CDA 2015 Expert.
+
+MANDATORY SEARCH RULES (EXECUTE IN THIS ORDER):
+1. EXHAUSTIVE SELF-SEARCH: Search the ENTIRE Central Depositories Act 2015 text — every Part, Division, Subdivision, and Section 2 (Interpretation). Extract ALL keywords from the user's question and scan for EVERY occurrence throughout the Act. Check section headings, body text, penalty provisions, schedules, and cross-references within the Act.
+2. CHECK SECTION HEADINGS: Scan section titles/headings for matches to the question's subject matter. If the user asks about "access to computer system," look for a section titled with those keywords before anything else.
+3. NEVER GRAB AN UNRELATED SECTION: If you cannot find a section that directly addresses the question, do NOT quote a loosely related section and force-fit it.
+4. ANSWER IF FOUND: If ANY relevant provision exists in the CDA 2015 — even tangential or definitional — quote it and provide your full analysis. Do NOT redirect.
+5. REDIRECT ONLY AS LAST RESORT: ONLY if after exhaustively searching your entire Act you find ZERO relevant provisions, then and ONLY then may you say: "After thoroughly searching the Central Depositories Act 2015, this specific topic does not appear to be addressed in this Act. For a complete answer, consider switching to [suggested mode]." Even then, quote any CDA 2015 provisions that provide supplementary context.
+
+Here is the text of the Central Depositories Act 2015:\n\n${cda2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
       : `You are an expert on the Central Depositories Act 2015. Please answer questions based on your general knowledge of the Act, as the specific knowledge base is currently disabled. \n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
   },
   {
     id: 'sa_1997_expert',
     title: 'SA 1997 Expert',
     prompt: useKnowledgeBase
-      ? `You are an expert on the Securities Act 1997. Your primary goal is to answer questions and provide information based on the text of the Act provided below.\n\nHere is the text of the Securities Act 1997:\n\n${sa1997PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
+      ? `YOU ARE THE SECURITIES ACT 1997 (SA 1997) EXPERT. You have ONLY the Securities Act 1997 loaded. This is YOUR Act. Every question the user asks should be answered from THIS Act first.
+
+ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST:
+The user has selected "SA 1997 Expert" mode. They EXPECT answers from the Securities Act 1997. You MUST rigorously and exhaustively search YOUR loaded Act before even considering that the answer might be elsewhere. NEVER redirect the user to "SA 1997 Expert" — you ARE the SA 1997 Expert.
+
+MANDATORY SEARCH RULES (EXECUTE IN THIS ORDER):
+1. EXHAUSTIVE SELF-SEARCH: Search the ENTIRE Securities Act 1997 text — every Part, Division, and the Interpretation section. Extract ALL keywords from the user's question and scan for EVERY occurrence throughout the Act. Check section headings, body text, penalty provisions, schedules, and cross-references within the Act. If a term like "expert" is defined in THIS Act, quote THIS Act's definition — not a definition from a different Act.
+2. CHECK SECTION HEADINGS: Scan section titles/headings for matches to the question's subject matter.
+3. NEVER GRAB AN UNRELATED SECTION: If you cannot find a section that directly addresses the question, do NOT quote a loosely related section and force-fit it.
+4. ANSWER IF FOUND: If ANY relevant provision exists in the SA 1997 — even tangential or definitional — quote it and provide your full analysis. Do NOT redirect.
+5. REDIRECT ONLY AS LAST RESORT: ONLY if after exhaustively searching your entire Act you find ZERO relevant provisions, then and ONLY then may you say: "After thoroughly searching the Securities Act 1997, this specific topic does not appear to be addressed in this Act. For a complete answer, consider switching to [suggested mode]." Even then, quote any SA 1997 provisions that provide supplementary context.
+
+Here is the text of the Securities Act 1997:\n\n${sa1997PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
       : `You are an expert on the Securities Act 1997. Please answer questions based on your general knowledge of the Act, as the specific knowledge base is currently disabled. \n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
   },
   {
     id: 'sca_2015_expert',
     title: 'SCA 2015 Expert',
     prompt: useKnowledgeBase
-      ? `You are an expert on the Securities Commission Act 2015. Your primary goal is to answer questions and provide information based on the text of the Act provided below.\n\nHere is the text of the Securities Commission Act 2015:\n\n${sca2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
+      ? `YOU ARE THE SECURITIES COMMISSION ACT 2015 (SCA 2015) EXPERT. You have ONLY the Securities Commission Act 2015 loaded. This is YOUR Act. Every question the user asks should be answered from THIS Act first.
+
+ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST:
+The user has selected "SCA 2015 Expert" mode. They EXPECT answers from the Securities Commission Act 2015. You MUST rigorously and exhaustively search YOUR loaded Act before even considering that the answer might be elsewhere. NEVER redirect the user to "SCA 2015 Expert" — you ARE the SCA 2015 Expert.
+
+MANDATORY SEARCH RULES (EXECUTE IN THIS ORDER):
+1. EXHAUSTIVE SELF-SEARCH: Search the ENTIRE Securities Commission Act 2015 text — every Part, Division, and Section 2 (Interpretation). Extract ALL keywords from the user's question and scan for EVERY occurrence throughout the Act. Check section headings, body text, penalty provisions, schedules, and cross-references within the Act.
+2. CHECK SECTION HEADINGS: Scan section titles/headings for matches to the question's subject matter. If the user asks about "Chairman appointment" or "notice of appointment" or "publication," look for sections titled "Chairman," "Appointment," "Term of Office" etc.
+3. NEVER GRAB AN UNRELATED SECTION: If you cannot find a section that directly addresses the question, do NOT quote a loosely related section and force-fit it.
+4. ANSWER IF FOUND: If ANY relevant provision exists in the SCA 2015 — even tangential or definitional — quote it and provide your full analysis. Do NOT redirect.
+5. REDIRECT ONLY AS LAST RESORT: ONLY if after exhaustively searching your entire Act you find ZERO relevant provisions, then and ONLY then may you say: "After thoroughly searching the Securities Commission Act 2015, this specific topic does not appear to be addressed in this Act. For a complete answer, consider switching to [suggested mode]." Even then, quote any SCA 2015 provisions that provide supplementary context.
+6. COMMON SCA 2015 TOPICS — KEY SECTIONS TO CHECK:
+   - Chairman appointment & publication → Section 9 (Chairman)
+   - Commission independence → Section 6 (Independence)
+   - Term of office → Section 12 (Term of Office)
+   - Commission powers & functions → Sections 4, 5, 7, 8
+   - Delegation → Section 11 (Delegation)
+   - Appointment Committee → Section 18
+   - Definitions → Section 2 (Interpretation)
+
+Here is the text of the Securities Commission Act 2015:\n\n${sca2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
       : `You are an expert on the Securities Commission Act 2015. Your primary goal is to answer questions and provide information based on your knowledge of the Act. \n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
   },
   {
     id: 'merged_acts_expert',
     title: 'All Acts Expert',
     prompt: useKnowledgeBase
-      ? `You are an expert on the Capital Market Act 2015, the Central Depositories Act 2015, the Securities Act 1997, and the Securities Commission Act 2015. Your primary goal is to answer questions and provide information based on the text of these Acts provided below.\n\nHere are the texts of the Acts:\n\nCapital Market Act 2015:\n${cma2015PromptText}\n\nCentral Depositories Act 2015:\n${cda2015PromptText}\n\nSecurities Act 1997:\n${sa1997PromptText}\n\nSecurities Commission Act 2015:\n${sca2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
+      ? `You are an expert on the Capital Market Act 2015, the Central Depositories Act 2015, the Securities Act 1997, and the Securities Commission Act 2015. Your primary goal is to answer questions and provide information based on the text of these Acts provided below.
+
+CRITICAL INSTRUCTION — CORRECT ACT SELECTION & THOROUGH SEARCH:
+You have ALL four Acts loaded. When the user asks a question, you MUST:
+
+STEP 1 — IDENTIFY THE PRIMARY ACT based on subject matter:
+- Depository, deposited securities, computer systems, depositors, securities accounts → Central Depositories Act 2015
+- Stock exchange, derivatives exchange, licensing, capital market products, trading → Capital Market Act 2015
+- Commission structure, Chairman, powers, appointments, governance, Commissioners → Securities Commission Act 2015
+- Securities generally (pre-2015 framework), prospectus, expert liability → Securities Act 1997
+
+STEP 2 — THOROUGH KEYWORD SEARCH: Extract keywords from the question and search for ALL occurrences across ALL four Acts. Check:
+- Section headings/titles that match the subject matter
+- Interpretation sections (Section 2) of ALL Acts for defined terms
+- Every Part, Division, and Subdivision — not just the first match
+
+STEP 3 — QUOTE FROM THE CORRECT ACT FIRST: The primary Act's provision is the main answer. Provisions from other Acts are supplementary cross-references.
+
+STEP 4 — VERIFY BEFORE CITING: Only cite section numbers you can confirm exist in the loaded text. Never guess or invent section numbers.
+
+Never say a term is undefined without checking the Interpretation section of EVERY Act. Never say "this is covered in another Act" without quoting it — you have all four Acts loaded.
+
+Here are the texts of the Acts:\n\nCapital Market Act 2015:\n${cma2015PromptText}\n\nCentral Depositories Act 2015:\n${cda2015PromptText}\n\nSecurities Act 1997:\n${sa1997PromptText}\n\nSecurities Commission Act 2015:\n${sca2015PromptText}\n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
       : `You are an expert on the Capital Market Act 2015, the Central Depositories Act 2015, the Securities Act 1997, and the Securities Commission Act 2015. Please answer questions based on your general knowledge of these Acts, as the specific knowledge base is currently disabled. \n\n${SHARED_LEGAL_EXPERT_INSTRUCTIONS}`
   }
 ];
@@ -164,6 +423,7 @@ const AIHub = () => {
   const [isChatFullScreen, setIsChatFullScreen] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null); // For copy feedback
   const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false);
+  const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
 
   const [uploadedSharePointFiles, setUploadedSharePointFiles] = useState<UploadedFile[]>([]);
   const [isLoadingFiles, setIsLoadingFiles] = useState(true);
@@ -188,12 +448,70 @@ const AIHub = () => {
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const userScrolledUpRef = useRef(false);
+  const isProgrammaticScrollRef = useRef(false);
+  const lastScrollTimeRef = useRef(0);
+  const pendingScrollRef = useRef<number | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
-  const scrollToBottom = () => {
-    if (messagesContainerRef.current) {
+  const scrollToBottom = (force = false) => {
+    if (!messagesContainerRef.current) return;
+    if (!force && userScrolledUpRef.current) return;
+
+    const now = Date.now();
+    const THROTTLE_MS = 200; // Only scroll at most once every 200ms during typing
+
+    const doScroll = () => {
+      if (!messagesContainerRef.current) return;
+      if (!force && userScrolledUpRef.current) return; // Re-check in case user scrolled up during the delay
+      isProgrammaticScrollRef.current = true;
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      lastScrollTimeRef.current = Date.now();
+      requestAnimationFrame(() => {
+        isProgrammaticScrollRef.current = false;
+      });
+    };
+
+    if (force) {
+      // Force scrolls (e.g. button click, typing finished) happen immediately
+      if (pendingScrollRef.current) cancelAnimationFrame(pendingScrollRef.current);
+      doScroll();
+    } else if (now - lastScrollTimeRef.current >= THROTTLE_MS) {
+      // Enough time has passed, scroll immediately
+      doScroll();
+    } else if (!pendingScrollRef.current) {
+      // Schedule a scroll for when the throttle window expires
+      const delay = THROTTLE_MS - (now - lastScrollTimeRef.current);
+      pendingScrollRef.current = window.setTimeout(() => {
+        pendingScrollRef.current = null;
+        doScroll();
+      }, delay) as unknown as number;
     }
   };
+
+  const handleScrollToBottomClick = () => {
+    userScrolledUpRef.current = false;
+    setShowScrollToBottom(false);
+    scrollToBottom(true);
+  };
+
+  // Detect when user manually scrolls up to pause auto-scroll
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // Ignore scroll events caused by programmatic scrollToBottom calls
+      if (isProgrammaticScrollRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+      userScrolledUpRef.current = !isAtBottom;
+      setShowScrollToBottom(!isAtBottom);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const lastMessage = chatMessages[chatMessages.length - 1];
@@ -235,11 +553,12 @@ const AIHub = () => {
   }, [chatMessages]); // Rerun when a new AI message starts typing or chatMessages array ref changes
 
   useEffect(() => {
-    // More robust scroll to bottom, especially after images or content that might change height
-    const timer = setTimeout(() => {
-      scrollToBottom();
-    }, 50); // A small delay can help if content is still rendering/reflowing
-    return () => clearTimeout(timer);
+    if (!userScrolledUpRef.current) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
   }, [chatMessages]);
 
   useEffect(() => {
@@ -454,8 +773,12 @@ const AIHub = () => {
       return;
     }
 
-    const messageToSend = manualMessage || query.trim(); // Use manual message if provided, else use query state
+    const messageToSend = manualMessage || query.trim();
     if (!messageToSend) return;
+
+    // Reset scroll lock when user sends a new message
+    userScrolledUpRef.current = false;
+    setShowScrollToBottom(false);
 
     const newUserMessage: ChatMessage = {
       id: uuidv4(),
@@ -518,24 +841,13 @@ const AIHub = () => {
     }
 
     const currentMode = aiModes.find(mode => mode.id === currentAiModeId);
-    // Construct conversation history for Gemini API
+    // Construct conversation history for Gemini API (only real user/model turns)
     const conversationHistory: any[] = [];
 
-    // Add system instruction as the very first "user" message to ensure compatibility with v1 API
-    if (currentMode?.prompt) {
-      conversationHistory.push({
-        role: 'user',
-        parts: [{ text: `System Instruction: ${currentMode.prompt}` }]
-      });
-      conversationHistory.push({
-        role: 'model',
-        parts: [{ text: "Understood. I will follow these instructions." }]
-      });
-    }
-
     const previousMessages = chatMessages
-      .filter((msg, index) => index !== 0)
+      .filter((msg, index) => index !== 0) // Skip initial greeting
       .filter(msg => msg.sender === 'user' || (msg.sender === 'ai' && !msg.isTyping))
+      .filter(msg => !msg.text.startsWith('Error:') && !msg.text.startsWith('AI is not configured')) // Filter error/system messages
       .map(msg => ({
         role: msg.sender === 'user' ? 'user' : 'model',
         parts: [{ text: msg.fullText || msg.text }],
@@ -550,17 +862,25 @@ const AIHub = () => {
 
     const requestBody: any = {
       contents: conversationHistory,
+      // Native system_instruction via v1beta — treated as a dedicated system turn by the model
+      ...(currentMode?.prompt && {
+        system_instruction: {
+          parts: [{ text: currentMode.prompt }]
+        }
+      }),
+      generationConfig: {
+        temperature: 0.1,        // Low temperature for precise, deterministic legal analysis
+        topP: 0.85,
+        maxOutputTokens: 8192,   // Allow full-length analysis with Hohfeldian tables
+      },
     };
-
-    // Legacy system_instruction field removed for v1 compatibility
-    // if (systemInstruction) { ... }
 
     try {
       // logger.info('[AIHub Chat] Sending message to Gemini API directly...', { mode: currentMode?.title });
 
       const cleanApiKey = effectiveApiKey.trim();
       const targetModel = modelName || 'gemini-1.5-flash';
-      let apiUrl = `https://generativelanguage.googleapis.com/v1/models/${targetModel}:generateContent?key=${cleanApiKey}`;
+      let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${cleanApiKey}`;
 
       // Create new AbortController for this request
       const controller = new AbortController();
@@ -587,11 +907,11 @@ const AIHub = () => {
 
         // Parse follow-up questions
         let followUpQuestions: string[] = [];
-        const followUpMatch = aiResponseText.match(/<followups>(.*?)<\/followups>/);
+        const followUpMatch = aiResponseText.match(/<followups>([\s\S]*?)<\/followups>/);
         if (followUpMatch) {
-          followUpQuestions = followUpMatch[1].split('|').map(q => q.trim());
-          // Remove tags from the text
-          aiResponseText = aiResponseText.replace(/<followups>.*?<\/followups>/, '').trim();
+          followUpQuestions = followUpMatch[1].split('|').map(q => q.trim()).filter(q => q.length > 0);
+          // Remove tags from the text (also handles newlines within tags)
+          aiResponseText = aiResponseText.replace(/<followups>[\s\S]*?<\/followups>/, '').trim();
         }
 
         const newAiMessage: ChatMessage = {
@@ -951,6 +1271,9 @@ const AIHub = () => {
               </CardTitle>
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => setIsInfoDialogOpen(true)} className="h-8 w-8 text-intranet-primary hover:text-intranet-primary/80" title="How this AI works">
+                <Info size={16} />
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setIsClearChatDialogOpen(true)} className="h-8 w-8" title="Clear chat">
                 <Trash2 size={16} />
               </Button>
@@ -1084,7 +1407,8 @@ const AIHub = () => {
                                 return (
                                   <blockquote
                                     className={cn(
-                                      "border-l-4 pl-4 py-2 my-4 italic rounded-r-md whitespace-pre-wrap",
+                                      "border-l-4 pl-4 py-2 my-4 italic rounded-r-md",
+                                      "[&>*:first-child]:mt-0",
                                       isNote
                                         ? "bg-blue-50/50 border-blue-500 text-blue-900 dark:bg-blue-900/20 dark:text-blue-100 dark:border-blue-400 font-medium"
                                         : "border-gray-300 dark:border-gray-600 bg-gray-50/50 dark:bg-gray-800/50"
@@ -1147,6 +1471,17 @@ const AIHub = () => {
               </div>
             )}
           </div>
+          {showScrollToBottom && !shouldShowPlaceholder && (
+            <div className="flex justify-center -mt-2 mb-2">
+              <button
+                onClick={handleScrollToBottomClick}
+                className="flex items-center gap-1 px-3 py-1 text-xs text-gray-600 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 hover:shadow transition-all duration-200 animate-in fade-in slide-in-from-top-1"
+              >
+                <ArrowDown size={12} />
+                Scroll to latest
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSendChatMessage} className={cn("flex gap-2 items-center", isFullScreenInstance && "max-w-3xl mx-auto w-full pt-2 pb-4 px-2")}>
             <Input
@@ -1438,6 +1773,467 @@ const AIHub = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* AI System Information Dialog */}
+      <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-intranet-primary/5 to-transparent">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Brain className="h-6 w-6 text-intranet-primary" />
+              How the AI Legal Expert Works
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">
+              Understanding the architecture, analytical framework, and output structure of the AI Assistant
+            </p>
+          </DialogHeader>
+          <ScrollArea className="max-h-[calc(90vh-100px)] px-6 py-4">
+            <div className="space-y-6 pb-6">
+
+              {/* Current Mode Info */}
+              <div className="rounded-lg border bg-amber-50/50 border-amber-200 p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Settings className="h-4 w-4 text-amber-600" />
+                  <span className="font-semibold text-sm text-amber-800">Current Configuration</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="bg-white border-amber-300 text-amber-700">
+                    Mode: {aiModes.find(m => m.id === currentAiModeId)?.title || 'Unknown'}
+                  </Badge>
+                  <Badge variant="outline" className={cn("bg-white", useKnowledgeBase ? "border-green-300 text-green-700" : "border-red-300 text-red-700")}>
+                    Knowledge Base: {useKnowledgeBase ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                  <Badge variant="outline" className="bg-white border-blue-300 text-blue-700">
+                    Model: Google Gemini ({modelName})
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Section 1: Prompt Architecture */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Layers className="h-5 w-5 text-intranet-primary" />
+                  1. Prompt Architecture
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Each response is generated using a <strong>multi-layered prompt system</strong> that combines three components injected as a single system instruction to the AI model:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-lg border p-3 bg-blue-50/50">
+                    <div className="font-semibold text-sm text-blue-800 mb-1">Layer 1: Mode Identity</div>
+                    <p className="text-xs text-muted-foreground">
+                      Defines the AI's expert persona and <strong>5 mandatory search rules</strong>: thorough keyword search of the entire Act, section heading matching, prohibition on unrelated sections, redirect rules for wrong-Act queries, and primary-Act-first quoting order.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border p-3 bg-green-50/50">
+                    <div className="font-semibold text-sm text-green-800 mb-1">Layer 2: Full Act Text</div>
+                    <p className="text-xs text-muted-foreground">
+                      The <strong>complete, word-for-word legislative text</strong> of the selected Act is embedded directly into the prompt. This is not a summary — it is the full statute (thousands of lines), enabling direct quoting and cross-referencing.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border p-3 bg-purple-50/50">
+                    <div className="font-semibold text-sm text-purple-800 mb-1">Layer 3: Analysis Framework</div>
+                    <p className="text-xs text-muted-foreground">
+                      A shared analytical framework (~200 lines) that transforms the AI from a reference tool into an <strong>advanced legal analyst</strong>. Detailed in the sections below.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 2: Available Knowledge Bases */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <BookOpenCheck className="h-5 w-5 text-intranet-primary" />
+                  2. Available Knowledge Bases (Legislative Acts)
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  When the Knowledge Base toggle is <strong>ON</strong>, the AI has the complete text of these Acts loaded in its context window:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { name: 'Capital Market Act 2015', file: 'CMA2015.txt', mode: 'CMA 2015 Expert', topics: 'Stock exchange, derivatives, licensing, capital market products, trading' },
+                    { name: 'Central Depositories Act 2015', file: 'CDA2015.txt', mode: 'CDA 2015 Expert', topics: 'Depository, deposited securities, computer systems, depositors, securities accounts' },
+                    { name: 'Securities Act 1997', file: 'SA1997.txt', mode: 'SA 1997 Expert', topics: 'Pre-2015 securities framework, prospectus, expert liability' },
+                    { name: 'Securities Commission Act 2015', file: 'SCA2015.txt', mode: 'SCA 2015 Expert', topics: 'Commission structure, Chairman, powers, appointments, governance' },
+                  ].map((act) => (
+                    <div key={act.file} className="rounded-lg border p-3 text-sm">
+                      <div className="font-semibold">{act.name}</div>
+                      <div className="text-xs text-muted-foreground mt-1"><strong>Mode:</strong> {act.mode}</div>
+                      <div className="text-xs text-muted-foreground"><strong>Covers:</strong> {act.topics}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-lg border p-3 bg-slate-50 text-sm">
+                  <div className="font-semibold">All Acts Expert Mode</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Loads <strong>all four Acts simultaneously</strong> and applies a 4-step methodology: (1) Identify primary Act by subject matter, (2) Thorough keyword search across all Acts, (3) Quote from correct Act first, (4) Verify before citing.
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 3: Mandatory Search Methodology */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Search className="h-5 w-5 text-intranet-primary" />
+                  3. Mandatory Search Methodology
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Before writing <strong>any</strong> response, the AI is required to execute this 5-step search process:
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { step: '1', title: 'Keyword Extraction', desc: 'Extract key nouns and legal concepts from the user\'s question (e.g., "Chairman," "appointment," "notice," "publish").' },
+                    { step: '2', title: 'Section-by-Section Scan', desc: 'Search for EVERY occurrence of those keywords throughout the ENTIRE Act text — not just the Interpretation section.' },
+                    { step: '3', title: 'Table of Contents Check', desc: 'Scan section headings for titles that match the subject matter of the question.' },
+                    { step: '4', title: 'Interpretation Section Scan', desc: 'Always check Section 2 (Interpretation) of ALL loaded Acts for defined terms relevant to the question.' },
+                    { step: '5', title: 'Don\'t Stop at First Match', desc: 'Continue searching for ALL related sections. Multiple sections often interact and must be analyzed together.' },
+                  ].map((item) => (
+                    <div key={item.step} className="flex gap-3 items-start">
+                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-intranet-primary text-white flex items-center justify-center text-xs font-bold">{item.step}</div>
+                      <div>
+                        <div className="font-semibold text-sm">{item.title}</div>
+                        <div className="text-xs text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 4: Cross-Reference Resolution */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Workflow className="h-5 w-5 text-intranet-primary" />
+                  4. Cross-Reference Resolution (Critical Rule)
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  The AI follows a strict <strong>7-rule cross-reference protocol</strong> to ensure completeness:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                  {[
+                    { rule: 'Follow References', desc: 'When one Act references a section in another, look up and quote the SUBSTANTIVE provision — don\'t stop at the definitional reference.' },
+                    { rule: 'Quote Both Provisions', desc: 'First quote the referencing provision, then quote the full substantive provision from the other Act.' },
+                    { rule: 'Search All Loaded Acts', desc: 'When a concept spans multiple Acts, search across ALL available Act texts for a complete answer.' },
+                    { rule: 'Trace the Full Chain', desc: 'If a referenced provision itself cross-references another section, follow that chain until reaching the operative rule.' },
+                    { rule: 'Never Defer Unnecessarily', desc: 'If the referenced Act is loaded in context, cite it directly — never say "refer to another Act."' },
+                    { rule: 'Subject-Matter Routing', desc: 'Depository → CDA 2015; Trading/Licensing → CMA 2015; Commission governance → SCA 2015; Pre-2015 → SA 1997.' },
+                    { rule: 'Check All Interpretation Sections', desc: 'Never say a term is "undefined" without checking Section 2 of EVERY loaded Act.' },
+                    { rule: 'Anti-Hallucination Rule', desc: 'Only cite section numbers that can be VERIFIED in the loaded Act text. Never invent or guess section numbers.' },
+                  ].map((item, i) => (
+                    <div key={i} className="rounded border p-2 bg-slate-50/50">
+                      <div className="font-semibold text-slate-700">{item.rule}</div>
+                      <div className="text-muted-foreground mt-0.5">{item.desc}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 5: Analysis Framework */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <GraduationCap className="h-5 w-5 text-intranet-primary" />
+                  5. Legal Analysis Framework
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  The AI applies a <strong>5-phase analytical framework</strong> derived from advanced legal interpretation theory:
+                </p>
+
+                {/* Phase I */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-intranet-primary">Phase I</Badge>
+                    <span className="font-semibold text-sm">Syntactic & Lexical Forensics</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Analyzes the grammatical architecture of every provision using established canons of statutory interpretation:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Last Antecedent Rule</div>
+                      <div className="text-muted-foreground">Limiting clause modifies only the nearest preceding noun</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Series-Qualifier Canon</div>
+                      <div className="text-muted-foreground">Determines if a modifier applies to the whole list or just the nearest item</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Ejusdem Generis</div>
+                      <div className="text-muted-foreground">General words after specific items are limited to the same class</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Noscitur a Sociis</div>
+                      <div className="text-muted-foreground">Ambiguous words take meaning from surrounding context</div>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-1 mt-2">
+                    <p><strong>Operative Word Hierarchy:</strong> "Shall" = mandatory obligation | "Must" = clearer mandatory | "May" = discretionary | "Will" = ambiguous (flagged) | "Should" = precatory/advisory</p>
+                    <p><strong>Critical Distinctions:</strong> Covenant vs. Condition Precedent | Notwithstanding Hierarchy mapping</p>
+                  </div>
+                </div>
+
+                {/* Phase II */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-intranet-primary">Phase II</Badge>
+                    <span className="font-semibold text-sm">Hohfeldian Analysis & Logical Structure</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Maps every legal relationship using Wesley Newcomb Hohfeld's framework of <strong>jural correlatives</strong>, the gold standard in analytical jurisprudence:
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="border p-2 text-left font-semibold">Category</th>
+                          <th className="border p-2 text-left font-semibold">Party A Holds</th>
+                          <th className="border p-2 text-left font-semibold">Party B Holds</th>
+                          <th className="border p-2 text-left font-semibold">Significance</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="border p-2 font-medium">Right / Duty</td>
+                          <td className="border p-2">Right to performance</td>
+                          <td className="border p-2">Strict Duty to perform</td>
+                          <td className="border p-2">Directly enforceable. Look for "shall," "is entitled to"</td>
+                        </tr>
+                        <tr className="bg-slate-50">
+                          <td className="border p-2 font-medium">Privilege / No-Right</td>
+                          <td className="border p-2">Freedom to act</td>
+                          <td className="border p-2">No right to stop Party A</td>
+                          <td className="border p-2">Cannot be restrained. Look for "may" granting discretion</td>
+                        </tr>
+                        <tr>
+                          <td className="border p-2 font-medium">Power / Liability</td>
+                          <td className="border p-2">Power to alter legal relation</td>
+                          <td className="border p-2">Liability to alteration</td>
+                          <td className="border p-2">e.g., approve, terminate, revoke. Requires procedural compliance</td>
+                        </tr>
+                        <tr className="bg-slate-50">
+                          <td className="border p-2 font-medium">Immunity / Disability</td>
+                          <td className="border p-2">Protection from legal action</td>
+                          <td className="border p-2">Cannot assert a claim</td>
+                          <td className="border p-2">Only explicit shields — "shall not be liable" language</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Also applies <strong>Syllogistic Reasoning</strong> (Major Premise → Minor Premise → Conclusion) and <strong>Fallacy Detection</strong> (circular reasoning, non sequitur, equivocation).
+                  </p>
+                </div>
+
+                {/* Phase III */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-intranet-primary">Phase III</Badge>
+                    <span className="font-semibold text-sm">Canon Warfare (Llewellyn Defense)</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    For every canon of construction applied, the AI identifies the <strong>counter-canon</strong> an opposing argument would deploy. Based on Karl Llewellyn's "thrust and parry" framework:
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-slate-100">
+                          <th className="border p-2 text-left font-semibold">Canon (Thrust)</th>
+                          <th className="border p-2 text-left font-semibold">Counter-Canon (Parry)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr><td className="border p-2">Plain Meaning: Apply text exactly as written</td><td className="border p-2">Absurdity Doctrine: Literal text cannot apply if it leads to absurd results</td></tr>
+                        <tr className="bg-slate-50"><td className="border p-2">Expressio Unius: Inclusion of one implies exclusion of others</td><td className="border p-2">Contextualism: The text was a non-exhaustive list of examples</td></tr>
+                        <tr><td className="border p-2">Specific Beats General: Specific clause overrides general</td><td className="border p-2">Document as a Whole: No clause should be rendered meaningless</td></tr>
+                        <tr className="bg-slate-50"><td className="border p-2">Ejusdem Generis: General words limited to same category</td><td className="border p-2">Noscitur a Sociis: General term is deliberately broad</td></tr>
+                        <tr><td className="border p-2">Last Antecedent: Modifier attaches to nearest noun</td><td className="border p-2">Series-Qualifier: Modifier at list's end applies to all items</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Phase IV */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-intranet-primary">Phase IV</Badge>
+                    <span className="font-semibold text-sm">Jurisdictional Context (PNG Securities Law)</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Governing Framework</div>
+                      <div className="text-muted-foreground">SCA 2015, CMA 2015, CDA 2015, SA 1997</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Regulatory Hierarchy</div>
+                      <div className="text-muted-foreground">Legislation → Regulatory Instruments → Market Rules → SCPNG Guidelines → Industry Practice</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Interpretation Standards</div>
+                      <div className="text-muted-foreground">PNG Interpretation Act + Commonwealth precedent (Australia, UK)</div>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded">
+                      <div className="font-semibold">Penalty Provisions</div>
+                      <div className="text-muted-foreground">Identifies penalty type, maximum fine/imprisonment, and strict vs. mens rea liability</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phase V */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge className="bg-intranet-primary">Phase V</Badge>
+                    <span className="font-semibold text-sm">Black Swan Stress Test</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    For high-stakes provisions, the AI stress-tests across five dimensions:
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    {['Edge Cases', 'Interaction Effects', 'Enforcement Gaps', 'Definitional Gaps', 'Temporal Issues'].map((item) => (
+                      <Badge key={item} variant="outline" className="bg-red-50 border-red-200 text-red-700">{item}</Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 6: Expected Output Structure */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Target className="h-5 w-5 text-intranet-primary" />
+                  6. Expected Response Structure
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Every response follows this <strong>mandatory output format</strong>:
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { num: '1', title: 'Direct Statutory Quote', desc: 'Word-for-word quote from the relevant Act(s) using formatted quote boxes with Section number, subsections, and paragraphs. Multi-Act queries get separate labeled quote boxes.', color: 'bg-blue-100 text-blue-800' },
+                    { num: '2', title: 'Syntactic Analysis', desc: 'Analysis of EVERY operative word (shall, may, must, if, subject to, provided that) in all quoted provisions. Maps modifier scope for every clause.', color: 'bg-green-100 text-green-800' },
+                    { num: '3', title: 'Hohfeldian Mapping Table', desc: 'Complete relationship table covering ALL parties and ALL legal relations (Right/Duty, Privilege/No-Right, Power/Liability, Immunity/Disability).', color: 'bg-purple-100 text-purple-800' },
+                    { num: '4', title: 'Practical Implications', desc: 'What the provision actually DOES — obligations triggered, penalties exposed, enforcement mechanisms available, procedural steps required.', color: 'bg-amber-100 text-amber-800' },
+                    { num: '5', title: 'Cross-References & Interactions', desc: 'ALL related sections across ALL loaded Acts — referenced by, references to, appeals, revocation, enforcement, and definitions.', color: 'bg-teal-100 text-teal-800' },
+                    { num: '6', title: 'Risk Flags (Minimum 3)', desc: 'Specific risks citing the EXACT language that creates each risk. Generic observations are prohibited — each risk must reference specific statutory wording.', color: 'bg-red-100 text-red-800' },
+                    { num: '7', title: 'Follow-Up Questions (3)', desc: 'Three contextually relevant follow-up questions to guide deeper exploration of the topic.', color: 'bg-indigo-100 text-indigo-800' },
+                  ].map((item) => (
+                    <div key={item.num} className="flex gap-3 items-start">
+                      <Badge className={cn("flex-shrink-0 mt-0.5", item.color)}>{item.num}</Badge>
+                      <div>
+                        <div className="font-semibold text-sm">{item.title}</div>
+                        <div className="text-xs text-muted-foreground">{item.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 7: Master Analytical Checklist */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-intranet-primary" />
+                  7. Quality Assurance — Master Analytical Checklist
+                </h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Every response is validated against this <strong>9-point checklist</strong>:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
+                  {[
+                    'Cross-reference resolution — follow ALL references and quote substantive provisions',
+                    'Identify every modifier and map its grammatical scope',
+                    'Distinguish obligations as Covenant or Condition Precedent',
+                    'Restate ALL relationships in Hohfeldian terms (complete table)',
+                    'Build a syllogism for each core legal argument',
+                    'Identify applicable canons AND their counter-canons',
+                    'Apply PNG jurisdictional context and regulatory hierarchy',
+                    'Stress-test for minimum 3 specific risks (edge cases, enforcement gaps)',
+                    'Identify ALL related sections: referenced by, references to, appeals, enforcement, definitions',
+                  ].map((item, i) => (
+                    <div key={i} className="flex gap-2 items-start p-2 rounded bg-green-50/50 border border-green-100">
+                      <span className="text-green-600 flex-shrink-0 mt-0.5">✓</span>
+                      <span className="text-muted-foreground">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 8: Accuracy Safeguards */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-500" />
+                  8. Accuracy Safeguards & Limitations
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="rounded-lg border border-green-200 p-3 bg-green-50/30">
+                    <div className="font-semibold text-sm text-green-800 mb-2">Built-in Safeguards</div>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• <strong>Anti-hallucination rule:</strong> Only cites section numbers verified in loaded text</li>
+                      <li>• <strong>Force-fit prohibition:</strong> Cannot quote unrelated sections to fill gaps</li>
+                      <li>• <strong>Redirect protocol:</strong> Directs to correct Act mode when question is off-topic</li>
+                      <li>• <strong>Definition verification:</strong> Must check all Acts' Section 2 before saying a term is undefined</li>
+                      <li>• <strong>Full-text embedding:</strong> Quotes directly from the statute, not from memory or training data</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-amber-200 p-3 bg-amber-50/30">
+                    <div className="font-semibold text-sm text-amber-800 mb-2">Known Limitations</div>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• AI-generated analysis is <strong>not a substitute for professional legal advice</strong></li>
+                      <li>• The AI may occasionally misinterpret complex multi-clause provisions</li>
+                      <li>• Cross-reference chains may not be followed to completion in rare edge cases</li>
+                      <li>• Hohfeldian categorizations involve analytical judgment and may differ from expert opinion</li>
+                      <li>• Always cross-check quoted text against the official gazetted Act</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Section 9: Technical Details */}
+              <div className="space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-intranet-primary" />
+                  9. Technical Details
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-slate-50 rounded border">
+                    <div className="font-semibold">AI Model</div>
+                    <div className="text-muted-foreground">Google Gemini ({modelName})</div>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded border">
+                    <div className="font-semibold">Response Delivery</div>
+                    <div className="text-muted-foreground">Character-by-character streaming animation</div>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded border">
+                    <div className="font-semibold">Context Window</div>
+                    <div className="text-muted-foreground">Full Act text + conversation history</div>
+                  </div>
+                  <div className="p-2 bg-slate-50 rounded border">
+                    <div className="font-semibold">Analysis Framework</div>
+                    <div className="text-muted-foreground">~200 lines of structured legal instructions</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer disclaimer */}
+              <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4 mt-4">
+                <p className="text-xs text-amber-800 text-center">
+                  <strong>Disclaimer:</strong> This AI assistant provides AI-calculated insights based on legislative acts. It is <strong>not</strong> a substitute for professional legal advice. You must always cross-check the AI's outputs against the official gazetted legislation and consult qualified legal professionals for formal opinions.
+                </p>
+              </div>
+
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </PageLayout>
   );
 };

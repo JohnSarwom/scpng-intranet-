@@ -45,6 +45,9 @@ interface StrategyAnalyticsProps {
     kpis: any[];
     unitObjectives: any[];
     orgHierarchy?: any[];
+    divisions?: any[];
+    units?: any[];
+    officerProfiles?: any[];
 }
 
 const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
@@ -54,6 +57,9 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
     kpis,
     unitObjectives,
     orgHierarchy = [],
+    divisions = [],
+    units = [],
+    officerProfiles = [],
 }) => {
     const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
 
@@ -115,6 +121,9 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
                 milestones={milestones}
                 unitObjectives={unitObjectives}
                 orgHierarchy={orgHierarchy}
+                divisions={divisions}
+                units={units}
+                officerProfiles={officerProfiles}
             />
         </div>
     );

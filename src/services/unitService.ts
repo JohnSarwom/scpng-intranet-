@@ -48,8 +48,21 @@ export class UnitService {
             MissionStatement: unit.missionStatement || null,
             CoreFunctions: unit.coreFunctions ? JSON.stringify(unit.coreFunctions) : '[]',
             Achievements: unit.achievements ? JSON.stringify(unit.achievements) : '[]',
-            StatutoryDuties: unit.statutoryDuties ? JSON.stringify(unit.statutoryDuties) : '[]'
+            StatutoryDuties: unit.statutoryDuties || '',
+            SortOrder: unit.totalStaff || 0
         };
+    }
+
+    private parseStatutoryDuties(raw: string | undefined): string {
+        if (!raw) return '';
+        if (raw.startsWith('[') || raw.startsWith('"')) {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed.join('\n\n');
+                if (typeof parsed === 'string') return parsed;
+            } catch { /* not valid JSON, use as-is */ }
+        }
+        return raw;
     }
 
     private mapFromSharePointItem(item: any): MockUnitData {
@@ -64,7 +77,7 @@ export class UnitService {
             parentDivision: item.fields.ParentDivision || '',
             primaryContact: { label: 'Primary Contact', email: item.fields.ContactEmail || '' },
             location: item.fields.Location || '',
-            totalStaff: 0, // Should be computed dynamically based on Officer Profiles
+            totalStaff: item.fields.SortOrder || 0,
             manager: {
                 name: item.fields.ManagerName || '',
                 quote: item.fields.ManagerQuote || ''
@@ -72,7 +85,7 @@ export class UnitService {
             missionStatement: item.fields.MissionStatement || '',
             coreFunctions: parseJsonFallback(item.fields.CoreFunctions, []),
             achievements: parseJsonFallback(item.fields.Achievements, []),
-            statutoryDuties: parseJsonFallback(item.fields.StatutoryDuties, [])
+            statutoryDuties: this.parseStatutoryDuties(item.fields.StatutoryDuties)
         };
     }
 

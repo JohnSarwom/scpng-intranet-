@@ -24,7 +24,6 @@ const allTabs = [
   { id: 'assets', label: 'Assets', icon: Box, tooltip: 'Manage Assets' },
   { id: 'invoices', label: 'Invoices', icon: FileText, tooltip: 'Manage Asset Invoices' },
   { id: 'maintenance', label: 'Maintenance', icon: Wrench, tooltip: 'Asset Maintenance Records' },
-  { id: 'decommissioned', label: 'Decommissioned', icon: Trash2, tooltip: 'View Decommissioned Assets' },
   { id: 'decommissioned', label: 'Decommissioned', icon: Trash2, tooltip: 'View Decommissioned Assets' }
 ];
 

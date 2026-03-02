@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3, Trash2, Maximize, Minimize, Database } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -10,11 +22,14 @@ import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
 import { serializeStrategyContext } from '@/utils/strategyAnalyticsUtils';
 import { STRATEGY_QUICK_QUESTIONS, STRATEGY_QUESTION_LIBRARY } from './strategyQuestions';
 import strategyCalculationLogic from '@/prompts/strategyCalculationLogic.txt?raw';
+import { cn } from '@/lib/utils';
 import {
     AIChatPanel,
     StaticQuestionLibrarySidebar,
     type AIChatMessage,
 } from '@/components/shared/ai-chat';
+
+type DataSourceFilter = 'all' | 'objectives' | 'unit_objectives' | 'kras' | 'kpis' | 'milestones' | 'divisions' | 'units' | 'staff_profiles' | 'org_hierarchy';
 
 const STRATEGY_AI_SYSTEM_PROMPT = `You are the SCPNG Strategy Intelligence Assistant — an AI analyst embedded within the Securities Commission of Papua New Guinea's intranet platform.
 
@@ -57,6 +72,9 @@ interface StrategyAIChatProps {
     milestones: any[];
     unitObjectives: any[];
     orgHierarchy?: any[];
+    divisions?: any[];
+    units?: any[];
+    officerProfiles?: any[];
 }
 
 const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
@@ -66,6 +84,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     milestones,
     unitObjectives,
     orgHierarchy = [],
+    divisions = [],
+    units = [],
+    officerProfiles = [],
 }) => {
     const [expanded, setExpanded] = useState(false);
     const [query, setQuery] = useState('');
@@ -80,6 +101,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     ]);
     const [isSending, setIsSending] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+    const [isChatFullScreen, setIsChatFullScreen] = useState(false);
+    const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false);
+    const [dataSourceFilter, setDataSourceFilter] = useState<DataSourceFilter>('all');
 
     const [apiKey, setApiKey] = useState('');
     const [isConfigLoading, setIsConfigLoading] = useState(true);
@@ -89,6 +113,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const briefTriggeredRef = useRef(false);
+    const userScrolledUpRef = useRef(false);
 
     // Teaser metrics for collapsed view
     const teaserMetrics = useMemo(() => {
@@ -108,11 +133,72 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const { inProgress: msalInProgress } = useMsal();
     const graphContext = useMicrosoftGraph();
 
-    const scrollToBottom = () => {
-        if (messagesContainerRef.current) {
+    const INITIAL_GREETING = "Hello! I'm your Strategy Intelligence Assistant. Ask me anything about strategic objectives, divisional performance, KPIs, or execution progress.";
+
+    // Data source options for the dropdown
+    const dataSourceOptions: { value: DataSourceFilter; label: string; count: number }[] = [
+        { value: 'all', label: 'All Data', count: objectives.length + unitObjectives.length + kras.length + kpis.length + milestones.length + divisions.length + units.length + officerProfiles.length + orgHierarchy.length },
+        { value: 'objectives', label: 'Strategic Objectives', count: objectives.length },
+        { value: 'unit_objectives', label: 'Unit Objectives', count: unitObjectives.length },
+        { value: 'kras', label: 'KRAs', count: kras.length },
+        { value: 'kpis', label: 'KPIs', count: kpis.length },
+        { value: 'milestones', label: 'Milestones', count: milestones.length },
+        { value: 'divisions', label: 'Divisions', count: divisions.length },
+        { value: 'units', label: 'Units', count: units.length },
+        { value: 'staff_profiles', label: 'Staff Profiles', count: officerProfiles.length },
+        { value: 'org_hierarchy', label: 'Org Hierarchy', count: orgHierarchy.length },
+    ];
+
+    // Filter data based on selected source
+    const getFilteredData = () => {
+        const empty: any[] = [];
+        switch (dataSourceFilter) {
+            case 'objectives': return { objectives, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
+            case 'unit_objectives': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
+            case 'kras': return { objectives: empty, kras, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
+            case 'kpis': return { objectives: empty, kras: empty, kpis, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
+            case 'milestones': return { objectives: empty, kras: empty, kpis: empty, milestones, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
+            case 'divisions': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions, units: empty, officerProfiles: empty };
+            case 'units': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units, officerProfiles: empty };
+            case 'staff_profiles': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles };
+            case 'org_hierarchy': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy, divisions: empty, units: empty, officerProfiles: empty };
+            default: return { objectives, kras, kpis, milestones, unitObjectives, orgHierarchy, divisions, units, officerProfiles };
+        }
+    };
+
+    const handleClearChat = () => {
+        setChatMessages([{
+            id: uuidv4(),
+            sender: 'ai',
+            text: INITIAL_GREETING,
+            isTyping: false,
+            timestamp: new Date(),
+        }]);
+        setQuery('');
+        setIsClearChatDialogOpen(false);
+    };
+
+    const scrollToBottom = (force = false) => {
+        if (messagesContainerRef.current && (force || !userScrolledUpRef.current)) {
             messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
     };
+
+    // Detect when user manually scrolls up to pause auto-scroll
+    useEffect(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            // Consider "at bottom" if within 50px of the bottom
+            const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+            userScrolledUpRef.current = !isAtBottom;
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, [expanded]); // re-attach when panel expands
 
     // Typing animation
     useEffect(() => {
@@ -160,8 +246,10 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     }, [chatMessages]);
 
     useEffect(() => {
-        const timer = setTimeout(() => scrollToBottom(), 50);
-        return () => clearTimeout(timer);
+        if (!userScrolledUpRef.current) {
+            const timer = setTimeout(() => scrollToBottom(), 50);
+            return () => clearTimeout(timer);
+        }
     }, [chatMessages]);
 
     // Fetch API key
@@ -240,6 +328,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         const messageToSend = manualMessage || query.trim();
         if (!messageToSend) return;
 
+        // Reset scroll lock when user sends a new message
+        userScrolledUpRef.current = false;
+
         setChatMessages((prev) => [
             ...prev,
             { id: uuidv4(), sender: 'user', text: messageToSend, timestamp: new Date() },
@@ -263,8 +354,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
             return;
         }
 
+        const filtered = getFilteredData();
         const strategyContext = serializeStrategyContext(
-            objectives, kras, kpis, milestones, unitObjectives, orgHierarchy
+            filtered.objectives, filtered.kras, filtered.kpis, filtered.milestones, filtered.unitObjectives, filtered.orgHierarchy, filtered.divisions, filtered.units, filtered.officerProfiles
         );
         const systemContext = STRATEGY_AI_SYSTEM_PROMPT
             .replace('{strategyDataContext}', strategyContext)
@@ -279,7 +371,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                 role: 'model',
                 parts: [
                     {
-                        text: `Understood. I have loaded ${objectives.length} strategic objectives, ${unitObjectives.length} unit-level objectives, ${kras.length} KRAs, ${kpis.length} KPIs, and ${milestones.length} milestones from the SCPNG SharePoint system. I will analyze this data to provide data-driven strategic insights.`,
+                        text: `Understood. I have loaded ${filtered.objectives.length} strategic objectives, ${filtered.unitObjectives.length} unit-level objectives, ${filtered.kras.length} KRAs, ${filtered.kpis.length} KPIs, ${filtered.milestones.length} milestones, ${filtered.divisions.length} divisions, ${filtered.units.length} units, and ${filtered.officerProfiles.length} staff profiles from the SCPNG SharePoint system. I will analyze this data to provide data-driven strategic insights.`,
                     },
                 ],
             },
@@ -379,19 +471,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         setTimeout(() => setCopiedMessageId(null), 2000);
     };
 
-    // Header slot: live data status + quick-question chips
+    // Header slot: quick-question chips only
     const chatHeaderSlot = (
-        <div className="p-4 space-y-3">
-            <div className="flex items-center gap-3 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-                <span className="text-[11px] text-green-700 dark:text-green-400 font-medium">
-                    Live data connected — {objectives.length} Strategic Objectives,&nbsp;
-                    {unitObjectives.length} Unit Objectives, {kras.length} KRAs,&nbsp;
-                    {kpis.length} KPIs, {milestones.length} Milestones,&nbsp;
-                    {orgHierarchy.length} Org Hierarchy entries loaded from SharePoint
-                </span>
-            </div>
-
+        <div className="p-4">
             <div>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Quick Analysis
@@ -415,32 +497,83 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         </div>
     );
 
-    return (
-        <Card className="animate-fade-in overflow-hidden">
-            {/* Collapsible card header — same pattern as AIHub */}
-            <CardHeader
-                className="border-b border-border pb-4 cursor-pointer"
-                onClick={() => setExpanded(!expanded)}
+    const renderChatInterface = (isFullScreenInstance = false) => (
+        <Card className={cn(
+            "flex flex-col h-full",
+            isFullScreenInstance
+                ? "w-full rounded-none border-none shadow-none"
+                : "animate-fade-in overflow-hidden"
+        )}>
+            <CardHeader className={cn(
+                isFullScreenInstance ? "border-b py-3 px-4" : "border-b border-border pb-4",
+                !isFullScreenInstance && !expanded && "cursor-pointer"
+            )}
+                onClick={!isFullScreenInstance && !expanded ? () => setExpanded(true) : undefined}
             >
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <Bot className="w-5 h-5 text-intranet-primary" />
+                        {isFullScreenInstance && (
+                            <img src="/images/SCPNG Original Logo.png" alt="SCPNG Logo" className="h-8 w-auto" />
+                        )}
+                        {!isFullScreenInstance && <Bot className="w-5 h-5 text-intranet-primary" />}
                         <CardTitle className="text-lg">Strategy Intelligence</CardTitle>
                     </div>
                     <div className="flex items-center gap-2">
-                        {!expanded && (
-                            <span className="text-xs text-muted-foreground">
-                                Click to expand AI analysis
-                            </span>
+                        {(expanded || isFullScreenInstance) && (
+                            <>
+                                {/* Clear chat button */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => { e.stopPropagation(); setIsClearChatDialogOpen(true); }}
+                                    className="h-8 w-8"
+                                    title="Clear chat"
+                                >
+                                    <Trash2 size={16} />
+                                </Button>
+
+                                {/* Data source dropdown */}
+                                <Select value={dataSourceFilter} onValueChange={(v) => setDataSourceFilter(v as DataSourceFilter)}>
+                                    <SelectTrigger className="w-[200px] text-xs h-8" onClick={(e) => e.stopPropagation()}>
+                                        <Database className="mr-1 h-3 w-3" />
+                                        <SelectValue placeholder="Select Data Source" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {dataSourceOptions.map(opt => (
+                                            <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                                                {opt.label} ({opt.count})
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Fullscreen toggle */}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => { e.stopPropagation(); setIsChatFullScreen(!isChatFullScreen); }}
+                                    className="h-8 w-8"
+                                    title={isChatFullScreen ? "Exit full screen" : "Enter full screen"}
+                                >
+                                    {isChatFullScreen ? <Minimize size={16} /> : <Maximize size={16} />}
+                                </Button>
+                            </>
                         )}
-                        {expanded
-                            ? <ChevronDown className="w-4 h-4" />
-                            : <ChevronUp className="w-4 h-4" />
-                        }
+                        {!isFullScreenInstance && (
+                            <div
+                                className="cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+                            >
+                                {expanded
+                                    ? <ChevronDown className="w-4 h-4" />
+                                    : <ChevronUp className="w-4 h-4" />
+                                }
+                            </div>
+                        )}
                     </div>
                 </div>
-                {!expanded && (
-                    <div className="mt-2">
+                {!isFullScreenInstance && !expanded && (
+                    <div className="mt-2 cursor-pointer" onClick={() => setExpanded(true)}>
                         <CardDescription className="mb-2">AI-powered strategic analysis and insights</CardDescription>
                         {objectives.length > 0 && (
                             <div className="flex flex-wrap gap-3">
@@ -464,11 +597,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                 )}
             </CardHeader>
 
-            {expanded && (
-                <CardContent className="p-0 overflow-hidden">
-                    {/* Two-column layout matching AIHub: chat (left) + question library (right) */}
-                    <div className="flex h-[640px]">
-
+            {(expanded || isFullScreenInstance) && (
+                <CardContent className={cn("p-0 overflow-hidden", isFullScreenInstance && "flex-1")}>
+                    <div className={cn("flex", isFullScreenInstance ? "h-full" : "h-[640px]")}>
                         {/* LEFT — AIChatPanel with header slot */}
                         <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-r border-border">
                             <AIChatPanel
@@ -489,7 +620,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                             />
                         </div>
 
-                        {/* RIGHT — Question Library (same styling as AIHub sidebar) */}
+                        {/* RIGHT — Question Library */}
                         <div className="w-80 shrink-0 overflow-hidden border-l border-border">
                             <StaticQuestionLibrarySidebar
                                 categories={STRATEGY_QUESTION_LIBRARY}
@@ -498,11 +629,46 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                                 className="h-full"
                             />
                         </div>
-
                     </div>
                 </CardContent>
             )}
         </Card>
+    );
+
+    return (
+        <>
+            {/* Normal (inline) view */}
+            {!isChatFullScreen && renderChatInterface(false)}
+
+            {/* Fullscreen overlay — portaled to document.body to cover sidebar nav */}
+            {isChatFullScreen && ReactDOM.createPortal(
+                <div className="fixed inset-0 z-[9999] flex flex-col p-0 m-0 bg-background dark:bg-intranet-dark">
+                    {renderChatInterface(true)}
+                </div>,
+                document.body
+            )}
+
+            {/* Clear chat confirmation dialog */}
+            <AlertDialog open={isClearChatDialogOpen} onOpenChange={setIsClearChatDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Clear Chat History?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete your current conversation history. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleClearChat}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                        >
+                            Clear Chat
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 };
 

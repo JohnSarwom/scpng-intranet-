@@ -550,6 +550,10 @@ const OrgChart = () => {
     });
 
     const handleUnitClick = (unitName: string) => {
+        if (unitName === "Executive Division") {
+            handleDivisionClick(unitName);
+            return;
+        }
         const unitData = rawUnits.find(u => u.unitName === unitName);
         if (unitData) {
             const unitProfiles = profiles.filter(p => p.unit === unitData.unitName);
@@ -575,9 +579,7 @@ const OrgChart = () => {
                 achievements: [
                     { title: "Quarterly Target Met", date: "Q1 2024", description: "Exceeded performance metrics.", icon: "award" }
                 ],
-                statutoryDuties: [
-                    "Perform duties assigned by the director in accordance with regulations."
-                ]
+                statutoryDuties: "Perform duties assigned by the director in accordance with regulations."
             });
         }
     };
@@ -604,7 +606,7 @@ const OrgChart = () => {
                 missionStatement: `To provide direction and leadership to the ${divName}.`,
                 subDepartments: [],
                 achievements: [],
-                statutoryDuties: []
+                statutoryDuties: ''
             });
         }
     };

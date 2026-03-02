@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
-import { X, Building2, AtSign, MapPin, Users, Network, Shield, TrendingUp, Globe, Rocket, Award, Scale, BookOpen, Briefcase, FileSearch, ShieldAlert, Share2, Printer, Flag, Edit, Save, Ban, Loader2, Plus, Trash2, Fingerprint } from 'lucide-react';
+import { X, Building2, AtSign, MapPin, Users, Network, Shield, TrendingUp, Globe, Rocket, Award, Scale, BookOpen, Briefcase, FileSearch, ShieldAlert, Share2, Printer, Flag, Edit, Save, Ban, Loader2, Fingerprint } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
@@ -38,7 +40,7 @@ export interface MockUnitData {
         description: string;
         icon: 'rocket' | 'award';
     }>;
-    statutoryDuties?: string[];
+    statutoryDuties?: string;
 }
 
 const getIcon = (iconName: string) => {
@@ -94,21 +96,38 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
             if (!graphClient) throw new Error("No Graph Client");
 
             const service = new UnitService(graphClient);
-            await service.updateUnit(unit.id, {
-                location: formData.location,
-                missionStatement: formData.missionStatement,
-                primaryContact: formData.primaryContact,
-                manager: formData.manager,
-                statutoryDuties: formData.statutoryDuties,
-            });
+            const isDemo = unit.id === 'demo';
+
+            if (isDemo) {
+                await service.addUnit({
+                    unitName: formData.unitName,
+                    parentDivision: formData.parentDivision,
+                    location: formData.location,
+                    missionStatement: formData.missionStatement,
+                    primaryContact: formData.primaryContact,
+                    manager: formData.manager,
+                    statutoryDuties: formData.statutoryDuties,
+                });
+            } else {
+                await service.updateUnit(unit.id, {
+                    location: formData.location,
+                    missionStatement: formData.missionStatement,
+                    primaryContact: formData.primaryContact,
+                    manager: formData.manager,
+                    statutoryDuties: formData.statutoryDuties,
+                });
+            }
 
             toast({
                 title: "Success",
-                description: "Unit updated successfully",
+                description: isDemo ? "Unit created and saved successfully" : "Unit updated successfully",
             });
 
             queryClient.invalidateQueries({ queryKey: ["strategyUnits"] });
             setIsEditing(false);
+            if (isDemo) {
+                onClose(); // Close to refresh with new live data
+            }
         } catch (error: any) {
             toast({
                 title: "Error",
@@ -133,29 +152,8 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
         });
     };
 
-    const handleDutyChange = (index: number, value: string) => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            const newArray = [...(prev.statutoryDuties || [])];
-            newArray[index] = value;
-            return { ...prev, statutoryDuties: newArray };
-        });
-    };
-
-    const addDuty = () => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            return { ...prev, statutoryDuties: [...(prev.statutoryDuties || []), ""] };
-        });
-    };
-
-    const removeDuty = (index: number) => {
-        setFormData(prev => {
-            if (!prev) return prev;
-            const newArray = [...(prev.statutoryDuties || [])];
-            newArray.splice(index, 1);
-            return { ...prev, statutoryDuties: newArray };
-        });
+    const handleDutyChange = (value: string) => {
+        setFormData(prev => prev ? { ...prev, statutoryDuties: value } : prev);
     };
 
     // Derived state for display
@@ -245,9 +243,18 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
 
                                         <div className="flex items-start gap-4">
                                             <Users className="w-5 h-5 text-[#FDF5E6] opacity-80 mt-0.5 shrink-0" />
-                                            <div>
+                                            <div className="w-full">
                                                 <p className="text-xs uppercase tracking-wider text-[#FDF5E6] opacity-70 font-semibold mb-1">Total Staff</p>
-                                                <p className="text-sm font-medium">{currentData.totalStaff} Employees</p>
+                                                {isEditing ? (
+                                                    <Input
+                                                        type="number"
+                                                        value={currentData.totalStaff}
+                                                        onChange={(e) => setFormData(prev => prev ? { ...prev, totalStaff: parseInt(e.target.value) || 0 } : prev)}
+                                                        className="h-8 px-2 text-sm bg-white/10 border-white/20 text-white placeholder-white/50 focus-visible:ring-1 focus-visible:ring-white"
+                                                    />
+                                                ) : (
+                                                    <p className="text-sm font-medium">{currentData.totalStaff} Employees</p>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -415,64 +422,41 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                                 )}
                                             </TabsContent>
 
-                                            <TabsContent value="duty" className="m-0 focus-visible:outline-none max-w-3xl">
+                                            <TabsContent value="duty" className="m-0 focus-visible:outline-none">
                                                 <div className="mb-8">
                                                     <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight pr-10">Statutory Duties</h2>
                                                     <p className="text-[#800020] font-bold text-sm uppercase tracking-wider mt-2">{currentData.unitName}</p>
                                                 </div>
 
-                                                <div className="space-y-6">
-                                                    {isEditing ? (
-                                                        <div className="space-y-4">
-                                                            {(currentData.statutoryDuties || []).map((duty, idx) => (
-                                                                <div key={idx} className="flex gap-3 items-start">
-                                                                    <div className="bg-gray-50 p-2 rounded-lg border border-gray-200 shrink-0 mt-1">
-                                                                        <Scale className="w-4 h-4 text-gray-500" />
-                                                                    </div>
-                                                                    <Textarea
-                                                                        value={duty}
-                                                                        onChange={(e) => handleDutyChange(idx, e.target.value)}
-                                                                        className="flex-1 min-h-[60px] text-sm"
-                                                                        placeholder="Enter duty description..."
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => removeDuty(idx)}
-                                                                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors mt-1 shrink-0"
-                                                                        title="Remove duty"
-                                                                    >
-                                                                        <Trash2 className="w-5 h-5" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                            <button
-                                                                onClick={addDuty}
-                                                                className="flex items-center gap-2 text-sm font-medium text-[#800020] hover:bg-red-50 px-4 py-2 rounded-lg transition-colors border border-dashed border-[#800020]/30 w-full justify-center"
-                                                            >
-                                                                <Plus className="w-4 h-4" />
-                                                                Add Statutory Duty
-                                                            </button>
+                                                {isEditing ? (
+                                                    <div className="space-y-3">
+                                                        <p className="text-xs text-gray-500">
+                                                            Supports markdown formatting: **bold**, *italic*, #### headings, bullet lists, numbered lists.
+                                                        </p>
+                                                        <Textarea
+                                                            value={currentData.statutoryDuties || ''}
+                                                            onChange={(e) => handleDutyChange(e.target.value)}
+                                                            className="w-full min-h-[400px] text-sm font-mono leading-relaxed resize-y"
+                                                            placeholder="Paste or type statutory duties content here. Markdown formatting is supported..."
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    currentData.statutoryDuties && currentData.statutoryDuties.trim().length > 0 ? (
+                                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                                                            <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900">
+                                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                                    {currentData.statutoryDuties}
+                                                                </ReactMarkdown>
+                                                            </div>
                                                         </div>
                                                     ) : (
-                                                        currentData.statutoryDuties && currentData.statutoryDuties.length > 0 ? (
-                                                            currentData.statutoryDuties.map((duty, idx) => (
-                                                                <div key={idx} className="flex gap-4 items-start bg-gray-50 border border-gray-100 p-5 rounded-xl">
-                                                                    <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100 shrink-0 mt-1">
-                                                                        <Scale className="w-5 h-5 text-[#800020]" />
-                                                                    </div>
-                                                                    <p className="text-gray-700 leading-relaxed text-sm">
-                                                                        {duty}
-                                                                    </p>
-                                                                </div>
-                                                            ))
-                                                        ) : (
-                                                            <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                                <Scale className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                                                <h5 className="text-gray-900 font-medium mb-1">No duties specified</h5>
-                                                                <p className="text-gray-500 text-sm">Statutory duties for this unit have not been documented yet.</p>
-                                                            </div>
-                                                        )
-                                                    )}
-                                                </div>
+                                                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                                                            <Scale className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                                            <h5 className="text-gray-900 font-medium mb-1">No duties specified</h5>
+                                                            <p className="text-gray-500 text-sm">Statutory duties for this unit have not been documented yet.</p>
+                                                        </div>
+                                                    )
+                                                )}
                                             </TabsContent>
                                         </div>
 

@@ -66,11 +66,25 @@ export class DivisionService {
             DirectorName: division.director?.name || null,
             DirectorQuote: division.director?.quote || null,
             MissionStatement: division.missionStatement || null,
-            StatutoryDuties: division.statutoryDuties ? JSON.stringify(division.statutoryDuties) : '[]',
+            StatutoryDuties: division.statutoryDuties || '',
             Achievements: division.achievements ? JSON.stringify(division.achievements) : '[]',
             SubDepartments: division.subDepartments ? JSON.stringify(division.subDepartments) : '[]',
-            DivisionImage: division.divisionImage || null
+            DivisionImage: division.divisionImage || null,
+            SortOrder: division.totalStaff || 0
         };
+    }
+
+    private parseStatutoryDuties(raw: string | undefined): string {
+        if (!raw) return '';
+        // Handle legacy data stored via JSON.stringify (array or quoted string)
+        if (raw.startsWith('[') || raw.startsWith('"')) {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed.join('\n\n');
+                if (typeof parsed === 'string') return parsed;
+            } catch { /* not valid JSON, use as-is */ }
+        }
+        return raw;
     }
 
     private mapFromSharePointItem(item: any): MockDivisionData {
@@ -85,14 +99,14 @@ export class DivisionService {
             branch: item.fields.Branch || '',
             primaryContact: { label: 'Primary Contact', email: item.fields.ContactEmail || '' },
             location: item.fields.Location || '',
-            totalStaff: 0, // Should be computed dynamically based on Officer Profiles
+            totalStaff: item.fields.SortOrder || 0,
             director: {
                 name: item.fields.DirectorName || '',
                 quote: item.fields.DirectorQuote || ''
             },
             missionStatement: item.fields.MissionStatement || '',
             achievements: parseJsonFallback(item.fields.Achievements, []),
-            statutoryDuties: parseJsonFallback(item.fields.StatutoryDuties, []),
+            statutoryDuties: this.parseStatutoryDuties(item.fields.StatutoryDuties),
             subDepartments: parseJsonFallback(item.fields.SubDepartments, []),
             divisionImage: item.fields.DivisionImage || undefined
         };

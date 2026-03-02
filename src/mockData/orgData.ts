@@ -9,7 +9,7 @@ export interface MockDivisionData {
     missionStatement: string;
     subDepartments: { name: string; description: string; icon: string }[];
     achievements: { title: string; date: string; description: string; icon: string }[];
-    statutoryDuties?: string[];
+    statutoryDuties?: string;
 }
 
 export interface MockUnitData {
@@ -23,7 +23,7 @@ export interface MockUnitData {
     missionStatement: string;
     coreFunctions: { name: string; description: string; icon: string }[];
     achievements: { title: string; date: string; description: string; icon: string }[];
-    statutoryDuties?: string[];
+    statutoryDuties?: string;
 }
 
 export const MOCK_DIVISIONS_DATA: Record<string, MockDivisionData> = {
@@ -62,11 +62,7 @@ export const MOCK_DIVISIONS_DATA: Record<string, MockDivisionData> = {
             { title: "ERP Migration", date: "Q3 2023", description: "Successfully migrated to the new integrated financial system ahead of schedule.", icon: "rocket" },
             { title: "Digital Transformation", date: "Q2 2023", description: "Completed phase 1 of the IT infrastructure upgrade.", icon: "award" }
         ],
-        statutoryDuties: [
-            "Manage the financial affairs and accounts of the Commission.",
-            "Oversee human resource development, recruitment, and staff welfare.",
-            "Maintain and upgrade the Commission's information technology infrastructure."
-        ]
+        statutoryDuties: "Manage the financial affairs and accounts of the Commission.\n\nOversee human resource development, recruitment, and staff welfare.\n\nMaintain and upgrade the Commission's information technology infrastructure."
     },
     "Licensing, Market & Supervision Division": {
         id: "lmsd",
@@ -86,11 +82,7 @@ export const MOCK_DIVISIONS_DATA: Record<string, MockDivisionData> = {
         achievements: [
             { title: "Revised Licensing Framework", date: "Q1 2024", description: "Implemented the new streamlined licensing process for brokers.", icon: "rocket" }
         ],
-        statutoryDuties: [
-            "Regulate and supervise the activities of stock exchanges, clearing houses, and central depositories.",
-            "License and supervise capital market intermediaries, including brokers, dealers, and investment advisors.",
-            "Enforce compliance with the Capital Market Act and related regulations to protect investors."
-        ]
+        statutoryDuties: "Regulate and supervise the activities of stock exchanges, clearing houses, and central depositories.\n\nLicense and supervise capital market intermediaries, including brokers, dealers, and investment advisors.\n\nEnforce compliance with the Capital Market Act and related regulations to protect investors."
     },
     "Legal Services Division": {
         id: "lsd",
@@ -107,11 +99,7 @@ export const MOCK_DIVISIONS_DATA: Record<string, MockDivisionData> = {
         achievements: [
             { title: "Capital Market Act Revision", date: "Q4 2023", description: "Successfully drafted amendments to the Capital Market Act.", icon: "award" }
         ],
-        statutoryDuties: [
-            "Provide legal advice to the Commission on statutory interpretations and regulatory actions.",
-            "Draft, review, and recommend amendments to capital market laws and regulations.",
-            "Represent the Commission in legal proceedings and enforcement actions."
-        ]
+        statutoryDuties: "Provide legal advice to the Commission on statutory interpretations and regulatory actions.\n\nDraft, review, and recommend amendments to capital market laws and regulations.\n\nRepresent the Commission in legal proceedings and enforcement actions."
     },
     "Research & Publication Division": {
         id: "rpd",
@@ -129,11 +117,7 @@ export const MOCK_DIVISIONS_DATA: Record<string, MockDivisionData> = {
         achievements: [
             { title: "Annual Market Report 2023", date: "Q1 2024", description: "Published the comprehensive annual overview of the PNG capital market.", icon: "rocket" }
         ],
-        statutoryDuties: [
-            "Conduct research and publish periodic reports on the performance and development of the capital market.",
-            "Develop and implement strategic plans for capital market growth and innovation.",
-            "Promote investor education and awareness programs."
-        ]
+        statutoryDuties: "Conduct research and publish periodic reports on the performance and development of the capital market.\n\nDevelop and implement strategic plans for capital market growth and innovation.\n\nPromote investor education and awareness programs."
     }
 };
 
@@ -154,10 +138,7 @@ export const MOCK_UNITS_DATA: Record<string, MockUnitData> = {
         achievements: [
             { title: "Digital Board Portal", date: "Q2 2023", description: "Implemented a paperless board meeting system.", icon: "rocket" }
         ],
-        statutoryDuties: [
-            "Maintain official records of all Commission proceedings.",
-            "Facilitate the legal and administrative duties of the executive board."
-        ]
+        statutoryDuties: "Maintain official records of all Commission proceedings.\n\nFacilitate the legal and administrative duties of the executive board."
     },
     "Licensing Unit": {
         id: "lic",
@@ -175,9 +156,6 @@ export const MOCK_UNITS_DATA: Record<string, MockUnitData> = {
         achievements: [
             { title: "E-Licensing Portal", date: "Q1 2024", description: "Launched the online application and renewal portal.", icon: "rocket" }
         ],
-        statutoryDuties: [
-            "Process applications for capital market licenses.",
-            "Maintain the official register of licensed intermediaries."
-        ]
+        statutoryDuties: "Process applications for capital market licenses.\n\nMaintain the official register of licensed intermediaries."
     }
 };

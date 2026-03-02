@@ -276,7 +276,7 @@ export class SharePointListSetupService {
                     DirectorName: item.director.name,
                     DirectorQuote: item.director.quote,
                     MissionStatement: item.missionStatement,
-                    StatutoryDuties: JSON.stringify(item.statutoryDuties || []),
+                    StatutoryDuties: item.statutoryDuties || '',
                     Achievements: JSON.stringify(item.achievements || []),
                     SubDepartments: JSON.stringify(item.subDepartments || []),
                     SortOrder: 0
@@ -316,7 +316,7 @@ export class SharePointListSetupService {
                     MissionStatement: item.missionStatement,
                     CoreFunctions: JSON.stringify(item.coreFunctions || []),
                     Achievements: JSON.stringify(item.achievements || []),
-                    StatutoryDuties: JSON.stringify(item.statutoryDuties || []),
+                    StatutoryDuties: item.statutoryDuties || '',
                     SortOrder: 0
                 };
                 await this.client.api(`/sites/${this.siteId}/lists/${unitsListId}/items`).post({ fields: spItem });
