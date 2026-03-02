@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import ContactDetailsModal from '@/components/contacts/ContactDetailsModal';
+import AddContactDialog from '@/components/contacts/AddContactDialog';
 import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
 
 const Contacts = () => {
@@ -24,6 +25,7 @@ const Contacts = () => {
   const [allContacts, setAllContacts] = useState<MicrosoftContact[]>([]);
   const [selectedContact, setSelectedContact] = useState<MicrosoftContact | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddContactOpen, setIsAddContactOpen] = useState(false);
   const { toast } = useToast();
   // const { isInitialized: photosInitialized } = useEmployeePhotos(); // Removed duplicate
   const [photoUrls, setPhotoUrls] = useState<Map<string, { profileUrl?: string; modalUrl?: string }>>(new Map());
@@ -540,7 +542,7 @@ const Contacts = () => {
                 Refresh
               </Button>
 
-              <Button className="whitespace-nowrap animate-fade-in btn-hover-effect" style={{ animationDelay: '0.2s' }}>
+              <Button className="whitespace-nowrap animate-fade-in btn-hover-effect" style={{ animationDelay: '0.2s' }} onClick={() => setIsAddContactOpen(true)}>
                 <Plus size={16} className="mr-1" />
                 Add Contact
               </Button>
@@ -639,6 +641,11 @@ const Contacts = () => {
         onClose={() => setIsModalOpen(false)}
         photoUrl={selectedContact?.emailAddresses?.[0]?.address ? photoUrls.get(selectedContact.emailAddresses[0].address)?.profileUrl : undefined}
         modalPhotoUrl={selectedContact?.emailAddresses?.[0]?.address ? photoUrls.get(selectedContact.emailAddresses[0].address)?.modalUrl : undefined}
+      />
+      <AddContactDialog
+        open={isAddContactOpen}
+        onOpenChange={setIsAddContactOpen}
+        onContactAdded={refetch}
       />
     </PageLayout>
   );

@@ -856,16 +856,16 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       // If we found the task in stale data
       if (currentColumnId) {
         // Compare with optimistic expectation
-        const intendedColumnId = optimisticTask.groupId || optimisticTask.status || ''; // Simplification
+        const intendedColumnId = optimisticTask.projectId || optimisticTask.status || ''; // Simplification
 
-        // Actually, we trust optimisticTask.groupId matches the bucket ID we put it in.
+        // Actually, we trust optimisticTask.projectId matches the bucket ID we put it in.
         // We need to move it from currentColumnId to the optimistic column.
 
         // NOTE: In boardData logic above, we placed tasks based on their PROPS data.
         // So 'currentColumnId' is where the SERVER thinks it is.
         // We want to force it to where WE think it is.
 
-        const targetColumnId = optimisticTask.groupId; // This should be the bucket ID
+        const targetColumnId = optimisticTask.projectId; // This should be the bucket ID
 
         if (targetColumnId && newBoardData[targetColumnId]) {
           // If server data matches optimistic data, we are good! Accessing props task...
@@ -974,7 +974,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     // Check if moved to a different column
     if (sourceColumnId !== destinationColumnId) {
       // 1. Optimistic Update: Update local state immediately
-      const updatedTask = { ...taskToMove!, groupId: destinationColumnId };
+      const updatedTask = { ...taskToMove!, projectId: destinationColumnId };
 
       // Store in ref to persist across prop updates
       optimisticUpdates.current.set(activeId, updatedTask);
@@ -1006,7 +1006,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       // We do NOT await this, letting it happen in background.
       const performUpdate = async () => {
         try {
-          await editTask(activeId, { groupId: destinationColumnId }, { suppressToast: true });
+          await editTask(activeId, { projectId: destinationColumnId }, { suppressToast: true });
 
           // Success confirmed by backend
           const taskTitle = taskToMove?.title || 'Task';
@@ -1017,7 +1017,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             title: "Task Moved",
             description: `Moved "${taskTitle}" to ${destTitle}`,
             action: (
-              <ToastAction altText="Undo" onClick={() => editTask(activeId, { groupId: sourceColumnId }, { suppressToast: false })}>
+              <ToastAction altText="Undo" onClick={() => editTask(activeId, { projectId: sourceColumnId }, { suppressToast: false })}>
                 Undo
               </ToastAction>
             ),

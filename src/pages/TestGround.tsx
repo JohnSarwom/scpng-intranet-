@@ -52,6 +52,9 @@ const TestGround = () => {
     const [isSeedingOfficers, setIsSeedingOfficers] = useState(false);
     const [isSettingUpOrgHierarchy, setIsSettingUpOrgHierarchy] = useState(false);
     const [isSettingUpTaskGroups, setIsSettingUpTaskGroups] = useState(false);
+    const [isSettingUpForms, setIsSettingUpForms] = useState(false);
+    const [isSettingUpDivisions, setIsSettingUpDivisions] = useState(false);
+    const [isSeedingDivisions, setIsSeedingDivisions] = useState(false);
 
     const handleSeedOfficerData = async () => {
         setIsSeedingOfficers(true);
@@ -158,6 +161,112 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpLists(false);
+        }
+    };
+
+    const handleSetupDivisionsAndUnits = async () => {
+        setIsSettingUpDivisions(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Creating Org Lists",
+                description: "Setting up Divisions and Units lists...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) {
+                throw new Error("Failed to initialize Graph client");
+            }
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupStrategyDivisionsAndUnitsLists();
+
+            setSetupResult(result);
+            if (result.success) {
+                toast({
+                    title: "✅ Success",
+                    description: "Divisions & Units lists created successfully.",
+                });
+            } else {
+                toast({
+                    title: "⚠️ Warning",
+                    description: result.message,
+                    variant: "destructive"
+                });
+            }
+        } catch (error: any) {
+            console.error('Setup failed:', error);
+            const result = {
+                success: false,
+                message: error.message || "An unexpected error occurred",
+                details: error
+            };
+            setSetupResult(result);
+            toast({
+                title: "❌ Error",
+                description: result.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpDivisions(false);
+        }
+    };
+
+    const handleSeedDivisionsAndUnits = async () => {
+        setIsSeedingDivisions(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🌱 Seeding Data",
+                description: "Populating Divisions and Units...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) {
+                throw new Error("Failed to initialize Graph client");
+            }
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedStrategyDivisionsAndUnits();
+
+            setSetupResult(result);
+            if (result.success) {
+                toast({
+                    title: "✅ Data Seeded",
+                    description: "Divisions & Units populated successfully.",
+                });
+            } else {
+                toast({
+                    title: "⚠️ Warning",
+                    description: result.message,
+                    variant: "destructive"
+                });
+            }
+        } catch (error: any) {
+            console.error('Seeding failed:', error);
+            const result = {
+                success: false,
+                message: error.message || "An unexpected error occurred",
+                details: error
+            };
+            setSetupResult(result);
+            toast({
+                title: "❌ Error",
+                description: result.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSeedingDivisions(false);
         }
     };
 
@@ -478,6 +587,48 @@ const TestGround = () => {
         }
     };
 
+    const handleSetupFormsEngine = async () => {
+        setIsSettingUpForms(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Deploying Forms Engine",
+                description: "Creating Form_Groups and Form_Registrations lists...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupFormsEngine();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Forms Engine Deployed!",
+                    description: "You can now manage form groups and registrations via SharePoint.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Forms Engine Setup failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Deployment Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpForms(false);
+        }
+    };
+
     const [isEnsuringAssignees, setIsEnsuringAssignees] = useState(false);
     const [isEnsuringCompletionDate, setIsEnsuringCompletionDate] = useState(false);
 
@@ -789,6 +940,31 @@ const TestGround = () => {
                 description: error.message,
                 variant: "destructive",
             });
+        } finally {
+            setIsSettingUpDocs(false);
+        }
+    };
+
+    const handleSetupDocumentCategories = async () => {
+        setIsSettingUpDocs(true);
+        try {
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.createDocumentCategoriesList();
+
+            if (result.success) {
+                toast({ title: "✅ Success", description: result.message });
+                setSetupResult({ success: true, message: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('Document Categories setup failed:', error);
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+            setSetupResult({ success: false, message: error.message, error });
         } finally {
             setIsSettingUpDocs(false);
         }
@@ -1445,6 +1621,49 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
+                {/* Forms Management Setup Card */}
+                <Card className="border-2 border-primary shadow-lg mb-6">
+                    <CardHeader className="bg-primary/5">
+                        <CardTitle className="flex items-center gap-2 text-primary text-xl">
+                            <FileText className="h-6 w-6" />
+                            Forms Management Setup
+                        </CardTitle>
+                        <CardDescription className="text-base">
+                            Initialize the backend infrastructure for the dynamic Forms Engine.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex gap-3 text-sm">
+                            <Info className="h-5 w-5 text-primary flex-shrink-0" />
+                            <p>
+                                This tool creates <strong>Form_Groups</strong> and <strong>Form_Registrations</strong> lists.
+                                These lists allow you to organize forms into categories and register templates dynamically.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupFormsEngine}
+                                disabled={isSettingUpForms || isSettingUpLists}
+                                size="lg"
+                                className="w-full gap-3 h-16 text-xl font-black shadow-md hover:shadow-lg transition-all"
+                            >
+                                {isSettingUpForms ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Deploying Forms Engine...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Rocket className="h-7 w-7" />
+                                        Deploy Forms Engine
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* SharePoint List Setup Card */}
                 <Card className="border-2 border-intranet-primary/20">
                     <CardHeader>
@@ -2055,7 +2274,7 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
-                {/* App Settings List Setup Card */}\n                {/* App Settings List Setup Card */}\n
+                {/* App Settings List Setup Card */}
                 <Card className="border-2 border-slate-500/20">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -2178,6 +2397,25 @@ const TestGround = () => {
                             </Button>
 
                             <Button
+                                onClick={handleSetupDocumentCategories}
+                                disabled={isSettingUpLists || isSettingUpOps || isSettingUpMarket || isSettingUpDocs}
+                                variant="outline"
+                                className="w-full gap-2 border-dashed border-purple-600/50 text-purple-700 hover:bg-purple-50"
+                            >
+                                {isSettingUpDocs ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                                        Setting up Categories...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-4 w-4 text-purple-600" />
+                                        Setup Document Categories List
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
                                 variant="outline"
                                 onClick={handleDeleteDocs}
                                 disabled={isSettingUpLists || isSettingUpOps || isSettingUpMarket || isSettingUpDocs}
@@ -2238,6 +2476,61 @@ const TestGround = () => {
                                 </>
                             )}
                         </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Organizational Units Setup Card */}
+                <Card className="border-2 border-cyan-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Network className="h-5 w-5 text-cyan-600" />
+                            Organizational Hierarchy Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Create Strategy_Divisions and Strategy_Units lists, and seed them with org data.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupDivisionsAndUnits}
+                                disabled={isSettingUpDivisions || isSeedingDivisions}
+                                size="lg"
+                                className="w-full bg-cyan-600 hover:bg-cyan-700"
+                            >
+                                {isSettingUpDivisions ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                        Creating Org Lists...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Settings className="h-5 w-5 mr-2" />
+                                        Create Divisions & Units Lists
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSeedDivisionsAndUnits}
+                                disabled={isSettingUpDivisions || isSeedingDivisions}
+                                variant="outline"
+                                size="lg"
+                                className="w-full gap-2 border-dashed border-cyan-600/50 text-cyan-700 hover:bg-cyan-50"
+                            >
+                                {isSeedingDivisions ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin text-cyan-600" />
+                                        Seeding Org Data...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-5 w-5 text-cyan-600" />
+                                        Seed Divisions & Units Data
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -2458,7 +2751,7 @@ const TestGround = () => {
                     <SharePointExplorer />
                 </div>
             </div>
-        </PageLayout >
+        </PageLayout>
     );
 };
 

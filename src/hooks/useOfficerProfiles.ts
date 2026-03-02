@@ -34,6 +34,7 @@ export const useOfficerProfiles = () => {
                 }
 
                 return {
+                    id: item.id,
                     name: f.Title || 'Unknown',
                     jobTitle: f.JobTitle || '',
                     email: f.Email || '',

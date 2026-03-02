@@ -17,10 +17,16 @@ import {
   Plus,
   Filter,
   Eye,
+  LucideIcon,
 } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { divisions } from '@/data/divisions';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormTemplate as FormTemplateType } from '@/types/forms';
+import { useForms } from '@/hooks/useForms';
+import { AddGroupDialog } from '@/components/forms/AddGroupDialog';
+import { AddFormDialog } from '@/components/forms/AddFormDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   defaultFormTemplates,
   leaveApplicationTemplate,
@@ -100,7 +106,45 @@ const Forms: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
   const [selectedDivision, setSelectedDivision] = useState<string>('');
+  const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+
   const navigate = useNavigate();
+  const { groups: dbGroups, registrations, loading, addGroup, addForm } = useForms();
+
+  // Helper to get Lucide icon from string
+  const getIcon = (iconName: string): LucideIcon => {
+    const Icon = (LucideIcons as any)[iconName];
+    return Icon || LucideIcons.FileText;
+  };
+
+  // Map database groups to FormCategory
+  const dynamicCategories = useMemo(() => {
+    return dbGroups.map(group => ({
+      id: group.id,
+      name: group.title,
+      description: group.description,
+      icon: getIcon(group.iconName),
+      forms: registrations
+        .filter(reg => reg.groupId === group.id)
+        .map(reg => {
+          const template = (defaultFormTemplates as any)[reg.templateId];
+          return {
+            id: reg.id,
+            title: reg.title || template?.title,
+            description: reg.description || template?.description,
+            status: reg.status,
+            estimatedTime: reg.estimatedTime || template?.estimatedTime || '5-10 mins',
+            lastUpdated: 'Recently',
+            requiredApprovals: template?.approvalSteps?.map((s: any) => s.approverRole) || []
+          } as FormTemplateType;
+        })
+    }));
+  }, [dbGroups, registrations]);
+
+  // Combine hardcoded and dynamic categories (or just use dynamic)
+  // For now, let's keep hardcoded if there are no dynamic groups, otherwise use dynamic
+  const activeCategories = dynamicCategories.length > 0 ? dynamicCategories : formCategories;
 
   // Real form templates
   const formTemplates: FormTemplateType[] = [
@@ -113,11 +157,11 @@ const Forms: React.FC = () => {
 
   // Filter forms based on division access and search
   const filteredCategories = useMemo(() => {
-    return formCategories.map(category => {
+    return activeCategories.map(category => {
       // Filter forms within category
       const filteredForms = category.forms.filter(form => {
-        // Division filter
-        const matchesDivision = !selectedDivision || form.divisionId === selectedDivision;
+        // Division filter (hardcoded categories have divisionId, dynamic ones might need one too)
+        const matchesDivision = !selectedDivision || (category as any).divisionId === selectedDivision;
 
         // Search filter
         const matchesSearch = !searchQuery ||
@@ -137,7 +181,7 @@ const Forms: React.FC = () => {
       // Or if we're on the specific tab for this category
       activeTab === category.id
     );
-  }, [searchQuery, selectedDivision, activeTab]);
+  }, [searchQuery, selectedDivision, activeTab, activeCategories]);
 
   const allForms = useMemo(() => {
     return filteredCategories.flatMap(category => category.forms);
@@ -247,9 +291,23 @@ const Forms: React.FC = () => {
                 </SelectContent>
               </Select>
 
-              <Button variant="outline" size="icon">
-                <Plus className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setIsAddFormOpen(true)}>
+                    <FileText className="h-4 w-4 mr-2" />
+                    Add New Form
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsAddGroupOpen(true)}>
+                    <Users className="h-4 w-4 mr-2" />
+                    Create New Group
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -258,7 +316,7 @@ const Forms: React.FC = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="all">All Forms ({allForms.length})</TabsTrigger>
-            {formCategories.map(category => (
+            {activeCategories.map(category => (
               <TabsTrigger key={category.id} value={category.id}>
                 {category.name}
               </TabsTrigger>
@@ -298,7 +356,7 @@ const Forms: React.FC = () => {
           </TabsContent>
 
           {/* Category-specific tabs */}
-          {formCategories.map(category => (
+          {activeCategories.map(category => (
             <TabsContent key={category.id} value={category.id} className="space-y-4 mt-6">
               <div className="flex items-center gap-3 mb-6">
                 <category.icon className="h-6 w-6 text-primary" />
@@ -327,6 +385,18 @@ const Forms: React.FC = () => {
           ))}
         </Tabs>
       </div>
+
+      <AddGroupDialog
+        open={isAddGroupOpen}
+        onOpenChange={setIsAddGroupOpen}
+        onAdd={addGroup}
+      />
+      <AddFormDialog
+        open={isAddFormOpen}
+        onOpenChange={setIsAddFormOpen}
+        groups={dbGroups}
+        onAdd={addForm}
+      />
 
     </PageLayout>
   );

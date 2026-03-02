@@ -4,6 +4,12 @@ import { Building2, Users, Mail, Phone, Maximize, Minimize, ZoomIn, ZoomOut, Rot
 import OfficerProfileModal, { type OfficerProfile } from './OfficerProfileModal';
 import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
+import { useDivisions } from '@/hooks/useDivisions';
+import { useUnits } from '@/hooks/useUnits';
+import DivisionModal, { type MockDivisionData } from './DivisionModal';
+import UnitModal, { type MockUnitData } from './UnitModal';
+
+// Removed MOCK_DIVISIONS_DATA and MOCK_UNITS_DATA
 
 // Using a distinct color palette based on the user's image
 // Dark Maroon: #600018 (Approximate from previous code, adjusting to match image)
@@ -14,13 +20,15 @@ import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
 const OrgNode = ({
     title,
     type = 'unit',
-    className = ''
+    className = '',
+    onClick
 }: {
     title: string;
     type?: 'ceo' | 'division' | 'unit' | 'highlight';
     className?: string;
+    onClick?: () => void;
 }) => {
-    const baseStyles = "flex items-center justify-center text-center px-4 py-3 rounded-md shadow-sm transition-all border w-full max-w-[220px] z-10 relative";
+    const baseStyles = `flex items-center justify-center text-center px-4 py-3 rounded-md shadow-sm transition-all border w-full max-w-[220px] z-10 relative ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-offset-2 hover:ring-[#800020]' : ''}`;
 
     let variantStyles = "";
 
@@ -42,7 +50,7 @@ const OrgNode = ({
     }
 
     return (
-        <div className={`${baseStyles} ${variantStyles} ${className}`}>
+        <div className={`${baseStyles} ${variantStyles} ${className}`} onClick={onClick}>
             {title}
         </div>
     );
@@ -97,6 +105,7 @@ interface ProfileUnit {
 interface ProfileDivision {
     divisionName: string;
     units: ProfileUnit[];
+    headOfficer?: OfficerProfile;
 }
 
 const OfficerCard = ({ officer, onClick }: { officer: OfficerProfile; onClick?: (officer: OfficerProfile) => void }) => {
@@ -145,7 +154,7 @@ const OfficerCard = ({ officer, onClick }: { officer: OfficerProfile; onClick?: 
     );
 };
 
-const StructureView = () => (
+const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { profileDivisions: ProfileDivision[], onDivisionClick: (divName: string) => void, onUnitClick: (unitName: string) => void }) => (
     <>
         {/* CEO Node */}
         <div className="flex flex-col items-center relative mb-12">
@@ -155,7 +164,7 @@ const StructureView = () => (
 
         {/* Office of the Chairman - intermediate tier */}
         <div className="flex flex-col items-center relative mb-12">
-            <OrgNode title={CHAIRMAN_OFFICE.divisionName} type="division" className="mb-6" />
+            <OrgNode title={CHAIRMAN_OFFICE.divisionName} type="division" className="mb-6" onClick={() => onDivisionClick(CHAIRMAN_OFFICE.divisionName)} />
             {/* Units under Chairman */}
             <div className="flex flex-col items-center w-full gap-3 relative">
                 <div
@@ -169,6 +178,7 @@ const StructureView = () => (
                             title={unit.unitName}
                             type={unit.isHighlight ? 'highlight' : 'unit'}
                             className="w-[90%]"
+                            onClick={() => onUnitClick(unit.unitName)}
                         />
                     </div>
                 ))}
@@ -179,9 +189,9 @@ const StructureView = () => (
 
         {/* Divisions row */}
         <div className="flex justify-center items-start w-full">
-            {ORG_DIVISIONS.map((division, index) => {
+            {profileDivisions.map((division, index) => {
                 const isFirst = index === 0;
-                const isLast = index === ORG_DIVISIONS.length - 1;
+                const isLast = index === profileDivisions.length - 1;
 
                 return (
                     <div key={index} className="flex flex-col items-center relative flex-1 min-w-[180px] px-2 lg:px-4">
@@ -193,6 +203,7 @@ const StructureView = () => (
                             title={division.divisionName}
                             type="division"
                             className="mb-6 w-full"
+                            onClick={() => onDivisionClick(division.divisionName)}
                         />
 
                         <div className="flex flex-col items-center w-full gap-3 relative">
@@ -209,6 +220,7 @@ const StructureView = () => (
                                                 title={unit.unitName}
                                                 type={'unit'}
                                                 className="w-[90%]"
+                                                onClick={() => onUnitClick(unit.unitName)}
                                             />
                                         </div>
                                     ))}
@@ -226,12 +238,16 @@ const ProfilesView = ({
     ceoOfficer,
     chairmanOfficeProfile,
     profileDivisions,
-    onOfficerClick
+    onOfficerClick,
+    onDivisionClick,
+    onUnitClick
 }: {
     ceoOfficer: OfficerProfile | null,
     chairmanOfficeProfile: any,
     profileDivisions: ProfileDivision[],
-    onOfficerClick: (officer: OfficerProfile) => void
+    onOfficerClick: (officer: OfficerProfile) => void,
+    onDivisionClick: (divName: string) => void,
+    onUnitClick: (unitName: string) => void
 }) => (
     <>
         {/* CEO Node + James Joshua card */}
@@ -248,7 +264,7 @@ const ProfilesView = ({
 
         {/* Office of the Chairman - intermediate tier */}
         <div className="flex flex-col items-center relative mb-12">
-            <OrgNode title={chairmanOfficeProfile.divisionName} type="division" className="mb-4" />
+            <OrgNode title={chairmanOfficeProfile.divisionName} type="division" className="mb-4" onClick={() => onDivisionClick(chairmanOfficeProfile.divisionName)} />
             {/* Executive Division on top, then Secretariat Unit below */}
             <div className="flex flex-col items-center gap-3 relative">
                 <div
@@ -259,17 +275,23 @@ const ProfilesView = ({
                 {/* Executive Division */}
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="w-px h-3 bg-gray-300"></div>
-                    <div className="bg-[#901025] border border-[#800020] text-white font-medium text-xs rounded-md px-3 py-2 text-center min-w-[180px] shadow-sm">
-                        {chairmanOfficeProfile.executiveDivision.unitName}
-                    </div>
+                    <OrgNode
+                        title={chairmanOfficeProfile.executiveDivision.unitName}
+                        type="unit"
+                        className="mb-2"
+                        onClick={() => onUnitClick(chairmanOfficeProfile.executiveDivision.unitName)}
+                    />
                 </div>
 
                 {/* Secretariat Unit with officers */}
                 <div className="relative z-10 flex flex-col items-center">
                     <div className="w-px h-3 bg-gray-300"></div>
-                    <div className="bg-[#FFF8E7] border border-amber-300 text-[#600018] font-bold text-xs rounded-md px-3 py-2 text-center min-w-[180px] shadow-sm mb-2">
-                        {chairmanOfficeProfile.secretariatUnit.unitName}
-                    </div>
+                    <OrgNode
+                        title={chairmanOfficeProfile.secretariatUnit.unitName}
+                        type="highlight"
+                        className="mb-2"
+                        onClick={() => onUnitClick(chairmanOfficeProfile.secretariatUnit.unitName)}
+                    />
                     <div className="w-[220px] flex flex-col gap-1.5">
                         {chairmanOfficeProfile.secretariatUnit.officers.map((officer: OfficerProfile, oIndex: number) => (
                             <OfficerCard key={oIndex} officer={officer} onClick={onOfficerClick} />
@@ -297,21 +319,31 @@ const ProfilesView = ({
                             title={division.divisionName}
                             type="division"
                             className="mb-6 w-full"
+                            onClick={() => onDivisionClick(division.divisionName)}
                         />
 
                         <div className="flex flex-col items-center w-full gap-4 relative">
-                            {division.units.length > 0 && (
+                            {(division.units.length > 0 || division.headOfficer) && (
                                 <>
                                     <div
-                                        className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
-                                        style={{ height: `calc(100% - 20px)` }}
+                                        className="absolute -top-6 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
                                     ></div>
-                                    {division.units.map((unit, uIndex) => (
+
+                                    {division.headOfficer && (
+                                        <div className="relative z-10 w-[95%] flex flex-col items-center mb-2">
+                                            <OfficerCard officer={division.headOfficer} onClick={onOfficerClick} />
+                                        </div>
+                                    )}
+
+                                    {division.units.length > 0 && division.units.map((unit, uIndex) => (
                                         <div key={uIndex} className="relative z-10 w-full flex flex-col items-center">
                                             <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300"></div>
-                                            <div className="bg-[#901025] border border-[#800020] text-white font-medium text-xs rounded-md px-3 py-2 text-center w-[90%] shadow-sm mb-2">
-                                                {unit.unitName}
-                                            </div>
+                                            <OrgNode
+                                                title={unit.unitName}
+                                                type="unit"
+                                                className="w-[90%] mb-2"
+                                                onClick={() => onUnitClick(unit.unitName)}
+                                            />
                                             <div className="w-[95%] flex flex-col gap-1.5">
                                                 {unit.officers.map((officer, oIndex) => (
                                                     <OfficerCard key={oIndex} officer={officer} onClick={onOfficerClick} />
@@ -338,6 +370,8 @@ const OrgChart = () => {
     const [zoom, setZoom] = useState(1);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [selectedOfficer, setSelectedOfficer] = useState<OfficerProfile | null>(null);
+    const [selectedDivision, setSelectedDivision] = useState<MockDivisionData | null>(null);
+    const [selectedUnit, setSelectedUnit] = useState<MockUnitData | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
     const handleZoomIn = useCallback(() => {
@@ -372,7 +406,13 @@ const OrgChart = () => {
 
     const zoomPercent = Math.round(zoom * 100);
 
-    const { data: rawProfiles = [], isLoading, error: fetchError } = useOfficerProfiles();
+    const { data: rawProfiles = [], isLoading: isProfilesLoading, error: profilesError } = useOfficerProfiles();
+    const { data: rawDivisions = [], isLoading: isDivisionsLoading, error: divisionsError } = useDivisions();
+    const { data: rawUnits = [], isLoading: isUnitsLoading, error: unitsError } = useUnits();
+
+    const isLoading = isProfilesLoading || isDivisionsLoading || isUnitsLoading;
+    const fetchError = profilesError || divisionsError || unitsError;
+
     const { getPhotosForEmails, getPhotoByFilename, isInitialized: photosInitialized } = useEmployeePhotos();
     const [photoUrls, setPhotoUrls] = useState<Map<string, { profileUrl?: string; modalUrl?: string }>>(new Map());
 
@@ -425,7 +465,7 @@ const OrgChart = () => {
     if (fetchError) {
         return (
             <div className="flex h-96 items-center justify-center text-red-500">
-                Failed to load profiles. Please ensure the SharePoint list is created and seeded.
+                Failed to load data. Please ensure the SharePoint lists are created and seeded.
             </div>
         );
     }
@@ -452,16 +492,122 @@ const OrgChart = () => {
     const profileDivisions: ProfileDivision[] = orgDivisionNames.map(divName => {
         const divProfiles = profiles.filter(p => p.division === divName);
         const staticDiv = ORG_DIVISIONS.find(d => d.divisionName === divName);
-        const unitNames = staticDiv ? staticDiv.units.map(u => u.unitName) : Array.from(new Set(divProfiles.map(p => p.unit).filter(Boolean)));
+        const staticUnitNames = staticDiv ? staticDiv.units.map(u => u.unitName) : [];
+        const dynamicUnitNames = Array.from(new Set(divProfiles.map(p => p.unit).filter(Boolean)));
+
+        const orderWeight = (name: string) => {
+            const lower = name.toLowerCase();
+            if (lower.includes('director') || lower === 'office of the director' || lower === 'head of division') return -1;
+            return 0;
+        };
+
+        const allUnitNamesSet = new Set([...staticUnitNames, ...dynamicUnitNames]);
+        const allUnitNames = Array.from(allUnitNamesSet).sort((a, b) => {
+            const weightA = orderWeight(a);
+            const weightB = orderWeight(b);
+            if (weightA !== weightB) return weightA - weightB;
+            const indexA = staticUnitNames.indexOf(a);
+            const indexB = staticUnitNames.indexOf(b);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a.localeCompare(b);
+        });
+
+        let headOfficer: OfficerProfile | undefined = divProfiles.find(p => {
+            const title = (p.jobTitle || '').toLowerCase();
+            return title.includes('director') || title === 'general counsel';
+        });
+
+        if (!headOfficer) {
+            headOfficer = divProfiles.find(p => {
+                const title = (p.jobTitle || '').toLowerCase();
+                return title.includes('oic') || title.includes('officer in charge');
+            });
+        }
+
+        if (!headOfficer) {
+            headOfficer = divProfiles.find(p => {
+                const title = (p.jobTitle || '').toLowerCase();
+                return title.includes('legal manager') || title.includes('manager');
+            });
+        }
 
         return {
             divisionName: divName,
-            units: unitNames.map(unitName => ({
-                unitName,
-                officers: divProfiles.filter(p => p.unit === unitName)
-            }))
+            headOfficer,
+            units: allUnitNames.map(unitName => {
+                let officers = divProfiles.filter(p => p.unit === unitName);
+                if (headOfficer) {
+                    officers = officers.filter(p => p.email !== headOfficer!.email);
+                }
+                return {
+                    unitName,
+                    officers
+                };
+            }).filter(u => u.officers.length > 0 || staticUnitNames.includes(u.unitName))
         };
     });
+
+    const handleUnitClick = (unitName: string) => {
+        const unitData = rawUnits.find(u => u.unitName === unitName);
+        if (unitData) {
+            const unitProfiles = profiles.filter(p => p.unit === unitData.unitName);
+            setSelectedUnit({
+                ...unitData,
+                totalStaff: unitProfiles.length > 0 ? unitProfiles.length : unitData.totalStaff
+            });
+        } else {
+            console.log("No live data for unit:", unitName);
+            // Fallback for demo purposes if unit doesn't exist
+            setSelectedUnit({
+                id: "demo",
+                unitName: unitName,
+                parentDivision: "Related Division",
+                primaryContact: { label: "Contact", email: "info@scpng.gov.pg" },
+                location: "HQ",
+                totalStaff: profiles.filter(p => p.unit === unitName).length || Math.floor(Math.random() * 10) + 2,
+                manager: { quote: "Dedicated to excellence in executing our core functions.", name: "Unit Manager" },
+                missionStatement: `To manage and execute the responsibilities of the ${unitName} effectively and efficiently.`,
+                coreFunctions: [
+                    { name: "Core Function 1", description: "Primary responsibility", icon: "book" }
+                ],
+                achievements: [
+                    { title: "Quarterly Target Met", date: "Q1 2024", description: "Exceeded performance metrics.", icon: "award" }
+                ],
+                statutoryDuties: [
+                    "Perform duties assigned by the director in accordance with regulations."
+                ]
+            });
+        }
+    };
+
+    const handleDivisionClick = (divName: string) => {
+        const divData = rawDivisions.find(d => d.divisionName === divName);
+        if (divData) {
+            const divProfiles = profiles.filter(p => p.division === divData.divisionName);
+            setSelectedDivision({
+                ...divData,
+                totalStaff: divProfiles.length > 0 ? divProfiles.length : divData.totalStaff
+            });
+        } else {
+            console.log("No live data for division:", divName);
+            // Fallback for demo purposes
+            setSelectedDivision({
+                id: "demo",
+                divisionName: divName,
+                branch: "General Branch",
+                primaryContact: { label: "Contact", email: "info@scpng.gov.pg" },
+                location: "HQ",
+                totalStaff: profiles.filter(p => p.division === divName).length || 15,
+                director: { quote: "Leading with vision to foster a robust market.", name: "Division Director" },
+                missionStatement: `To provide direction and leadership to the ${divName}.`,
+                subDepartments: [],
+                achievements: [],
+                statutoryDuties: []
+            });
+        }
+    };
 
     return (
         <div
@@ -544,13 +690,19 @@ const OrgChart = () => {
                 style={{ transform: `scale(${zoom})` }}
             >
                 {view === 'structure' ? (
-                    <StructureView />
+                    <StructureView
+                        profileDivisions={profileDivisions}
+                        onDivisionClick={handleDivisionClick}
+                        onUnitClick={handleUnitClick}
+                    />
                 ) : (
                     <ProfilesView
                         ceoOfficer={ceoOfficer}
                         chairmanOfficeProfile={chairmanOfficeProfile}
                         profileDivisions={profileDivisions}
                         onOfficerClick={setSelectedOfficer}
+                        onDivisionClick={handleDivisionClick}
+                        onUnitClick={handleUnitClick}
                     />
                 )}
             </div>
@@ -560,6 +712,19 @@ const OrgChart = () => {
                 officer={selectedOfficer}
                 open={!!selectedOfficer}
                 onClose={() => setSelectedOfficer(null)}
+            />
+
+            {/* Division Detail Modal */}
+            <DivisionModal
+                isOpen={!!selectedDivision}
+                onClose={() => setSelectedDivision(null)}
+                division={selectedDivision}
+            />
+
+            <UnitModal
+                isOpen={!!selectedUnit}
+                onClose={() => setSelectedUnit(null)}
+                unit={selectedUnit}
             />
         </div>
     );

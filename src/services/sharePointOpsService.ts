@@ -389,9 +389,9 @@ export class SharePointOpsService {
     async addTask(task: Partial<Task>, department?: string): Promise<Task> {
         if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
 
-        // Handle Project ID vs Bucket ID logic
-        let relatedProjectId = task.projectId ? Number(task.projectId) : null;
-        if (isNaN(relatedProjectId as number)) relatedProjectId = null;
+        // Handle Group ID logic — buckets come from Task Groups
+        let numericGroupId = task.projectId ? Number(task.projectId) : null;
+        if (isNaN(numericGroupId as number)) numericGroupId = null;
 
         // Update Tags to include bucket ID if it's not a real project
         const tags = this.updateTagsWithBucketId(task.tags || [], task.projectId);
@@ -411,8 +411,9 @@ export class SharePointOpsService {
                 // Lookups
                 RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
                 RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
-                RelatedProjectLookupId: relatedProjectId,
-                RelatedTaskGroupLookupId: task.groupId ? Number(task.groupId) : null
+                // Write group ID to BOTH lookups for consistency
+                RelatedProjectLookupId: numericGroupId,
+                RelatedTaskGroupLookupId: numericGroupId
             }
         };
 
@@ -458,16 +459,17 @@ export class SharePointOpsService {
             }
         }
 
-        // Handle Project ID vs Bucket ID logic for Updates
+        // Handle Project ID / Task Group ID logic for Updates
+        // Buckets in the UI come from Task Groups, so we always sync projectId to RelatedTaskGroupLookupId
         if (task.projectId !== undefined) {
-            let relatedProjectId = task.projectId ? Number(task.projectId) : null;
-            if (isNaN(relatedProjectId as number)) relatedProjectId = null;
-            fields.RelatedProjectLookupId = relatedProjectId;
+            let numericGroupId = task.projectId ? Number(task.projectId) : null;
+            if (isNaN(numericGroupId as number)) numericGroupId = null;
+
+            // Write to BOTH lookups for backwards compatibility
+            fields.RelatedProjectLookupId = numericGroupId;
+            fields.RelatedTaskGroupLookupId = numericGroupId;
 
             // Also update tags
-            // Note: We need existing tags to preserve them, but partial update might not have them.
-            // If tags ARE passed, use them. If not, we might overwrite?
-            // UI should pass tags in updateTask if possible.
             if (task.tags) {
                 const newTags = this.updateTagsWithBucketId(task.tags, task.projectId);
                 fields.Tags = newTags.join(',');
@@ -478,14 +480,15 @@ export class SharePointOpsService {
             fields.Tags = (task.tags || []).join(',');
         }
 
-
         // Lookups
         if (task.kra_id !== undefined) fields.RelatedKRALookupId = task.kra_id ? Number(task.kra_id) : null;
         if (task.kpi_id !== undefined) fields.RelatedKPILookupId = task.kpi_id ? Number(task.kpi_id) : null;
-        if (task.groupId !== undefined) fields.RelatedTaskGroupLookupId = task.groupId ? Number(task.groupId) : null;
-        // ProjectId handled above
-
-        // ProjectId handled above
+        // Also handle explicit groupId updates (sync both directions)
+        if (task.groupId !== undefined && task.projectId === undefined) {
+            const numericGroupId = task.groupId ? Number(task.groupId) : null;
+            fields.RelatedTaskGroupLookupId = isNaN(numericGroupId as number) ? null : numericGroupId;
+            fields.RelatedProjectLookupId = isNaN(numericGroupId as number) ? null : numericGroupId;
+        }
 
         // Fetch old task data to detect KPI linkage changes
         let oldKpiId: string | null = null;
@@ -1292,11 +1295,12 @@ export class SharePointOpsService {
         const tags = f.Tags ? f.Tags.split(',') : [];
 
         // Determine Project/Group ID:
-        // 1. Prefer explicit Lookup ID if available
-        // 2. Fall back to 'bucket:ID' found in Tags
-        let projectId = f.RelatedProjectLookupId?.toString();
+        // Buckets come from Task Groups, so prefer RelatedTaskGroupLookupId
+        // Fall back to RelatedProjectLookupId for backwards compatibility
+        // Last resort: 'bucket:ID' found in Tags
         let groupId = f.RelatedTaskGroupLookupId?.toString();
-        if (!projectId && !groupId) {
+        let projectId = groupId || f.RelatedProjectLookupId?.toString();
+        if (!projectId) {
             // legacy fallback
             projectId = this.getBucketIdFromTags(tags);
         }

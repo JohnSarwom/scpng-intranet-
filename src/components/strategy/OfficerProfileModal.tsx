@@ -5,10 +5,14 @@ import { Badge } from '@/components/ui/badge';
 import {
     X, User, AtSign, Briefcase, Activity,
     Mail, Phone, MapPin, Clock, Building2,
-    ChevronRight, Share2, Printer, Flag, FileText
+    ChevronRight, Share2, Printer, Flag, FileText, Pencil
 } from 'lucide-react';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 
 export interface OfficerProfile {
+    id?: string;
     name: string;
     jobTitle: string;
     email: string;
@@ -37,6 +41,8 @@ interface OfficerProfileModalProps {
 
 const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProps) => {
     const [activeTab, setActiveTab] = useState('about');
+    const { hasPermission, isAdmin } = useRoleBasedAuth();
+    const navigate = useNavigate();
 
     if (!officer) return null;
 
@@ -53,7 +59,7 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-            <DialogContent className="max-w-[960px] p-0 overflow-hidden rounded-2xl border-0 gap-0 [&>button]:hidden flex flex-col md:flex-row h-auto !min-h-0 max-h-[90vh]">
+            <DialogContent className="max-w-[960px] p-0 overflow-hidden rounded-2xl border-0 gap-0 [&>button]:hidden flex flex-col md:flex-row min-h-[520px] max-h-[90vh]">
                 <DialogTitle className="sr-only">{officer.name} Profile</DialogTitle>
                 {/* Left Panel - Photo / Avatar */}
                 <div className="w-[340px] bg-[#400010] flex flex-col relative flex-shrink-0 overflow-hidden">
@@ -340,9 +346,11 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
                             </h3>
                             {officer.statutoryDuty ? (
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-                                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                                        {officer.statutoryDuty}
-                                    </p>
+                                    <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900">
+                                        <ReactMarkdown>
+                                            {officer.statutoryDuty}
+                                        </ReactMarkdown>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-12 flex-1 flex flex-col items-center justify-center">
@@ -357,6 +365,19 @@ const OfficerProfileModal = ({ officer, open, onClose }: OfficerProfileModalProp
                     <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between">
                         <p className="text-xs text-gray-400">Last updated: Today at 09:12 AM</p>
                         <div className="flex items-center gap-2">
+                            {(isAdmin || hasPermission('admin', 'access')) && (
+                                <button
+                                    onClick={() => {
+                                        onClose();
+                                        navigate('/admin?tab=org-structure');
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-md transition-colors border border-gray-200"
+                                    title="Edit Profile in Admin Dashboard"
+                                >
+                                    <Pencil className="w-3.5 h-3.5" />
+                                    <span className="text-xs font-medium">Edit Profile</span>
+                                </button>
+                            )}
                             <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Share">
                                 <Share2 className="w-4 h-4" />
                             </button>

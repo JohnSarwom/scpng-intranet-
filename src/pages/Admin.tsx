@@ -14,7 +14,8 @@ import {
     Target,
     Activity,
     Globe,
-    LayoutDashboard
+    LayoutDashboard,
+    Building2
 } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
 import RoleManagement from '@/components/admin/RoleManagement';
@@ -22,6 +23,7 @@ import ThemeCustomization from '@/components/admin/ThemeCustomization';
 
 import ApiManagement from '@/components/admin/ApiManagement';
 import { ViewSettingsTab } from '@/components/admin/ViewSettingsTab';
+import OrgStructureManagement from '@/components/admin/OrgStructureManagement';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -29,10 +31,18 @@ import { useMsal } from '@azure/msal-react';
 import { getGraphClient } from '@/services/graphService';
 import { UserSharePointService, UserRole, PermissionGroup } from '@/services/userSharePointService';
 import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
 
 const Admin = () => {
     const { hasPermission, isAdmin } = useRoleBasedAuth();
-    const [activeTab, setActiveTab] = useState('users');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') || 'users';
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    const handleTabChange = (value: string) => {
+        setActiveTab(value);
+        setSearchParams({ tab: value });
+    };
     const { instance } = useMsal();
 
     // SharePoint Data State
@@ -140,7 +150,7 @@ const Admin = () => {
                     {/* Refresh Button or Status Indicator could go here */}
                 </div>
 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
                     <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
                         <TabsTrigger value="users" className="py-2">
                             <Users className="mr-2 h-4 w-4" />
@@ -158,6 +168,10 @@ const Admin = () => {
                         <TabsTrigger value="api" className="py-2">
                             <Activity className="mr-2 h-4 w-4" />
                             API & Integrations
+                        </TabsTrigger>
+                        <TabsTrigger value="org-structure" className="py-2">
+                            <Building2 className="mr-2 h-4 w-4" />
+                            Org Structure
                         </TabsTrigger>
                         <TabsTrigger value="view-settings" className="py-2">
                             <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -195,6 +209,10 @@ const Admin = () => {
 
                     <TabsContent value="api" className="space-y-4">
                         <ApiManagement />
+                    </TabsContent>
+
+                    <TabsContent value="org-structure" className="space-y-4">
+                        <OrgStructureManagement />
                     </TabsContent>
 
                     <TabsContent value="view-settings" className="space-y-4">

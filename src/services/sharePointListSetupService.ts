@@ -11,6 +11,7 @@ import { mapKraToSharePoint, mapKpiToSharePoint, mapTaskToSharePoint } from '@/u
 import { mockProjects } from '@/mockData/projects';
 import { initialEmployeeData } from '@/data/employeeData';
 import { generateAllOfficerData, SCPNG_STAFF_DATA } from '@/data/mockPerformanceDataGenerator';
+import { MOCK_DIVISIONS_DATA, MOCK_UNITS_DATA } from '@/mockData/orgData';
 
 export class SharePointListSetupService {
     private client: Client;
@@ -31,6 +32,8 @@ export class SharePointListSetupService {
             const results = {
                 config: null as any,
                 pillars: null as any,
+                divisions: null as any,
+                units: null as any,
                 objectives: null as any
             };
 
@@ -43,6 +46,16 @@ export class SharePointListSetupService {
             console.log('📝 [Setup] Creating Strategic_Pillars list...');
             results.pillars = await this.createStrategicPillarsList();
             console.log('✅ [Setup] Strategic_Pillars created');
+
+            // Step 2b: Create Strategy_Divisions list
+            console.log('📝 [Setup] Creating Strategy_Divisions list...');
+            results.divisions = await this.createStrategyDivisionsList();
+            console.log('✅ [Setup] Strategy_Divisions created');
+
+            // Step 2c: Create Strategy_Units list
+            console.log('📝 [Setup] Creating Strategy_Units list...');
+            results.units = await this.createStrategyUnitsList(results.divisions.id);
+            console.log('✅ [Setup] Strategy_Units created');
 
             // Step 3: Create Strategic_Objectives list (with lookups)
             console.log('📝 [Setup] Creating Strategic_Objectives list...');
@@ -139,6 +152,181 @@ export class SharePointListSetupService {
             });
 
         return list;
+    }
+
+    /**
+     * Create Strategy_Divisions list
+     */
+    private async createStrategyDivisionsList() {
+        return await this.createList(
+            'Strategy_Divisions',
+            'Organizational Divisions',
+            [
+                { name: 'Branch', text: {} },
+                { name: 'ContactEmail', text: {} },
+                { name: 'Location', text: {} },
+                { name: 'DirectorName', text: {} },
+                { name: 'DirectorQuote', text: { allowMultipleLines: true } },
+                { name: 'MissionStatement', text: { allowMultipleLines: true } },
+                { name: 'StatutoryDuties', text: { allowMultipleLines: true } },
+                { name: 'Achievements', text: { allowMultipleLines: true } },
+                { name: 'SubDepartments', text: { allowMultipleLines: true } },
+                { name: 'SortOrder', number: { decimalPlaces: 'none' } }
+            ]
+        );
+    }
+
+    /**
+     * Create Strategy_Units list
+     */
+    private async createStrategyUnitsList(divisionsListId: string) {
+        const list = await this.createList(
+            'Strategy_Units',
+            'Organizational Units',
+            [
+                { name: 'ParentDivision', text: {} },
+                { name: 'ContactEmail', text: {} },
+                { name: 'Location', text: {} },
+                { name: 'ManagerName', text: {} },
+                { name: 'ManagerQuote', text: { allowMultipleLines: true } },
+                { name: 'MissionStatement', text: { allowMultipleLines: true } },
+                { name: 'CoreFunctions', text: { allowMultipleLines: true } },
+                { name: 'Achievements', text: { allowMultipleLines: true } },
+                { name: 'StatutoryDuties', text: { allowMultipleLines: true } },
+                { name: 'SortOrder', number: { decimalPlaces: 'none' } }
+            ]
+        );
+
+        await this.addLookupColumn(list.id, 'ParentDivisionLookupId', divisionsListId, 'Title');
+        return list;
+    }
+
+    /**
+     * Set up Strategy Divisions and Units Lists standalone
+     */
+    async setupStrategyDivisionsAndUnitsLists(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            console.log('🚀 [Setup] Setting up Strategy Divisions and Units lists...');
+
+            // Check if exist
+            const listsToCheck = ['Strategy_Divisions', 'Strategy_Units'];
+            for (const listTitle of listsToCheck) {
+                try {
+                    const existingListResponse = await this.client
+                        .api(`/sites/${this.siteId}/lists`)
+                        .filter(`displayName eq '${listTitle}'`)
+                        .get();
+
+                    if (existingListResponse.value && existingListResponse.value.length > 0) {
+                        return { success: false, message: `List ${listTitle} already exists.`, details: null };
+                    }
+                } catch (e) {
+                    // Ignore, we will create
+                }
+            }
+
+            const results = { divisions: null as any, units: null as any };
+            results.divisions = await this.createStrategyDivisionsList();
+            results.units = await this.createStrategyUnitsList(results.divisions.id);
+
+            return {
+                success: true,
+                message: "Strategy Divisions and Units lists created successfully.",
+                details: results
+            };
+        } catch (error: any) {
+            console.error('❌ Strategy Divisions and Units setup failed:', error);
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    /**
+     * Seed Strategy Divisions and Units with mock data
+     */
+    async seedStrategyDivisionsAndUnits(): Promise<{ success: boolean; message: string }> {
+        try {
+            console.log('🌱 [Setup] Seeding Strategy Divisions and Units...');
+
+            // Find lists
+            const listsResponse = await this.client.api(`/sites/${this.siteId}/lists`).select('id,name,displayName').get();
+            const divisionsListId = listsResponse.value.find((l: any) => l.displayName === 'Strategy_Divisions')?.id;
+            const unitsListId = listsResponse.value.find((l: any) => l.displayName === 'Strategy_Units')?.id;
+
+            if (!divisionsListId || !unitsListId) throw new Error("Lists not found. Please create them first.");
+
+            // Fetch existing Divisions to avoid duplicates
+            const existingDivisionsResponse = await this.client.api(`/sites/${this.siteId}/lists/${divisionsListId}/items`).expand('fields($select=Title,id)').get();
+            const existingDivisionsMap = new Map();
+            existingDivisionsResponse.value.forEach((d: any) => { existingDivisionsMap.set(d.fields.Title, d.fields.id); });
+
+            for (const key in MOCK_DIVISIONS_DATA) {
+                const item = MOCK_DIVISIONS_DATA[key];
+
+                // Skip if already exists
+                if (existingDivisionsMap.has(item.divisionName)) {
+                    console.log(`Skipping Division ${item.divisionName}, already exists`);
+                    continue;
+                }
+
+                const spItem = {
+                    Title: item.divisionName,
+                    Branch: item.branch,
+                    ContactEmail: item.primaryContact.email,
+                    Location: item.location,
+                    DirectorName: item.director.name,
+                    DirectorQuote: item.director.quote,
+                    MissionStatement: item.missionStatement,
+                    StatutoryDuties: JSON.stringify(item.statutoryDuties || []),
+                    Achievements: JSON.stringify(item.achievements || []),
+                    SubDepartments: JSON.stringify(item.subDepartments || []),
+                    SortOrder: 0
+                };
+                await this.client.api(`/sites/${this.siteId}/lists/${divisionsListId}/items`).post({ fields: spItem });
+            }
+
+            // Reload Divisions for lookup map
+            const newDivisions = await this.client.api(`/sites/${this.siteId}/lists/${divisionsListId}/items`).expand('fields($select=Title,id)').get();
+            const divMap = new Map();
+            newDivisions.value.forEach((d: any) => { divMap.set(d.fields.Title, d.fields.id); });
+
+            // Fetch existing Units to avoid duplicates
+            const existingUnitsResponse = await this.client.api(`/sites/${this.siteId}/lists/${unitsListId}/items`).expand('fields($select=Title,id)').get();
+            const existingUnitsMap = new Map();
+            existingUnitsResponse.value.forEach((u: any) => { existingUnitsMap.set(u.fields.Title, u.fields.id); });
+
+            for (const key in MOCK_UNITS_DATA) {
+                const item = MOCK_UNITS_DATA[key];
+
+                // Skip if already exists
+                if (existingUnitsMap.has(item.unitName)) {
+                    console.log(`Skipping Unit ${item.unitName}, already exists`);
+                    continue;
+                }
+
+                const parentId = divMap.get(item.parentDivision);
+
+                const spItem = {
+                    Title: item.unitName,
+                    ParentDivision: item.parentDivision,
+                    ParentDivisionLookupIdLookupId: parentId || null,
+                    ContactEmail: item.primaryContact.email,
+                    Location: item.location,
+                    ManagerName: item.manager.name,
+                    ManagerQuote: item.manager.quote,
+                    MissionStatement: item.missionStatement,
+                    CoreFunctions: JSON.stringify(item.coreFunctions || []),
+                    Achievements: JSON.stringify(item.achievements || []),
+                    StatutoryDuties: JSON.stringify(item.statutoryDuties || []),
+                    SortOrder: 0
+                };
+                await this.client.api(`/sites/${this.siteId}/lists/${unitsListId}/items`).post({ fields: spItem });
+            }
+
+            return { success: true, message: "Strategy Divisions and Units seeded successfully." };
+        } catch (error: any) {
+            console.error('❌ Seeding failed:', error);
+            return { success: false, message: error.message };
+        }
     }
 
     /**
@@ -526,6 +714,8 @@ export class SharePointListSetupService {
         const listNames = [
             'Strategy_Config',
             'Strategic_Pillars',
+            'Strategy_Divisions',
+            'Strategy_Units',
             'Strategic_Objectives',
             'Performance_KRAs',
             'Performance_KPIs',
@@ -575,6 +765,8 @@ export class SharePointListSetupService {
                 .filter((name: string) =>
                     name === 'Strategy_Config' ||
                     name === 'Strategic_Pillars' ||
+                    name === 'Strategy_Divisions' ||
+                    name === 'Strategy_Units' ||
                     name === 'Strategic_Objectives' ||
                     name === 'Performance_KRAs' ||
                     name === 'Performance_KPIs' ||
@@ -798,6 +990,73 @@ export class SharePointListSetupService {
         }
     }
 
+    /**
+     * Create Forms Management Lists (Groups and Registrations)
+     */
+    async setupFormsEngine(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Starting Forms Engine Setup...');
+        const results = {
+            groups: null as any,
+            registrations: null as any
+        };
+
+        try {
+            // 1. Create Form_Groups
+            console.log('📝 [Setup] Creating Form_Groups...');
+            results.groups = await this.createFormGroupsList();
+            console.log('✅ [Setup] Form_Groups created');
+
+            // 2. Create Form_Registrations
+            console.log('📝 [Setup] Creating Form_Registrations...');
+            results.registrations = await this.createFormRegistrationsList(results.groups.id);
+            console.log('✅ [Setup] Form_Registrations created');
+
+            return {
+                success: true,
+                message: 'Forms Management lists created successfully!',
+                details: results
+            };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to setup Forms engine:', error);
+            return {
+                success: false,
+                message: `Failed to setup Forms engine: ${error.message}`,
+                details: error
+            };
+        }
+    }
+
+    private async createFormGroupsList() {
+        return await this.createList(
+            'Form_Groups',
+            'Categories for organizing intranet forms',
+            [
+                { name: 'Description', text: { allowMultipleLines: true } },
+                { name: 'IconName', text: {} },
+                { name: 'DisplayOrder', number: { decimalPlaces: 'none' } },
+                { name: 'Color', text: {} }
+            ]
+        );
+    }
+
+    private async createFormRegistrationsList(groupsListId: string) {
+        const list = await this.createList(
+            'Form_Registrations',
+            'Metadata for registered intranet forms',
+            [
+                { name: 'Description', text: { allowMultipleLines: true } },
+                { name: 'TemplateID', text: { enforceUniqueValues: false } }, // ID from formTemplates.ts
+                { name: 'Status', choice: { choices: ['active', 'draft', 'archived'] } },
+                { name: 'EstimatedTime', text: {} }
+            ]
+        );
+
+        // Add Group lookup
+        await this.addLookupColumn(list.id, 'GroupID', groupsListId, 'Title');
+
+        return list;
+    }
+
     async recreateProjectsListOnly(): Promise<{ success: boolean; message: string }> {
         console.log('🔄 [Setup] Recreating Operations_Projects list only...');
         try {
@@ -915,6 +1174,103 @@ export class SharePointListSetupService {
             });
 
         return list;
+    }
+
+    /**
+     * Create Document_Categories list for dynamic category management
+     */
+    async createDocumentCategoriesList(): Promise<{ success: boolean; message: string; listId?: string }> {
+        try {
+            // Check if exists first
+            const check = await this.client.api(`/sites/${this.siteId}/lists`)
+                .filter("displayName eq 'Document_Categories'").get();
+            if (check.value && check.value.length > 0) {
+                return { success: true, message: 'Document_Categories list already exists.', listId: check.value[0].id };
+            }
+
+            const list = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .post({
+                    displayName: 'Document_Categories',
+                    columns: [
+                        { name: 'Description', text: { allowMultipleLines: true } },
+                        { name: 'SortOrder', number: { decimalPlaces: 'none', minimum: 0 } },
+                        { name: 'IconName', text: {} },
+                        { name: 'IsActive', boolean: {} },
+                        { name: 'SubCategories', text: { allowMultipleLines: true } }
+                    ],
+                    list: { template: 'genericList' }
+                });
+
+            // Seed with existing hardcoded categories
+            const seedCategories = [
+                {
+                    Title: 'Governance & Legal',
+                    Description: 'Legal, compliance, and governance documents',
+                    SortOrder: 1,
+                    IsActive: true,
+                    SubCategories: JSON.stringify([
+                        'Legal & Compliance Documents', 'Regulatory & Legal Framework',
+                        'Internal Compliance Policies & Procedures', 'Contracts & Agreements',
+                        'Data Privacy & Protection', 'Ethics & Code of Conduct',
+                        'Litigation & Dispute Resolution', 'Compliance Audits & Assessments',
+                        'Licenses & Permits', 'Corporate Governance & Board Resolutions',
+                        'Legal Opinions & Advice'
+                    ])
+                },
+                {
+                    Title: 'Policies, Procedures, Guidelines and Manuals',
+                    Description: 'Organizational policies and procedure manuals',
+                    SortOrder: 2,
+                    IsActive: true,
+                    SubCategories: JSON.stringify([
+                        'Legal Advisory', 'Legal Enforcement & Compliance', 'Licensing',
+                        'Supervision', 'Investigations', 'Research', 'Media & Publication',
+                        'Market Data', 'Finance', 'HR', 'Investments', 'IT'
+                    ])
+                },
+                {
+                    Title: 'Communication & Branding',
+                    Description: 'Branding, communications, and templates',
+                    SortOrder: 3,
+                    IsActive: true,
+                    SubCategories: JSON.stringify(['Branding & Communications', 'Forms & Templates'])
+                },
+                {
+                    Title: 'Training & Human Resources',
+                    Description: 'Training materials and HR resources',
+                    SortOrder: 4,
+                    IsActive: true,
+                    SubCategories: JSON.stringify(['Training & Development Resources'])
+                },
+                {
+                    Title: 'IT & Systems',
+                    Description: 'IT documentation and system guides',
+                    SortOrder: 5,
+                    IsActive: true,
+                    SubCategories: JSON.stringify(['IT & System Documentation'])
+                },
+                {
+                    Title: 'Organisational Strategy & Management',
+                    Description: 'Strategic plans, reports, and management documents',
+                    SortOrder: 6,
+                    IsActive: true,
+                    SubCategories: JSON.stringify([
+                        'Corporate & Strategic', 'Reports', 'Policies & Procedures', 'Guidelines & Procedures'
+                    ])
+                }
+            ];
+
+            for (const cat of seedCategories) {
+                await this.client.api(`/sites/${this.siteId}/lists/${list.id}/items`).post({ fields: cat });
+            }
+
+            console.log('✅ [Setup] Document_Categories list created and seeded with', seedCategories.length, 'categories');
+            return { success: true, message: 'Document_Categories list created and seeded.', listId: list.id };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to create Document_Categories list:', error);
+            return { success: false, message: `Failed: ${error.message}` };
+        }
     }
 
     /**

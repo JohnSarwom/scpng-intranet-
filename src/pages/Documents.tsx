@@ -11,14 +11,17 @@ import {
   File, FileArchive, FileCode, Video, Music,
   Folder, ArrowLeft, RefreshCw,
   PlusCircle, User, Users, Building, ChevronDown, ChevronRight, Globe,
-  FolderOpen, Calendar, Clock, Download
+  FolderOpen, FolderPlus, Calendar, Clock, Download, Pencil, Trash2
 } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import AddDocumentModal from '@/components/custom/AddDocumentModal';
+import AddCategoryDialog from '@/components/documents/AddCategoryDialog';
+import EditCategoryDialog from '@/components/documents/EditCategoryDialog';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { fetchSharedDocuments, uploadSharedDocument, addExternalLink, SharedDocument } from '@/services/sharedDocumentsService';
+import { fetchDocumentCategories, createDocumentCategory, updateDocumentCategory, deleteDocumentCategory, DocumentCategory } from '@/services/documentCategoriesService';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { getGraphClient } from '@/services/graphService';
 
@@ -540,7 +543,7 @@ const getFileIconForDocument = (doc: DisplayableDocument) => {
 };
 
 // Mock data generator for visual folder representation
-const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string, documents: DisplayableDocument[]): DocumentFolder[] => {
+const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string, documents: DisplayableDocument[], categories?: CompanyWideSubCategoryItem[]): DocumentFolder[] => {
   if (activePrimaryTab === 'my-documents') {
     // For My Documents, show OneDrive folders as visual cards
     const folders = documents.filter(doc => doc.isFolder);
@@ -610,7 +613,8 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
 
   if (activePrimaryTab === 'company-wide') {
     // Always show all company-wide categories as cards (no more sidebar navigation)
-    return companyWideSubCategories.filter(cat => cat.id !== 'all-company').map(category => {
+    const cats = categories || companyWideSubCategories;
+    return cats.filter(cat => cat.id !== 'all-company').map(category => {
       // Calculate real stats from documents if available
       const categoryDocs = documents.filter(doc => doc.category === category.label);
       const fileCount = categoryDocs.length;
@@ -726,8 +730,15 @@ export default function Documents() {
   const [expandedCompanyWideItems, setExpandedCompanyWideItems] = useState<Record<string, boolean>>({});
 
   const [isAddDocumentModalOpen, setIsAddDocumentModalOpen] = useState(false);
+  const [isAddCategoryDialogOpen, setIsAddCategoryDialogOpen] = useState(false);
+  const [isEditCategoryDialogOpen, setIsEditCategoryDialogOpen] = useState(false);
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<DocumentCategory | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<DocumentCategory[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   // Navigation state for drill-down functionality
   const [navigationState, setNavigationState] = useState<NavigationState>({
@@ -736,7 +747,153 @@ export default function Documents() {
     breadcrumbs: []
   });
 
-  // console.log("Documents component. Primary:", activePrimaryTab, "Secondary:", activeSecondaryNav, "isLoading:", isLoading, "Expanded:", expandedCompanyWideItems);
+  // Build the active category list: use dynamic categories if loaded, fall back to hardcoded
+  const activeCompanyWideCategories: CompanyWideSubCategoryItem[] = useMemo(() => {
+    if (categoriesLoaded && dynamicCategories.length > 0) {
+      const allItem: CompanyWideSubCategoryItem = { id: 'all-company', label: 'All Organisational Documents' };
+      const dynamicItems: CompanyWideSubCategoryItem[] = dynamicCategories.map(cat => {
+        const safeId = cat.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-parent';
+        return {
+          id: safeId,
+          label: cat.title,
+          children: cat.subCategories.length > 0
+            ? cat.subCategories.map((sub, idx) => ({
+                id: `${safeId}-child-${idx}`,
+                label: sub,
+                dbSubCategoryValue: sub,
+              }))
+            : undefined,
+        };
+      });
+      return [allItem, ...dynamicItems];
+    }
+    return companyWideSubCategories;
+  }, [dynamicCategories, categoriesLoaded]);
+
+  // Load dynamic categories from SharePoint (auto-creates list if missing)
+  const loadCategories = async () => {
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) return;
+      const categories = await fetchDocumentCategories(client);
+      setDynamicCategories(categories);
+      setCategoriesLoaded(true);
+    } catch (error: any) {
+      // If the list doesn't exist yet, try to create it automatically
+      if (error?.statusCode === 404 || error?.message?.includes('does not exist')) {
+        console.log('Document_Categories list not found, attempting to create...');
+        try {
+          const client = await getGraphClient(instance);
+          if (!client) return;
+          const site = await client.api(`/sites/scpng1.sharepoint.com:/sites/scpngintranet`).get();
+          const { SharePointListSetupService } = await import('@/services/sharePointListSetupService');
+          const setup = new SharePointListSetupService(client, site.id);
+          await setup.createDocumentCategoriesList();
+          // Retry fetch after creation
+          const categories = await fetchDocumentCategories(client);
+          setDynamicCategories(categories);
+          setCategoriesLoaded(true);
+          return;
+        } catch (setupError) {
+          console.warn('Could not auto-create Document_Categories list:', setupError);
+        }
+      }
+      console.warn('Could not load dynamic categories, using hardcoded fallback:', error);
+      setCategoriesLoaded(false);
+    }
+  };
+
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Handle creating a new category
+  const handleCreateCategory = async (data: { title: string; description: string; sortOrder: number }) => {
+    setIsCreatingCategory(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      await createDocumentCategory(client, {
+        title: data.title,
+        description: data.description,
+        sortOrder: data.sortOrder,
+      });
+      toast.success(`Category "${data.title}" created successfully!`);
+      setIsAddCategoryDialogOpen(false);
+      await loadCategories(); // Refresh the categories list
+    } catch (error: any) {
+      console.error('Error creating category:', error);
+      toast.error(`Failed to create category: ${error.message}`);
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
+
+  // Handle opening the edit dialog for a category
+  const handleEditCategoryClick = (folder: DocumentFolder) => {
+    // Find the matching dynamic category by title
+    const cat = dynamicCategories.find(c => c.title === folder.name);
+    if (cat) {
+      setEditingCategory(cat);
+      setIsEditCategoryDialogOpen(true);
+    } else {
+      toast.error('This category cannot be edited (hardcoded fallback).');
+    }
+  };
+
+  // Handle updating a category
+  const handleUpdateCategory = async (data: { title: string; description: string; sortOrder: number }) => {
+    if (!editingCategory) return;
+    setIsEditingCategory(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      await updateDocumentCategory(client, editingCategory.id, {
+        title: data.title,
+        description: data.description,
+        sortOrder: data.sortOrder,
+      });
+      toast.success(`Category "${data.title}" updated successfully!`);
+      setIsEditCategoryDialogOpen(false);
+      setEditingCategory(null);
+      await loadCategories();
+    } catch (error: any) {
+      console.error('Error updating category:', error);
+      toast.error(`Failed to update category: ${error.message}`);
+    } finally {
+      setIsEditingCategory(false);
+    }
+  };
+
+  // Handle deleting (soft-delete) a category
+  const handleDeleteCategory = async () => {
+    if (!editingCategory) return;
+    setIsEditingCategory(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      await deleteDocumentCategory(client, editingCategory.id);
+      toast.success(`Category "${editingCategory.title}" deleted successfully.`);
+      setIsEditCategoryDialogOpen(false);
+      setEditingCategory(null);
+      await loadCategories();
+    } catch (error: any) {
+      console.error('Error deleting category:', error);
+      toast.error(`Failed to delete category: ${error.message}`);
+    } finally {
+      setIsEditingCategory(false);
+    }
+  };
+
+  // Handle delete directly from hover button (opens edit dialog in delete-confirm mode)
+  const handleDeleteCategoryClick = (folder: DocumentFolder) => {
+    const cat = dynamicCategories.find(c => c.title === folder.name);
+    if (cat) {
+      setEditingCategory(cat);
+      setIsEditCategoryDialogOpen(true);
+    }
+  };
 
   const currentSharePointCategoriesForModal = useMemo(() => {
     if (activePrimaryTab === 'company-wide') return ['SCPNG Shared Documents'];
@@ -755,17 +912,27 @@ export default function Documents() {
     // Provides a flat list of all possible DB sub-category *labels* for the modal
     // when 'SCPNG Shared Documents' is the target.
     if (activePrimaryTab === 'company-wide') {
-      return companyWideSubCategories
+      return activeCompanyWideCategories
         .flatMap(item => item.dbSubCategoryValue ? [item.dbSubCategoryValue] : (item.children?.map(c => c.dbSubCategoryValue).filter(Boolean) || []))
         .filter(Boolean) as string[]; // Ensure only defined strings
     }
     return undefined; // Or an empty array if preferred for other primary tabs
-  }, [activePrimaryTab]);
+  }, [activePrimaryTab, activeCompanyWideCategories]);
 
   const modalAvailableCategories = useMemo(() =>
-    companyWideSubCategories.filter(c => c.id !== 'all-company').map(c => c.label),
-    []
+    activeCompanyWideCategories.filter(c => c.id !== 'all-company').map(c => c.label),
+    [activeCompanyWideCategories]
   );
+
+  const dynamicSubCategoryMap = useMemo(() => {
+    const map: Record<string, string[]> = {};
+    activeCompanyWideCategories.forEach(cat => {
+      if (cat.id !== 'all-company' && cat.children) {
+        map[cat.label] = cat.children.map(c => c.label);
+      }
+    });
+    return map;
+  }, [activeCompanyWideCategories]);
 
 
   const fetchPersonalDocumentsRoot = async () => {
@@ -1067,7 +1234,7 @@ export default function Documents() {
   const handleSecondaryNavChange = (navId: string, isParentToggle: boolean = false) => {
     if (isUploading || isLoading) return;
 
-    const item = findCategoryById(navId, companyWideSubCategories);
+    const item = findCategoryById(navId, activeCompanyWideCategories);
 
     if (item && item.children && item.children.length > 0) { // It's a parent item
       setExpandedCompanyWideItems(prev => ({ ...prev, [navId]: !prev[navId] }));
@@ -1269,11 +1436,49 @@ export default function Documents() {
   );
 
   // New component for visual document/folder cards
-  const DocumentFolderCard = ({ folder, onClick }: { folder: DocumentFolder; onClick: (folder: DocumentFolder) => void }) => (
+  const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions }: {
+    folder: DocumentFolder;
+    onClick: (folder: DocumentFolder) => void;
+    onEdit?: (folder: DocumentFolder) => void;
+    onDelete?: (folder: DocumentFolder) => void;
+    showAdminActions?: boolean;
+  }) => (
     <Card
-      className="overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60"
+      className="group relative overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60"
       onClick={() => onClick(folder)}
     >
+      {/* Hover action buttons - top right */}
+      {showAdminActions && folder.category === 'company-category' && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(folder);
+              }}
+              className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-primary hover:text-white hover:border-primary transition-all opacity-0 group-hover:opacity-100"
+              title="Edit category"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(folder);
+              }}
+              className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all opacity-0 group-hover:opacity-100"
+              title="Delete category"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-shrink-0 mr-4">
@@ -1404,15 +1609,15 @@ export default function Documents() {
     if (navigationState.currentLevel === 'files' && navigationState.currentCategoryId) {
       return []; // Files will be handled separately
     }
-    return getDocumentFolders(activePrimaryTab, activeSecondaryNav, filteredDocuments);
-  }, [activePrimaryTab, activeSecondaryNav, filteredDocuments, navigationState]);
+    return getDocumentFolders(activePrimaryTab, activeSecondaryNav, filteredDocuments, activeCompanyWideCategories);
+  }, [activePrimaryTab, activeSecondaryNav, filteredDocuments, navigationState, activeCompanyWideCategories]);
 
   // Get current category data for file view
   // Dynamic generation of view data based on real documents and selected category
   const currentCategoryData = useMemo(() => {
     if (navigationState.currentLevel === 'files' && navigationState.currentCategoryId) {
       const categoryId = navigationState.currentCategoryId;
-      const categoryDef = companyWideSubCategories.find(c => c.id === categoryId);
+      const categoryDef = activeCompanyWideCategories.find(c => c.id === categoryId);
       if (!categoryDef) return null;
 
       // Filter documents belonging to this category
@@ -1475,7 +1680,7 @@ export default function Documents() {
 
     }
     return null;
-  }, [navigationState, documents]);
+  }, [navigationState, documents, activeCompanyWideCategories]);
 
 
   console.log('DEBUG: Rendering Documents. ActiveTab:', activePrimaryTab, 'CanAdd:', canAddDocument);
@@ -1581,31 +1786,6 @@ export default function Documents() {
               {navigationState.currentLevel === 'categories' && (
                 <>
                   {/* Recently Opened Section (like in reference image) */}
-                  {activePrimaryTab === 'company-wide' && (
-                    <div>
-                      <div className="mb-4">
-                        <h2 className="text-xl font-semibold text-primary mb-1">Recently opened</h2>
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 mb-8">
-                        {/* Recently opened files - smaller cards */}
-                        {[
-                          { name: 'Annual Report 2024.docx', size: '4 MB', date: '2/1/2024', icon: <FileText className="h-6 w-6 text-blue-500" /> },
-                          { name: 'Budget Forecast.xlsx', size: '2.3 MB', date: '1/30/2024', icon: <FileSpreadsheet className="h-6 w-6 text-green-500" /> },
-                          { name: 'Team Overview.pptx', size: '5.1 MB', date: '1/28/2024', icon: <Presentation className="h-6 w-6 text-red-500" /> },
-                          { name: 'Compliance Guide.pdf', size: '1.8 MB', date: '1/25/2024', icon: <File className="h-6 w-6 text-red-600" /> },
-                        ].map((file, index) => (
-                          <Card key={index} className="p-4 cursor-pointer hover:shadow-md transition-shadow">
-                            <div className="flex flex-col items-center text-center">
-                              {file.icon}
-                              <h4 className="text-sm font-medium text-gray-900 mt-2 line-clamp-2">{file.name}</h4>
-                              <p className="text-xs text-gray-500 mt-1">{file.date}</p>
-                              <p className="text-xs text-gray-400">{file.size}</p>
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Main Document Categories Section */}
                   <div>
@@ -1625,9 +1805,16 @@ export default function Documents() {
                         </p>
                       </div>
                       {activePrimaryTab !== 'my-documents' && canAddDocument && (
-                        <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
-                          <PlusCircle className="h-4 w-4 mr-2" /> {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          {activePrimaryTab === 'company-wide' && (isAdmin || isSuperAdmin) && (
+                            <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" disabled={isUploading || isLoading}>
+                              <FolderPlus className="h-4 w-4 mr-2" /> Add Category
+                            </Button>
+                          )}
+                          <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
+                            <PlusCircle className="h-4 w-4 mr-2" /> {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
+                          </Button>
+                        </div>
                       )}
                     </div>
 
@@ -1694,6 +1881,9 @@ export default function Documents() {
                                 key={folder.id}
                                 folder={folder}
                                 onClick={handleFolderClick}
+                                onEdit={handleEditCategoryClick}
+                                onDelete={handleDeleteCategoryClick}
+                                showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
                               />
                             ))}
                           </div>
@@ -1717,25 +1907,6 @@ export default function Documents() {
               {/* File View - Show files within a category */}
               {navigationState.currentLevel === 'files' && currentCategoryData && (
                 <div className="space-y-8">
-                  {/* Recently opened files in this category */}
-                  <div>
-                    <div className="mb-4">
-                      <h2 className="text-xl font-semibold text-primary mb-1">Recently opened</h2>
-                      <p className="text-sm text-gray-600">From {currentCategoryData.name}</p>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {currentCategoryData.recentFiles.map((file, index) => (
-                        <Card key={index} className="p-4 cursor-pointer hover:shadow-md transition-shadow" onClick={() => handleFileClick(file)}>
-                          <div className="flex flex-col items-center text-center">
-                            {file.icon}
-                            <h4 className="text-sm font-medium text-gray-900 mt-2 line-clamp-2">{file.name}</h4>
-                            <p className="text-xs text-gray-500 mt-1">{file.lastModified}</p>
-                            <p className="text-xs text-gray-400">{file.size}</p>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  </div>
 
                   {/* File sections */}
                   {currentCategoryData.sections.map((section) => (
@@ -1770,8 +1941,31 @@ export default function Documents() {
         onOpenChange={setIsAddDocumentModalOpen}
         onShare={handleShareDocument}
         availableCategories={currentSharePointCategoriesForModal}
-        subCategoryMap={companyWideSubCategoryMap}
+        subCategoryMap={dynamicSubCategoryMap}
         initialCategory={currentSharePointCategoriesForModal[0]}
+      />
+
+      <AddCategoryDialog
+        isOpen={isAddCategoryDialogOpen}
+        onOpenChange={setIsAddCategoryDialogOpen}
+        onSubmit={handleCreateCategory}
+        isSubmitting={isCreatingCategory}
+      />
+
+      <EditCategoryDialog
+        isOpen={isEditCategoryDialogOpen}
+        onOpenChange={(open) => {
+          setIsEditCategoryDialogOpen(open);
+          if (!open) setEditingCategory(null);
+        }}
+        onSubmit={handleUpdateCategory}
+        onDelete={handleDeleteCategory}
+        isSubmitting={isEditingCategory}
+        initialData={editingCategory ? {
+          title: editingCategory.title,
+          description: editingCategory.description || '',
+          sortOrder: editingCategory.sortOrder,
+        } : null}
       />
     </PageLayout>
   );
