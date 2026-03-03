@@ -1,8 +1,9 @@
-# AI Hub — Elite Legal Document Analysis Framework
+# AI Hub — Legal Document Analysis Framework
 
 ## Comprehensive Implementation Documentation
 
 **Date:** March 2026
+**Last Updated:** 3 March 2026
 **File Modified:** `src/pages/AIHub.tsx`
 **Scope:** All legal expert AI chat modes in the AI Hub
 
@@ -13,17 +14,18 @@
 1. [Overview](#1-overview)
 2. [Problem Statement — What We Were Solving](#2-problem-statement)
 3. [Architecture — How the AI Hub Prompts Work](#3-architecture)
-4. [The Elite Legal Analysis Framework (Shared Instructions)](#4-the-elite-legal-analysis-framework)
-5. [Per-Mode Prompt Enhancements](#5-per-mode-prompt-enhancements)
-6. [Test Results & Iterative Fixes](#6-test-results--iterative-fixes)
-7. [Complete Prompt Reference](#7-complete-prompt-reference)
-8. [Future Improvements](#8-future-improvements)
+4. [The Legal Analysis Framework (Shared Instructions)](#4-the-legal-analysis-framework)
+5. [Per-Mode Prompt Architecture](#5-per-mode-prompt-architecture)
+6. [API Integration — v1beta with Native System Instructions](#6-api-integration)
+7. [Test Results & Iterative Fixes](#7-test-results--iterative-fixes)
+8. [Complete Prompt Reference](#8-complete-prompt-reference)
+9. [Future Improvements](#9-future-improvements)
 
 ---
 
 ## 1. Overview
 
-The AI Hub legal expert modes were enhanced with an **Elite Legal Document Analysis Framework** — a comprehensive system prompt that transforms the AI from a basic legal reference tool into an analytical engine capable of:
+The AI Hub legal expert modes use a **Legal Document Analysis Framework** — a comprehensive system prompt that transforms the AI from a basic legal reference tool into an analytical engine capable of:
 
 - **Syntactic & Lexical Forensics** (modifier analysis, covenant vs. condition precedent classification)
 - **Hohfeldian Legal Analysis** (formal rights/duty/power/liability/immunity mapping)
@@ -31,7 +33,47 @@ The AI Hub legal expert modes were enhanced with an **Elite Legal Document Analy
 - **Jurisdictional Context** (PNG securities law specifics)
 - **Black Swan Stress Testing** (edge cases, enforcement gaps, definitional ambiguities)
 
-The framework was iteratively tested and refined across three rounds of testing, fixing critical failures in cross-Act referencing, Act selection, search methodology, Hohfeldian accuracy, and section citation hallucination.
+The framework was iteratively tested and refined across multiple rounds, fixing critical failures in cross-Act referencing, Act selection, search methodology, Hohfeldian accuracy, and section citation hallucination.
+
+### Key Technical Improvements (March 2026)
+
+| Change | Impact |
+|---|---|
+| Switched from Gemini v1 to v1beta endpoint | Enables native `system_instruction` support |
+| Native `system_instruction` field | System prompts treated as dedicated context, not fake conversation turns |
+| `temperature: 0.1` generation config | Precise, deterministic legal analysis instead of creative responses |
+| `maxOutputTokens: 8192` | Full-length analysis with Hohfeldian tables and cross-references |
+| Strong identity anchors in all single-Act modes | Prevents self-redirect bug where AI redirected users to the mode they were already in |
+| Follow-up regex fix (`[\s\S]*?`) | Correctly parses follow-up questions that span newlines |
+| Error message filtering from conversation history | Prevents context pollution from error/system messages |
+| Summary section added to response format | Plain-language distillation at the end of every analysis |
+
+### Elite Framework Enhancements (3 March 2026)
+
+| Enhancement | Priority | Impact |
+|---|---|---|
+| **Temporal/Repeal Tracking** | High | SA 1997 repeal status (SCA 2015 s.117) now flagged in every SA 1997 analysis with successor provision mapping and transitional provisions (ss.118-123) |
+| **Cross-Act Quoting in Single Modes** | High | Each single-Act mode now includes a lightweight cross-reference index from other Acts, enabling direct quoting without mode switching |
+| **Remedies & Enforcement Analysis** | Medium | New mandatory analysis section: penalty provisions, enforcement mechanisms (administrative/civil/criminal), remedial hierarchy, enforcement gap identification |
+| **Response Format Tiering** | Medium | 3-tier adaptive response system — Tier 1 (Quick Reference), Tier 2 (Standard Analysis), Tier 3 (Full Elite Analysis) — prevents over-engineering simple queries |
+| **Phase VI: Advanced Doctrines** | Medium | Added 4 advanced doctrine sections: implied duties/gap-filling, parol evidence in statutory context, third-party/accessorial liability, privilege & confidentiality |
+| **PNG Case Law Database** | Low | Key case law reference embedded: PNG statutory interpretation principles (Gari Baki, Salamo Elema), PNG securities decisions (Oil Search v SCPNG), and Commonwealth persuasive authorities |
+| **Post-Response Self-Verification** | Low | 5-point mandatory verification checklist: section number audit, quote accuracy, Act attribution, cross-reference verification, Hohfeldian category accuracy |
+| **Context Window Optimization** | Low | Conversation history limiting (20 turns single-Act, 10 turns All Acts) with summarization markers to prevent token overflow in long sessions |
+
+### Anti-Hallucination & Context Awareness Fixes (3 March 2026)
+
+| Fix | Priority | Impact |
+|---|---|---|
+| **Act Boundary Markers** | Critical | All Act texts now delimited with `=== BEGIN/END ===` markers so the model can unambiguously identify which Acts are loaded and where each Act's text begins/ends |
+| **LOADED ACTS MANIFEST** | Critical | All Acts Expert mode now opens with an explicit manifest listing all 4 loaded Acts with checkmarks, preventing the model from claiming an Act is "not loaded" |
+| **Anti-Hallucination Rule (Shared)** | Critical | New section in `SHARED_LEGAL_EXPERT_INSTRUCTIONS`: explicit rule prohibiting the model from claiming any Act is "not loaded" without first scanning context for boundary markers |
+| **Anti-Hallucination Warning (All Acts)** | Critical | Dedicated warning in All Acts Expert prompt: "NEVER say any Act is 'not loaded' — all four are present below" |
+| **Act Reordering (Lost-in-Middle Fix)** | High | All Acts Expert now loads Acts in ascending size order: CDA (115KB) → SCA (123KB) → SA (253KB) → CMA (774KB). Prevents smaller Acts from being "lost in the middle" of the context window |
+| **Cross-Act Conflict Analysis (STEP 5)** | Medium | New mandatory step in All Acts Expert: when questions ask about conflicts/tensions between Acts, the AI must quote both provisions, identify tension points, and apply statutory hierarchy |
+
+**Root Cause — "SCA Not Loaded" Bug:**
+In All Acts Expert mode, the AI falsely claimed "The Securities Commission Act 2015 is not loaded" when asked about SCA s. 7 vs CMA s. 13. The SCA text (123KB) was loaded but placed third in a sequence of four Acts totaling ~1.27 MB. The model exhibited the "lost in the middle" phenomenon — paying less attention to content buried in the middle of very long contexts. Fixed by: (1) boundary markers, (2) explicit manifest, (3) anti-hallucination rules, (4) reordering Acts so smaller ones appear first and last (avoiding the middle position).
 
 ---
 
@@ -39,23 +81,7 @@ The framework was iteratively tested and refined across three rounds of testing,
 
 ### Initial State (Before Enhancement)
 
-The original `SHARED_LEGAL_EXPERT_INSTRUCTIONS` constant (lines 47–73 of `AIHub.tsx`) contained only formatting instructions:
-
-```
-### MANDATORY RESPONSE INSTRUCTIONS (OFFICIAL LAYOUT):
-1. AUTHENTICITY IS PARAMOUNT: You MUST provide a direct, word-for-word quote...
-2. REQUIRED STRUCTURE (MANDATORY BLANK LINES)...
-3. EXPERT ANALYSIS: Provide your interpretation below the quote box.
-4. RICH FORMATTING...
-5. INTERACTIVE FOLLOW-UPS (MANDATORY)...
-```
-
-**Problems identified:**
-- No analytical framework — the AI provided surface-level "interpretations" with no structured methodology
-- No cross-referencing rules — when one Act referenced another, the AI would stop at the definitional provision instead of following the reference
-- No search methodology — the AI would grab the first loosely-related section instead of thoroughly searching for the correct one
-- No Hohfeldian analysis — legal relationships were described informally
-- No risk identification framework — edge cases and enforcement gaps were not flagged
+The original `SHARED_LEGAL_EXPERT_INSTRUCTIONS` contained only formatting instructions with no analytical framework, no cross-referencing rules, no search methodology, and no Hohfeldian analysis.
 
 ### Failures Discovered During Testing
 
@@ -64,8 +90,16 @@ The original `SHARED_LEGAL_EXPERT_INSTRUCTIONS` constant (lines 47–73 of `AIHu
 | "What is the process for approval of a stock exchange under Section 9?" | SCA Expert | Quoted only SCA 2015 definition, said "one would also need to cite the Capital Market Act 2015" instead of quoting CMA Section 9 |
 | "What is the definition of 'access' in the context of a depository's computer system?" | CMA Expert | Searched wrong Act (CMA instead of CDA), said "there is no explicit definition" when CDA 2015 Section 2(1) has an explicit definition |
 | "Where must the notice of the Chairman's appointment be published?" | SCA Expert | Answered from CMA Section 12 (exchange directors) instead of SCA Section 9(2) (Chairman appointment via National Gazette) |
-| "How is 'expert' defined?" | SA 1997 Expert | Quoted from SCA 2015 instead of SA 1997, despite SA 1997 having its own identical definition at line 344 |
+| "How is 'expert' defined?" | SA 1997 Expert | Quoted from SCA 2015 instead of SA 1997, despite SA 1997 having its own identical definition |
 | Cross-references in CDA test | CDA Expert | Cited fabricated section numbers (e.g., "Section 466 of the CMA") that don't exist in the loaded text |
+
+### Self-Redirect Bug (Fixed March 2026)
+
+A critical bug was identified where the AI in **CMA 2015 Expert** mode would respond with "This topic is primarily governed by the Capital Market Act 2015. I recommend switching to the CMA 2015 Expert mode" — redirecting the user to the mode they were already using.
+
+**Root cause:** The shared `SHARED_LEGAL_EXPERT_INSTRUCTIONS` contained multi-Act routing rules (rules 3, 5, 6) that assumed multiple Acts were loaded. In single-Act modes, the AI read these rules and incorrectly triggered redirects.
+
+**Fix:** Strong identity anchors + "redirect only as last resort" protocol in all single-Act modes, plus single-Act context clarifications in shared instructions.
 
 ---
 
@@ -75,97 +109,131 @@ The original `SHARED_LEGAL_EXPERT_INSTRUCTIONS` constant (lines 47–73 of `AIHu
 
 ```
 AIHub.tsx
-├── SHARED_LEGAL_EXPERT_INSTRUCTIONS (const, lines 47–242)
-│   ├── Elite Legal Analysis Framework (6 phases)
-│   ├── Cross-Reference Resolution Rules
-│   ├── Mandatory Search Methodology
-│   ├── Depth of Analysis Requirements
-│   ├── Hohfeldian Accuracy Rules
-│   ├── Anti-Hallucination Rules
-│   ├── Master Analytical Checklist
-│   └── Mandatory Response Format
-│
-├── getAiModes() function (lines 244–375)
-│   ├── General Purpose AI (disabled, inline prompt)
-│   ├── SCPNG Document Analyst (disabled, external prompt file)
-│   ├── CMA 2015 Expert (mode-specific rules + Act text + SHARED instructions)
-│   ├── CDA 2015 Expert (mode-specific rules + Act text + SHARED instructions)
-│   ├── SA 1997 Expert (mode-specific rules + Act text + SHARED instructions)
-│   ├── SCA 2015 Expert (mode-specific rules + Act text + SHARED instructions)
-│   └── All Acts Expert (mode-specific rules + ALL Act texts + SHARED instructions)
-│
-└── Act text files loaded via imports:
-    ├── /files/CMA2015.txt (Capital Market Act 2015)
-    ├── /files/CDA2015.txt (Central Depositories Act 2015)
-    ├── /files/SA1997.txt (Securities Act 1997)
-    └── /files/SCA2015.txt (Securities Commission Act 2015)
++-- SHARED_LEGAL_EXPERT_INSTRUCTIONS (const, template literal)
+|   +-- Cross-Reference Resolution Rules (single-Act aware)
+|   +-- Anti-Hallucination Rule — Loaded Act Awareness (NEW)
+|   +-- Mandatory Search Methodology
+|   +-- Post-Response Self-Verification Checklist (5 points)
+|   +-- Depth of Analysis Requirements
+|   +-- Hohfeldian Accuracy Rules
+|   +-- Anti-Hallucination Rules (section citation)
+|   +-- Phase I: Syntactic & Lexical Forensics
+|   +-- Phase II: Hohfeldian Analysis & Logical Structure
+|   +-- Phase III: Canon Warfare (Llewellyn Defense)
+|   +-- Phase IV: Jurisdictional Context (PNG Securities Law)
+|   +-- Phase V: Black Swan Stress Test
+|   +-- Temporal & Repeal Tracking (SA 1997 → 2015 Acts mapping)
+|   +-- Remedies & Enforcement Analysis
+|   +-- Phase VI: Advanced Doctrines (gap-filling, parol evidence, third-party liability, privilege)
+|   +-- Key Case Law Reference (PNG & Commonwealth)
+|   +-- Master Analytical Checklist (11 items)
+|   +-- Response Depth Tiering (Tier 1/2/3)
+|   +-- Mandatory Response Format (with Summary + Remedies sections)
+|
++-- CROSS_REF_INDEX_FOR_CMA (const) — key SCA/CDA provisions for CMA mode
++-- CROSS_REF_INDEX_FOR_CDA (const) — key CMA/SCA provisions for CDA mode
++-- CROSS_REF_INDEX_FOR_SA  (const) — key 2015 successor provisions for SA mode
++-- CROSS_REF_INDEX_FOR_SCA (const) — key CMA/CDA provisions for SCA mode
+|
++-- getAiModes() function
+|   +-- General Purpose AI (disabled, inline prompt)
+|   +-- SCPNG Document Analyst (disabled, external prompt file)
+|   +-- CMA 2015 Expert (identity anchor + === boundary markers === + Act text + SHARED + CROSS_REF_INDEX_FOR_CMA)
+|   +-- CDA 2015 Expert (identity anchor + === boundary markers === + Act text + SHARED + CROSS_REF_INDEX_FOR_CDA)
+|   +-- SA 1997 Expert (identity anchor + temporal warning + === boundary markers === + Act text + SHARED + CROSS_REF_INDEX_FOR_SA)
+|   +-- SCA 2015 Expert (identity anchor + === boundary markers === + Act text + SHARED + CROSS_REF_INDEX_FOR_SCA)
+|   +-- All Acts Expert (MANIFEST + 5-step methodology + cross-act conflict analysis + temporal awareness + === boundary markers === + ALL Act texts [size-ordered: CDA→SCA→SA→CMA] + SHARED)
+|
++-- Act text files loaded via imports:
+    +-- /files/CMA2015.txt (Capital Market Act 2015)
+    +-- /files/CDA2015.txt (Central Depositories Act 2015)
+    +-- /files/SA1997.txt (Securities Act 1997)
+    +-- /files/SCA2015.txt (Securities Commission Act 2015)
 ```
 
 ### Prompt Assembly Per Mode
 
 Each legal expert mode assembles its prompt as:
 
+**Single-Act Modes (CMA, CDA, SA, SCA):**
 ```
-[Mode-specific identity + search rules]
+[Strong identity anchor + "YOU ARE THE [ACT] EXPERT"]
 +
-[Full Act text(s)]
+[Temporal context (SA 1997 mode: repeal warning)]
++
+[Absolute rule: answer from own Act first]
++
+[5-step mandatory search rules with redirect-only-as-last-resort]
++
+"=== BEGIN [ACT NAME] TEXT ===" + [Full Act text] + "=== END [ACT NAME] TEXT ==="
++
+SHARED_LEGAL_EXPERT_INSTRUCTIONS (includes anti-hallucination loaded Act awareness rule)
++
+CROSS_REF_INDEX_FOR_[ACT] (lightweight cross-reference index from other Acts)
+```
+
+**All Acts Expert Mode:**
+```
+[LOADED ACTS MANIFEST — explicit checklist of all 4 loaded Acts with ✅ markers]
++
+[Anti-hallucination warning: "NEVER say any Act is 'not loaded'"]
++
+[5-step methodology (incl. STEP 5: cross-Act conflict analysis)]
++
+[Temporal awareness — SA 1997 repeal status]
++
+[4 Act texts in SIZE ORDER with boundary markers:]
+  "=== BEGIN CDA 2015 TEXT ===" (115KB — smallest first)
+  "=== BEGIN SCA 2015 TEXT ===" (123KB)
+  "=== BEGIN SA 1997 TEXT ===" (253KB)
+  "=== BEGIN CMA 2015 TEXT ===" (774KB — largest last)
 +
 SHARED_LEGAL_EXPERT_INSTRUCTIONS
 ```
 
-The shared instructions are appended at the end so they apply universally to all legal modes. Mode-specific rules come first to establish the AI's primary Act allegiance and search behavior.
+**Why size ordering matters:** Large language models exhibit a "lost in the middle" effect where content buried deep in very long contexts gets less attention. By placing smaller Acts first, we ensure they're not overshadowed by the 774KB CMA text. The CMA goes last because it's the largest and benefits from recency bias.
 
 ### Where the Prompt Gets Injected
 
-At runtime (around line 570+ in AIHub.tsx), the selected mode's prompt is injected as the first message in the conversation:
+At runtime, the selected mode's prompt is injected via the Gemini v1beta API's native `system_instruction` field:
 
 ```typescript
-if (currentMode?.prompt) {
-  parts: [{ text: `System Instruction: ${currentMode.prompt}` }]
-}
+const requestBody = {
+  contents: conversationHistory,  // Only real user/model turns
+  system_instruction: {
+    parts: [{ text: currentMode.prompt }]
+  },
+  generationConfig: {
+    temperature: 0.1,
+    topP: 0.85,
+    maxOutputTokens: 8192,
+  },
+};
 ```
+
+This is a significant improvement over the previous approach which faked the system instruction as a user/model message pair, wasting context window space and causing inconsistent instruction-following.
 
 ---
 
-## 4. The Elite Legal Analysis Framework
+## 4. The Legal Analysis Framework
 
 ### 4.1 Cross-Reference Resolution Rules (CRITICAL RULE)
-
-**Location:** Lines 54–82 of `AIHub.tsx`
 
 **Purpose:** Prevent the AI from stopping at a definitional provision when the user is asking about the substantive provision in another Act.
 
 **Rules:**
 
-| # | Rule | Purpose |
+| # | Rule | Single-Act Behavior |
 |---|---|---|
 | 1 | Follow the cross-reference | Quote the SUBSTANTIVE provision, not just the definition |
 | 2 | Quote BOTH provisions | Definitional first, then substantive in full |
-| 3 | Search ALL loaded Acts | Don't stay in one Act when the answer is in another |
+| 3 | Search ALL loaded Acts | If only one Act loaded, search it exhaustively |
 | 4 | Trace the full chain | Follow nested cross-references to the operative rule |
-| 5 | Never say "one would also need to cite another Act" | If the Act is loaded, cite it directly |
-| 6 | Search the CORRECT Act first | Subject-matter-to-Act routing table |
-| 7 | Never say "there is no definition" without checking all Acts | Every Act has its own Section 2 |
-
-**Subject-Matter Routing Table:**
-
-| Keywords in Question | Primary Act |
-|---|---|
-| Depository, deposited securities, computer systems, depositors, securities accounts | Central Depositories Act 2015 |
-| Stock exchange, derivatives exchange, licensing, capital market products, trading | Capital Market Act 2015 |
-| Commission structure, powers, appointments, governance, Chairman | Securities Commission Act 2015 |
-| Securities generally (pre-2015 framework), prospectus, expert liability | Securities Act 1997 |
-
-**Worked Examples in the Prompt:**
-- Example 1: Cross-reference resolution (SCA → CMA Section 9)
-- Example 2: Correct Act selection ("access" in depository computer system → CDA)
-- Example 3: Incorrect behavior pattern to avoid
+| 5 | Never say "need to cite another Act" if loaded | In single-Act mode, note cross-reference and suggest mode switch |
+| 6 | Search the CORRECT Act first | **ALL ACTS EXPERT MODE ONLY** — single-Act modes ignore this |
+| 7 | Check all interpretation sections | If only one Act loaded, search that Act's Section 2 thoroughly |
 
 ### 4.2 Mandatory Search Methodology
-
-**Location:** Lines 86–96 of `AIHub.tsx`
-
-**Purpose:** Prevent the AI from missing obvious answers by enforcing a structured keyword search before writing any response.
 
 **5-Step Search Process:**
 
@@ -179,16 +247,10 @@ if (currentMode?.prompt) {
 
 ### 4.3 Depth of Analysis Requirements
 
-**Location:** Lines 99–112 of `AIHub.tsx`
-
-**Purpose:** Ensure every response is exhaustive, not surface-level.
-
-**Category-Specific Depth Rules:**
-
 | Category | Minimum Requirement |
 |---|---|
 | Syntactic Analysis | Analyze EVERY operative word (shall, may, must, if, subject to, provided that). Map modifier scope for every list/qualifier. |
-| Hohfeldian Mapping | COMPLETE relationship table for ALL parties and ALL correlatives. Accuracy rules enforced (see below). |
+| Hohfeldian Mapping | COMPLETE relationship table for ALL parties and ALL correlatives. Accuracy rules enforced. |
 | Cross-References | ALL related sections across ALL loaded Acts. Must include: referenced by, references to, appeals, revocation, enforcement, definitions. |
 | Risk Flags | Minimum 3 SPECIFIC risks citing exact statutory language. No generic observations. |
 
@@ -201,14 +263,10 @@ if (currentMode?.prompt) {
 | Power/Liability | One party can ALTER another's legal relationship | approve, terminate, revoke, amend |
 | Immunity/Disability | ONLY when explicit shield from legal action | "shall not be liable," exculpatory clauses |
 
-**Key Correction:** A procedural limitation on a Power (e.g., "with the concurrence of") is NOT an Immunity — it is a condition on the exercise of the Power. Omit categories that don't apply rather than force-fitting.
-
-**Anti-Hallucination Rule for Cross-References:**
+**Anti-Hallucination Rule:**
 > Only cite section numbers you can VERIFY exist in the loaded text. Never invent or guess section numbers. If unsure, say: "A related provision likely exists regarding [topic] but could not be located in the available text."
 
 ### 4.4 Phase I: Syntactic & Lexical Forensics
-
-**Location:** Lines 116–128 of `AIHub.tsx`
 
 **Modifier Analysis Tools:**
 
@@ -227,8 +285,6 @@ if (currentMode?.prompt) {
 | Breach consequence | Damages lawsuit, contract survives | Duty discharged entirely, deal can die |
 | Trigger words | — | "provided that," "if," "on the condition that," "subject to," "unless and until" |
 
-**Notwithstanding Hierarchy:** Map every "Notwithstanding" clause to find the apex predator. "Notwithstanding anything to the contrary herein" defeats all specific cross-references.
-
 **Shall/May/Must Hierarchy:**
 
 | Term | Meaning |
@@ -241,8 +297,6 @@ if (currentMode?.prompt) {
 
 ### 4.5 Phase II: Hohfeldian Analysis & Logical Structure
 
-**Location:** Lines 132–150 of `AIHub.tsx`
-
 **The Four Correlative Pairs:**
 
 | Category | Party A Holds | Party B Holds | Significance |
@@ -253,17 +307,13 @@ if (currentMode?.prompt) {
 | Immunity / Disability | Protection from legal action | Cannot assert a claim | Examine for unconscionability |
 
 **Syllogistic Reasoning:**
-- Major Premise (Rule of Law) → from the governing Act provision
-- Minor Premise (Facts/Document) → applied to the specific scenario
-- Conclusion → inevitable legal result from both premises
+- Major Premise (Rule of Law) -> from the governing Act provision
+- Minor Premise (Facts/Document) -> applied to the specific scenario
+- Conclusion -> inevitable legal result from both premises
 
 **Fallacy Detection:** Flag circular reasoning, non sequitur, and equivocation.
 
 ### 4.6 Phase III: Canon Warfare (Llewellyn Defense)
-
-**Location:** Lines 154–165 of `AIHub.tsx`
-
-**Thrust & Parry Matrix:**
 
 | Your Canon (Thrust) | Counter-Canon (Parry) |
 |---|---|
@@ -273,21 +323,15 @@ if (currentMode?.prompt) {
 | Ejusdem Generis: General words limited to same category | Noscitur a Sociis: General term deliberately broad |
 | Last Antecedent: Modifier attaches to nearest noun | Series-Qualifier: Modifier applies to all list items |
 
-**Instruction:** Always present both sides — state which canon governs the specific linguistic formulation and why.
-
 ### 4.7 Phase IV: Jurisdictional Context (PNG Securities Law)
 
-**Location:** Lines 169–175 of `AIHub.tsx`
-
 - **Governing Framework:** SCA 2015, CMA 2015, CDA 2015, SA 1997
-- **Regulatory Hierarchy:** Legislation → Regulatory Instruments → Market Rules → SCPNG Guidelines → Industry Practice
+- **Regulatory Hierarchy:** Legislation -> Regulatory Instruments -> Market Rules -> SCPNG Guidelines -> Industry Practice
 - **Interpretation Standards:** PNG Interpretation Act; Commonwealth (Australia, UK) as persuasive authority
-- **Efforts Clauses:** best efforts ≠ reasonable efforts ≠ commercially reasonable efforts
+- **Efforts Clauses:** best efforts != reasonable efforts != commercially reasonable efforts
 - **Penalty Provisions:** Always identify max fine, imprisonment term, strict vs. mens rea liability
 
 ### 4.8 Phase V: Black Swan Stress Test
-
-**Location:** Lines 179–185 of `AIHub.tsx`
 
 | Stress Test | What to Check |
 |---|---|
@@ -297,11 +341,90 @@ if (currentMode?.prompt) {
 | Definitional Gaps | Are key terms defined in Section 2? If not, what's the likely judicial interpretation? |
 | Temporal Issues | Time limits, sunset clauses, transitional provisions? |
 
-### 4.9 Master Analytical Checklist
+### 4.9 Temporal & Repeal Tracking (Added 3 March 2026)
 
-**Location:** Lines 189–198 of `AIHub.tsx`
+**Critical Legislative Fact:** The Securities Act 1997 has been formally repealed by SCA 2015 Section 117.
 
-Applied to every response:
+**What's Implemented:**
+- Every SA 1997 Expert response now includes a mandatory **Temporal Status** section
+- Full Part-by-Part successor provision mapping (SA 1997 → 2015 Acts)
+- Saving & transitional provisions documented (SCA 2015 ss.118-123)
+- All Acts Expert mode includes temporal awareness for SA 1997 provisions
+- Fidelity Fund → Capital Market Compensation Fund conversion tracked (SCA 2015 s.123)
+
+**SA 1997 → 2015 Acts Successor Mapping:**
+
+| SA 1997 Part | Successor Act | Subject Matter |
+|---|---|---|
+| Part II (ss.4-17) | SCA 2015 | Securities Commission establishment & powers |
+| Part III Div 1 (ss.18-26) | CMA 2015 | Stock exchange approval & regulation |
+| Part III Div 2 (ss.27-49) | CMA 2015 Part IX | Fidelity Fund → Capital Market Compensation Fund |
+| Part IV (ss.51-94) | CMA 2015 | Prospectus, offer & allotment restrictions |
+| Part V (ss.95-104) | CMA 2015 | Market conduct, manipulation, false trading |
+| Part VI (ss.105-115) | CMA 2015 | Substantial security holders, disclosure |
+| Part VII (ss.116-163) | CMA 2015 | Takeover provisions |
+
+### 4.10 Remedies & Enforcement Analysis (Added 3 March 2026)
+
+A new mandatory analysis section requiring identification of:
+- **Penalty provisions**: Fine amounts, imprisonment terms, strict vs. mens rea liability
+- **Enforcement mechanisms**: Commission administrative action, court orders, criminal prosecution, private civil action
+- **Remedial hierarchy**: Administrative (fastest) → Civil (balance of probabilities) → Criminal (beyond reasonable doubt)
+- **Enforcement gaps**: Obligations without penalties, disproportionate penalties, missing timeframes
+
+### 4.11 Phase VI: Advanced Doctrines (Added 3 March 2026)
+
+Four advanced doctrine sections added for Tier 2 and Tier 3 queries:
+
+| Section | Content |
+|---|---|
+| 6.1 Implied Duties & Gap-Filling | Commission guidelines (CMA s.466), PNG Interpretation Act principles, Commonwealth persuasive authority |
+| 6.2 Parol Evidence in Statutory Context | Four corners rule, purposive construction exception, subordinate legislation |
+| 6.3 Third-Party Liability | Officer/director personal liability, aiding and abetting, civil accessorial liability |
+| 6.4 Privilege & Confidentiality | Statutory secrecy obligations, privileged Commission proceedings, self-incrimination |
+
+### 4.12 Key Case Law Reference (Added 3 March 2026)
+
+Embedded case law database for AI reference:
+
+**PNG Statutory Interpretation:**
+- **Gari Baki v Allan Kopi [2008] PGNC 251; N4023** — Three-step approach: plain meaning → fair/liberal construction → contextual reading
+- **Salamo Elema v Pacific MMI Insurance Ltd [2011] PGSC 9; SC1114** — Supreme Court endorsed fair, large, and liberal construction
+- **PNG Constitution s.25(3)** — Interpretation giving effect to National Goals preferred
+
+**PNG Securities Law:**
+- **Oil Search Ltd v Securities Commission of PNG (2020)** — SCA 2015 does not authorize "Acting Chairman" appointments; strict compliance required
+- **In the Matter of Oil Search Limited (2021)** — CMA 2015 intersection with Companies Act 1997 in scheme of arrangement
+
+**Commonwealth Persuasive Authority:**
+- **ASIC v Hellicar [2012] HCA 17** — Directors' duties in securities disclosure
+- **ASIC v Fortescue Metals Group Ltd [2011] FCAFC 19** — Misleading conduct in securities markets
+- **Project Blue Sky Inc v Australian Broadcasting Authority [1998] HCA 28** — Purposive statutory interpretation
+- **CIC Insurance Ltd v Bankstown Football Club Ltd [1997] HCA 2** — Context over literal meaning
+
+### 4.13 Response Depth Tiering (Added 3 March 2026)
+
+Adaptive 3-tier response system:
+
+| Tier | Trigger | Format |
+|---|---|---|
+| **Tier 1 — Quick Reference** | "What is the definition of...", "What does Section X say?", "What is the penalty for..." | Statutory quote → Brief explanation → Key cross-references → Follow-ups |
+| **Tier 2 — Standard Analysis** (Default) | "How does Section X apply to...", "What are the requirements for...", "Can the Commission..." | Statutory quote → Syntactic analysis → Hohfeldian (relevant pairs) → Practical implications → Cross-references → Remedies → Summary → Follow-ups |
+| **Tier 3 — Full Elite Analysis** | "Analyze the interaction between...", "What are the legal risks of...", multi-provision queries | Full mandatory format — all phases, all sections, minimum 3 risk flags, full Hohfeldian table, Canon Warfare |
+
+### 4.14 Post-Response Self-Verification (Added 3 March 2026)
+
+5-point mandatory verification checklist before finalizing every response:
+
+1. **Section Number Audit** — Confirm every cited section number exists in loaded text
+2. **Quote Accuracy Check** — Verify direct quotes match Act text word-for-word
+3. **Act Attribution Check** — Verify every provision is attributed to the correct Act
+4. **Cross-Reference Verification** — Verify referenced sections exist in cross-reference index or loaded text
+5. **Hohfeldian Category Accuracy** — Confirm categorizations follow accuracy rules
+
+### 4.15 Master Analytical Checklist
+
+Applied to every response (updated 3 March 2026 — expanded from 9 to 11 items):
 
 1. CROSS-REFERENCE RESOLUTION — Follow all cross-references, quote substantive provisions in full
 2. Identify every modifier and map grammatical scope (shall, may, must, if, subject to)
@@ -312,79 +435,85 @@ Applied to every response:
 7. Apply PNG jurisdictional context and regulatory hierarchy
 8. Stress-test for edge cases, interaction effects, enforcement gaps (minimum 3 specific risks)
 9. Identify ALL related sections: referenced by, references to, appeals, revocation, enforcement, definitions
+10. **TEMPORAL CHECK** — If analyzing SA 1997, flag repeal status, identify successor provisions, note transitional effects
+11. **REMEDIES & ENFORCEMENT** — Identify penalty provisions, enforcement mechanisms, and enforcement gaps
 
-### 4.10 Mandatory Response Format
+### 4.16 Mandatory Response Format
 
-**Location:** Lines 202–241 of `AIHub.tsx`
-
-**Structure:**
+**Structure (updated 3 March 2026):**
 
 1. **Authenticity** — Direct word-for-word quote from the Act
 2. **Multi-Act Cross-Referencing** — Separate quote boxes per Act, labeled clearly, full provisions
 3. **Required Quote Format** — `> [!NOTE]` syntax with mandatory blank lines between subsections
-4. **Elite Analysis Section** — Structured as:
+4. **Analysis Section** — Structured as:
    - Syntactic Analysis (every operative word)
    - Hohfeldian Mapping (complete relationship table)
    - Practical Implications (what the provision DOES)
    - Cross-References & Interactions (all related sections with numbers and descriptions)
+   - **Remedies & Enforcement** (penalty provisions, enforcement mechanisms, strict vs. mens rea, enforcement gaps)
    - Risk Flags (minimum 3, citing exact language)
+   - **Temporal Status** (SA 1997 provisions only — repeal status, successor provision, transitional effects)
+   - **Summary** (2-4 plain-language sentences: what the provision does, who it affects, key practical consequence)
 5. **Rich Formatting** — Bold section numbers, italicize obligations
 6. **Follow-up Questions** — 3 mandatory follow-ups in `<followups>` tag format
 
 ---
 
-## 5. Per-Mode Prompt Enhancements
+## 5. Per-Mode Prompt Architecture
 
-### 5.1 Shared 5-Point Search Rules (All Single-Act Modes)
+### 5.1 Identity Anchor Pattern (All Single-Act Modes)
 
-Every single-Act mode (CMA, CDA, SA, SCA) now has a `MANDATORY SEARCH RULES FOR THIS MODE` block prepended to its prompt. The 5 rules are:
+Every single-Act mode now opens with a strong identity anchor that prevents the self-redirect bug:
+
+```
+YOU ARE THE [ACT NAME] EXPERT. You have ONLY the [Act Name] loaded.
+This is YOUR Act. Every question the user asks should be answered from THIS Act first.
+
+ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST:
+The user has selected "[Mode Name]" mode. They EXPECT answers from the [Act Name].
+You MUST rigorously and exhaustively search YOUR loaded Act before even considering
+that the answer might be elsewhere. NEVER redirect the user to "[Mode Name]" — you ARE
+the [Mode Name].
+```
+
+### 5.2 Five-Step Search Rules (All Single-Act Modes)
 
 | # | Rule | Purpose |
 |---|---|---|
-| 1 | SEARCH YOUR OWN ACT THOROUGHLY FIRST | Extract keywords, scan entire text, every Part/Division/Subdivision + Section 2 |
+| 1 | EXHAUSTIVE SELF-SEARCH | Extract keywords, scan entire text, every Part/Division/Subdivision + Section 2, headings, body text, penalty provisions, schedules, cross-references |
 | 2 | CHECK SECTION HEADINGS | Match section titles to the question before reading body text |
 | 3 | NEVER GRAB AN UNRELATED SECTION | If no match, say so clearly — don't force-fit |
-| 4 | REDIRECT WHEN APPROPRIATE | State which Act governs the topic and recommend the correct mode |
-| 5 | QUOTE FROM THIS ACT FIRST | Primary Act = primary source. Other Acts = supplementary only |
+| 4 | ANSWER IF FOUND | If ANY relevant provision exists — even tangential or definitional — quote it and provide full analysis. Do NOT redirect. |
+| 5 | REDIRECT ONLY AS LAST RESORT | ONLY if ZERO relevant provisions found after exhaustive search. Use language: "After thoroughly searching the [Act], this specific topic does not appear to be addressed..." |
 
-### 5.2 CMA 2015 Expert Mode
-
-**Location:** Lines 258–277 of `AIHub.tsx`
+### 5.3 CMA 2015 Expert Mode
 **Mode ID:** `cma_2015_expert`
+- Identity anchor: "YOU ARE THE CAPITAL MARKET ACT 2015 (CMA 2015) EXPERT"
+- 5-step search rules with CMA-specific examples
+- Redirect-only-as-last-resort protocol
+- **Cross-Reference Index** (`CROSS_REF_INDEX_FOR_CMA`): Key provisions from SCA 2015 (ss.4, 55, 105, 117-123) and CDA 2015 (s.2(1) definitions, ss.5, 14)
 
-**Mode-Specific Rules:**
-- 5-point search rules with CMA-specific redirect guidance
-- Redirects depository topics → CDA Expert, Commission governance → SCA Expert
-- Example: "If the user asks about minimum financial requirements, look for a section titled 'Minimum financial requirements' before anything else"
-
-### 5.3 CDA 2015 Expert Mode
-
-**Location:** Lines 278–297 of `AIHub.tsx`
+### 5.4 CDA 2015 Expert Mode
 **Mode ID:** `cda_2015_expert`
+- Identity anchor: "YOU ARE THE CENTRAL DEPOSITORIES ACT 2015 (CDA 2015) EXPERT"
+- 5-step search rules with CDA-specific examples
+- Redirect-only-as-last-resort protocol
+- **Cross-Reference Index** (`CROSS_REF_INDEX_FOR_CDA`): Key provisions from CMA 2015 (s.2(1) imported definitions, ss.9, 179, 250) and SCA 2015 (ss.4, 43, 55, 105)
 
-**Mode-Specific Rules:**
-- 5-point search rules with CDA-specific redirect guidance
-- Redirects exchange/licensing topics → CMA Expert, Commission governance → SCA Expert
-- Example: "If the user asks about access to computer system, look for a section titled with those keywords before anything else"
-
-### 5.4 SA 1997 Expert Mode
-
-**Location:** Lines 298–317 of `AIHub.tsx`
+### 5.5 SA 1997 Expert Mode
 **Mode ID:** `sa_1997_expert`
+- Identity anchor: "YOU ARE THE SECURITIES ACT 1997 (SA 1997) EXPERT"
+- **Temporal Context Warning**: Prominent repeal status notice (SCA 2015 s.117) with mandatory Temporal Status section in every response
+- 5-step search rules with SA-specific examples
+- Special rule: "If a term like 'expert' is defined in THIS Act, quote THIS Act's definition — not a definition from a different Act"
+- **Cross-Reference Index** (`CROSS_REF_INDEX_FOR_SA`): Key successor provisions from SCA 2015 (ss.4, 117-123) and CMA 2015 (ss.9, 2(1), Part VII, Part IX) for temporal mapping
 
-**Mode-Specific Rules:**
-- 5-point search rules with SA-specific redirect guidance
-- **Special rule:** "If a term like 'expert' is defined in THIS Act, quote THIS Act's definition — not a definition from a different Act"
-- This was added after the SA 1997 test where the AI quoted the SCA 2015's "expert" definition instead of SA 1997's own identical definition
-
-### 5.5 SCA 2015 Expert Mode
-
-**Location:** Lines 318–344 of `AIHub.tsx`
+### 5.6 SCA 2015 Expert Mode
 **Mode ID:** `sca_2015_expert`
-
-**Mode-Specific Rules:**
-- 5-point search rules with SCA-specific redirect guidance
-- **Extra Rule 6 — Key Section Cheat Sheet:**
+- Identity anchor: "YOU ARE THE SECURITIES COMMISSION ACT 2015 (SCA 2015) EXPERT"
+- 5-step search rules with SCA-specific examples
+- **Cross-Reference Index** (`CROSS_REF_INDEX_FOR_SCA`): Key provisions from CMA 2015 (s.2(1) definitions, ss.3, 9, 30, 31, 36, 77) and CDA 2015 (ss.2(1), 5)
+- Key Section Cheat Sheet:
 
 | Topic | Section to Check |
 |---|---|
@@ -396,14 +525,10 @@ Every single-Act mode (CMA, CDA, SA, SCA) now has a `MANDATORY SEARCH RULES FOR 
 | Appointment Committee | Section 18 |
 | Definitions | Section 2 (Interpretation) |
 
-This cheat sheet was added after the test where the AI failed to find SCA Section 9(2) for the Chairman appointment publication question.
-
-### 5.6 All Acts Expert Mode
-
-**Location:** Lines 346–374 of `AIHub.tsx`
+### 5.7 All Acts Expert Mode
 **Mode ID:** `merged_acts_expert`
 
-**Mode-Specific Rules — 4-Step Methodology:**
+**4-Step Methodology:**
 
 | Step | Instruction |
 |---|---|
@@ -415,10 +540,87 @@ This cheat sheet was added after the test where the AI failed to find SCA Sectio
 **Additional Rules:**
 - Never say a term is undefined without checking all four Interpretation sections
 - Never say "this is covered in another Act" without quoting it — all four Acts are loaded
+- **Temporal Awareness (Added 3 March 2026)**: SA 1997 is formally repealed by SCA 2015 s.117 — always note repeal status, quote both the repealed provision and the current 2015 successor, and explain saving/transitional effects (SCA 2015 ss.118-123)
 
 ---
 
-## 6. Test Results & Iterative Fixes
+## 6. API Integration
+
+### Endpoint Migration: v1 to v1beta
+
+**Before (v1):**
+```
+https://generativelanguage.googleapis.com/v1/models/{model}:generateContent
+```
+System prompt was faked as a user/model conversation pair:
+```typescript
+// OLD — wasted 2 turns of context, inconsistent instruction following
+conversationHistory.push({ role: 'user', parts: [{ text: `System Instruction: ${prompt}` }] });
+conversationHistory.push({ role: 'model', parts: [{ text: "Understood." }] });
+```
+
+**After (v1beta):**
+```
+https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent
+```
+System prompt sent as native top-level field:
+```typescript
+// NEW — dedicated system context, better instruction following
+const requestBody = {
+  contents: conversationHistory,
+  system_instruction: { parts: [{ text: currentMode.prompt }] },
+  generationConfig: { temperature: 0.1, topP: 0.85, maxOutputTokens: 8192 },
+};
+```
+
+### Generation Configuration
+
+| Parameter | Value | Rationale |
+|---|---|---|
+| `temperature` | `0.1` | Precision over creativity for statutory interpretation |
+| `topP` | `0.85` | Slightly constrained sampling for consistency |
+| `maxOutputTokens` | `8192` | Allows full Hohfeldian tables, cross-reference analysis, and summary |
+
+### Conversation History Filtering
+
+Messages sent to the API are filtered to exclude:
+- Initial greeting message (index 0)
+- Messages still being typed (`isTyping === true`)
+- Error messages (`text.startsWith('Error:')`)
+- Configuration messages (`text.startsWith('AI is not configured')`)
+
+### Context Window Optimization (Added 3 March 2026)
+
+To prevent token overflow in long sessions, conversation history is now limited:
+
+| Mode | Max History Turns | Rationale |
+|---|---|---|
+| Single-Act modes | 20 messages | Moderate context pressure — one Act loaded |
+| All Acts Expert | 10 messages | High context pressure — all 4 Act texts loaded simultaneously |
+
+**When history exceeds the limit:**
+1. The first user-model exchange is preserved (initial context)
+2. A summarization marker is inserted: `[SYSTEM NOTE: Earlier conversation turns have been omitted...]`
+3. The model acknowledges the trim and proceeds with available context
+4. The most recent turns are preserved in full
+
+This prevents truncated responses and context confusion in long analytical sessions.
+
+### Follow-Up Question Parsing
+
+```typescript
+// OLD — failed when model output contained newlines
+const followUpMatch = aiResponseText.match(/<followups>(.*?)<\/followups>/);
+
+// NEW — correctly matches across newlines, filters empty entries
+const followUpMatch = aiResponseText.match(/<followups>([\s\S]*?)<\/followups>/);
+followUpQuestions = followUpMatch[1].split('|').map(q => q.trim()).filter(q => q.length > 0);
+aiResponseText = aiResponseText.replace(/<followups>[\s\S]*?<\/followups>/, '').trim();
+```
+
+---
+
+## 7. Test Results & Iterative Fixes
 
 ### Round 1: Initial Tests (Pre-Enhancement)
 
@@ -437,41 +639,55 @@ This cheat sheet was added after the test where the AI failed to find SCA Sectio
 
 | Test Question | Mode | Grade | Issue |
 |---|---|---|---|
-| Minister's power vs. Commission independence (CMA s.12 + SCA s.6) | All Acts | **A-** | Minor Hohfeldian imprecision (procedural limit misclassified as Immunity) |
-| Thirteen core functions of CSD (CDA s.8) | CDA Expert | **B+** | Fabricated cross-ref section numbers; thin Hohfeldian mapping |
-| Minimum financial requirements (CMA s.43) | CMA Expert | **A-** | Possible hallucinated section "445"; missing key cross-ref to s.48 |
-| Chairman appointment notice publication | SCA Expert | **F** | Answered from CMA s.12 (wrong Act entirely), missed SCA s.9(2) |
-| "Expert" definition | SA 1997 Expert | **B+** | Quoted SCA 2015 instead of SA 1997's own definition; missed SA's own s.11 and s.82 |
+| Minister's power vs. Commission independence (CMA s.12 + SCA s.6) | All Acts | **A-** | Minor Hohfeldian imprecision |
+| Thirteen core functions of CSD (CDA s.8) | CDA Expert | **B+** | Fabricated cross-ref section numbers |
+| Minimum financial requirements (CMA s.43) | CMA Expert | **A-** | Possible hallucinated section |
+| Chairman appointment notice publication | SCA Expert | **F** | Answered from wrong Act entirely |
+| "Expert" definition | SA 1997 Expert | **B+** | Quoted wrong Act's definition |
 
 **Fixes Applied:**
+- Mandatory Search Methodology (5-step process)
+- Hohfeldian Accuracy Rules
+- Anti-Hallucination Rule
+- Single-Act Mode Rewrites with search rules
+- SA 1997 "Quote Your Own Act" Rule
+- SCA 2015 Section Cheat Sheet
+- All Acts 4-Step Methodology
 
-1. **Mandatory Search Methodology** — 5-step keyword search process before writing any response
-2. **Hohfeldian Accuracy Rules** — Strict definitions for each category; instruction to omit non-applicable categories
-3. **Anti-Hallucination Rule** — Only cite verifiable section numbers; say "could not be located" if unsure
-4. **Single-Act Mode Rewrites** — All 4 modes got 5-point search rules + redirect guidance
-5. **SA 1997 "Quote Your Own Act" Rule** — Explicit instruction to prefer own Act's definitions
-6. **SCA 2015 Section Cheat Sheet** — Key section lookup table for common topics
-7. **All Acts 4-Step Methodology** — Structured approach: identify Act → keyword search → quote correct Act → verify citations
-8. **Fixed duplicate numbering** — Response format had two items numbered "5."
+### Round 3: Self-Redirect Bug Fix (March 2026)
+
+| Test Question | Mode | Issue |
+|---|---|---|
+| "What are the limitations on establishing stock and derivatives markets according to Section 8?" | CMA 2015 Expert | AI responded as CDA Expert, told user to switch to CMA mode (the mode they were already in) |
+
+**Fixes Applied:**
+- Strong identity anchors in all 4 single-Act modes
+- "ABSOLUTE RULE — ANSWER FROM YOUR OWN ACT FIRST" protocol
+- Rule 4 changed from "REDIRECT WHEN APPROPRIATE" to "ANSWER IF FOUND"
+- Rule 5 changed to "REDIRECT ONLY AS LAST RESORT" (zero provisions found)
+- Shared instructions rules 3, 5, 6 updated for single-Act context awareness
 
 ---
 
-## 7. Complete Prompt Reference
+## 8. Complete Prompt Reference
 
 ### File Location
-`src/pages/AIHub.tsx`, lines 47–375
+`src/pages/AIHub.tsx`
 
 ### Constants & Variables
 
-| Name | Type | Lines | Purpose |
-|---|---|---|---|
-| `SHARED_LEGAL_EXPERT_INSTRUCTIONS` | `const string` (template literal) | 47–242 | Elite analysis framework + response format shared by all legal modes |
-| `SHARED_LEGAL_EXPERT_INSTRUCTIONS` reference in `getAiModes()` | — | appended to each mode | Injected at end of every legal expert prompt |
-| `getAiModes(useKnowledgeBase)` | `function` | 244–375 | Returns array of mode objects with id, title, prompt |
-| `cma2015PromptText` | `import` | line 38 | Full text of CMA 2015 |
-| `cda2015PromptText` | `import` | line 39 | Full text of CDA 2015 |
-| `sa1997PromptText` | `import` | line 40 | Full text of SA 1997 |
-| `sca2015PromptText` | `import` | line 41 | Full text of SCA 2015 |
+| Name | Type | Purpose |
+|---|---|---|
+| `SHARED_LEGAL_EXPERT_INSTRUCTIONS` | `const string` | Analysis framework (6 phases) + response format + checklist shared by all legal modes |
+| `CROSS_REF_INDEX_FOR_CMA` | `const string` | Cross-reference index: key SCA 2015 & CDA 2015 provisions for CMA Expert mode |
+| `CROSS_REF_INDEX_FOR_CDA` | `const string` | Cross-reference index: key CMA 2015 & SCA 2015 provisions for CDA Expert mode |
+| `CROSS_REF_INDEX_FOR_SA` | `const string` | Cross-reference index: key 2015 Acts successor provisions for SA Expert mode |
+| `CROSS_REF_INDEX_FOR_SCA` | `const string` | Cross-reference index: key CMA 2015 & CDA 2015 provisions for SCA Expert mode |
+| `getAiModes(useKnowledgeBase)` | `function` | Returns array of mode objects with id, title, prompt |
+| `cma2015PromptText` | `import` | Full text of CMA 2015 |
+| `cda2015PromptText` | `import` | Full text of CDA 2015 |
+| `sa1997PromptText` | `import` | Full text of SA 1997 |
+| `sca2015PromptText` | `import` | Full text of SCA 2015 |
 
 ### Mode IDs
 
@@ -487,19 +703,33 @@ This cheat sheet was added after the test where the AI failed to find SCA Sectio
 
 ---
 
-## 8. Future Improvements
+## 9. Future Improvements
+
+### Resolved Items (3 March 2026)
+
+| # | Previously Known Gap | Resolution |
+|---|---|---|
+| 1 | Single-Act modes cannot cross-reference | **RESOLVED** — Cross-reference indexes (`CROSS_REF_INDEX_FOR_*`) now provide key provisions from other Acts in each single-Act mode |
+| 2 | Context window pressure | **MITIGATED** — Conversation history limiting (20/10 turns) + Act text reordering by size (CDA→SCA→SA→CMA) to mitigate "lost in the middle" effect |
+| 3 | Hallucination persistence | **RESOLVED** — 5-point self-verification checklist + Act boundary markers (`=== BEGIN/END ===`) + LOADED ACTS MANIFEST + explicit "never claim Act not loaded" rule. Fixed "SCA not loaded" false claim in All Acts mode |
+| 4 | Canon Warfare depth / no case law | **RESOLVED** — PNG & Commonwealth case law reference database embedded in shared instructions |
+| 6 | Temporal Validity Check | **RESOLVED** — Full temporal/repeal tracking with SA 1997 → 2015 Acts successor mapping and transitional provisions |
 
 ### Known Remaining Gaps
 
-1. **Single-Act modes cannot cross-reference**: When using CMA Expert and the question requires CDA content, the AI can only redirect — it cannot quote the other Act. Consider always loading all Acts or implementing dynamic Act loading.
+1. **Penalty cross-reference table**: Many provisions reference general penalty sections. A pre-built penalty cross-reference table could be added to the prompt.
 
-2. **Context window pressure**: Loading all four Act texts in "All Acts Expert" mode consumes significant context. If responses become truncated or the AI loses track of content deep in the Acts, consider chunking or retrieval-augmented generation (RAG).
+2. **Ambiguity Escalation Protocol**: When a provision admits two equally valid interpretations, present both with separate Hohfeldian tables and flag as a genuine interpretive dispute.
 
-3. **Hallucination persistence**: Despite the anti-hallucination rule, the AI may still occasionally cite section numbers that exist in its training data but differ from the loaded text. Consider adding a post-processing validation step.
+3. **Confidence Scoring**: Self-reported confidence indicators (HIGH/MEDIUM/LOW/INFERRED) on analytical conclusions, with appropriate caveats about AI self-calibration limitations. (Deliberately deferred — not implemented per stakeholder decision.)
 
-4. **Canon Warfare depth**: The current prompt instructs the AI to identify canons and counter-canons but doesn't enforce citing PNG-specific case law. Future enhancement could include a PNG case law reference database.
+4. **Dynamic Act Loading**: Single-Act modes use static cross-reference indexes rather than dynamically loading other Acts. A future RAG-based approach could retrieve only relevant sections on demand.
 
-5. **Penalty cross-reference table**: Many provisions reference general penalty sections. A pre-built penalty cross-reference table could be added to the prompt to prevent the AI from missing applicable penalties.
+5. **Expanded PNG Case Law**: The current case law database is limited to publicly available decisions. As more PNG securities law decisions become available (via PACLII or SCPNG enforcement actions), the database should be expanded.
+
+6. **Regulatory Instruments Database**: Commission guidelines, practice notes, and regulatory instruments issued under the Acts are not currently embedded. These could supplement the legislative text for practical compliance guidance.
+
+7. **Securities Commission Amendment Act 2023**: The SCA was amended in 2023 — any changes to Commission powers, appointments, or enforcement provisions should be incorporated into the prompt framework.
 
 ### Suggested Test Questions for Validation
 
@@ -511,4 +741,5 @@ This cheat sheet was added after the test where the AI failed to find SCA Sectio
 | "How is 'expert' defined in the Securities Act?" | SA 1997 | s.2 interpretation section |
 | "Can the Minister revoke a public interest director AND does that undermine Commission independence?" | All Acts | CMA s.12 + SCA s.6 (multi-Act) |
 | "What penalties apply for unauthorized access to a depository computer system?" | CDA 2015 | s.55(3) — K10M fine / 10 years |
-| "What are the grounds for revoking a stock exchange's approval?" | CMA 2015 | s.14 |
+| "What are the limitations on establishing stock and derivatives markets?" | CMA 2015 | s.8 (should NOT redirect when in CMA mode) |
+| "How does the 'public interest' objective in SCA s. 7 conflict with market efficiency mandates in CMA s. 13?" | All Acts | SCA s.7 + CMA s.13 (must quote BOTH, never claim SCA "not loaded") |

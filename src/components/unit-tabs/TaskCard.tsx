@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -8,9 +8,12 @@ import { cn } from '@/lib/utils';
 import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BaseCard } from '@/components/ui/BaseCard';
-import { Input } from '@/components/ui/input';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { StaffMember } from '@/types/staff';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
 import { Employee } from '@/contexts/EmployeesContext';
@@ -96,16 +99,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
   availableAssignees = [],
   container
 }) => {
-  // State for editable dropdowns
-  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
-  const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-
-  // Refs for dropdowns
-  const priorityDropdownRef = useRef<HTMLDivElement>(null);
-  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-
   // Init local state from props, but allow instant toggle
   const [isCompletedOptimistic, setIsCompletedOptimistic] = useState(completed);
 
@@ -142,77 +135,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
       percentage: (completedCount / subtasks.length) * 100,
     };
   }, [subtasks]);
-
-  // Handle editing priority
-  const handlePriorityClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowPriorityDropdown(!showPriorityDropdown);
-    setShowAssigneeDropdown(false);
-    setShowStatusDropdown(false);
-  };
-
-  // Handle editing assignee
-  const handleAssigneeClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowAssigneeDropdown(!showAssigneeDropdown);
-    setShowPriorityDropdown(false);
-    setShowStatusDropdown(false);
-  };
-
-  // --- Define handleStatusClick BEFORE usage ---
-  const handleStatusClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowStatusDropdown(!showStatusDropdown);
-    setShowPriorityDropdown(false);
-    setShowAssigneeDropdown(false);
-  };
-
-  // --- Restore handleChangePriority --- 
-  const handleChangePriority = (newPriority: 'low' | 'medium' | 'high' | 'urgent') => {
-    if (onPriorityChange) {
-      onPriorityChange(id, newPriority);
-    }
-    setShowPriorityDropdown(false);
-  };
-
-  // Handle changing status
-  const handleChangeStatus = (newStatus: string) => {
-    if (onStatusChange) {
-      onStatusChange(id, newStatus);
-    }
-    setShowStatusDropdown(false);
-  };
-
-  // Handle changing assignee
-  const handleChangeAssignee = (newAssignee: StaffMember) => {
-    if (onAssigneeChange) {
-      onAssigneeChange(id, newAssignee);
-    }
-    setShowAssigneeDropdown(false);
-  };
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        (priorityDropdownRef.current && !priorityDropdownRef.current.contains(e.target as Node)) &&
-        (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(e.target as Node)) &&
-        (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node))
-      ) {
-        setShowPriorityDropdown(false);
-        setShowAssigneeDropdown(false);
-        setShowStatusDropdown(false);
-      }
-    };
-
-    if (showPriorityDropdown || showAssigneeDropdown || showStatusDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showPriorityDropdown, showAssigneeDropdown, showStatusDropdown]);
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
