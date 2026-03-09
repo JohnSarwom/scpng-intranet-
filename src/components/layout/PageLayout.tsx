@@ -24,6 +24,7 @@ import { useSlideshow } from '@/contexts/SlideshowContext';
 
 import { Switch } from '@/components/ui/switch';
 import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
+import FeedbackWidget from '@/components/feedback/FeedbackWidget';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -270,6 +271,8 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
           {children}
         </main>
       </div>
+
+      {!hideNavAndFooter && <FeedbackWidget />}
 
       {isMobile && isSidebarOpen && (
         <div className="fixed inset-0 bg-black/50 z-[100]" onClick={() => setIsSidebarOpen(false)}>

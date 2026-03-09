@@ -162,8 +162,9 @@ export class UserSharePointService {
         const fields = item.fields || item;
         let permissions: any = {};
         try {
-            if (fields.Permissions) {
-                const parsed = JSON.parse(fields.Permissions);
+            const rawPermissions = fields[this.permissionsColumnName];
+            if (rawPermissions) {
+                const parsed = JSON.parse(rawPermissions);
 
                 // Handle compressed format (Array of strings)
                 if (Array.isArray(parsed)) {
@@ -368,7 +369,8 @@ export class UserSharePointService {
                 .api(`/sites/${this.siteId}/lists/${this.groupsListId}/items`)
                 .post({ fields });
 
-            return this.mapGroupFromSharePoint(response);
+            // Return the input group with the new SharePoint item ID
+            return { ...group, id: response.id };
         } catch (error) {
             console.error('Error creating group:', error);
             throw error;

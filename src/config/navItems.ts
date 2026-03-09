@@ -19,6 +19,7 @@ import {
     Database,
     TestTube,
     Palette,
+    MessageSquareText,
     LucideIcon
 } from 'lucide-react';
 
@@ -59,6 +60,7 @@ export const mainNavItems: NavItem[] = [
 
 export const adminNavItems: NavItem[] = [
     { icon: Database, path: '/admin', label: 'Admin', resource: null, isAdminOnly: true },
+    { icon: MessageSquareText, path: '/uat-feedback', label: 'UAT', resource: null, isAdminOnly: true },
     { icon: TestTube, path: '/test-ground', label: 'Test Ground', resource: null, isAdminOnly: true },
     { icon: Palette, path: '/ui-library', label: 'UI Library', resource: null, isAdminOnly: true },
 ];

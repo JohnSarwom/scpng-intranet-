@@ -37,7 +37,8 @@ import {
     RefreshCw,
     Shield,
     Copy,
-    Search
+    Search,
+    MessageSquarePlus,
 } from "lucide-react";
 import {
     Table,
@@ -48,6 +49,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
+import { FeedbackSharePointService } from '@/services/feedbackService';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
 import { generateAllMockData, StaffMember } from '@/data/mockPerformanceDataGenerator';
 import { mockStrategyData } from '@/mockData/strategyData';
@@ -1627,6 +1629,39 @@ const TestGround = () => {
             toast({ title: "❌ Seeding Failed", description: error.message, variant: "destructive" });
         } finally {
             setIsSeedingOfficerProfiles(false);
+        }
+    };
+
+    // ==========================================
+    // UAT FEEDBACK LIST SETUP
+    // ==========================================
+    const [isCreatingFeedbackList, setIsCreatingFeedbackList] = useState(false);
+
+    const handleCreateUATFeedbackList = async () => {
+        setIsCreatingFeedbackList(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "🚀 Creating UAT Feedback List", description: "Setting up UAT_Feedback SharePoint list..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+
+            const result = await FeedbackSharePointService.createList(graphClient, site.id);
+            setSetupResult({ success: result.success, message: result.message });
+
+            if (result.success) {
+                toast({ title: "✅ List Created", description: result.message });
+            } else {
+                toast({ title: "⚠️ Already Exists", description: result.message, variant: "destructive" });
+            }
+        } catch (error: any) {
+            console.error('UAT Feedback list creation failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsCreatingFeedbackList(false);
         }
     };
 
@@ -3303,6 +3338,60 @@ const TestGround = () => {
                             <li>Wait for the process to complete.</li>
                             <li>Check "Site Contents" in SharePoint to verify all lists.</li>
                         </ol>
+                    </CardContent>
+                </Card>
+
+                {/* UAT Feedback List Setup */}
+                <Card className="border-2 border-intranet-primary/30 bg-gradient-to-br from-white to-intranet-primary/5 dark:from-gray-900 dark:to-intranet-primary/10">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-xl flex items-center gap-2 text-intranet-primary">
+                                    <MessageSquarePlus className="h-6 w-6" />
+                                    UAT Feedback List Setup
+                                </CardTitle>
+                                <CardDescription className="mt-1">
+                                    Creates the <strong>UAT_Feedback</strong> SharePoint list used to store staff feedback during testing.
+                                    File attachments are uploaded to the <strong>Asset Images/FeedBackFiles</strong> folder.
+                                </CardDescription>
+                            </div>
+                            <Badge className="bg-intranet-primary text-white shrink-0">UAT</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="bg-muted/50 rounded-lg border p-4 space-y-2 text-sm">
+                            <p className="font-semibold text-muted-foreground uppercase text-xs tracking-wider">Columns created</p>
+                            <div className="grid grid-cols-2 gap-1.5 text-muted-foreground">
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Title (Page Name)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> PageRoute (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> UserName (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> UserEmail (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Rating (number 1–5)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Category (choice)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Comment (multiline text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Status (choice)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> AttachmentUrl (short text)</span>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={handleCreateUATFeedbackList}
+                            disabled={isCreatingFeedbackList}
+                            size="lg"
+                            className="w-full gap-2 bg-intranet-primary hover:bg-intranet-secondary"
+                        >
+                            {isCreatingFeedbackList ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    Creating List...
+                                </>
+                            ) : (
+                                <>
+                                    <Database className="h-5 w-5" />
+                                    Create UAT_Feedback List
+                                </>
+                            )}
+                        </Button>
                     </CardContent>
                 </Card>
 

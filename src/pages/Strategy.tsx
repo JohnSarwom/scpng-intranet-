@@ -403,6 +403,10 @@ const Strategy = () => {
         return obj;
     });
 
+    // Overall progress across all strategic objectives
+    const totalProgress = effectiveObjectives.reduce((acc: number, obj: any) => acc + (obj.progress || 0), 0);
+    const averageProgress = effectiveObjectives.length > 0 ? Math.round(totalProgress / effectiveObjectives.length) : 0;
+
     // Divisional Alignments (The cascade)
     const effectiveAlignments = alignments && alignments.length > 0 ? alignments : divisionAlignment;
 
@@ -1140,6 +1144,104 @@ const Strategy = () => {
                                     })}
                                 </Accordion>
                             )}
+                        </div>
+
+                        {/* 5. Overall Organizational Achievement */}
+                        <div className="space-y-8 pt-4">
+                            <div className="text-center md:text-left">
+                                <h2 className="text-xl font-semibold px-1 flex items-center justify-center md:justify-start gap-2">
+                                    <BarChart2 className="w-5 h-5 text-intranet-primary" />
+                                    Overall Organizational Achievement
+                                </h2>
+                                <p className="text-sm text-muted-foreground mt-1 px-1">
+                                    Aggregate progress across all strategic objectives for the 2025/26 cycle.
+                                </p>
+                            </div>
+
+                            <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-intranet-primary/5 via-card to-muted/40">
+                                <CardContent className="p-8 md:p-12">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+                                        {/* Large Donut Chart */}
+                                        <div className="flex flex-col items-center justify-center gap-6">
+                                            <div className="text-center space-y-1">
+                                                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">2025/26 Work Plan</p>
+                                                <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Strategic Position</h3>
+                                            </div>
+                                            <TaskCompletionDonut
+                                                segments={[
+                                                    { value: averageProgress, color: '#5C001E', label: 'Completed' },
+                                                    { value: 100 - averageProgress, color: '#e2e8f0', label: 'Remaining' }
+                                                ]}
+                                                centerLabel={`${averageProgress}%`}
+                                                centerSubtext="Overall Status"
+                                                size={300}
+                                                thickness={24}
+                                            />
+                                            <div className="flex items-center gap-8 text-sm">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-intranet-primary" />
+                                                    <span className="text-muted-foreground font-medium">Achieved: <strong className="text-gray-800 dark:text-gray-200">{averageProgress}%</strong></span>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-3 h-3 rounded-full bg-slate-200" />
+                                                    <span className="text-muted-foreground font-medium">Remaining: <strong className="text-gray-800 dark:text-gray-200">{100 - averageProgress}%</strong></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Per-Objective Breakdown */}
+                                        <div className="space-y-5">
+                                            <div className="space-y-1 mb-6">
+                                                <h3 className="font-bold text-base text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                                                    <Target className="w-4 h-4 text-intranet-primary" />
+                                                    Objectives Breakdown
+                                                </h3>
+                                                <p className="text-xs text-muted-foreground">Individual progress per strategic objective</p>
+                                            </div>
+                                            {effectiveObjectives.map((objective: any, index: number) => {
+                                                const Icon = IconMap[objective.icon] || Target;
+                                                const prog = objective.progress || 0;
+                                                const statusColor =
+                                                    prog >= 75 ? 'text-green-600 bg-green-50 border-green-200' :
+                                                    prog >= 40 ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                                                    'text-rose-600 bg-rose-50 border-rose-200';
+                                                return (
+                                                    <div key={objective.id || index} className="space-y-2">
+                                                        <div className="flex items-center justify-between gap-3">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <div className="p-1.5 rounded-lg bg-intranet-primary/10 text-intranet-primary flex-shrink-0">
+                                                                    <Icon className="w-3.5 h-3.5" />
+                                                                </div>
+                                                                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate">{objective.title}</span>
+                                                            </div>
+                                                            <Badge variant="outline" className={`text-[10px] font-bold flex-shrink-0 border ${statusColor}`}>
+                                                                {prog}%
+                                                            </Badge>
+                                                        </div>
+                                                        <Progress value={prog} className="h-2" indicatorClassName="bg-[#5C001E]" />
+                                                    </div>
+                                                );
+                                            })}
+
+                                            {/* Summary stats row */}
+                                            <div className="grid grid-cols-3 gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
+                                                {[
+                                                    { label: 'Objectives', value: effectiveObjectives.length, icon: Layers },
+                                                    { label: 'On Track (≥40%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 40).length, icon: TrendingUp },
+                                                    { label: 'Completed (≥75%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 75).length, icon: Award },
+                                                ].map(({ label, value, icon: StatIcon }, i) => (
+                                                    <div key={i} className="flex flex-col items-center p-3 rounded-xl bg-intranet-primary/5 gap-1">
+                                                        <StatIcon className="w-4 h-4 text-intranet-primary" />
+                                                        <span className="text-lg font-black text-intranet-primary">{value}</span>
+                                                        <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-wider text-center">{label}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
                         </div>
 
                         {/* Redundant original "Alignment Cascade" has been removed to simplify the page as requested */}

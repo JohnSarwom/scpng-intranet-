@@ -45,6 +45,7 @@ import EditEmployeeProfile from './pages/EditEmployeeProfile';
 import PaymentsPage from './pages/PaymentsPage';
 import Apps from './pages/Apps';
 import TestGround from './pages/TestGround';
+import UATFeedbackPage from './pages/UATFeedbackPage';
 import { EmployeesProvider } from '@/contexts/EmployeesContext';
 import { SlideshowProvider } from '@/contexts/SlideshowContext';
 import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
@@ -230,6 +231,12 @@ const AppRoutes = () => {
       <Route path="/test-ground" element={
         <ProtectedRoute>
           <TestGround />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/uat-feedback" element={
+        <ProtectedRoute>
+          <UATFeedbackPage />
         </ProtectedRoute>
       } />
 

@@ -31,6 +31,7 @@ const SYSTEM_RESOURCES = [
   { id: 'market_data', label: 'Market Data' },
   { id: 'apps', label: 'Apps & Tools' },
   { id: 'units', label: 'Unit Page' },
+  { id: 'divisions', label: 'Division Page' },
   { id: 'organization', label: 'Organization Chart' },
   { id: 'hr', label: 'HR Profiles' },
   { id: 'reports', label: 'Reports' },
@@ -38,6 +39,7 @@ const SYSTEM_RESOURCES = [
   { id: 'licenses', label: 'Licensing Registry' },
   { id: 'assets', label: 'Asset Management' },
   { id: 'payments', label: 'Payments' },
+  { id: 'regulatory', label: 'Regulatory Intelligence' },
 ];
 
 const RoleManagement: React.FC<RoleManagementProps> = ({

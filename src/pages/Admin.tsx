@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import {
     Tabs,
@@ -15,7 +15,8 @@ import {
     Activity,
     Globe,
     LayoutDashboard,
-    Building2
+    Building2,
+    MessageSquareText
 } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
 import RoleManagement from '@/components/admin/RoleManagement';
@@ -24,6 +25,7 @@ import ThemeCustomization from '@/components/admin/ThemeCustomization';
 import ApiManagement from '@/components/admin/ApiManagement';
 import { ViewSettingsTab } from '@/components/admin/ViewSettingsTab';
 import OrgStructureManagement from '@/components/admin/OrgStructureManagement';
+import { UATFeedbackTab } from '@/components/admin/UATFeedbackTab';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -50,11 +52,15 @@ const Admin = () => {
     const [groups, setGroups] = useState<PermissionGroup[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Initialize Service
-    const getService = async () => {
-        const client = await getGraphClient(instance);
-        if (!client) throw new Error("Failed to initialize Graph Client");
-        return new UserSharePointService(client);
+    // Initialize Service — cached so initialization (siteId, listId, column names) runs once
+    const serviceRef = useRef<UserSharePointService | null>(null);
+    const getService = async (): Promise<UserSharePointService> => {
+        if (!serviceRef.current) {
+            const client = await getGraphClient(instance);
+            if (!client) throw new Error("Failed to initialize Graph Client");
+            serviceRef.current = new UserSharePointService(client);
+        }
+        return serviceRef.current;
     };
 
     const fetchData = async () => {
@@ -100,23 +106,23 @@ const Admin = () => {
         await fetchData();
     };
 
-    // Group Handlers
+    // Group Handlers — use optimistic updates to avoid SharePoint eventual-consistency lag
     const handleCreateGroup = async (group: PermissionGroup) => {
         const service = await getService();
-        await service.createGroup(group);
-        await fetchData();
+        const created = await service.createGroup(group);
+        setGroups(prev => [...prev, created]);
     };
 
     const handleUpdateGroup = async (group: PermissionGroup) => {
         const service = await getService();
         await service.updateGroup(group);
-        await fetchData();
+        setGroups(prev => prev.map(g => g.id === group.id ? group : g));
     };
 
     const handleDeleteGroup = async (groupId: string) => {
         const service = await getService();
         await service.deleteGroup(groupId);
-        await fetchData();
+        setGroups(prev => prev.filter(g => g.id !== groupId));
     };
 
 
@@ -151,7 +157,7 @@ const Admin = () => {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 h-auto">
+                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-7 h-auto">
                         <TabsTrigger value="users" className="py-2">
                             <Users className="mr-2 h-4 w-4" />
                             Users
@@ -176,6 +182,10 @@ const Admin = () => {
                         <TabsTrigger value="view-settings" className="py-2">
                             <LayoutDashboard className="mr-2 h-4 w-4" />
                             View Settings
+                        </TabsTrigger>
+                        <TabsTrigger value="uat-feedback" className="py-2">
+                            <MessageSquareText className="mr-2 h-4 w-4" />
+                            UAT Feedback
                         </TabsTrigger>
                     </TabsList>
 
@@ -217,6 +227,10 @@ const Admin = () => {
 
                     <TabsContent value="view-settings" className="space-y-4">
                         <ViewSettingsTab />
+                    </TabsContent>
+
+                    <TabsContent value="uat-feedback" className="space-y-4">
+                        <UATFeedbackTab />
                     </TabsContent>
                 </Tabs>
             </div>
