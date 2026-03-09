@@ -43,6 +43,11 @@ Comprehensive view of individual cases including:
 - **Tab-Based Filtering**: Quick access to specific case types
 - **Filter Panel**: Advanced filtering options (placeholder for future enhancement)
 
+### 6. Document Attachments (Added 2026-03-09)
+- **Attachment Resolution**: Automatically resolves Microsoft Graph DriveItem IDs (e.g., `b!...`) from SharePoint into direct `downloadUrl` or `webUrl` links.
+- **Direct Graph Access**: Leverages the Graph API (`/drives/{drive-id}/items/{item-id}`) within the `useRegulatoryCases.ts` hook for seamless rendering of case attachments.
+- **UI Integration**: Included within the Case Details Modal and Case Management Table as clickable view links.
+
 ---
 
 ## Architecture
@@ -307,6 +312,11 @@ Required permissions in RBAC:
 
 ### Change Log
 
+#### v1.1.0 (2026-03-09)
+- **Attachment Url Resolution**: Added seamless conversion of Microsoft Graph DriveItem IDs (`b!...`) into clickable download/web URLs via `@microsoft.graph.downloadUrl` in `useRegulatoryCases.ts`.
+- **Exposed Graph Client**: Updated `SharePointOpsService` to expose the Graph `client` for more flexible API querying within hooks.
+- **Attachment UI**: Added an "Attachments" column to the `CaseTable` and an "Attachments" section to the `CaseDetailsModal`.
+
 #### v1.0.0 (2026-02-13)
 - Initial implementation
 - Dashboard with tabbed navigation
@@ -366,6 +376,6 @@ Required permissions in RBAC:
 
 ---
 
-**Last Updated**: February 13, 2026  
-**Document Version**: 1.0  
-**Module Version**: 1.0
+**Last Updated**: March 09, 2026  
+**Document Version**: 1.1  
+**Module Version**: 1.1

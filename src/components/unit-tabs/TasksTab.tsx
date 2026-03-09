@@ -73,7 +73,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { addDays, addWeeks, addMonths } from 'date-fns';
+import { addDays, addWeeks, addMonths, format, isBefore, isValid } from 'date-fns';
 
 interface BoardData {
   [key: string]: Task[];
@@ -268,6 +268,7 @@ const BoardLane = ({
                 {...task}
                 assignee={assignee}
                 assignees={assignees}
+                onClick={() => onEditTask(task.id)}
                 onEdit={() => onEditTask(task.id)}
                 onDelete={() => onDeleteTask(task.id)}
                 onComplete={onToggleComplete}
@@ -304,6 +305,7 @@ const BoardLane = ({
                       {...task}
                       assignee={assignee}
                       assignees={assignees}
+                      onClick={() => onEditTask(task.id)}
                       onEdit={() => onEditTask(task.id)}
                       onDelete={() => onDeleteTask(task.id)}
                       onComplete={onToggleComplete}
@@ -367,6 +369,7 @@ const TaskGridView: React.FC<{
             {...task}
             assignee={assignee}
             assignees={assignees}
+            onClick={() => onEditTask(task.id)}
             onEdit={() => onEditTask(task.id)}
             onDelete={() => onDeleteTask(task.id)}
             onComplete={onToggleComplete}
@@ -382,6 +385,29 @@ const TaskGridView: React.FC<{
   );
 };
 
+const statusColorsMap: Record<string, string> = {
+  todo: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700',
+  'in-progress': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700',
+  'on-hold': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700',
+  'in-review': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
+  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
+};
+
+const statusLabelsMap: Record<string, string> = {
+  todo: 'To Do',
+  'in-progress': 'In Progress',
+  'on-hold': 'On Hold',
+  'in-review': 'In Review',
+  completed: 'Completed',
+};
+
+const priorityColorsMap: Record<string, string> = {
+  low: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
+  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
+  high: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700',
+  urgent: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700',
+};
+
 const TaskListView: React.FC<{
   tasks: BoardData;
   buckets: Bucket[];
@@ -390,10 +416,11 @@ const TaskListView: React.FC<{
   onToggleComplete: (id: string, completed: boolean) => void;
   onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange: (id: string, assignee: StaffMember) => void;
+  onAssigneesChange?: (id: string, assignees: StaffMember[]) => void;
   onStatusChange: (id: string, status: string) => void;
   staffMembers: StaffMember[];
   container?: HTMLElement | null;
-}> = ({ tasks, buckets, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange, staffMembers, container }) => {
+}> = ({ tasks, buckets, onEditTask, onDeleteTask, onToggleComplete, onPriorityChange, onAssigneeChange, onAssigneesChange, onStatusChange, staffMembers, container }) => {
   const allTasks = useMemo(() => {
     const flattened: (Task & { columnId: string, columnTitle: string })[] = [];
     Object.entries(tasks).forEach(([columnId, columnTasks]) => {
@@ -423,6 +450,7 @@ const TaskListView: React.FC<{
               <th className="text-xs font-medium text-left p-3 text-muted-foreground w-10"></th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Tasks/Operations</th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Group</th>
+              <th className="text-xs font-medium text-left p-3 text-muted-foreground">Status</th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Priority</th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Due Date</th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Assignee</th>
@@ -488,8 +516,57 @@ const TaskListView: React.FC<{
                     {task.description && <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{task.description}</div>}
                   </td>
                   <td className="p-3"><Badge variant="outline">{task.columnTitle}</Badge></td>
-                  <td className="p-3"><Badge variant={task.priority === 'high' || task.priority === 'urgent' ? 'destructive' : 'outline'}>{task.priority}</Badge></td>
-                  <td className="p-3">{task.dueDate}</td>
+                  <td className="p-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Badge variant="outline" className={cn("cursor-pointer hover:opacity-80 transition-opacity", statusColorsMap[task.status] || '')}>
+                          {statusLabelsMap[task.status] || task.status}
+                        </Badge>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" container={container}>
+                        {Object.entries(statusLabelsMap).map(([key, label]) => (
+                          <DropdownMenuItem key={key} className={cn("text-xs", statusColorsMap[key] || '')} onClick={() => onStatusChange(task.id, key)}>
+                            {label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                  <td className="p-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Badge variant="outline" className={cn("cursor-pointer hover:opacity-80 transition-opacity capitalize", priorityColorsMap[task.priority] || '')}>
+                          {task.priority}
+                        </Badge>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" container={container}>
+                        {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
+                          <DropdownMenuItem key={p} className={cn("text-xs capitalize", priorityColorsMap[p])} onClick={() => onPriorityChange(task.id, p)}>
+                            {p}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                  <td className="p-3">
+                    {(() => {
+                      if (!task.dueDate) return <span className="text-muted-foreground">—</span>;
+                      try {
+                        const date = new Date(task.dueDate);
+                        if (!isValid(date)) return <span className="text-muted-foreground">—</span>;
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const isOverdue = isBefore(date, today) && !task.completed;
+                        return (
+                          <span className={cn(isOverdue && "text-red-600 dark:text-red-500 font-semibold")}>
+                            {format(date, 'MMM d, yyyy')}
+                          </span>
+                        );
+                      } catch {
+                        return <span className="text-muted-foreground">—</span>;
+                      }
+                    })()}
+                  </td>
                   <td className="p-3">
                     {(() => {
                       if (assignees.length > 0) {
@@ -628,6 +705,9 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
   const activeBuckets = buckets || localBuckets;
   const setActiveBuckets = setBuckets || setLocalBuckets;
+
+  // Track pending deletes for soft-delete undo (maps taskId -> timeoutId)
+  const pendingDeletes = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   // Local search state for full-screen mode
   const [searchQuery, setSearchQuery] = useState('');
@@ -1067,12 +1147,9 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       performUpdate();
 
     } else {
-      // Reordering within same column - handled by SortableContext sort of,
-      // but we need to persist index if we supported manual sorting.
-      // Current implementation seems to just sort by status/date in ListView,
-      // BoardView uses boardData order.
-      // If we want to support reordering, we'd need an 'order' field.
-      // For now, just let it drop back.
+      // Same-column reorder is intentionally disabled — tasks snap back to original position.
+      // Implementing within-column reordering requires an 'order' field on tasks (backend change).
+      // Until then, dragging within the same column is a no-op.
     }
 
     setActiveDragItem(null);
@@ -1130,8 +1207,6 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     if (!itemToDelete) return;
 
     if (itemToDelete.type === 'task') {
-      console.log(`[Metrics] UI Reaction - Delete Task Confirm Clicked at ${performance.now().toFixed(2)}ms`);
-      console.time('UI-Reaction-DeleteTask-Processing');
       const taskId = itemToDelete.id;
       const taskName = itemToDelete.name;
 
@@ -1156,7 +1231,6 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
       // STEP 1: Optimistic Update - Remove task from UI immediately
       setBoardData(prev => {
-        // Create a deep copy to prevent state mutation
         const newData: BoardData = {};
         Object.keys(prev).forEach(columnId => {
           newData[columnId] = [...prev[columnId]];
@@ -1165,77 +1239,80 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         return newData;
       });
 
-      // Close modal immediately
+      // Close confirmation modal immediately
       setItemToDelete(null);
 
-      // STEP 2: Perform API call in background
-      const performDelete = async () => {
+      // STEP 2: Soft-delete — delay the actual API call so undo genuinely cancels it
+      const UNDO_GRACE_PERIOD = 5000;
+
+      // Cancel any existing pending delete for this task
+      if (pendingDeletes.current.has(taskId)) {
+        clearTimeout(pendingDeletes.current.get(taskId)!);
+      }
+
+      const timeoutId = setTimeout(async () => {
+        pendingDeletes.current.delete(taskId);
         try {
           await deleteTask(taskId);
-          console.log(`[Metrics] Delete Task API Completed at ${performance.now().toFixed(2)}ms`);
-          try { console.timeEnd('UI-Reaction-DeleteTask-Processing'); } catch (e) { }
-
-          // STEP 3: Show success toast with Undo button
-          toast({
-            title: "Task Deleted",
-            description: `"${taskName}" has been deleted.`,
-            action: (
-              <ToastAction
-                altText="Undo deletion"
-                onClick={() => {
-                  // Restore the task to boardData
-                  setBoardData(prev => {
-                    // Create a deep copy for undo action
-                    const newData: BoardData = {};
-                    Object.keys(prev).forEach(columnId => {
-                      newData[columnId] = [...prev[columnId]];
-                    });
-                    if (!newData[sourceColumnId]) {
-                      newData[sourceColumnId] = [];
-                    }
-                    // Add task back to its original position
-                    newData[sourceColumnId] = [...newData[sourceColumnId], taskToDelete!];
-                    return newData;
-                  });
-
-                  toast({
-                    title: "Deletion Undone",
-                    description: `"${taskName}" has been restored.`,
-                  });
-                }}
-              >
-                Undo
-              </ToastAction>
-            ),
-          });
-
         } catch (error) {
           console.error('Failed to delete task:', error);
-
-          // STEP 4: Rollback on failure - Restore task to UI
+          // Rollback on failure — restore task to UI
           setBoardData(prev => {
-            // Create a deep copy for rollback
             const newData: BoardData = {};
-            Object.keys(prev).forEach(columnId => {
-              newData[columnId] = [...prev[columnId]];
+            Object.keys(prev).forEach(colId => {
+              newData[colId] = [...prev[colId]];
             });
-            if (!newData[sourceColumnId]) {
-              newData[sourceColumnId] = [];
-            }
+            if (!newData[sourceColumnId]) newData[sourceColumnId] = [];
             newData[sourceColumnId] = [...newData[sourceColumnId], taskToDelete!];
             return newData;
           });
-
-          // Show error toast
           toast({
             title: "Failed to Delete Task",
             description: `Could not delete "${taskName}". It has been restored.`,
             variant: "destructive",
           });
         }
-      };
+      }, UNDO_GRACE_PERIOD);
 
-      performDelete();
+      pendingDeletes.current.set(taskId, timeoutId);
+
+      // STEP 3: Show toast with Undo that cancels the pending delete
+      toast({
+        title: "Task Deleted",
+        description: `"${taskName}" has been deleted.`,
+        duration: UNDO_GRACE_PERIOD,
+        action: (
+          <ToastAction
+            altText="Undo deletion"
+            onClick={() => {
+              // Cancel the pending API delete
+              const pending = pendingDeletes.current.get(taskId);
+              if (pending) {
+                clearTimeout(pending);
+                pendingDeletes.current.delete(taskId);
+              }
+
+              // Restore the task to boardData
+              setBoardData(prev => {
+                const newData: BoardData = {};
+                Object.keys(prev).forEach(colId => {
+                  newData[colId] = [...prev[colId]];
+                });
+                if (!newData[sourceColumnId]) newData[sourceColumnId] = [];
+                newData[sourceColumnId] = [...newData[sourceColumnId], taskToDelete!];
+                return newData;
+              });
+
+              toast({
+                title: "Deletion Undone",
+                description: `"${taskName}" has been restored.`,
+              });
+            }}
+          >
+            Undo
+          </ToastAction>
+        ),
+      });
 
     } else if (itemToDelete.type === 'group') {
       const groupId = itemToDelete.id;
@@ -1353,7 +1430,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   const applyTaskUpdate = (
     taskId: string,
     updates: Partial<Task>,
-    successMessage: { title: string; description: string },
+    _successMessage: { title: string; description: string },
     errorMessage: { title: string; description: string }
   ) => {
     let task: Task | undefined;
@@ -1370,7 +1447,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     // Optimistic cache
     optimisticUpdates.current.set(taskId, updatedTask);
 
-    // Force local UI render 
+    // Force local UI render — the visual change on the card IS the feedback
     setBoardData(prev => {
       const next = { ...prev };
       Object.keys(next).forEach(key => {
@@ -1378,8 +1455,6 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       });
       return next;
     });
-
-    toast(successMessage);
 
     Promise.resolve(editTask(taskId, updates, { suppressToast: true }))
       .then(() => {
@@ -1457,6 +1532,10 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           completed: false,
         };
         addTask(newTask);
+        toast({
+          title: "Recurring Task Rescheduled",
+          description: `Next occurrence scheduled for ${format(newStartDate, 'MMM d, yyyy')}`,
+        });
       }
     }
 
@@ -1597,8 +1676,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
                 {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              <Popover>
+                <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className={selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length > 0 ? "bg-accent text-accent-foreground border-primary" : ""}>
                     <Filter className="mr-2 h-4 w-4" />
                     Filter
@@ -1608,10 +1687,10 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                       </Badge>
                     )}
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-[300px] p-0 overflow-hidden" container={(isFullScreen && containerRef.current) || undefined}>
-                  <DropdownMenuLabel className="flex items-center justify-between p-3 border-b bg-muted/20">
-                    Filters
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[300px] p-0 overflow-hidden" container={(isFullScreen && containerRef.current) || undefined}>
+                  <div className="flex items-center justify-between p-3 border-b bg-muted/20">
+                    <span className="text-sm font-medium">Filters</span>
                     {(selectedPriorities.length + selectedStatuses.length + selectedAssignees.length + selectedGroups.length) > 0 && (
                       <Button variant="ghost" size="sm" className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
                         setSelectedPriorities([]);
@@ -1622,10 +1701,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                         Clear all
                       </Button>
                     )}
-                  </DropdownMenuLabel>
+                  </div>
                   <div className="max-h-[60vh] overflow-y-auto kanban-scrollbar p-1">
-                    <DropdownMenuSeparator />
-
                     {/* Priority Section */}
                     <div className="p-2">
                       <div className="mb-2 text-xs font-semibold text-muted-foreground uppercase">Priority</div>
@@ -1643,7 +1720,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                         </div>
                       ))}
                     </div>
-                    <DropdownMenuSeparator />
+                    <div className="border-t border-border mx-2" />
 
                     {/* Status Section */}
                     <div className="p-2">
@@ -1668,7 +1745,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                         </div>
                       ))}
                     </div>
-                    <DropdownMenuSeparator />
+                    <div className="border-t border-border mx-2" />
 
                     {/* Groups Section */}
                     {activeBuckets.length > 0 && (
@@ -1691,7 +1768,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                             ))}
                           </div>
                         </div>
-                        <DropdownMenuSeparator />
+                        <div className="border-t border-border mx-2" />
                       </>
                     )}
 
@@ -1722,8 +1799,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                       </div>
                     )}
                   </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -1866,6 +1943,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                     onToggleComplete={handleToggleComplete}
                     onPriorityChange={handlePriorityChange}
                     onAssigneeChange={handleAssigneeChange}
+                    onAssigneesChange={handleAssigneesChange}
                     onStatusChange={handleStatusChange}
                     staffMembers={staffMembers}
                     container={isFullScreen ? containerRef.current : null}

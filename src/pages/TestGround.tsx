@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ui/use-toast';
@@ -9,6 +10,7 @@ import { useMsal } from '@azure/msal-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { SharePointListSetupService } from '@/services/sharePointListSetupService';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
+import { RegulatorySharePointSetupService } from '@/services/regulatorySharePointSetupService';
 import { AnnouncementsSharePointService } from '@/services/announcementsSharePointService';
 import { getGraphClient } from '@/services/graphService';
 import {
@@ -31,21 +33,46 @@ import {
     FolderKanban,
     Users,
     Target,
-    Network
+    Network,
+    RefreshCw,
+    Shield,
+    Copy,
+    Search
 } from "lucide-react";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
 import { generateAllMockData, StaffMember } from '@/data/mockPerformanceDataGenerator';
 import { mockStrategyData } from '@/mockData/strategyData';
 import { Kra, Kpi, Task } from '@/types';
+import { FormRenderer } from '@/components/forms/FormRenderer';
+import { itRequestTemplate } from '@/config/formTemplates';
+import { useSharePointUpload } from '@/hooks/useSharePointUpload';
+import { FormProvider, useForm } from 'react-hook-form';
 
 const TestGround = () => {
     const { toast } = useToast();
     const { instance: msalInstance } = useMsal();
     const { user: roleUser } = useRoleBasedAuth();
+
+    // ID Extractor State
+    const [spUrlToExtract, setSpUrlToExtract] = useState('');
+    const [extractedSiteId, setExtractedSiteId] = useState('');
+    const [extractedListId, setExtractedListId] = useState('');
+    const [extractedDriveId, setExtractedDriveId] = useState('');
+    const [isExtractingIds, setIsExtractingIds] = useState(false);
+
     const [isSettingUpOps, setIsSettingUpOps] = useState(false);
     const [isSettingUpLists, setIsSettingUpLists] = useState(false);
     const [isSettingUpStrategyHub, setIsSettingUpStrategyHub] = useState(false);
+    const [isSettingUpRegulatory, setIsSettingUpRegulatory] = useState(false);
     const [setupResult, setSetupResult] = useState<any>(null);
     const [isSettingUpAnnouncements, setIsSettingUpAnnouncements] = useState(false);
     const [isPurgingOps, setIsPurgingOps] = useState(false);
@@ -55,6 +82,147 @@ const TestGround = () => {
     const [isSettingUpForms, setIsSettingUpForms] = useState(false);
     const [isSettingUpDivisions, setIsSettingUpDivisions] = useState(false);
     const [isSeedingDivisions, setIsSeedingDivisions] = useState(false);
+    const [isSettingUpITRequest, setIsSettingUpITRequest] = useState(false);
+    const [recentITRequests, setRecentITRequests] = useState<any[]>([]);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+    const { addSharePointListItem, isLoading: isSubmittingForm } = useSharePointUpload();
+    const form = useForm({ defaultValues: {} });
+
+    const loadRecentITRequests = async () => {
+        setIsLoadingRequests(true);
+        try {
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) return;
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const response = await graphClient
+                .api(`/sites/${site.id}/lists/IT_Request_Access_List/items`)
+                .expand('fields')
+                .top(5)
+                .get();
+
+            setRecentITRequests(response.value || []);
+        } catch (error) {
+            console.error('Failed to fetch recent IT requests:', error);
+        } finally {
+            setIsLoadingRequests(false);
+        }
+    };
+
+    useEffect(() => {
+        loadRecentITRequests();
+    }, []);
+
+    const handleExtractIds = async () => {
+        if (!spUrlToExtract) {
+            toast({ title: "⚠️ URL Required", description: "Please enter a SharePoint URL.", variant: "destructive" });
+            return;
+        }
+
+        setIsExtractingIds(true);
+        setExtractedSiteId('');
+        setExtractedListId('');
+        setExtractedDriveId('');
+
+        try {
+            const urlObj = new URL(spUrlToExtract);
+            const hostname = urlObj.hostname;
+            const pathParts = urlObj.pathname.split('/');
+            let sitePath = '';
+
+            if (pathParts.length >= 3 && pathParts[1].toLowerCase() === 'sites') {
+                sitePath = `/${pathParts[1]}/${pathParts[2]}`;
+            } else {
+                sitePath = '/';
+            }
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Graph client initialization failed');
+
+            const siteResponse = await graphClient
+                .api(`/sites/${hostname}:${sitePath}`)
+                .select('id')
+                .get();
+
+            const siteId = siteResponse.id;
+            setExtractedSiteId(siteId);
+
+            const listsResponse = await graphClient
+                .api(`/sites/${siteId}/lists`)
+                .select('id,webUrl,displayName,name')
+                .get();
+
+            const decodedUrl = decodeURIComponent(spUrlToExtract).toLowerCase();
+            let foundListId = '';
+
+            for (const list of listsResponse.value) {
+                if (list.webUrl && decodedUrl.includes(list.webUrl.toLowerCase())) {
+                    foundListId = list.id;
+                    break;
+                }
+            }
+
+            if (!foundListId) {
+                for (const list of listsResponse.value) {
+                    if (decodedUrl.includes(`/${list.name.toLowerCase()}/`) || decodedUrl.includes(`/${list.displayName.toLowerCase()}/`)) {
+                        foundListId = list.id;
+                        break;
+                    }
+                }
+            }
+
+            if (foundListId) {
+                setExtractedListId(foundListId);
+            }
+
+            // Try extracting Drive ID
+            const drivesResponse = await graphClient
+                .api(`/sites/${siteId}/drives`)
+                .select('id,webUrl,name')
+                .get();
+
+            let foundDriveId = '';
+            for (const drive of drivesResponse.value) {
+                if (drive.webUrl && decodedUrl.includes(drive.webUrl.toLowerCase())) {
+                    foundDriveId = drive.id;
+                    break;
+                }
+            }
+            if (!foundDriveId) {
+                for (const drive of drivesResponse.value) {
+                    if (decodedUrl.includes(`/${drive.name.toLowerCase()}/`)) {
+                        foundDriveId = drive.id;
+                        break;
+                    }
+                }
+            }
+            if (foundDriveId) {
+                setExtractedDriveId(foundDriveId);
+            }
+
+            if (foundListId && foundDriveId) {
+                toast({ title: "✅ Success", description: "Extracted Site ID, List ID, and Drive ID successfully!" });
+            } else if (foundListId || foundDriveId) {
+                toast({ title: "⚠️ Partial Success", description: `Extracted Site ID and ${foundDriveId ? 'Drive ID' : 'List ID'}, but not both. URL might not be a standard Document Library.`, variant: "destructive" });
+            } else {
+                toast({ title: "⚠️ Partial Success", description: "Extracted Site ID, but could not determine List/Drive ID. Make sure it points to a Library/List.", variant: "destructive" });
+            }
+
+        } catch (error: any) {
+            console.error("ID Extraction Error", error);
+            toast({ title: "❌ Extraction Failed", description: "Make sure you provided a valid SharePoint URL.", variant: "destructive" });
+        } finally {
+            setIsExtractingIds(false);
+        }
+    };
+
+    const handleCopy = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: "📋 Copied", description: `${label} copied to clipboard!` });
+    };
 
     const handleSeedOfficerData = async () => {
         setIsSeedingOfficers(true);
@@ -351,6 +519,48 @@ const TestGround = () => {
         }
     };
 
+    const handleSetupRegulatoryEngine = async () => {
+        setIsSettingUpRegulatory(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Deploying Regulatory Engine",
+                description: "Creating 'Regulatory_Intelligence_Cases' list and seeding mock cases...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new RegulatorySharePointSetupService(graphClient, site.id);
+            const result = await setupService.deployRegulatoryEngine();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Regulatory Engine Deployed!",
+                    description: "Regulatory lists are now live with real data.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Regulatory Setup failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Deployment Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpRegulatory(false);
+        }
+    };
+
     const handleSetupOrgHierarchy = async () => {
         setIsSettingUpOrgHierarchy(true);
         setSetupResult(null);
@@ -626,6 +836,70 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpForms(false);
+        }
+    };
+
+    const handleSetupITRequestList = async () => {
+        setIsSettingUpITRequest(true);
+        setSetupResult(null);
+        try {
+            toast({
+                title: "🚀 Setting up IT Request list",
+                description: "Creating IT_Request_Access_List...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupITRequestList();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({ title: "✅ IT Request List Ready", description: result.message });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            toast({ title: "❌ Setup Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSettingUpITRequest(false);
+        }
+    };
+
+    const handleITRequestSubmit = async (data: any) => {
+        try {
+            toast({ title: "📤 Submitting", description: "Uploading IT Request to SharePoint..." });
+
+            // Map form data to SharePoint schema
+            const mappedData = {
+                StaffName: data.name || roleUser?.display_name || 'Anonymous',
+                StaffEmail: data.email || roleUser?.email || '',
+                StaffID: data.payrollNumber || '',
+                Department: data.division || '',
+                JobTitle: data.jobTitle || 'Staff',
+                RequestType: data.requestAccessType || 'Equipment Request',
+                Systems: Array.isArray(data.access) ? data.access.join(', ') : (Array.isArray(data.equipment) ? data.equipment.join(', ') : ''),
+                Priority: data.priority || 'Medium',
+                Notes: data.details || '',
+                Status: 'Pending',
+                SubmissionDate: new Date().toISOString()
+            };
+
+            const result = await addSharePointListItem('/sites/scpngintranet', 'IT_Request_Access_List', mappedData);
+
+            if (result) {
+                toast({ title: "✅ Submitted", description: "IT Request submitted successfully!" });
+                loadRecentITRequests(); // Refresh the list
+            } else {
+                throw new Error('Failed to submit');
+            }
+        } catch (error: any) {
+            toast({ title: "❌ Submission Failed", description: error.message, variant: "destructive" });
         }
     };
 
@@ -1413,7 +1687,132 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
-                {/* Enterprise Strategy Hub Setup Card (NEW) */}
+                {/* SharePoint ID Extractor */}
+                <Card className="border-2 border-primary/20 shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Search className="h-5 w-5" />
+                            SharePoint ID Extractor
+                        </CardTitle>
+                        <CardDescription>
+                            Extract Site ID and List ID from a SharePoint URL to use in configuration.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder="Paste SharePoint List URL here..."
+                                value={spUrlToExtract}
+                                onChange={(e) => setSpUrlToExtract(e.target.value)}
+                                className="flex-1"
+                            />
+                            <Button
+                                onClick={handleExtractIds}
+                                disabled={isExtractingIds || !spUrlToExtract}
+                            >
+                                {isExtractingIds ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                                Extract IDs
+                            </Button>
+                        </div>
+
+                        {(extractedSiteId || extractedListId || extractedDriveId) && (
+                            <div className="bg-muted/50 rounded-md p-4 space-y-3 border">
+                                <div>
+                                    <div className="text-sm font-medium text-muted-foreground mb-1">Site ID</div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm flex-1 overflow-x-auto">
+                                            {extractedSiteId || 'Could not extract'}
+                                        </code>
+                                        <Button size="sm" variant="outline" onClick={() => handleCopy(extractedSiteId, 'Site ID')} disabled={!extractedSiteId}>
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-sm font-medium text-muted-foreground mb-1">List ID</div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm flex-1 overflow-x-auto">
+                                            {extractedListId || 'Could not extract'}
+                                        </code>
+                                        <Button size="sm" variant="outline" onClick={() => handleCopy(extractedListId, 'List ID')} disabled={!extractedListId}>
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-sm font-medium text-muted-foreground mb-1">Drive ID (Document Library Uploads)</div>
+                                    <div className="flex items-center gap-2">
+                                        <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm flex-1 overflow-x-auto">
+                                            {extractedDriveId || 'Could not extract'}
+                                        </code>
+                                        <Button size="sm" variant="outline" onClick={() => handleCopy(extractedDriveId, 'Drive ID')} disabled={!extractedDriveId}>
+                                            <Copy className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Regulatory Intelligence Setup Card (NEW) */}
+                <Card className="border-2 border-intranet-primary shadow-lg bg-gradient-to-br from-white to-intranet-primary/5 dark:from-gray-900 dark:to-intranet-primary/10">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-2xl flex items-center gap-2 text-intranet-primary text-bold">
+                                    <Shield className="h-6 w-6" /> {/* Requires Shield icon from lucide-react */}
+                                    Regulatory Intelligence Backend Setup
+                                </CardTitle>
+                                <CardDescription className="text-base font-medium mt-1">
+                                    Deploy the 'Regulatory_Intelligence_Cases' SharePoint list.
+                                </CardDescription>
+                            </div>
+                            <Badge className="bg-intranet-primary text-white">New</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <Layers className="h-4 w-4" /> Comprehensive Data Setup
+                                </h3>
+                                <ul className="grid grid-cols-1 gap-2 text-sm font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Case Types (Whistleblower, Scam)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Case Categories</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Status & Risk Levels</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Reporter Details</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Assigned Units/Officers</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-intranet-primary/5 rounded-2xl p-6 border border-intranet-primary/10 flex flex-col justify-center">
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={handleSetupRegulatoryEngine}
+                                        disabled={isSettingUpRegulatory}
+                                        size="lg"
+                                        className="w-full bg-intranet-primary hover:bg-intranet-primary-dark shadow-md py-6 text-lg font-bold"
+                                    >
+                                        {isSettingUpRegulatory ? (
+                                            <>
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Deploying Engine...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Settings className="h-6 w-6 mr-2" />
+                                                Deploy Regulatory Engine
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Enterprise Strategy Hub Setup Card */}
                 <Card className="border-2 border-intranet-primary shadow-lg bg-gradient-to-br from-white to-intranet-primary/5 dark:from-gray-900 dark:to-intranet-primary/10">
                     <CardHeader>
                         <div className="flex justify-between items-start">
@@ -1567,6 +1966,124 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
+                {/* IT Request Form Test Area (MOVED HIGHER) */}
+                <Card className="border-2 border-primary/20 bg-primary/5 mb-6">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl text-primary">
+                            <Settings className="h-6 w-6" />
+                            IT Request Form Test Ground
+                        </CardTitle>
+                        <CardDescription>
+                            Setup the IT Request Access List and test the form submission logic.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="font-semibold flex items-center gap-2">
+                                    <ListChecks className="h-4 w-4" />
+                                    Backend Setup
+                                </h3>
+                                <Button
+                                    onClick={handleSetupITRequestList}
+                                    disabled={isSettingUpITRequest}
+                                    className="w-full"
+                                >
+                                    {isSettingUpITRequest ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                            Creating IT_Request_Access_List...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Database className="h-4 w-4 mr-2" />
+                                            Setup IT Request Access List
+                                        </>
+                                    )}
+                                </Button>
+                                <p className="text-xs text-muted-foreground bg-white/50 p-2 rounded border">
+                                    Clicking this button creates the <strong>IT_Request_Access_List</strong> in SharePoint.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                <h3 className="font-semibold flex items-center gap-2">
+                                    <Play className="h-4 w-4" />
+                                    Live Form Test
+                                </h3>
+                                <FormProvider {...form}>
+                                    <FormRenderer
+                                        template={itRequestTemplate}
+                                        onSubmit={handleITRequestSubmit}
+                                        isSubmitting={isSubmittingForm}
+                                    />
+                                </FormProvider>
+                            </div>
+                        </div>
+
+                        <Separator />
+
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h3 className="font-semibold flex items-center gap-2">
+                                    <List className="h-4 w-4" />
+                                    Recent Submissions (Last 5)
+                                </h3>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={loadRecentITRequests}
+                                    disabled={isLoadingRequests}
+                                >
+                                    <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingRequests ? 'animate-spin' : ''}`} />
+                                    Refresh
+                                </Button>
+                            </div>
+
+                            <div className="rounded-md border bg-white overflow-hidden">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Staff Name</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Priority</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Date</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {recentITRequests.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                                    {isLoadingRequests ? 'Loading submissions...' : 'No submissions found yet.'}
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : (
+                                            recentITRequests.map((req) => (
+                                                <TableRow key={req.id}>
+                                                    <TableCell className="font-medium">{req.fields?.StaffName}</TableCell>
+                                                    <TableCell>{req.fields?.RequestType}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={req.fields?.Priority === 'Urgent' ? 'destructive' : 'secondary'}>
+                                                            {req.fields?.Priority}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline">{req.fields?.Status}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-xs">
+                                                        {req.fields?.SubmissionDate ? new Date(req.fields.SubmissionDate).toLocaleDateString() : '-'}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Officer Profiles Setup Card */}
                 <Card className="border-2 border-indigo-500/20 mb-6">
                     <CardHeader>
@@ -1663,6 +2180,7 @@ const TestGround = () => {
                         </div>
                     </CardContent>
                 </Card>
+
 
                 {/* SharePoint List Setup Card */}
                 <Card className="border-2 border-intranet-primary/20">
@@ -2684,6 +3202,59 @@ const TestGround = () => {
                                     </>
                                 )}
                             </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* IT Request Form Test Area */}
+                <Card className="border-2 border-primary/20 bg-primary/5">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Rocket className="h-5 w-5 text-primary" />
+                            IT Request Form Test Ground
+                        </CardTitle>
+                        <CardDescription>
+                            Create the dedicated list and test the form submission with independent logic.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="flex flex-col gap-4">
+                            <Button
+                                onClick={handleSetupITRequestList}
+                                disabled={isSettingUpITRequest}
+                                size="lg"
+                                className="w-full bg-primary hover:bg-primary/90"
+                            >
+                                {isSettingUpITRequest ? (
+                                    <>
+                                        <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                                        Setting up IT Request List...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-5 w-5 mr-2" />
+                                        Step 1: Setup IT_Request_Access_List
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        <Separator className="my-6" />
+
+                        <div className="bg-white dark:bg-slate-900 p-6 rounded-xl border-2 border-primary/10 shadow-sm">
+                            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <TestTube className="w-5 h-5 text-primary" />
+                                Step 2: Live Form Test
+                            </h3>
+                            <div className="max-h-[600px] overflow-y-auto p-4 border rounded-lg bg-slate-50/50">
+                                <FormProvider {...form}>
+                                    <FormRenderer
+                                        template={itRequestTemplate}
+                                        onSubmit={handleITRequestSubmit}
+                                        isSubmitting={isSubmittingForm}
+                                    />
+                                </FormProvider>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>

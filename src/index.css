@@ -384,37 +384,30 @@
 }
 
 
-/* Kanban Board Custom Scrollbar (Updated to match KRA table light style) */
+/* Kanban Board Custom Scrollbar */
 .kanban-scrollbar {
-  scrollbar-width: auto;
-  /* Use auto to allow custom width/height */
-  scrollbar-color: rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.05);
-  /* Firefox: thumb track */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
 }
 
 .kanban-scrollbar::-webkit-scrollbar {
-  height: 14px;
-  /* Height for horizontal scrollbar */
-  width: 14px;
-  /* Width for vertical scrollbar */
+  height: 8px;
+  width: 8px;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
+  background: transparent;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--primary));
-  opacity: 0.8;
+  background-color: rgba(156, 163, 175, 0.4);
   border-radius: 6px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 
 .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--primary));
-  opacity: 1;
+  background-color: rgba(107, 114, 128, 0.6);
 }
 
 .kanban-scrollbar::-webkit-scrollbar-corner {
@@ -422,19 +415,50 @@
 }
 
 .dark .kanban-scrollbar {
-  scrollbar-color: hsl(var(--primary)) rgba(255, 255, 255, 0.1);
-}
-
-.dark .kanban-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
 }
 
 .dark .kanban-scrollbar::-webkit-scrollbar-thumb {
-  background-color: hsl(var(--primary));
-  opacity: 0.6;
+  background-color: rgba(75, 85, 99, 0.5);
 }
 
 .dark .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: hsl(var(--primary));
-  opacity: 0.9;
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* Horizontal Scrollbar with Fade on Hover (for Tabs, etc.) */
+.horizontal-scrollbar-fade {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  /* Firefox: hidden by default */
+  transition: scrollbar-color 0.3s ease;
+}
+
+.horizontal-scrollbar-fade:hover {
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  /* Firefox: show on hover */
+}
+
+.horizontal-scrollbar-fade::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontal-scrollbar-fade::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.horizontal-scrollbar-fade::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.horizontal-scrollbar-fade:hover::-webkit-scrollbar-thumb {
+  background: rgba(209, 213, 219, 1);
+  /* tailwind gray-300 */
+}
+
+.horizontal-scrollbar-fade:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 1);
+  /* tailwind gray-400 */
 }

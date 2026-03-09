@@ -2,21 +2,16 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { FormRenderer } from '@/components/forms/FormRenderer';
-import { defaultFormTemplates, leaveApplicationTemplate, assetRequestTemplate, itSupportTemplate, trainingRequestTemplate, itRequestTemplate } from '@/config/formTemplates';
+import { defaultFormTemplates, leaveApplicationTemplate, assetRequestTemplate, trainingRequestTemplate, itRequestTemplate } from '@/config/formTemplates';
 import LeaveApplicationPage from '@/components/forms/LeaveApplicationPage';
 import ITRequestPage from '@/components/forms/ITRequestPage';
 import AssetRequestPage from '@/components/forms/AssetRequestPage';
-import ITSupportPage from '@/components/forms/ITSupportPage';
+
 import TrainingRequestPage from '@/components/forms/TrainingRequestPage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const formTemplates = [
   ...Object.values(defaultFormTemplates),
-  leaveApplicationTemplate,
-  assetRequestTemplate,
-  itSupportTemplate,
-  trainingRequestTemplate,
-  itRequestTemplate,
 ];
 
 const FillFormPage: React.FC = () => {
@@ -53,8 +48,6 @@ const FillFormPage: React.FC = () => {
           <ITRequestPage />
         ) : template.id === 'asset-request' ? (
           <AssetRequestPage />
-        ) : template.id === 'it-support-request' ? (
-          <ITSupportPage />
         ) : template.id === 'training-request' ? (
           <TrainingRequestPage />
         ) : (

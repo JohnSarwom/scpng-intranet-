@@ -24,6 +24,7 @@ import { fetchSharedDocuments, uploadSharedDocument, addExternalLink, SharedDocu
 import { fetchDocumentCategories, createDocumentCategory, updateDocumentCategory, deleteDocumentCategory, DocumentCategory } from '@/services/documentCategoriesService';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { getGraphClient } from '@/services/graphService';
+import DocumentsPageSkeleton from '@/components/documents/skeletons/DocumentsPageSkeleton';
 
 // Define a more comprehensive interface for display purposes
 interface DisplayableDocument {
@@ -758,10 +759,10 @@ export default function Documents() {
           label: cat.title,
           children: cat.subCategories.length > 0
             ? cat.subCategories.map((sub, idx) => ({
-                id: `${safeId}-child-${idx}`,
-                label: sub,
-                dbSubCategoryValue: sub,
-              }))
+              id: `${safeId}-child-${idx}`,
+              label: sub,
+              dbSubCategoryValue: sub,
+            }))
             : undefined,
         };
       });
@@ -1005,7 +1006,7 @@ export default function Documents() {
         // However, company-wide tab logic usually wants ALL docs loaded so we can filter locally for speed, 
         // OR if the list is huge, we filter server side. For now, fetch all, filter local.
 
-        let filtered = sharedDocs;
+        const filtered = sharedDocs;
 
         // Logic to filter if we wanted to restrict what's in 'documents' state based on sidebar.
         // But documents state usually drives the view.
@@ -1720,217 +1721,217 @@ export default function Documents() {
 
 
         <div className="w-full">{/* All tab content goes here */}
-          {isLoading && (
-            <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-              <p className="ml-4 text-lg text-muted-foreground">Loading Documents...</p>
-            </div>
-          )}
+          {isLoading ? (
+            <DocumentsPageSkeleton />
+          ) : (
+            <>
 
-          {!isLoading && authError && activePrimaryTab === 'my-documents' && (
-            <div className="flex flex-col items-center justify-center p-8 bg-destructive/10 rounded-lg mt-4">
-              <p className="text-destructive mb-4 text-center">Authentication error for My Documents. Please re-authenticate.</p>
-              <Button onClick={handleReauthenticate} variant="default" disabled={isLoading || isUploading}>
-                Re-authenticate
-              </Button>
-            </div>
-          )}
-
-          {!isLoading && !authError && activePrimaryTab === 'my-documents' && currentPath.length > 0 && (
-            <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4 flex-wrap">
-              <Button variant="ghost" size="sm" onClick={navigateUp} disabled={isLoading || isUploading} className="flex items-center text-primary hover:bg-primary/10">
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
-              </Button> <span>/</span>
-              <Button variant="link" size="sm" className="text-primary px-1 h-auto py-0"
-                onClick={async () => { setIsLoading(true); await fetchPersonalDocumentsRoot(); setIsLoading(false); }}
-                disabled={isLoading || isUploading}> OneDrive Root </Button> <span>/</span>
-              {currentPath.map((folder, index) => (
-                <div key={folder.id} className="flex items-center gap-1">
-                  {index < currentPath.length - 1 ? (
-                    <Button variant="link" size="sm" className="text-primary px-1 h-auto py-0"
-                      onClick={async () => {
-                        if (isLoading || isUploading) return; setIsLoading(true);
-                        const pathSlice = currentPath.slice(0, index + 1);
-                        const targetFolder = pathSlice[pathSlice.length - 1];
-                        try {
-                          const contentsResult = await getFolderContents(targetFolder.id);
-                          const contents: DisplayableDocument[] = (contentsResult || []).map((item: any) => ({
-                            id: item.id, name: item.name, url: item.webUrl, lastModified: item.lastModifiedDateTime, size: item.size, isFolder: !!item.folder, source: 'OneDrive', originalFileName: item.name
-                          }));
-                          contents.sort((a, b) => { if (a.isFolder && !b.isFolder) return -1; if (!a.isFolder && b.isFolder) return 1; return a.name.localeCompare(b.name); });
-                          setDocuments(contents); setCurrentPath(pathSlice);
-                        } catch (error: any) {
-                          toast.error(`Failed to load folder: ${error.message}`);
-                          if (error.message?.includes('Authentication') || error.code === 'UserLoginRequired') setAuthError(true);
-                        } finally { setIsLoading(false); }
-                      }}
-                      disabled={isLoading || isUploading} > {folder.name} </Button>
-                  ) : (<span className="text-foreground font-medium px-1">{folder.name}</span>)}
-                  {index < currentPath.length - 1 && <span className="text-gray-400">/</span>}
+              {!isLoading && authError && activePrimaryTab === 'my-documents' && (
+                <div className="flex flex-col items-center justify-center p-8 bg-destructive/10 rounded-lg mt-4">
+                  <p className="text-destructive mb-4 text-center">Authentication error for My Documents. Please re-authenticate.</p>
+                  <Button onClick={handleReauthenticate} variant="default" disabled={isLoading || isUploading}>
+                    Re-authenticate
+                  </Button>
                 </div>
-              ))}
-            </div>
-          )}
-
-          {!isLoading && (!authError || activePrimaryTab !== 'my-documents') && (
-            <div className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
-              {/* Breadcrumb Navigation */}
-              {navigationState.breadcrumbs.length > 0 && (
-                <BreadcrumbNavigation
-                  breadcrumbs={navigationState.breadcrumbs}
-                  onBreadcrumbClick={handleBreadcrumbClick}
-                />
               )}
 
-              {/* Category View - Show categories and recently opened */}
-              {navigationState.currentLevel === 'categories' && (
-                <>
-                  {/* Recently Opened Section (like in reference image) */}
-
-                  {/* Main Document Categories Section */}
-                  <div>
-                    <div className="mb-4 flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-semibold text-primary mb-1">
-                          {activePrimaryTab === 'company-wide' && 'Document Categories'}
-                          {activePrimaryTab === 'my-documents' && 'My Files'}
-                          {activePrimaryTab === 'team-unit' && 'Team Documents'}
-                          {activePrimaryTab === 'external-shared' && 'External Documents'}
-                        </h2>
-                        <p className="text-sm text-gray-600">
-                          {activePrimaryTab === 'company-wide' && 'Browse documents by organizational category'}
-                          {activePrimaryTab === 'my-documents' && 'Your personal files and folders'}
-                          {activePrimaryTab === 'team-unit' && 'Shared team and division documents'}
-                          {activePrimaryTab === 'external-shared' && 'Documents shared with external parties'}
-                        </p>
-                      </div>
-                      {activePrimaryTab !== 'my-documents' && canAddDocument && (
-                        <div className="flex items-center gap-2">
-                          {activePrimaryTab === 'company-wide' && (isAdmin || isSuperAdmin) && (
-                            <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" disabled={isUploading || isLoading}>
-                              <FolderPlus className="h-4 w-4 mr-2" /> Add Category
-                            </Button>
-                          )}
-                          <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
-                            <PlusCircle className="h-4 w-4 mr-2" /> {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {activePrimaryTab === 'my-documents' ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredDocuments.length > 0 ? (
-                          filteredDocuments.map((doc) => {
-                            if (doc.isFolder) {
-                              const folderData: DocumentFolder = {
-                                id: doc.id,
-                                name: doc.name,
-                                description: 'Folder',
-                                fileCount: 0, // Not available in simple view
-                                totalSize: doc.size || 0,
-                                lastModified: doc.lastModified,
-                                icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
-                                category: 'folder',
-                                isFolder: true,
-                                sharedWith: []
-                              };
-                              return (
-                                <DocumentFolderCard
-                                  key={doc.id}
-                                  folder={folderData}
-                                  onClick={handleFolderClick}
-                                />
-                              );
-                            } else {
-                              // Map DisplayableDocument to MockDocument for FileCard
-                              const fileData: MockDocument = {
-                                id: doc.id,
-                                name: doc.name,
-                                size: formatFileSize(doc.size),
-                                lastModified: formatDate(doc.lastModified),
-                                fileType: doc.name.split('.').pop()?.toUpperCase() || 'FILE',
-                                extension: doc.name.split('.').pop() || '',
-                                icon: getFileIconForDocument(doc),
-                                sharedWith: [], // Personal files usually not shared in this view context or data not avail
-                                description: doc.description,
-                                tags: doc.tags ? doc.tags.split(',') : []
-                              };
-                              return (
-                                <FileCard
-                                  key={doc.id}
-                                  file={fileData}
-                                  onClick={() => handleFileClick(doc)} // Use original doc for onClick to get URL
-                                />
-                              );
-                            }
-                          })
-                        ) : (
-                          <div className="col-span-full text-center py-10 text-gray-500">
-                            <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
-                            <p className="text-sm">You have no documents in this OneDrive folder.</p>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <>
-                        {documentFolders.length > 0 ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {documentFolders.map((folder) => (
-                              <DocumentFolderCard
-                                key={folder.id}
-                                folder={folder}
-                                onClick={handleFolderClick}
-                                onEdit={handleEditCategoryClick}
-                                onDelete={handleDeleteCategoryClick}
-                                showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
-                              />
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="col-span-full text-center py-10 text-gray-500">
-                            <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
-                            <p className="text-sm">
-                              {searchQuery ? 'Try a different search term.' :
-                                (activePrimaryTab === 'company-wide' ? 'No organisational documents found in this category.' :
-                                  activePrimaryTab === 'team-unit' ? 'No documents found for your team/unit.' :
-                                    'Check back later for new documents.')}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* File View - Show files within a category */}
-              {navigationState.currentLevel === 'files' && currentCategoryData && (
-                <div className="space-y-8">
-
-                  {/* File sections */}
-                  {currentCategoryData.sections.map((section) => (
-                    <div key={section.id} className="space-y-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-primary">{section.name}</h3>
-                        {section.description && (
-                          <p className="text-sm text-gray-600">{section.description}</p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {section.files.map((file) => (
-                          <FileCard
-                            key={file.id}
-                            file={file}
-                            onClick={handleFileClick}
-                          />
-                        ))}
-                      </div>
+              {!isLoading && !authError && activePrimaryTab === 'my-documents' && currentPath.length > 0 && (
+                <div className="flex items-center gap-1 text-sm text-muted-foreground mb-4 flex-wrap">
+                  <Button variant="ghost" size="sm" onClick={navigateUp} disabled={isLoading || isUploading} className="flex items-center text-primary hover:bg-primary/10">
+                    <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                  </Button> <span>/</span>
+                  <Button variant="link" size="sm" className="text-primary px-1 h-auto py-0"
+                    onClick={async () => { setIsLoading(true); await fetchPersonalDocumentsRoot(); setIsLoading(false); }}
+                    disabled={isLoading || isUploading}> OneDrive Root </Button> <span>/</span>
+                  {currentPath.map((folder, index) => (
+                    <div key={folder.id} className="flex items-center gap-1">
+                      {index < currentPath.length - 1 ? (
+                        <Button variant="link" size="sm" className="text-primary px-1 h-auto py-0"
+                          onClick={async () => {
+                            if (isLoading || isUploading) return; setIsLoading(true);
+                            const pathSlice = currentPath.slice(0, index + 1);
+                            const targetFolder = pathSlice[pathSlice.length - 1];
+                            try {
+                              const contentsResult = await getFolderContents(targetFolder.id);
+                              const contents: DisplayableDocument[] = (contentsResult || []).map((item: any) => ({
+                                id: item.id, name: item.name, url: item.webUrl, lastModified: item.lastModifiedDateTime, size: item.size, isFolder: !!item.folder, source: 'OneDrive', originalFileName: item.name
+                              }));
+                              contents.sort((a, b) => { if (a.isFolder && !b.isFolder) return -1; if (!a.isFolder && b.isFolder) return 1; return a.name.localeCompare(b.name); });
+                              setDocuments(contents); setCurrentPath(pathSlice);
+                            } catch (error: any) {
+                              toast.error(`Failed to load folder: ${error.message}`);
+                              if (error.message?.includes('Authentication') || error.code === 'UserLoginRequired') setAuthError(true);
+                            } finally { setIsLoading(false); }
+                          }}
+                          disabled={isLoading || isUploading} > {folder.name} </Button>
+                      ) : (<span className="text-foreground font-medium px-1">{folder.name}</span>)}
+                      {index < currentPath.length - 1 && <span className="text-gray-400">/</span>}
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+
+              {!isLoading && (!authError || activePrimaryTab !== 'my-documents') && (
+                <div className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                  {/* Breadcrumb Navigation */}
+                  {navigationState.breadcrumbs.length > 0 && (
+                    <BreadcrumbNavigation
+                      breadcrumbs={navigationState.breadcrumbs}
+                      onBreadcrumbClick={handleBreadcrumbClick}
+                    />
+                  )}
+
+                  {/* Category View - Show categories and recently opened */}
+                  {navigationState.currentLevel === 'categories' && (
+                    <>
+                      {/* Recently Opened Section (like in reference image) */}
+
+                      {/* Main Document Categories Section */}
+                      <div>
+                        <div className="mb-4 flex items-center justify-between">
+                          <div>
+                            <h2 className="text-xl font-semibold text-primary mb-1">
+                              {activePrimaryTab === 'company-wide' && 'Document Categories'}
+                              {activePrimaryTab === 'my-documents' && 'My Files'}
+                              {activePrimaryTab === 'team-unit' && 'Team Documents'}
+                              {activePrimaryTab === 'external-shared' && 'External Documents'}
+                            </h2>
+                            <p className="text-sm text-gray-600">
+                              {activePrimaryTab === 'company-wide' && 'Browse documents by organizational category'}
+                              {activePrimaryTab === 'my-documents' && 'Your personal files and folders'}
+                              {activePrimaryTab === 'team-unit' && 'Shared team and division documents'}
+                              {activePrimaryTab === 'external-shared' && 'Documents shared with external parties'}
+                            </p>
+                          </div>
+                          {activePrimaryTab !== 'my-documents' && canAddDocument && (
+                            <div className="flex items-center gap-2">
+                              {activePrimaryTab === 'company-wide' && (isAdmin || isSuperAdmin) && (
+                                <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" disabled={isUploading || isLoading}>
+                                  <FolderPlus className="h-4 w-4 mr-2" /> Add Category
+                                </Button>
+                              )}
+                              <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
+                                <PlusCircle className="h-4 w-4 mr-2" /> {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {activePrimaryTab === 'my-documents' ? (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredDocuments.length > 0 ? (
+                              filteredDocuments.map((doc) => {
+                                if (doc.isFolder) {
+                                  const folderData: DocumentFolder = {
+                                    id: doc.id,
+                                    name: doc.name,
+                                    description: 'Folder',
+                                    fileCount: 0, // Not available in simple view
+                                    totalSize: doc.size || 0,
+                                    lastModified: doc.lastModified,
+                                    icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
+                                    category: 'folder',
+                                    isFolder: true,
+                                    sharedWith: []
+                                  };
+                                  return (
+                                    <DocumentFolderCard
+                                      key={doc.id}
+                                      folder={folderData}
+                                      onClick={handleFolderClick}
+                                    />
+                                  );
+                                } else {
+                                  // Map DisplayableDocument to MockDocument for FileCard
+                                  const fileData: MockDocument = {
+                                    id: doc.id,
+                                    name: doc.name,
+                                    size: formatFileSize(doc.size),
+                                    lastModified: formatDate(doc.lastModified),
+                                    fileType: doc.name.split('.').pop()?.toUpperCase() || 'FILE',
+                                    extension: doc.name.split('.').pop() || '',
+                                    icon: getFileIconForDocument(doc),
+                                    sharedWith: [], // Personal files usually not shared in this view context or data not avail
+                                    description: doc.description,
+                                    tags: doc.tags ? doc.tags.split(',') : []
+                                  };
+                                  return (
+                                    <FileCard
+                                      key={doc.id}
+                                      file={fileData}
+                                      onClick={() => handleFileClick(doc)} // Use original doc for onClick to get URL
+                                    />
+                                  );
+                                }
+                              })
+                            ) : (
+                              <div className="col-span-full text-center py-10 text-gray-500">
+                                <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
+                                <p className="text-sm">You have no documents in this OneDrive folder.</p>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            {documentFolders.length > 0 ? (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {documentFolders.map((folder) => (
+                                  <DocumentFolderCard
+                                    key={folder.id}
+                                    folder={folder}
+                                    onClick={handleFolderClick}
+                                    onEdit={handleEditCategoryClick}
+                                    onDelete={handleDeleteCategoryClick}
+                                    showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="col-span-full text-center py-10 text-gray-500">
+                                <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
+                                <p className="text-sm">
+                                  {searchQuery ? 'Try a different search term.' :
+                                    (activePrimaryTab === 'company-wide' ? 'No organisational documents found in this category.' :
+                                      activePrimaryTab === 'team-unit' ? 'No documents found for your team/unit.' :
+                                        'Check back later for new documents.')}
+                                </p>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* File View - Show files within a category */}
+                  {navigationState.currentLevel === 'files' && currentCategoryData && (
+                    <div className="space-y-8">
+
+                      {/* File sections */}
+                      {currentCategoryData.sections.map((section) => (
+                        <div key={section.id} className="space-y-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-primary">{section.name}</h3>
+                            {section.description && (
+                              <p className="text-sm text-gray-600">{section.description}</p>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {section.files.map((file) => (
+                              <FileCard
+                                key={file.id}
+                                file={file}
+                                onClick={handleFileClick}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
         </div>

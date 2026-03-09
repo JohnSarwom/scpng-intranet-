@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useNoticeBoard } from '@/hooks/useNoticeBoard';
 import { IAnnouncement } from '@/types';
 import DOMPurify from 'dompurify';
+import { NoticeBoardSkeleton } from './skeletons/NoticeBoardSkeleton';
 
 const NewsCarousel: React.FC = () => {
   const newsImages = [
@@ -115,6 +116,10 @@ const NoticeBoard = () => {
     });
   };
 
+  if (loading) {
+    return <NoticeBoardSkeleton />;
+  }
+
   return (
     <>
       <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
@@ -127,11 +132,6 @@ const NoticeBoard = () => {
         <CardContent className="h-[580px] flex flex-col">
           <NewsCarousel />
           <div className="space-y-3 flex-1 overflow-y-auto scrollbar-thin pr-2">
-            {loading && (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="h-8 w-8 animate-spin text-intranet-primary" />
-              </div>
-            )}
             {error && (
               <div className="flex flex-col items-center justify-center h-full text-red-500">
                 <AlertTriangle className="h-8 w-8 mb-2" />
@@ -139,7 +139,7 @@ const NoticeBoard = () => {
                 <p className="text-xs">{error.message}</p>
               </div>
             )}
-            {!loading && !error && announcements.map((notice) => (
+            {!error && announcements.map((notice) => (
               <div
                 key={notice.id}
                 onClick={() => setSelectedNotice(notice)}

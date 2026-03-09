@@ -19,6 +19,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
+import { PersonalKPIStatsSkeleton } from './skeletons/PersonalKPIStatsSkeleton';
 
 const PersonalKPIStats: React.FC = () => {
   // 1. Context & User Setup
@@ -200,11 +201,7 @@ const PersonalKPIStats: React.FC = () => {
 
 
   if (isLoading) {
-    return (
-      <Card className="shadow-sm mb-6 animate-fade-in rounded-xl h-96 flex items-center justify-center">
-        <Loader2 className="h-8 w-8 text-intranet-primary animate-spin" />
-      </Card>
-    );
+    return <PersonalKPIStatsSkeleton />;
   }
 
   return (

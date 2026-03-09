@@ -60,6 +60,17 @@ const staffByDivision: Record<string, StaffMember[]> = {
       division_id: "corporate-services-division"
     },
     {
+      id: "52",
+      name: "Donald Sinogerel Samson",
+      email: "dsamson@scpng.gov.pg",
+      job_title: "IT Hardware Officer",
+      unit: "IT Unit",
+      mobile: "N/A",
+      business_phone: "+675 3212223",
+      office_location: "Corporate Services Division",
+      division_id: "corporate-services-division"
+    },
+    {
       id: "12",
       name: "John Sarwom",
       email: "jsarwom@scpng.gov.pg",
@@ -78,6 +89,28 @@ const staffByDivision: Record<string, StaffMember[]> = {
       unit: "Human Resource Unit",
       mobile: "+675 71882467",
       business_phone: "+675 321 2223",
+      office_location: "Corporate Services Division",
+      division_id: "corporate-services-division"
+    },
+    {
+      id: "53",
+      name: "Leah Samuel",
+      email: "lsamuel@scpng.gov.pg",
+      job_title: "Divisional Secretary",
+      unit: "Human Resource Unit",
+      mobile: "N/A",
+      business_phone: "+675 3212223",
+      office_location: "Corporate Services Division",
+      division_id: "corporate-services-division"
+    },
+    {
+      id: "54",
+      name: "Lenome Rex MBalupa",
+      email: "lrmbalupa@scpng.gov.pg",
+      job_title: "Administrative Driver",
+      unit: "Human Resource Unit",
+      mobile: "N/A",
+      business_phone: "+675 3212223",
       office_location: "Corporate Services Division",
       division_id: "corporate-services-division"
     },

@@ -18,6 +18,8 @@ import { NewsSharePointService } from '@/services/newsSharePointService';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import NewsDashboard from '@/components/dashboard/NewsDashboard';
 import { PageNewsArticle } from '@/types/news';
+import { ArticleGridSkeleton } from '@/components/custom/ArticleGridSkeleton';
+import { NewsDashboardSkeleton } from '@/components/dashboard/NewsDashboardSkeleton';
 
 // Mock news data (rest of your code)
 const mockNewsData = [
@@ -287,10 +289,12 @@ const News = () => {
     const currentTabState = newsData[tabKey];
 
     if (currentTabState?.isLoading && !currentTabState?.hasFetched) {
+      if (category === 'News Dashboard') {
+        return <NewsDashboardSkeleton />;
+      }
       return (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-12 w-12 animate-spin text-intranet-primary" />
-          <p className="ml-4 text-lg">Loading news...</p>
+        <div className="mt-4">
+          <ArticleGridSkeleton count={6} />
         </div>
       );
     }

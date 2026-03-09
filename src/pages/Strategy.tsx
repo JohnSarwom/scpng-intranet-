@@ -17,6 +17,7 @@ import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 import { Loader2, Table as TableIcon, BarChart as BarChartIcon, LayoutDashboard as DashboardIcon, Network, Globe as GlobeIcon } from 'lucide-react';
 import DonutChart from '@/components/organization/DonutChart';
 import BarChart from '@/components/organization/BarChart';
+import { TaskCompletionDonut } from '@/components/dashboard/TaskCompletionDonut';
 import OrgChart from '@/components/strategy/OrgChart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import StrategySetupWizard from '@/components/strategy/StrategySetupWizard';
@@ -30,6 +31,8 @@ import { useUnits } from '@/hooks/useUnits';
 import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { Objective } from '@/types';
 import { calculateGoalProgressFromChildren, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils'; // Import calculation utility
+import { StrategyPageSkeleton } from '@/components/strategy/skeletons/StrategyPageSkeleton';
+import { DivisionHierarchySkeleton } from '@/components/strategy/skeletons/DivisionHierarchySkeleton';
 
 // Map icon strings to components
 const IconMap: Record<string, React.ComponentType<any>> = {
@@ -361,16 +364,7 @@ const Strategy = () => {
     };
 
     if (isLoading) {
-        return (
-            <PageLayout>
-                <div className="flex items-center justify-center h-[calc(100vh-100px)]">
-                    <div className="flex flex-col items-center gap-4">
-                        <Loader2 className="w-8 h-8 animate-spin text-intranet-primary" />
-                        <p className="text-muted-foreground animate-pulse">Loading Strategy System...</p>
-                    </div>
-                </div>
-            </PageLayout>
-        );
+        return <StrategyPageSkeleton />;
     }
 
     const { organization, pillars, objectives, alignments, milestones, risks } = strategyData || {
@@ -831,10 +825,7 @@ const Strategy = () => {
 
                             {/* Loading state */}
                             {isLoadingHierarchy && (
-                                <div className="flex items-center justify-center py-10 gap-3 text-muted-foreground">
-                                    <Loader2 className="w-5 h-5 animate-spin text-intranet-primary" />
-                                    <span className="text-sm">Loading division objectives...</span>
-                                </div>
+                                <DivisionHierarchySkeleton />
                             )}
 
                             {/* Dynamic hierarchy: Division → Unit → Key Deliverable → Objectives */}

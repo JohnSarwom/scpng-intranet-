@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,18 +10,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
-import {
   Loader2, Plus, Edit, Trash2, List, LayoutGrid, Search, Download,
-  RotateCcw, Rows, MoreVertical, Info, ArrowUpDown, ArrowUp, ArrowDown, Filter, X
+  RotateCcw, Rows, MoreVertical, Info, ArrowUpDown, ArrowUp, ArrowDown, X,
+  Maximize2, Minimize2
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { logger } from '@/lib/supabaseClient'; // Keep logger if used elsewhere
@@ -37,6 +28,7 @@ import { units } from '@/data/units'; // Import units data
 import { useStaffMembers } from '@/hooks/useStaffMembers'; // Import staff members hook
 import { formatDate } from '@/lib/utils'; // Import formatDate from utils
 import { cn } from '@/lib/utils'; // Import cn utility
+import { getConditionBadgeClass, ASSET_CONDITIONS } from '@/config/assetConditions';
 
 // Import modal components
 import AddAssetModal from '@/components/unit-tabs/modals/AddAssetModal';
@@ -112,38 +104,59 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     staffMembers,
     loading: staffLoading,
     error: staffError,
-    refreshStaffMembers
   } = useStaffMembers();
 
-  // State for managing modals
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<UserAsset | null>(null);
-
-  // --- State for Info Modals ---
-  const [selectedAssetForInfo, setSelectedAssetForInfo] = useState<UserAsset | null>(null); // Renamed from infoModalAsset
-  const [isQuickInfoModalOpen, setIsQuickInfoModalOpen] = useState(false);
+  // --- Unified modal state — only one modal open at a time ---
+  type ModalType = 'add' | 'edit' | 'delete' | 'info' | null;
+  const [activeModal, setActiveModal] = useState<{ type: ModalType; asset: UserAsset | null }>({ type: null, asset: null });
 
   const [viewMode, setViewMode] = useState<'table' | 'card' | 'detailed-list'>('table');
   const [filterText, setFilterText] = useState('');
+  const [debouncedFilterText, setDebouncedFilterText] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterCondition, setFilterCondition] = useState('all');
   const [filterUnit, setFilterUnit] = useState('all');
   const [filterDivision, setFilterDivision] = useState('all');
-  const [filterVendor, setFilterVendor] = useState('all');
-  const [filterAssignedTo, setFilterAssignedTo] = useState('all');
-
   // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
   // --- End Pagination State ---
 
   // --- Sorting State ---
-  const [sortColumn, setSortColumn] = useState<string>('name');
+  type SortableAssetColumn = 'name' | 'id' | 'type' | 'condition' | 'assigned_to' | 'assigned_to_email' | 'unit' | 'division' | 'description' | 'assigned_date' | 'purchase_date' | 'last_updated';
+  const [sortColumn, setSortColumn] = useState<SortableAssetColumn>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   // --- End Sorting State ---
 
-  // --- Derive unique lists for modal suggestions --- 
+  // --- Fullscreen State ---
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  // --- End Fullscreen State ---
+
+  // Debounce search text by 300ms to avoid filtering on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFilterText(filterText), 300);
+    return () => clearTimeout(timer);
+  }, [filterText]);
+
+  // --- Fullscreen handlers ---
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(err => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullScreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+  // --- End fullscreen handlers ---
+
+  // --- Derive unique lists for modal suggestions ---
   const existingNames = useMemo(() =>
     Array.from(new Set(assets.map(a => a.name).filter(Boolean) as string[])).sort(),
     [assets]
@@ -154,10 +167,6 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   );
   const existingVendors = useMemo(() =>
     Array.from(new Set(assets.map(a => a.vendor).filter(Boolean) as string[])).sort(),
-    [assets]
-  );
-  const existingAssignedTo = useMemo(() =>
-    Array.from(new Set(assets.map(a => a.assigned_to).filter(Boolean) as string[])).sort(),
     [assets]
   );
 
@@ -175,7 +184,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   // [Cursor] Updated filtering logic to include all filters
   const filteredAssets = useMemo(() => {
     return assets.filter(asset => {
-      const searchTerm = filterText.toLowerCase();
+      const searchTerm = debouncedFilterText.toLowerCase();
 
       // Text search check
       const textMatch = !searchTerm || (
@@ -192,16 +201,14 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
       );
 
       // Dropdown filter checks
-      const typeMatch = filterType === 'all' || (asset.type && asset.type === filterType);
-      const conditionMatch = filterCondition === 'all' || (asset.condition && asset.condition === filterCondition);
-      const unitMatch = filterUnit === 'all' || (asset.unit && asset.unit === filterUnit);
-      const divisionMatch = filterDivision === 'all' || (asset.division && asset.division === filterDivision);
-      const vendorMatch = filterVendor === 'all' || (asset.vendor && asset.vendor === filterVendor);
-      const assignedToMatch = filterAssignedTo === 'all' || (asset.assigned_to && asset.assigned_to === filterAssignedTo);
+      const typeMatch = filterType === 'all' || asset.type?.trim() === filterType;
+      const conditionMatch = filterCondition === 'all' || asset.condition?.trim() === filterCondition;
+      const unitMatch = filterUnit === 'all' || asset.unit?.trim() === filterUnit;
+      const divisionMatch = filterDivision === 'all' || asset.division?.trim() === filterDivision;
 
-      return textMatch && typeMatch && conditionMatch && unitMatch && divisionMatch && vendorMatch && assignedToMatch;
+      return textMatch && typeMatch && conditionMatch && unitMatch && divisionMatch;
     });
-  }, [assets, filterText, filterType, filterCondition, filterUnit, filterDivision, filterVendor, filterAssignedTo]); // [Cursor] Update dependencies
+  }, [assets, debouncedFilterText, filterType, filterCondition, filterUnit, filterDivision]);
 
   // console.log(`[AssetManagement] Filters: Text="${filterText}", Type="${filterType}", Condition="${filterCondition}", Unit="${filterUnit}", Division="${filterDivision}", Vendor="${filterVendor}"`);
   // console.log('[AssetManagement] Assets array AFTER filtering:', filteredAssets);
@@ -210,8 +217,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   // --- Sort Assets Function ---
   const sortedAssets = useMemo(() => {
     const sorted = [...filteredAssets].sort((a, b) => {
-      const aValue = a[sortColumn as keyof UserAsset] || '';
-      const bValue = b[sortColumn as keyof UserAsset] || '';
+      const aValue = a[sortColumn] ?? '';
+      const bValue = b[sortColumn] ?? '';
 
       // Handle different data types
       if (typeof aValue === 'string' && typeof bValue === 'string') {
@@ -236,7 +243,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   }, [filteredAssets, sortColumn, sortDirection]);
 
   // --- Sort Indicator Component ---
-  const SortIndicator = ({ column }: { column: string }) => {
+  const SortIndicator = ({ column }: { column: SortableAssetColumn }) => {
     if (sortColumn !== column) {
       return <ArrowUpDown className="h-3 w-3 ml-1 text-gray-400" />;
     }
@@ -259,7 +266,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   // Reset to page 1 when filters, sort, or source data change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterText, filterType, filterCondition, filterUnit, filterDivision, filterVendor, sortColumn, sortDirection, assets]); // Reset on filter, sort, or data change
+  }, [debouncedFilterText, filterType, filterCondition, filterUnit, filterDivision, sortColumn, sortDirection, assets]);
   // --- End Pagination Logic ---
 
   // --- Email for filtering (derive from MSAL account) ---
@@ -269,67 +276,25 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   // --- Modal Handlers ---
 
-  const handleAddClick = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const handleEditClick = (asset: UserAsset) => {
-    // console.log('Edit clicked for asset:', asset.name);
-    setSelectedAsset(asset);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDeleteClick = (asset: UserAsset) => {
-    // console.log('Delete clicked for asset:', asset.name);
-    setSelectedAsset(asset);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleCloseModals = () => {
-    setIsAddModalOpen(false);
-    setIsEditModalOpen(false);
-    setIsDeleteModalOpen(false);
-    setSelectedAsset(null);
-    // --- Close both info modals and clear selected asset ---
-    setSelectedAssetForInfo(null);
-    setIsQuickInfoModalOpen(false);
-    // --- End closing info modals ---
-  };
-
-  // [Cursor] Handler to open the QUICK info modal
-  const handleInfoClick = (asset: UserAsset) => {
-    // console.log('Info clicked for asset:', asset.name);
-    setSelectedAssetForInfo(asset);
-    setIsQuickInfoModalOpen(true);
-  };
+  const handleEditClick = (asset: UserAsset) => setActiveModal({ type: 'edit', asset });
+  const handleDeleteClick = (asset: UserAsset) => setActiveModal({ type: 'delete', asset });
+  const handleInfoClick = (asset: UserAsset) => setActiveModal({ type: 'info', asset });
+  const handleCloseModals = () => setActiveModal({ type: null, asset: null });
 
   // [Cursor] Handler to reset all filters
   const handleResetFilters = () => {
     setFilterText('');
+    setDebouncedFilterText('');
     setFilterType('all');
     setFilterCondition('all');
     setFilterUnit('all');
     setFilterDivision('all');
-    setFilterVendor('all');
-    setFilterAssignedTo('all');
-    // Reset sorting as well
     setSortColumn('name');
     setSortDirection('asc');
   };
 
-  // Handler to refresh staff members from database
-  const handleRefreshStaffMembers = async () => {
-    try {
-      await refreshStaffMembers();
-      toast({ title: "Success", description: "Staff members refreshed successfully." });
-    } catch (error) {
-      console.error('Error refreshing staff members:', error);
-      toast({ title: "Error", description: "Failed to refresh staff members.", variant: "destructive" });
-    }
-  };
-
   // --- Sorting Handler ---
-  const handleSort = (column: string) => {
+  const handleSort = (column: SortableAssetColumn) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
@@ -376,10 +341,10 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   };
 
   const handleSaveEdit = async (updatedAssetData: Partial<UserAsset>) => {
-    if (!selectedAsset) return;
+    if (!activeModal.asset) return;
     try {
       const dataToSave = loggedInUserEmail ? { ...updatedAssetData, last_updated_by: loggedInUserEmail } : updatedAssetData;
-      await editAsset(selectedAsset.id, dataToSave);
+      await editAsset(activeModal.asset.id, dataToSave);
       toast({ title: "Asset Updated", description: "Asset details have been updated." });
       handleCloseModals();
     } catch (err) {
@@ -389,9 +354,9 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   };
 
   const handleConfirmDelete = async () => {
-    if (!selectedAsset) return;
+    if (!activeModal.asset) return;
     try {
-      await deleteAsset(selectedAsset.id);
+      await deleteAsset(activeModal.asset.id);
       toast({ title: "Asset Deleted", description: "Asset has been removed successfully." });
       handleCloseModals();
     } catch (err) {
@@ -411,22 +376,10 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     return skipPageLayout ? loadingContent : <PageLayout>{loadingContent}</PageLayout>;
   }
 
-  // Show loading state while staff data is being fetched
-  if (staffLoading) {
-    const loadingContent = (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-muted-foreground">Loading staff members...</span>
-      </div>
-    );
-    return skipPageLayout ? loadingContent : <PageLayout>{loadingContent}</PageLayout>;
-  }
-
-  // Handle staff loading error (but don't block the UI, just show a warning)
+  // Staff members load in the background — page renders immediately.
+  // Modals receive staffMembers (empty array while loading, populated once ready).
   if (staffError) {
-    console.warn('Staff loading error:', staffError);
-    // Optionally show a toast notification
-    // toast({ title: "Warning", description: "Failed to load staff members from database. Using fallback data.", variant: "destructive" });
+    console.warn('Staff loading error — assignee dropdowns may be incomplete:', staffError);
   }
 
   // Handle case where MSAL account is not available after loading
@@ -452,7 +405,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   // --- End User Email Check ---
 
   const mainContent = (
-    <Card className="w-full shadow-sm border">
+    <div ref={containerRef} className={cn("w-full", isFullScreen && "bg-background p-4 h-screen overflow-auto")}>
+    <Card className={cn("w-full shadow-sm border", isFullScreen && "h-full")}>
       <CardContent className="p-6 space-y-6 flex flex-col h-full">
         {/* Fixed Header */}
         <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -462,202 +416,64 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
           </div>
         </div>
 
-        {/* Header and Actions - Search on left, buttons on right */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          {/* Search Input & Inline Filters */}
-          <div className="flex flex-col md:flex-row items-center gap-2 w-full">
-            <div className="relative w-full flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search assets by name, ID, user, vendor..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                className="pl-8 w-full bg-white dark:bg-gray-950 h-9"
-              />
-            </div>
-            {/* Inline Type Filter */}
-            <div className="w-full md:w-36 hidden md:block">
-              <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full h-9 bg-white dark:bg-gray-950">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {existingTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {/* Inline Unit Filter */}
-            <div className="w-full md:w-36 hidden md:block">
-              <Select value={filterUnit} onValueChange={setFilterUnit}>
-                <SelectTrigger className="w-full h-9 bg-white dark:bg-gray-950">
-                  <SelectValue placeholder="Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Units</SelectItem>
-                  {[...new Set(assets.map(a => a.unit).filter(Boolean))].sort().map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+        {/* Search + Action Bar */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by name, ID, type, user, vendor..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+              className="pl-8 w-full bg-background h-9"
+            />
           </div>
-
-          {/* Action Buttons Container */}
-          <div className="flex items-center gap-2 flex-shrink-0 w-full md:w-auto justify-end">
-            {/* Filter Drawer */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 bg-white dark:bg-gray-950 h-9">
-                  <Filter className="h-4 w-4" /> Filters {
-                    (filterCondition !== 'all' || filterDivision !== 'all' || filterVendor !== 'all' || filterAssignedTo !== 'all') && (
-                      <span className="flex h-2 w-2 rounded-full bg-primary" />
-                    )
-                  }
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px]">
-                <SheetHeader>
-                  <SheetTitle>Advanced Filters</SheetTitle>
-                  <SheetDescription>Narrow down your asset list by applying specific criteria.</SheetDescription>
-                </SheetHeader>
-                <div className="py-6 space-y-6">
-                  {/* Asset Info Group */}
-                  <div className="space-y-4">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Asset Info</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Show Type and Unit in drawer on mobile only */}
-                      <div className="space-y-2 md:hidden">
-                        <label className="text-sm font-medium">Type</label>
-                        <Select value={filterType} onValueChange={setFilterType}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="All Types" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            {existingTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2 md:hidden">
-                        <label className="text-sm font-medium">Unit</label>
-                        <Select value={filterUnit} onValueChange={setFilterUnit}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="All Units" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Units</SelectItem>
-                            {[...new Set(assets.map(a => a.unit).filter(Boolean))].sort().map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Condition</label>
-                        <Select value={filterCondition} onValueChange={setFilterCondition}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="All Conditions" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Conditions</SelectItem>
-                            {[...new Set(assets.map(a => a.condition).filter(Boolean))].sort().map(cond => <SelectItem key={cond} value={cond}>{cond}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Vendor</label>
-                        <Select value={filterVendor} onValueChange={setFilterVendor}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="All Vendors" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Vendors</SelectItem>
-                            {existingVendors.map(vendor => <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Organization Group */}
-                  <div className="space-y-4 pt-2">
-                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Organization</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Division</label>
-                        <Select value={filterDivision} onValueChange={setFilterDivision}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="All Divisions" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Divisions</SelectItem>
-                            {[...new Set(assets.map(a => a.division).filter(Boolean))].sort().map(div => <SelectItem key={div} value={div}>{div}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-sm font-medium">Assigned To</label>
-                        <Select value={filterAssignedTo} onValueChange={setFilterAssignedTo}>
-                          <SelectTrigger className="w-full h-9">
-                            <SelectValue placeholder="Anyone" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">Anyone</SelectItem>
-                            {existingAssignedTo.map(person => <SelectItem key={person} value={person}>{person}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <SheetFooter className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-between items-center w-full gap-2">
-                  <Button variant="outline" onClick={handleResetFilters} className="w-full sm:w-auto">
-                    Reset All
-                  </Button>
-                  <SheetClose asChild>
-                    <Button type="button" className="w-full sm:w-auto">Apply Filters</Button>
-                  </SheetClose>
-                </SheetFooter>
-              </SheetContent>
-            </Sheet>
-
+          <div className="flex items-center gap-2 flex-shrink-0">
             {/* View Mode Toggle */}
-            <TooltipWrapper content="Switch between different view modes">
-              <ToggleGroup
-                type="single"
-                value={viewMode}
-                onValueChange={(value) => value && setViewMode(value as 'table' | 'card' | 'detailed-list')}
-                aria-label="View mode"
-                className="border rounded-md p-0.5 bg-white dark:bg-gray-950 h-9"
-              >
-                <TooltipWrapper content="Table view - Display assets in a detailed table format">
-                  <ToggleGroupItem value="table" aria-label="Table view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                    <List className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </TooltipWrapper>
-                <TooltipWrapper content="Card view - Display assets as individual cards">
-                  <ToggleGroupItem value="card" aria-label="Card view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                    <LayoutGrid className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </TooltipWrapper>
-                <TooltipWrapper content="Detailed list view - Show all asset information in an expanded format">
-                  <ToggleGroupItem value="detailed-list" aria-label="Detailed list view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
-                    <Rows className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </TooltipWrapper>
-              </ToggleGroup>
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(value) => value && setViewMode(value as 'table' | 'card' | 'detailed-list')}
+              aria-label="View mode"
+              className="border rounded-md p-0.5 bg-background h-9"
+            >
+              <TooltipWrapper content="Table view">
+                <ToggleGroupItem value="table" aria-label="Table view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                  <List className="h-4 w-4" />
+                </ToggleGroupItem>
+              </TooltipWrapper>
+              <TooltipWrapper content="Card view">
+                <ToggleGroupItem value="card" aria-label="Card view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                  <LayoutGrid className="h-4 w-4" />
+                </ToggleGroupItem>
+              </TooltipWrapper>
+              <TooltipWrapper content="Detailed list view">
+                <ToggleGroupItem value="detailed-list" aria-label="Detailed list view" className="px-2 py-1 h-auto data-[state=on]:bg-intranet-primary data-[state=on]:text-primary-foreground">
+                  <Rows className="h-4 w-4" />
+                </ToggleGroupItem>
+              </TooltipWrapper>
+            </ToggleGroup>
+
+            {/* Fullscreen Button */}
+            <TooltipWrapper content={isFullScreen ? "Exit fullscreen" : "Enter fullscreen"}>
+              <Button variant="outline" size="icon" className="h-9 w-9 bg-background" onClick={toggleFullscreen}>
+                {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
             </TooltipWrapper>
 
             {/* Add Asset Button */}
-            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+            <Dialog
+              open={activeModal.type === 'add'}
+              onOpenChange={(open) => setActiveModal(open ? { type: 'add', asset: null } : { type: null, asset: null })}
+            >
               <DialogTrigger asChild>
-                <TooltipWrapper content="Add a new asset to the system">
-                  <Button onClick={handleAddClick} className="h-9">
-                    <Plus className="mr-2 h-4 w-4" /> Add Asset
-                  </Button>
-                </TooltipWrapper>
+                <Button className="h-9">
+                  <Plus className="mr-2 h-4 w-4" /> Add Asset
+                </Button>
               </DialogTrigger>
-              {isAddModalOpen && (
+              {activeModal.type === 'add' && (
                 <AddAssetModal
-                  isOpen={isAddModalOpen}
+                  isOpen={activeModal.type === 'add'}
                   onClose={handleCloseModals}
                   onAdd={handleSaveAdd}
                   divisions={divisions}
@@ -673,68 +489,72 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
             {/* More Options Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <TooltipWrapper content="More options - Export data and additional actions">
-                  <Button variant="outline" size="icon" className="h-9 w-9 bg-white dark:bg-gray-950">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </TooltipWrapper>
+                <Button variant="outline" size="icon" className="h-9 w-9 bg-background">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem>
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
                 </DropdownMenuItem>
-                {/* Add more options here if needed */}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        {/* Active Filters Row */}
-        {(filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all') && (
-          <div className="flex flex-wrap items-center gap-2 mt-0">
-            <span className="text-sm text-muted-foreground font-medium mr-1">Active Filters:</span>
-            {filterType !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Type: {filterType}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterType('all')} />
-              </Badge>
-            )}
-            {filterCondition !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Condition: {filterCondition}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterCondition('all')} />
-              </Badge>
-            )}
-            {filterUnit !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Unit: {filterUnit}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterUnit('all')} />
-              </Badge>
-            )}
-            {filterDivision !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Division: {filterDivision}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterDivision('all')} />
-              </Badge>
-            )}
-            {filterVendor !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Vendor: {filterVendor}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterVendor('all')} />
-              </Badge>
-            )}
-            {filterAssignedTo !== 'all' && (
-              <Badge variant="secondary" className="px-2 py-1 gap-1 font-normal text-xs bg-muted/50">
-                Assigned To: {filterAssignedTo}
-                <X className="h-3 w-3 ml-1 cursor-pointer hover:text-foreground" onClick={() => setFilterAssignedTo('all')} />
-              </Badge>
-            )}
-            <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground shrink-0">
-              Clear all
+        {/* Filter Row - always visible, 4 key dropdowns */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className={cn("h-8 text-xs bg-background", filterType !== 'all' ? "w-auto min-w-[100px] border-primary text-primary" : "w-32")}>
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              {existingTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterCondition} onValueChange={setFilterCondition}>
+            <SelectTrigger className={cn("h-8 text-xs bg-background", filterCondition !== 'all' ? "w-auto min-w-[100px] border-primary text-primary" : "w-32")}>
+              <SelectValue placeholder="Condition" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Conditions</SelectItem>
+              {[...new Set(assets.map(a => a.condition).filter(Boolean) as string[])].sort().map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterDivision} onValueChange={setFilterDivision}>
+            <SelectTrigger className={cn("h-8 text-xs bg-background", filterDivision !== 'all' ? "w-auto min-w-[100px] border-primary text-primary" : "w-36")}>
+              <SelectValue placeholder="Division" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Divisions</SelectItem>
+              {[...new Set(assets.map(a => a.division).filter(Boolean) as string[])].sort().map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterUnit} onValueChange={setFilterUnit}>
+            <SelectTrigger className={cn("h-8 text-xs bg-background", filterUnit !== 'all' ? "w-auto min-w-[100px] border-primary text-primary" : "w-32")}>
+              <SelectValue placeholder="Unit" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Units</SelectItem>
+              {[...new Set(assets.map(a => a.unit).filter(Boolean) as string[])].sort().map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {(filterType !== 'all' || filterCondition !== 'all' || filterDivision !== 'all' || filterUnit !== 'all' || filterText) && (
+            <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground gap-1">
+              <X className="h-3 w-3" /> Clear
             </Button>
-          </div>
-        )}
+          )}
+
+          <span className="text-xs text-muted-foreground ml-auto">
+            {sortedAssets.length} {sortedAssets.length === 1 ? 'asset' : 'assets'}
+          </span>
+        </div>
 
         {/* Main Content Area */}
         <div className="border rounded-md w-full bg-background">
@@ -747,8 +567,11 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                 </div>
               )}
               {assetsError && (
-                <div className="text-center py-10 px-4 text-destructive flex items-center justify-center h-full">
+                <div className="flex flex-col items-center justify-center h-full gap-3 py-10 px-4 text-destructive">
                   <p>Error loading assets: {assetsError.message}</p>
+                  <Button variant="outline" size="sm" onClick={() => refreshAssets()} className="text-foreground">
+                    <RotateCcw className="mr-2 h-4 w-4" /> Retry
+                  </Button>
                 </div>
               )}
               {!assetsLoading && !assetsError && (
@@ -886,63 +709,57 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               {/* Name Cell */}
                               <td className="p-4 align-middle font-medium text-gray-900 whitespace-nowrap dark:text-white cursor-pointer" onClick={() => handleInfoClick(asset)}>
                                 <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
-                                  <HighlightMatch text={asset.name || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.name || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* ID Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
-                                  <HighlightMatch text={asset.id || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.id || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Type Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
-                                  <HighlightMatch text={asset.type || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.type || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Condition Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Current Condition: ${asset.condition || 'N/A'}`}>
-                                  <span className={cn(
-                                    "px-2 py-1 rounded-full text-xs font-medium",
-                                    asset.condition === 'Good' ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' :
-                                      asset.condition === 'Fair' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100' :
-                                        asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
-                                          'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                                  )}>
-                                    <HighlightMatch text={asset.condition || 'N/A'} searchTerm={filterText} />
+                                  <span className={cn("px-2 py-1 rounded-full text-xs font-medium border", getConditionBadgeClass(asset.condition))}>
+                                    <HighlightMatch text={asset.condition || 'N/A'} searchTerm={debouncedFilterText} />
                                   </span>
                                 </TooltipWrapper>
                               </td>
                               {/* Assigned To Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
-                                  <HighlightMatch text={asset.assigned_to || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.assigned_to || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Email Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Email: ${asset.assigned_to_email || 'N/A'}`}>
-                                  <HighlightMatch text={asset.assigned_to_email || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.assigned_to_email || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Unit Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
-                                  <HighlightMatch text={asset.unit || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.unit || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Division Cell */}
                               <td className="p-4 align-middle">
                                 <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
-                                  <HighlightMatch text={asset.division || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.division || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Description Cell */}
                               <td className="p-4 align-middle max-w-xs truncate">
                                 <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
-                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Assigned Date Cell */}
@@ -999,7 +816,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                         ) : (
                           <tr>
                             <td colSpan={14} className="h-24 text-center text-gray-500 dark:text-gray-400"> {/* Adjusted colSpan */}
-                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all'
                                 ? `No assets found matching the current filters.`
                                 : "No assets were found."}
                             </td>
@@ -1025,7 +842,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                         ))
                       ) : (
                         <div className="col-span-full text-center py-10 px-4 text-muted-foreground">
-                          {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                          {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all'
                             ? `No assets found matching the current filters.`
                             : "No assets were found."}
                         </div>
@@ -1299,7 +1116,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                         {paginatedAssets.length === 0 ? (
                           <tr>
                             <td colSpan={32} className="h-16 text-center text-muted-foreground py-1 px-2">
-                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all' || filterVendor !== 'all'
+                              {filterText || filterType !== 'all' || filterCondition !== 'all' || filterUnit !== 'all' || filterDivision !== 'all'
                                 ? `No assets found matching the current filters.`
                                 : "No assets were found."}
                             </td>
@@ -1319,43 +1136,43 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               {/* Name Cell */}
                               <td className="p-4 align-middle min-w-[150px] font-medium text-gray-900 whitespace-nowrap dark:text-white sticky left-[50px] bg-white group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-800/50 z-10 cursor-pointer transition-colors" onClick={() => handleInfoClick(asset)}>
                                 <TooltipWrapper content={`Asset: ${asset.name || 'N/A'} - Click to view full details`}>
-                                  <HighlightMatch text={asset.name} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.name} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* ID Cell */}
                               <td className="p-4 align-middle min-w-[100px]">
                                 <TooltipWrapper content={`Asset ID: ${asset.id || 'N/A'}`}>
-                                  <HighlightMatch text={asset.id} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.id} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Type Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Asset Type: ${asset.type || 'N/A'}`}>
-                                  <HighlightMatch text={asset.type} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.type} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Brand Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Brand: ${asset.brand || 'N/A'}`}>
-                                  <HighlightMatch text={asset.brand || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.brand || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Model Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Model: ${asset.model || 'N/A'}`}>
-                                  <HighlightMatch text={asset.model || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.model || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Serial Number Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Serial Number: ${asset.serial_number || 'N/A'}`}>
-                                  <HighlightMatch text={asset.serial_number || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.serial_number || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Asset ID Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Asset ID: ${asset.asset_id || 'N/A'}`}>
-                                  <HighlightMatch text={asset.asset_id || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.asset_id || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Condition Cell */}
@@ -1368,14 +1185,14 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                         asset.condition === 'Poor' ? 'bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100' :
                                           'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
                                   )}>
-                                    <HighlightMatch text={asset.condition} searchTerm={filterText} />
+                                    <HighlightMatch text={asset.condition} searchTerm={debouncedFilterText} />
                                   </span>
                                 </TooltipWrapper>
                               </td>
                               {/* Assigned To Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Assigned To: ${asset.assigned_to || 'N/A'}`}>
-                                  <HighlightMatch text={asset.assigned_to} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.assigned_to} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Email Cell */}
@@ -1387,19 +1204,19 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               {/* Unit Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Unit: ${asset.unit || 'N/A'}`}>
-                                  <HighlightMatch text={asset.unit} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.unit} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Division Cell */}
                               <td className="p-4 align-middle min-w-[200px]">
                                 <TooltipWrapper content={`Division: ${asset.division || 'N/A'}`}>
-                                  <HighlightMatch text={asset.division} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.division} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Description Cell */}
                               <td className="p-4 align-middle max-w-[200px] truncate">
                                 <TooltipWrapper content={`Description: ${asset.description || 'No description available'}`}>
-                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.description || 'N/A'} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Assigned Date Cell */}
@@ -1425,7 +1242,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               {/* Vendor Cell */}
                               <td className="p-4 align-middle min-w-[150px]">
                                 <TooltipWrapper content={`Vendor: ${asset.vendor || 'N/A'}`}>
-                                  <HighlightMatch text={asset.vendor} searchTerm={filterText} />
+                                  <HighlightMatch text={asset.vendor} searchTerm={debouncedFilterText} />
                                 </TooltipWrapper>
                               </td>
                               {/* Warranty Expiry Cell */}
@@ -1580,14 +1397,14 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
           </div>
         </div>
 
-        {/* Modals */}
-        {isEditModalOpen && selectedAsset && (
+        {/* Modals — only one renders at a time via activeModal state */}
+        {activeModal.type === 'edit' && activeModal.asset && (
           <EditAssetModal
-            isOpen={isEditModalOpen}
+            isOpen={activeModal.type === 'edit'}
             onClose={handleCloseModals}
             onEdit={handleSaveEdit}
-            asset={selectedAsset}
-            onDelete={() => handleDeleteClick(selectedAsset)}
+            asset={activeModal.asset}
+            onDelete={() => handleDeleteClick(activeModal.asset!)}
             divisions={divisions}
             units={units}
             staffMembers={staffMembers}
@@ -1597,29 +1414,24 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
           />
         )}
 
-        {selectedAsset && isDeleteModalOpen && (
+        {activeModal.type === 'delete' && activeModal.asset && (
           <DeleteModal
-            open={isDeleteModalOpen}
-            onOpenChange={setIsDeleteModalOpen}
+            open={activeModal.type === 'delete'}
+            onOpenChange={(open) => !open && handleCloseModals()}
             onDelete={handleConfirmDelete}
             title="Delete Asset"
-            description={`Are you sure you want to delete the asset "${selectedAsset?.name || "this asset"}"? This action cannot be undone.`}
+            description={`Are you sure you want to delete the asset "${activeModal.asset.name || "this asset"}"? This action cannot be undone.`}
           />
         )}
 
-        {/* --- Render Quick Asset Info Modal --- */}
         <AssetInfoModal
-          asset={selectedAssetForInfo}
-          isOpen={isQuickInfoModalOpen}
-          onClose={() => { // Only close the quick modal here
-            setIsQuickInfoModalOpen(false);
-            // Optionally clear selectedAssetForInfo if you don't want the full modal to open after closing quick view directly
-            // setSelectedAssetForInfo(null); 
-          }}
+          asset={activeModal.type === 'info' ? activeModal.asset : null}
+          isOpen={activeModal.type === 'info'}
+          onClose={handleCloseModals}
         />
-        {/* --- End Quick Asset Info Modal --- */}
       </CardContent>
     </Card>
+    </div>
   );
 
   return skipPageLayout ? mainContent : <PageLayout>{mainContent}</PageLayout>;

@@ -67,7 +67,7 @@ export const BaseCard: React.FC<BaseCardProps> = ({
   footerContent,
   wrapperClassName,
   cardClassName,
-  isDragging: externalIsDragging, 
+  isDragging: externalIsDragging,
   isOver: externalIsOver,
   isDragOverlay = false,
   onClick,

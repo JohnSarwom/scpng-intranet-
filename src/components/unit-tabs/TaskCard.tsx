@@ -266,89 +266,56 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </Badge>
       )}
       {status && (
-        <div className="relative inline-block" ref={statusDropdownRef}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer", statusColor, "hover:opacity-80 transition-opacity")}
-                  onClick={handleStatusClick}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {statusLabel}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Change Status</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {showStatusDropdown && (
-            <div
-              className="absolute z-10 mt-1 min-w-[120px] bg-background border rounded shadow-lg py-1"
-              onPointerDown={(e) => e.stopPropagation()}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onPointerDown={(e) => e.stopPropagation()}>
+            <Badge
+              variant="outline"
+              className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer", statusColor, "hover:opacity-80 transition-opacity")}
             >
-              {Object.keys(statusLabels).map(key => (
-                <Button
-                  key={key}
-                  variant="ghost"
-                  size="sm"
-                  className={cn("w-full justify-start text-xs h-7 px-2", statusColors[key as keyof typeof statusColors] || '')}
-                  onClick={(e) => { e.stopPropagation(); handleChangeStatus(key); }}
-                >
-                  {statusLabels[key as keyof typeof statusLabels]}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
+              {statusLabel}
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" container={container} onPointerDown={(e) => e.stopPropagation()}>
+            {Object.keys(statusLabels).map(key => (
+              <DropdownMenuItem
+                key={key}
+                className={cn("text-xs", statusColors[key as keyof typeof statusColors] || '')}
+                onClick={() => onStatusChange?.(id, key)}
+              >
+                {statusLabels[key as keyof typeof statusLabels]}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
       {/* Priority Badge/Dropdown */}
       {priority && (
-        <div className="relative inline-block" ref={priorityDropdownRef}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "px-1.5 py-0.5 text-xs font-normal border cursor-pointer",
-                    priorityColors[priority],
-                    "hover:opacity-80 transition-opacity"
-                  )}
-                  onClick={handlePriorityClick}
-                  onPointerDown={(e) => e.stopPropagation()}
-                >
-                  {priority}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <p>Change Priority</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {showPriorityDropdown && (
-            <div
-              className="absolute z-10 mt-1 w-24 bg-background border rounded shadow-lg"
-              onPointerDown={(e) => e.stopPropagation()}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onPointerDown={(e) => e.stopPropagation()}>
+            <Badge
+              variant="outline"
+              className={cn(
+                "px-1.5 py-0.5 text-xs font-normal border cursor-pointer",
+                priorityColors[priority],
+                "hover:opacity-80 transition-opacity"
+              )}
             >
-              {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
-                <Button
-                  key={p}
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start text-xs h-7 px-2"
-                  onClick={(e) => { e.stopPropagation(); handleChangePriority(p); }}
-                >
-                  {p}
-                </Button>
-              ))}
-            </div>
-          )}
-        </div>
+              {priority}
+            </Badge>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" container={container} onPointerDown={(e) => e.stopPropagation()}>
+            {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
+              <DropdownMenuItem
+                key={p}
+                className={cn("text-xs capitalize", priorityColors[p])}
+                onClick={() => onPriorityChange?.(id, p)}
+              >
+                {p}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       )}
 
       {/* Due Date Display - Now displays range */}

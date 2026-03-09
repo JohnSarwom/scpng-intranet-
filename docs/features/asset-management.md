@@ -1,3 +1,87 @@
+# Asset Management: Architecture & Data Logic
+
+> **Last updated:** March 09, 2026
+> See [`history/ASSET_MANAGEMENT_AUDIT_REFACTOR.md`](../history/ASSET_MANAGEMENT_AUDIT_REFACTOR.md) for the full audit and refactor implementation log.
+
+---
+
+## Component Architecture (Current)
+
+### Primary File
+`src/pages/AssetManagementNew.tsx` — the main page component (~1,600 lines).
+
+### Key Design Decisions (as of March 2026)
+
+#### Unified Modal State
+All modal open/close state and the currently-selected asset are managed through a single `activeModal` state object. Only one modal can be active at a time.
+
+```typescript
+type ModalType = 'add' | 'edit' | 'delete' | 'info' | null;
+const [activeModal, setActiveModal] = useState<{ type: ModalType; asset: UserAsset | null }>({
+  type: null, asset: null,
+});
+```
+
+Handlers: `handleEditClick`, `handleDeleteClick`, `handleInfoClick`, `handleCloseModals` all call `setActiveModal(...)`.
+
+#### Typed Sort Column
+Sort state uses a typed union instead of `string` to prevent unsafe key access:
+```typescript
+type SortableAssetColumn = 'name' | 'id' | 'type' | 'condition' | 'assigned_to' |
+  'assigned_to_email' | 'unit' | 'division' | 'description' | 'assigned_date' |
+  'purchase_date' | 'last_updated';
+const [sortColumn, setSortColumn] = useState<SortableAssetColumn>('name');
+```
+
+#### Search Debounce
+`filterText` drives the input value (instant). `debouncedFilterText` (300ms delay) drives `filteredAssets`, `HighlightMatch` highlights, and the pagination reset effect. `handleResetFilters` clears both immediately.
+
+#### Staff Data Loading
+`useStaffMembers()` loads in the background — the page renders immediately. Staff data populates Add/Edit modal assignee dropdowns once resolved. The page-level `staffLoading` block was removed.
+
+#### Data Source Feature Flag
+The page conditionally uses either the SharePoint hook or Supabase hook based on the `VITE_USE_SHAREPOINT_ASSETS` env var:
+```typescript
+const USE_SHAREPOINT_ASSETS = import.meta.env.VITE_USE_SHAREPOINT_ASSETS === 'true';
+const { assets, loading, error, add, update, remove, refresh } =
+  USE_SHAREPOINT_ASSETS ? sharePointHook : { ...supabaseHook mapped to same interface };
+```
+
+#### Condition Badge Constants
+All condition colours and option lists live in `src/constants/assetChoices.ts` (the authoritative SharePoint-aligned source). `src/config/assetConditions.ts` re-exports from it. Import the function/constants from either path:
+```typescript
+import { getConditionBadgeClass, ASSET_CONDITIONS } from '@/constants/assetChoices';
+// or:
+import { getConditionBadgeClass, ASSET_CONDITIONS } from '@/config/assetConditions';
+```
+
+### Component Map
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `AssetManagementNew` | `src/pages/AssetManagementNew.tsx` | Main page — filtering, sorting, pagination, view mode |
+| `AddAssetModal` | `src/components/unit-tabs/modals/AddAssetModal.tsx` | Create new asset; uses `GlobalAssigneeSelector` |
+| `EditAssetModal` | `src/components/unit-tabs/modals/EditAssetModal.tsx` | Edit existing asset; includes image/invoice upload |
+| `DeleteModal` | `src/components/unit-tabs/modals/DeleteModal.tsx` | Generic confirmation dialog |
+| `AssetInfoModal` | `src/components/assets/AssetInfoModal.tsx` | Read-only asset detail view |
+| `AssetCard` | `src/components/assets/AssetCard.tsx` | Card view tile with hover action menu |
+| `assetChoices.ts` | `src/constants/assetChoices.ts` | Canonical condition/type/unit/division lists + badge colours |
+
+### View Modes
+The page supports three view modes toggled via `ToggleGroup`:
+- **Table** (`List` icon) — sortable columns, sticky header and actions column, 15 items per page
+- **Card** (`LayoutGrid` icon) — responsive grid, image-first with hover dropdown
+- **Detailed List** (`Rows` icon) — wide horizontal table with all fields including financials
+
+### Filtering
+Seven simultaneous filters:
+- `filterText` (debounced) — searches across name, ID, type, condition, vendor, unit, division, assigned\_to, notes, description
+- `filterType`, `filterCondition`, `filterUnit`, `filterDivision`, `filterVendor`, `filterAssignedTo` — exact-match dropdowns
+
+Type and Unit are shown inline on desktop (≥ md). All filters are accessible in the Sheet drawer. Active filters display as removable badges below the toolbar.
+
+---
+
 # Asset Management: My Assets Page Data Requirements & Logic
 
 ## Overview

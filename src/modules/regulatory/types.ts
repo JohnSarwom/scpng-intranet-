@@ -20,6 +20,7 @@ export interface RegulatoryCase {
     summary?: string;
     reporterName?: string;
     reporterContact?: string;
+    attachments?: string;
 }
 
 export interface KPIStats {

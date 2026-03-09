@@ -75,6 +75,7 @@ import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
 import { StaffMember } from '@/types/staff';
 
 import DivisionStaffMap from '@/utils/divisionStaffMap';
+import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useGraphProfile } from '@/hooks/useGraphProfile';
 
@@ -151,6 +152,7 @@ const StatusDropdown: React.FC<{
 const Unit = () => {
   const { user } = useSupabaseAuth();
   const { staffMembers, currentUserDepartment } = useStaffByDepartment();
+  const { data: officerProfiles = [] } = useOfficerProfiles();
   const { toast } = useToast();
 
   // Determine effective department for filtering
@@ -460,36 +462,41 @@ const Unit = () => {
     }
   };
 
-  // --- Derive Departments from DivisionStaffMap ---
+  // --- Derive unit list from live officer profiles (fallback: static map) ---
   const derivedUnits = useMemo((): UnitData[] => {
     try {
-      // 1. Get staff for user's division to filter units relevant to them
-      let relevantStaff = DivisionStaffMap.getStaffForUserDivision(userContext.email);
+      let unitNames: string[] = [];
 
-      // 2. Fallback to all staff if user not found in static map (e.g. admin or new user)
-      if (relevantStaff.length === 0) {
-        relevantStaff = DivisionStaffMap.getAllStaff();
+      if (officerProfiles.length > 0) {
+        // Find user's division from their profile
+        const userProfile = officerProfiles.find(
+          p => p.email?.toLowerCase() === userContext.email?.toLowerCase()
+        );
+        const userDivision = userProfile?.division?.toLowerCase() || '';
+
+        // Filter profiles to the user's division, or all if not found
+        const relevant = userDivision
+          ? officerProfiles.filter(p => p.division?.toLowerCase() === userDivision)
+          : officerProfiles;
+
+        unitNames = Array.from(new Set(
+          relevant.map(p => p.unit).filter(u => u && u.toLowerCase().includes('unit') && !u.toLowerCase().includes('division'))
+        )) as string[];
+      } else {
+        // Fallback to static map
+        let relevantStaff = DivisionStaffMap.getStaffForUserDivision(userContext.email);
+        if (relevantStaff.length === 0) relevantStaff = DivisionStaffMap.getAllStaff();
+        unitNames = Array.from(new Set(
+          relevantStaff.map(s => s.unit).filter(u => u && u.toLowerCase().includes('unit') && !u.toLowerCase().includes('division'))
+        )) as string[];
       }
 
-      // 3. Extract and filter unit names (Strictly includes "Unit", excludes "Division")
-      const uniqueNames = Array.from(new Set(
-        relevantStaff
-          .map(staff => staff.unit)
-          .filter(unit =>
-            unit &&
-            unit.toLowerCase().includes('unit') &&
-            !unit.toLowerCase().includes('division')
-          )
-      )) as string[];
-
-      return uniqueNames
-        .sort()
-        .map(name => ({ id: name, name: name }));
+      return unitNames.sort().map(name => ({ id: name, name }));
     } catch (error) {
-      console.error("Error deriving units from DivisionStaffMap:", error);
+      console.error("Error deriving units:", error);
       return [];
     }
-  }, [userContext.email]);
+  }, [userContext.email, officerProfiles]);
 
   // Data loading is handled by React Query's cache + persistence.
   // staleTime (5 min) ensures cached data is served instantly on navigation.

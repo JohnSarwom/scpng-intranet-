@@ -17,7 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Lock, ShieldAlert, Edit2, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Eye, Lock, ShieldAlert, Edit2, Trash2, Paperclip } from 'lucide-react';
 import { RegulatoryCase, CaseRisk, CaseStatus, CaseType } from '../types';
 import { format } from 'date-fns';
 import CaseDetailsModal from './CaseDetailsModal';
@@ -96,6 +96,7 @@ const CaseTable: React.FC<CaseTableProps> = ({ data }) => {
                             <TableHead>Status</TableHead>
                             <TableHead>Assigned Unit</TableHead>
                             <TableHead>Date</TableHead>
+                            <TableHead>Attachments</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -131,6 +132,28 @@ const CaseTable: React.FC<CaseTableProps> = ({ data }) => {
                                 <TableCell>{item.assignedUnit}</TableCell>
                                 <TableCell className="text-gray-500 text-sm">
                                     {format(new Date(item.createdAt), 'MMM dd, yyyy')}
+                                </TableCell>
+                                <TableCell>
+                                    {item.attachments ? (
+                                        item.attachments.startsWith('http') ? (
+                                            <a
+                                                href={item.attachments}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center text-blue-600 hover:text-blue-800 text-sm"
+                                                onClick={(e) => { e.stopPropagation(); }}
+                                            >
+                                                <Paperclip className="h-4 w-4 mr-1" /> View
+                                            </a>
+                                        ) : (
+                                            <span className="text-sm text-gray-600 truncate max-w-[150px] inline-block" title={item.attachments}>
+                                                <Paperclip className="h-4 w-4 mr-1 inline" />
+                                                {item.attachments}
+                                            </span>
+                                        )
+                                    ) : (
+                                        <span className="text-gray-400 text-sm">-</span>
+                                    )}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end">

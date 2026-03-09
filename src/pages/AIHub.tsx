@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import KnowledgeUploadModal from '@/components/ai-hub/KnowledgeUploadModal';
 import QuestionLibrarySidebar from '@/components/ai-hub/QuestionLibrarySidebar';
+import AIHubSkeleton from '@/components/ai-hub/skeletons/AIHubSkeleton';
 import { useUIRoles } from '@/hooks/useUIRoles';
 import { cn } from '@/lib/utils';
 import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
@@ -105,6 +106,32 @@ When a provision in one Act references a section in another Act (e.g., SCA 2015 
 
 ---
 
+### STEP 0: PREMISE VERIFICATION (MANDATORY — EXECUTE BEFORE EVERYTHING ELSE)
+Before searching the Act text, you MUST verify whether the question's embedded premise is factually correct.
+
+**WHY THIS MATTERS:** Questions often contain embedded assumptions ("How does X conflict with Y?", "Why does Section Z prevent..."). If those assumptions are factually wrong based on the statute, answering as framed produces confident-sounding but misleading analysis.
+
+**3-STEP PROCEDURE:**
+1. **Extract the embedded assumption**: Identify what the question assumes to be true (e.g., "assumes a conflict exists between SCA s.7 and CMA s.13").
+2. **Test against the Act text**: Does SCA s.7 actually use the phrase "public interest"? Does the conflict exist as framed, or does the statute resolve a *different* conflict?
+3. **Declare your finding first**:
+   - **Premise CORRECT** → Proceed normally.
+   - **Premise PARTIALLY CORRECT / INACCURATELY FRAMED** → State this at the top of your response. Answer what the Act *actually* addresses, correcting the framing.
+   - **Premise INCORRECT** → State this clearly. Explain what the Act says. Do NOT manufacture an analysis to fit a false premise.
+
+**EXAMPLE — CORRECT behavior:**
+- Question: "How does the 'public interest' objective in SCA s.7 conflict with market efficiency mandates in CMA s.13?"
+- Step 1: Assumption = a conflict exists between SCA s.7's "public interest" objective and CMA s.13's market efficiency mandate.
+- Step 2: Check SCA s.7 — it does NOT use the phrase "public interest"; its objectives are "orderly administration," "fairness, efficiency and transparency," and "soundness and stability." Check CMA s.13 — it uses "public interest" in s.13(3)(a), but the explicit conflict it resolves is between the exchange's public interest duty and its *corporate obligations* (s.13(3)(b)), not a conflict with SCA s.7.
+- Step 3: State at the top: "The question's premise requires examination. SCA s.7 does not use the phrase 'public interest' — its objectives are framed around orderly administration and fairness/efficiency/transparency. The statutory conflict resolved by CMA s.13 is between the exchange's public interest duty and its corporate obligations under s.13(3)(b), not between SCA s.7 and CMA s.13. The following analysis addresses what the Acts actually say."
+
+**EXAMPLE — INCORRECT behavior:**
+- Immediately constructing a conflict narrative without checking whether SCA s.7 uses "public interest" or whether the conflict as framed exists in the statute. This produces a plausible-sounding but factually misleading response.
+
+**CRITICAL**: Premise verification is NOT optional. Execute it before every response, even for simple queries.
+
+---
+
 ### MANDATORY SEARCH METHODOLOGY (DO THIS BEFORE ANSWERING)
 Before writing ANY response, you MUST perform these search steps on the Act text(s) available to you:
 
@@ -155,6 +182,12 @@ When analyzing any provision, apply these principles:
 - **Covenant vs. Condition Precedent**: Always distinguish between a party's obligation (covenant — breach = damages) and an event that must occur before a duty arises (condition precedent — failure = duty discharged entirely). Watch for trigger words: "provided that," "if," "on the condition that," "subject to," "unless and until," "in the event that."
 - **Notwithstanding Hierarchy**: Map every "Notwithstanding" clause to identify the apex predator — the broadest "Notwithstanding anything to the contrary herein" defeats all specific cross-references.
 - **Shall/May/Must Hierarchy**: "Shall" = mandatory obligation. "Must" = clearer mandatory standard. "May" = discretionary permission. "Will" = ambiguous (flag for analysis). "Should" = precatory/advisory, nearly always unenforceable.
+- **Obligation-Qualifying Phrases** — When "shall" or "must" is followed by a qualifying phrase, analyze the qualifier's effect on the duty's standard and enforceability:
+  - **"having particular regard to [X]"**: The duty exists but must be exercised with *heightened, weighted attention* to [X]. It is NOT an absolute rule — [X] is a mandatory consideration, not a mandatory outcome. The question for enforcement is whether sufficient weight was given to [X], not whether [X] was always achieved as a result.
+  - **"so far as may be reasonably practicable"**: Limits the duty to what is achievable with reasonable effort. Impossibility is a valid defence. Creates a qualified obligation, not an absolute one — breach requires proof that the result was practicably achievable.
+  - **"as appropriate" / "where necessary"**: Introduces a threshold condition before the duty activates. The threshold may be subjectively assessed by the duty-bearer unless the Act specifies criteria — creating enforcement ambiguity about when the obligation is triggered.
+  - **"subject to [provision]"**: The duty is subordinate to the referenced provision. The referenced provision governs; this duty applies only within its constraints and yields to any conflict with the superior provision.
+  For each qualifier found: state (a) what the qualifier does to the duty standard, and (b) whether it makes the obligation harder or easier to enforce compared to an unqualified "shall."
 
 ---
 
@@ -245,6 +278,117 @@ When analyzing ANY Securities Act 1997 provision, you MUST:
    - SA 1997 **Part VII (Takeovers, Sections 116-163)** → Now governed by **CMA 2015** (takeover provisions) — Takeovers Code 1998 also repealed
 3. **State the transitional status**: Explain whether the SA 1997 provision still has any residual effect under the saving/transitional provisions (Sections 118-123 of SCA 2015).
 4. **Recommend the current law**: Direct the user to the specific 2015 Act and section that now governs the subject matter, and if in All Acts mode, quote that provision directly.
+
+---
+
+### DEFINITIONAL ARCHITECTURE MAP (MANDATORY AWARENESS)
+
+The four Acts form an interdependent definitional network. The **Capital Market Act 2015 (CMA 2015)** is the definitional anchor — both CDA 2015 and SCA 2015 import core definitions directly from it. Be aware of the following structural issues in every analysis. Surface them intelligently using the output rules in Section G below.
+
+---
+
+#### A. CIRCULAR DEFINITIONS (Terms That Define Each Other)
+
+**CDA 2015 — "depositor" ↔ "securities account"** (the only true circular pair across all four Acts)
+- \`"securities account"\` means an account established by a central depository **for a depositor** for the recording of deposit of securities and cash balances.
+- \`"depositor"\` in relation to any book-entry, means a holder of **a securities account**.
+→ These are mutually dependent. The Acts resolve this contextually (the depositor is the person for whom the account exists; the account is what gives a person depositor status), but structurally neither term can be fully understood without the other. When analyzing either term, flag this interdependency.
+
+---
+
+#### B. SELF-REFERENTIAL DEFINITIONS (Terms That Use Themselves)
+
+**CMA 2015 — "clearing house"**
+- \`"clearing house"\` means **a clearing house** that has been approved under Section 31(4).
+→ The term being defined appears inside its own definition. The definition establishes legal status (Commission approval under s.31(4)) but presupposes rather than establishes the conceptual meaning of the term. When analyzing clearing house provisions, note that the Act requires prior external understanding of what a clearing house fundamentally is.
+
+**CDA 2015 / CMA 2015 / SA 1997 — "Act" / "this Act"**
+- CDA 2015: \`"Act"\` includes any regulations made under **this Act**.
+- CMA 2015 & SA 1997: \`"this Act"\` includes the regulations made under **this Act**.
+→ Standard legislative technique for extending statutory scope to subsidiary legislation, but self-referential in form. Practically: any reference to "the Act" or "this Act" throughout the legislation also encompasses all regulations made under it. Surface this when a provision's scope analysis turns on whether it applies only to the primary statute or also to subsidiary instruments.
+
+---
+
+#### C. CROSS-ACT DEFERRED DEFINITIONS
+
+**CMA 2015 is the master definition source.** CDA 2015 and SCA 2015 explicitly import core definitions from it. This means the CMA 2015 Section 2 Interpretation section is functionally operative across all three 2015 Acts — not just the CMA 2015 itself.
+
+**CDA 2015 — 7 Terms Imported from CMA 2015 Section 2(1):**
+| Term in CDA 2015 | Sourced From |
+|---|---|
+| \`"dealer"\` | CMA 2015 s.2(1) |
+| \`"debenture"\` / \`"debenture holder"\` | CMA 2015 s.2(1) |
+| \`"participating organisation"\` | CMA 2015 s.2(1) |
+| \`"security"\` / \`"securities"\` | CMA 2015 s.2 |
+| \`"stock exchange"\` | CMA 2015 s.2(1) |
+| \`"stock market"\` | CMA 2015 s.2(1) |
+| \`"unit trust scheme"\` | CMA 2015 s.2(1) |
+
+**SCA 2015 — 15 Terms Imported from CMA 2015:**
+| Term in SCA 2015 | Sourced From |
+|---|---|
+| \`"associated person"\` | CMA 2015 s.3 |
+| \`"clearing facility"\` | CMA 2015 s.30 |
+| \`"clearing house"\` | CMA 2015 s.31 |
+| \`"corporation"\` | CMA 2015 s.2 |
+| \`"derivatives exchange"\` | CMA 2015 s.9 |
+| \`"exchange"\` | CMA 2015 s.9 |
+| \`"licence"\` / \`"licensed person"\` | CMA 2015 s.36 |
+| \`"listed"\` / \`"listed corporation"\` / \`"listing rules"\` | CMA 2015 s.2 |
+| \`"OTC"\` / \`"trade repository"\` | CMA 2015 s.77 |
+| \`"record"\` | CMA 2015 s.2 |
+| \`"security"\` / \`"securities"\` | CMA 2015 s.2 |
+| \`"stock market"\` / \`"stock exchange"\` | CMA 2015 s.9 |
+
+→ **PRACTICAL RULE**: When in CDA 2015 or SCA 2015 single-act mode and a deferred term is central to the analysis, flag that its definition is sourced from CMA 2015 and quote the CMA 2015 definition from your cross-reference index. Never treat these terms as undefined.
+
+---
+
+#### D. SA 1997 SUPERSEDED SELF-REFERENCE
+
+**SA 1997 — "Securities Commission"**
+- \`"Securities Commission"\` and \`"Commission"\` means the Securities Commission of Papua New Guinea **established by this Act**.
+→ SA 1997 was repealed by SCA 2015 s.117(1). The Commission is now established under **SCA 2015 Section 4**, not under the SA 1997. When analyzing any SA 1997 provision involving the Commission, flag that the Commission's current legal basis is SCA 2015 s.4, and that the SA 1997 establishing provision is no longer operative.
+
+---
+
+#### E. DEFINITIONAL WEB — MANDATORY READING ORDER (CMA 2015)
+
+Several key CMA 2015 definitions depend on other definitions within the same Section 2. When a user's query involves these terms, trace the full definitional chain before analyzing the operative provision:
+- \`"capital market product"\` → depends on: \`"debt security"\`, \`"equity security"\`, \`"managed investment scheme"\`, \`"derivative"\` (all defined in s.2)
+- \`"dealing"\` (in relation to capital market product) → depends on: \`"capital market product"\` (above)
+- \`"client"\` → depends on: \`"regulated activity"\` (s.2 + Schedule 2) and \`"licence"\` (s.2)
+- \`"insolvent"\` → depends on: \`"managed investment scheme"\` (s.2)
+
+---
+
+#### F. DRAFTING ANOMALY — "TRUST ACCOUNT RECORDS" (CMA 2015)
+
+The definition of \`"trust account records"\` in CMA 2015 Section 2(1) contains a double use of the keyword "means":
+> \`"trust account records"\` **means** — (a) **means** records relating to a trust account; and (b) includes any information that relates to a trust account...
+
+The second "means" at the start of subsection (a) is a drafting/OCR error from scanning the signed original document. The correct reading of (a) is simply: "records relating to a trust account." When quoting or analyzing this definition, apply the corrected reading and note the anomaly.
+
+---
+
+#### G. OUTPUT RULES — WHEN TO SURFACE DEFINITIONAL ARCHITECTURE ISSUES
+
+**TRIGGER — Surface the issue when:**
+- The user's query directly asks about a term listed in sections A–F above (e.g., "What is a depositor?", "What is a clearing house?", "What does 'exchange' mean under the SCA?")
+- The operative meaning of the provision being analyzed TURNS ON a flagged term (e.g., a penalty provision that applies to "depositors" — flag the circular pair; a CDA/SCA provision relying on an imported CMA term — flag the cross-act import)
+- A cross-act deferred definition is central to a single-act mode analysis
+
+**FORMAT — when triggered:**
+Within the **Syntactic Analysis** section, add:
+> ⚠️ **Definitional Architecture Note:** [1–3 sentences identifying the specific structural issue and its practical implication for this analysis]
+
+**SUPPRESS — do not surface when:**
+- The flagged term does NOT appear in the specific section(s) being quoted and analyzed. **A flagged term that exists elsewhere in the Act but is absent from the provision(s) under analysis MUST NOT trigger a note.** Example: when analyzing CMA s.13 and SCA s.7, the "clearing house" self-referential note MUST NOT appear because "clearing house" is present in neither of those sections.
+- None of the flagged terms are material to the interpretation outcome of the query
+- The definitional issue has already been flagged earlier in the same conversation
+- The query is purely procedural and the definition is not in dispute
+
+**⚠️ PROXIMITY RULE (CRITICAL — TWO CONDITIONS REQUIRED):** A Definitional Architecture Note is only triggered when BOTH conditions are met simultaneously: (1) the flagged term appears in the SPECIFIC PROVISION(S) being quoted, AND (2) the term's structural issue materially affects interpretation of that provision. Meeting only one condition is INSUFFICIENT. When in doubt, SUPPRESS.
 
 ---
 
@@ -342,6 +486,7 @@ PNG securities legislation is substantially modeled on Australian securities law
 9. ✅ Identify ALL related sections: referenced by, references to, appeals, revocation, enforcement, and definitions
 10. ✅ **TEMPORAL CHECK**: If analyzing SA 1997 provisions, flag repeal status (SCA 2015 Section 117), identify successor provisions in the 2015 Acts, and note any saving/transitional effects (SCA 2015 Sections 118-123)
 11. ✅ **REMEDIES & ENFORCEMENT**: Identify penalty provisions, enforcement mechanisms (administrative/civil/criminal), and flag any enforcement gaps
+12. ✅ **DEFINITIONAL ARCHITECTURE CHECK**: If any operative term in the provision being analyzed is flagged in the Definitional Architecture Map (circular pairs: "depositor"/"securities account"; self-referential: "clearing house", "Act"/"this Act"; cross-act imports in CDA/SCA; SA 1997 superseded "Securities Commission" reference; "trust account records" drafting anomaly), include a ⚠️ **Definitional Architecture Note** within the Syntactic Analysis section. Keep it concise — 1–3 sentences identifying the structural issue and its practical implication for this specific analysis.
 
 ---
 
@@ -393,16 +538,35 @@ Format: FULL mandatory response format below — all phases, all sections, nothi
      >
      > **Penalty:** A fine not exceeding K10,000,000.00...
 4. **ANALYSIS SECTION**: After ALL quote boxes, provide your expert analysis organized as:
-   - **Syntactic Analysis**: Analyze EVERY operative word (shall, may, must, if, subject to, provided that) in all quoted provisions. Map modifier scope for every clause containing a list or qualifier. Do not make a single observation and stop.
-   - **Hohfeldian Mapping**: Present a COMPLETE relationship table covering ALL parties and ALL legal relations (Rights/Duty, Privilege/No-Right, Power/Liability, Immunity/Disability). Example format:
-     | Relationship | Party A | Party B |
+   - **Syntactic Analysis**: Analyze EVERY operative word (shall, may, must, if, subject to, provided that) in all quoted provisions. Map modifier scope for every clause containing a list or qualifier. Do not make a single observation and stop. If any operative term is flagged in the Definitional Architecture Map (circular pairs, self-referential definitions, cross-act imports, SA 1997 superseded reference, or the "trust account records" anomaly), append a ⚠️ **Definitional Architecture Note** (1–3 sentences) identifying the structural issue and its practical implication for this analysis.
+   - **Hohfeldian Mapping**: Present a COMPLETE relationship table covering ALL parties and ALL legal relations (Rights/Duty, Privilege/No-Right, Power/Liability, Immunity/Disability).
+
+     **MANDATORY TABLE FORMAT — use these exact column headers:**
+     | Hohfeldian Category | Advantaged Party (Right / Privilege / Power / Immunity) | Burdened Party (Duty / No-Right / Liability / Disability) |
      |---|---|---|
-     | Application | No-Right (cannot compel) | Privilege to apply |
-     | Decision | Power to approve/refuse | Liability to decision |
+     | Right / Duty | Investors — Right to receive an orderly and fair market | Exchange — Duty to ensure orderly and fair market (*shall*) |
+     | Privilege / No-Right | Exchange — Privilege to determine HOW to ensure fairness (operational discretion) | Investors — No-Right to dictate specific mechanisms |
+     | Power / Liability | Commission — Power to revoke exchange approval if duty breached | Exchange — Liability to revocation |
+
+     **⚠️ WRONG FORMAT (DO NOT USE):**
+     \`| Relationship | Party A | Party B |\` ← ambiguous column names; does not show who holds what
+     \`| Application | No-Right (cannot compel) | Privilege to apply |\` ← mixing categories in one row; inverted parties
+
+     **COLUMN ORDER ENFORCEMENT:** The party with *shall* in the statute is ALWAYS in Column 3 (they bear the Duty/Liability). Never place a *shall* obligation-bearer in Column 2.
    - **Practical Implications**: What these provisions actually DO — obligations triggered, penalties exposed, enforcement mechanisms available, procedural steps required.
    - **Cross-References & Interactions**: ALL related sections across ALL loaded Acts — including appeals provisions, revocation mechanisms, enforcement sections, and definitional dependencies. List each with its section number and a brief description.
    - **Remedies & Enforcement**: Identify the specific penalty provision (fine/imprisonment), enforcement mechanism (Commission administrative action, court orders, criminal prosecution, private civil action), and whether liability is strict or requires mens rea. Flag any enforcement gaps.
-   - **Risk Flags**: Minimum 3 SPECIFIC risks — cite the exact language that creates each risk. Generic observations are insufficient.
+   - **Risk Flags**: Minimum 3 SPECIFIC risks. Each flag MUST follow this exact format:
+     > **Risk [N]: [Risk Title]** — The phrase *"[exact statutory quote from the Act]"* (**Section X**) creates this risk because [specific legal consequence]. [1–2 sentences on real-world impact.]
+
+     **NON-COMPLIANT examples (DO NOT produce these):**
+     - "A risk exists if the standard is unclear." ← No statutory quote, no specific consequence
+     - "Balancing competing interests creates a risk of overregulation." ← Generic observation, no statutory anchor
+
+     **COMPLIANT example:**
+     - **Risk 1: Undefined Duty Standard** — The phrase *"having particular regard to the need for the protection of investors"* (**CMA s.13(3)(a)**) creates this risk because "having particular regard to" establishes a weighted consideration, not a defined threshold. Without a statutory definition of what weight is "sufficient," enforcement becomes discretionary and the standard is vulnerable to challenge as void for vagueness.
+
+     Every risk flag MUST contain: (a) a direct statutory quote in quotation marks, (b) the section number in bold, and (c) a specific legal consequence — not a vague possibility.
    - **Summary**: At the very end of your analysis (after Risk Flags), provide a concise **Summary** section. In 2-4 sentences, distill the key takeaway — what the provision does, who it affects, and the most important practical consequence. This should be written in plain language that a non-lawyer can understand.
 5. **RICH FORMATTING**: **Bold** all Section numbers and *Italicize* obligations (*shall*, *must*).
 
@@ -416,6 +580,14 @@ const CROSS_REF_INDEX_FOR_CMA = `
 ---
 ### CROSS-REFERENCE INDEX (OTHER ACTS — KEY PROVISIONS ONLY)
 You have ONLY the CMA 2015 loaded, but the following key provisions from other Acts are provided so you can quote cross-referenced sections without requiring the user to switch modes.
+
+**⚠️ CMA 2015 DEFINITIONAL ANCHOR STATUS**: The CMA 2015 is the master definition source for the entire PNG securities legislative framework. Both the CDA 2015 and SCA 2015 import core definitions directly from CMA 2015 Section 2(1). When you answer definitional questions, be aware your definitions carry weight beyond this Act alone.
+
+**⚠️ CMA 2015 INTERNAL DEFINITIONAL FLAGS** (apply when these terms are analyzed):
+- **"clearing house"** (s.2(1)): Self-referential definition — \`"clearing house" means a clearing house that has been approved under Section 31(4)\`. The Act presupposes rather than establishes the conceptual meaning. Flag this when analyzing clearing house provisions.
+- **"trust account records"** (s.2(1)): Drafting anomaly — the text reads \`"trust account records" means — (a) means records relating to a trust account\`. The second "means" in subsection (a) is an OCR/scanning error from the original signed document. The correct reading is: "(a) records relating to a trust account." Apply the corrected reading and note the anomaly when quoting.
+- **"this Act"** (s.2(1)): Extended self-reference — \`"this Act" includes the regulations made under this Act\`. Any reference to "this Act" throughout the CMA 2015 also encompasses all subsidiary regulations.
+- **Definitional web**: "capital market product" depends on "debt security", "equity security", "managed investment scheme", and "derivative". "Dealing" depends on "capital market product". Always trace the full definitional chain before analyzing provisions built on these terms.
 
 **From the Securities Commission Act 2015 (SCA 2015):**
 - **Section 4 (Establishment of the Commission)**: The Securities Commission of Papua New Guinea is established as a body corporate with perpetual succession, common seal, may acquire/hold/dispose of property, may sue and be sued. Functions assigned by SCA, CMA, and CDA.
@@ -441,6 +613,30 @@ const CROSS_REF_INDEX_FOR_CDA = `
 ---
 ### CROSS-REFERENCE INDEX (OTHER ACTS — KEY PROVISIONS ONLY)
 You have ONLY the CDA 2015 loaded, but the following key provisions from other Acts are provided so you can quote cross-referenced sections without requiring the user to switch modes.
+
+**⚠️ CDA 2015 DEFINITIONAL FLAGS** (apply when these terms are analyzed):
+
+**CIRCULAR DEFINITION PAIR — Flag whenever "depositor" or "securities account" is analyzed:**
+- \`"securities account"\` (CDA 2015 s.2(1)): means an account established by a central depository **for a depositor** for the recording of deposit of securities and cash balances.
+- \`"depositor"\` (CDA 2015 s.2(1)): in relation to any book-entry, means a holder of **a securities account**.
+→ These two definitions are mutually dependent — each uses the other. The Acts resolve this contextually (depositor = the person for whom the account exists; account = what confers depositor status), but structurally they form a closed definitional loop. When either term is central to the analysis, include a ⚠️ Definitional Architecture Note explaining this circularity and its practical implication.
+
+**"Act" SELF-REFERENCE — Flag when scope of "this Act" is in issue:**
+- \`"Act"\` (CDA 2015 s.2(1)): includes any regulations made under this Act.
+→ Every reference to "the Act" or "this Act" throughout CDA 2015 also encompasses all subsidiary regulations. Surface this when analyzing whether a provision's scope extends to regulatory instruments.
+
+**7 TERMS DEFINED BY REFERENCE TO CMA 2015** (do NOT treat these as undefined — quote from the CMA 2015 definitions below):
+| Term Used in CDA 2015 | Go-To Source |
+|---|---|
+| \`"dealer"\` | CMA 2015 s.2(1) — see below |
+| \`"debenture"\` / \`"debenture holder"\` | CMA 2015 s.2(1) — see below |
+| \`"participating organisation"\` | CMA 2015 s.2(1) — see below |
+| \`"security"\` / \`"securities"\` | CMA 2015 s.2 — see below |
+| \`"stock exchange"\` | CMA 2015 s.2(1) — see below |
+| \`"stock market"\` | CMA 2015 s.2(1) — see below |
+| \`"unit trust scheme"\` | CMA 2015 s.2(1) — see below |
+
+When any of these terms is central to the analysis, include a ⚠️ Definitional Architecture Note stating: "This term is not independently defined in the CDA 2015 — its definition is imported from CMA 2015 Section 2(1) by express reference."
 
 **From the Capital Market Act 2015 (CMA 2015):**
 - **Section 2(1) Key Definitions imported by CDA**: "dealer" (person carrying on business of dealing in securities), "debenture" (includes debenture stock, bond, note, certificate of deposit), "participating organisation" (person carrying on business of dealing in securities recognised by stock exchange rules), "securities" ((a) debentures/stocks/bonds of any government; (b) shares/debentures of body corporate; (c) units in unit trust scheme; (d) other prescribed instruments), "stock exchange" (body corporate approved under Section 9), "stock market" (market/exchange/facility for securities trading), "unit trust scheme" (arrangement for participation as beneficiaries under a trust), "officer" (director, secretary, employee, receiver/manager, or liquidator).
@@ -490,6 +686,31 @@ const CROSS_REF_INDEX_FOR_SCA = `
 ---
 ### CROSS-REFERENCE INDEX (OTHER ACTS — KEY PROVISIONS ONLY)
 You have ONLY the SCA 2015 loaded, but the following key provisions from other Acts are provided so you can quote cross-referenced sections without requiring the user to switch modes.
+
+**⚠️ SCA 2015 DEFINITIONAL FLAGS** (apply when these terms are analyzed):
+
+**15 TERMS DEFINED BY REFERENCE TO CMA 2015** (do NOT treat these as undefined — quote from the CMA 2015 definitions below):
+| Term Used in SCA 2015 | Go-To Source |
+|---|---|
+| \`"associated person"\` | CMA 2015 s.3 |
+| \`"clearing facility"\` | CMA 2015 s.30 |
+| \`"clearing house"\` | CMA 2015 s.31 ⚠️ also self-referential in CMA |
+| \`"corporation"\` | CMA 2015 s.2 |
+| \`"derivatives exchange"\` | CMA 2015 s.9 |
+| \`"exchange"\` | CMA 2015 s.9 |
+| \`"licence"\` / \`"licensed person"\` | CMA 2015 s.36 |
+| \`"listed"\` / \`"listed corporation"\` / \`"listing rules"\` | CMA 2015 s.2 |
+| \`"OTC"\` / \`"trade repository"\` | CMA 2015 s.77 |
+| \`"record"\` | CMA 2015 s.2 |
+| \`"security"\` / \`"securities"\` | CMA 2015 s.2 |
+| \`"stock market"\` / \`"stock exchange"\` | CMA 2015 s.9 |
+
+When any of these terms is central to the analysis, include a ⚠️ Definitional Architecture Note: "This term is not independently defined in the SCA 2015 — its definition is imported from CMA 2015 by express reference in SCA 2015 Section 2(1)."
+
+**ADDITIONAL NOTE — "clearing house" double-import**: SCA 2015 imports "clearing house" from CMA 2015 s.31, but CMA 2015's own definition of "clearing house" is self-referential (\`"clearing house" means a clearing house approved under Section 31(4)\`). Flag both layers when this term is analyzed in SCA 2015 mode.
+
+**"Securities Commission" self-establishment reference — already resolved in SCA 2015:**
+SCA 2015 s.2(1) defines: \`"Securities Commission" and "Commission" means the Securities Commission of Papua New Guinea established by this Act\`. Unlike SA 1997 (where this definition now points to a repealed provision), in SCA 2015 this is correct — the Commission IS established by this Act under Section 4. No anomaly here.
 
 **From the Capital Market Act 2015 (CMA 2015):**
 - **Section 2(1) Key Definitions imported by SCA**: "securities" ((a) government debentures/stocks/bonds; (b) shares/debentures of body corporate; (c) units in unit trust scheme; (d) other prescribed instruments), "stock exchange" (body corporate approved under Section 9), "stock market" (market/facility for securities trading), "listed" (admitted to official list of stock exchange), "corporation" (as defined in CMA).
@@ -765,6 +986,8 @@ const AIHub = () => {
   const lastScrollTimeRef = useRef(0);
   const pendingScrollRef = useRef<number | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
+  const uiIsActuallyLoading = isAuthLoading || msalInProgress !== 'none' || isConfigLoading;
 
   const scrollToBottom = (force = false) => {
     if (!messagesContainerRef.current) return;
@@ -1493,7 +1716,6 @@ const AIHub = () => {
     ]
   };
 
-  const uiIsActuallyLoading = isAuthLoading || msalInProgress !== 'none' || isConfigLoading;
   const canEditSettings = !uiIsActuallyLoading && isSystemAdmin;
 
   const handleClearChat = () => {
@@ -1851,234 +2073,260 @@ const AIHub = () => {
   };
 
   return (
-    <PageLayout hideNavAndFooter={isChatFullScreen}>
-      {!isChatFullScreen && (
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold mb-2">AI Knowledge Hub</h1>
-        </div>
-      )}
-
-      {/* Normal View Layout */}
-      {!isChatFullScreen && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="h-[600px] lg:h-[700px]">
-              {renderAIChatInterface(false)} {/* AI Assistant Card in normal flow */}
+    <PageLayout>
+      {uiIsActuallyLoading ? (
+        <AIHubSkeleton />
+      ) : (
+        <>
+          {!isChatFullScreen && (
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold mb-2">AI Knowledge Hub</h1>
             </div>
+          )}
 
-            <div className="space-y-6">
-              {/* Featured Document Section */}
-              <div className="mt-2">
-                <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  <FileText size={20} className="text-intranet-primary" />
-                  Featured Legislation
-                </h2>
-                <div className="space-y-3">
-                  {[
-                    {
-                      title: "Capital Market Act 2015",
-                      desc: "Market Structure, Licensing, Conduct, and Securities Regulation.",
-                      url: "https://scpng.gov.pg/wp-content/uploads/2022/09/cma2015.pdf"
-                    },
-                    {
-                      title: "Central Depositories Act 2015",
-                      desc: "Clearing, Settlement, and Market Infrastructure.",
-                      url: "https://scpng.gov.pg/wp-content/uploads/2022/09/cda2015.pdf"
-                    },
-                    {
-                      title: "Securities Commission Act 2015",
-                      desc: "Establishment, Powers, and Governance of the Regulator.",
-                      url: "https://www.scpng.gov.pg/wp-content/uploads/2022/09/sca2015.pdf"
-                    },
-                    {
-                      title: "Securities Act 1997",
-                      desc: "Historical Context and Transitional Provisions.",
-                      url: "https://scpng.gov.pg/wp-content/uploads/2022/09/sa1997.pdf"
-                    }
-                  ].map((act, idx) => (
-                    <a
-                      key={idx}
-                      href={act.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
-                    >
-                      <div className="bg-intranet-light dark:bg-intranet-dark p-2 rounded-lg mr-3">
-                        <FileText className="h-5 w-5 text-intranet-primary flex-shrink-0" />
+          {/* Normal View Layout */}
+          {!isChatFullScreen && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <div className="h-[600px] lg:h-[700px]">
+                  {renderAIChatInterface(false)} {/* AI Assistant Card in normal flow */}
+                </div>
+
+                <div className="space-y-6">
+                  {/* Featured Document Section */}
+                  <div className="mt-2">
+                    <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                      <FileText size={20} className="text-intranet-primary" />
+                      Featured Legislation
+                    </h2>
+                    <div className="space-y-3">
+                      {[
+                        {
+                          title: "Capital Market Act 2015",
+                          desc: "Market Structure, Licensing, Conduct, and Securities Regulation.",
+                          url: "https://scpng.gov.pg/wp-content/uploads/2022/09/cma2015.pdf"
+                        },
+                        {
+                          title: "Central Depositories Act 2015",
+                          desc: "Clearing, Settlement, and Market Infrastructure.",
+                          url: "https://scpng.gov.pg/wp-content/uploads/2022/09/cda2015.pdf"
+                        },
+                        {
+                          title: "Securities Commission Act 2015",
+                          desc: "Establishment, Powers, and Governance of the Regulator.",
+                          url: "https://www.scpng.gov.pg/wp-content/uploads/2022/09/sca2015.pdf"
+                        },
+                        {
+                          title: "Securities Act 1997",
+                          desc: "Historical Context and Transitional Provisions.",
+                          url: "https://scpng.gov.pg/wp-content/uploads/2022/09/sa1997.pdf"
+                        }
+                      ].map((act, idx) => (
+                        <a
+                          key={idx}
+                          href={act.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
+                        >
+                          <div className="bg-intranet-light dark:bg-intranet-dark p-2 rounded-lg mr-3">
+                            <FileText className="h-5 w-5 text-intranet-primary flex-shrink-0" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{act.title}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {act.desc}
+                            </p>
+                          </div>
+                          <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-intranet-primary ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Section for Uploaded SharePoint Files */}
+                  <div className="mt-8">
+                    <h2 className="text-xl font-semibold mb-3">Uploaded Knowledge Documents</h2>
+                    {isLoadingFiles ? (
+                      <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <div key={i} className="flex items-center p-3 border rounded-lg bg-card border-border">
+                            <Skeleton className="h-10 w-10 rounded-lg mr-3" />
+                            <div className="flex-1 space-y-2">
+                              <Skeleton className="h-4 w-1/2" />
+                              <Skeleton className="h-3 w-1/4" />
+                            </div>
+                            <Skeleton className="h-4 w-4 ml-2" />
+                          </div>
+                        ))}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{act.title}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {act.desc}
-                        </p>
+                    ) : loadFilesError ? (
+                      <p className="text-red-500">{loadFilesError}</p>
+                    ) : uploadedSharePointFiles.length === 0 ? (
+                      <p className="text-gray-500">No documents have been uploaded yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {uploadedSharePointFiles.map(file => (
+                          <a
+                            key={file.id}
+                            href={file.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
+                          >
+                            {file.type === 'link' ?
+                              <LinkIcon className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" /> :
+                              <FileText className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" />
+                            }
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{file.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded: {new Date(file.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-intranet-primary ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                        ))}
                       </div>
-                      <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-intranet-primary ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    </a>
-                  ))}
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Section for Uploaded SharePoint Files */}
-              <div className="mt-8">
-                <h2 className="text-xl font-semibold mb-3">Uploaded Knowledge Documents</h2>
-                {isLoadingFiles ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="ml-2 text-gray-500">Loading documents...</span>
-                  </div>
-                ) : loadFilesError ? (
-                  <p className="text-red-500">{loadFilesError}</p>
-                ) : uploadedSharePointFiles.length === 0 ? (
-                  <p className="text-gray-500">No documents have been uploaded yet.</p>
+              <div className="lg:col-span-1 h-[700px] sticky top-6">
+                {isSystemAdmin ? (
+                  <Tabs defaultValue="library" className="w-full h-full flex flex-col border border-border rounded-xl bg-card overflow-hidden shadow-sm">
+                    <div className="px-4 pt-4 pb-2 border-b border-border bg-gray-50/50 dark:bg-gray-900/50">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="library" className="flex items-center gap-2">
+                          <BookOpen size={14} /> Library
+                        </TabsTrigger>
+                        <TabsTrigger value="admin" className="flex items-center gap-2">
+                          <Settings size={14} /> Admin
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+
+                    <TabsContent value="library" className="flex-1 overflow-hidden m-0 p-0 border-none">
+                      <QuestionLibrarySidebar onSelectQuestion={handleLibraryQuestionSelect} />
+                    </TabsContent>
+
+                    <TabsContent value="admin" className="flex-1 overflow-y-auto m-0 p-4 space-y-6 custom-scrollbar">
+                      <Card className="border-none shadow-none bg-transparent">
+                        <CardHeader className="px-0 pt-0">
+                          <CardTitle className="text-sm">Knowledge Areas</CardTitle>
+                          <CardDescription className="text-xs text-muted-foreground">Upload documents or links.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4 px-0 pb-0">
+                          {knowledgeAreas.map((area, index) => (
+                            <div
+                              key={index}
+                              className="flex items-start p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors border border-border/50"
+                              onClick={() => openUploadModalForArea(area.title)}
+                            >
+                              <div className="bg-intranet-light dark:bg-intranet-dark p-2 rounded-lg mr-3">
+                                <area.icon size={18} className="text-intranet-primary" />
+                              </div>
+                              <div>
+                                <h3 className="font-medium text-xs">{area.title}</h3>
+                                <p className="text-[10px] text-gray-500 leading-tight">{area.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
+
+                      <Card className="border-none shadow-none bg-transparent pt-4 border-t border-border mt-4">
+                        <CardHeader className="px-0 pt-0">
+                          <CardTitle className="text-sm">AI Configuration</CardTitle>
+                          <CardDescription className="text-[10px] text-muted-foreground">Manage API settings for the AI Assistant.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="px-0">
+                          {isConfigLoading ? (
+                            <div className="space-y-4">
+                              <div className="space-y-2">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-8 w-full" />
+                              </div>
+                              <div className="space-y-2">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-8 w-full" />
+                              </div>
+                              <div className="flex flex-col gap-2 pt-2">
+                                <Skeleton className="h-8 w-full" />
+                                <Skeleton className="h-8 w-full" />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="space-y-4">
+                              <div className="space-y-1.5">
+                                <Label htmlFor="aiApiKey" className="text-xs">API Key</Label>
+                                <Input
+                                  id="aiApiKey"
+                                  type="password"
+                                  value={apiKey}
+                                  onChange={(e) => setApiKey(e.target.value)}
+                                  className="h-8 text-xs"
+                                  placeholder="Enter API Key"
+                                  disabled={!canEditSettings || isSaving || isTesting}
+                                />
+                              </div>
+                              <div className="space-y-1.5">
+                                <Label htmlFor="aiApiEndpoint" className="text-xs">Endpoint</Label>
+                                <Input
+                                  id="aiApiEndpoint"
+                                  value={apiEndpoint}
+                                  onChange={(e) => setApiEndpoint(e.target.value)}
+                                  className="h-8 text-xs"
+                                  placeholder="Enter Endpoint"
+                                  disabled={!canEditSettings || isSaving || isTesting}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-2 pt-2">
+                                <Button
+                                  onClick={handleTestAiConnection}
+                                  disabled={isTesting || isSaving || !canEditSettings || (!apiKey && !apiEndpoint)}
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8 text-xs"
+                                >
+                                  {isTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                                  Test Connection
+                                </Button>
+                                <Button
+                                  onClick={handleSaveAiSettings}
+                                  disabled={isSaving || isTesting || !canEditSettings}
+                                  size="sm"
+                                  className="h-8 text-xs"
+                                >
+                                  {isSaving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
+                                  Save Settings
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </TabsContent>
+                  </Tabs>
                 ) : (
-                  <div className="space-y-3">
-                    {uploadedSharePointFiles.map(file => (
-                      <a
-                        key={file.id}
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
-                      >
-                        {file.type === 'link' ?
-                          <LinkIcon className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" /> :
-                          <FileText className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" />
-                        }
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Uploaded: {new Date(file.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-intranet-primary ml-2 opacity-50 group-hover:opacity-100 transition-opacity" />
-                      </a>
-                    ))}
+                  <div className="h-full border border-border rounded-xl bg-card overflow-hidden shadow-sm">
+                    <QuestionLibrarySidebar onSelectQuestion={handleLibraryQuestionSelect} />
                   </div>
                 )}
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="lg:col-span-1 h-[700px] sticky top-6">
-            {isSystemAdmin ? (
-              <Tabs defaultValue="library" className="w-full h-full flex flex-col border border-border rounded-xl bg-card overflow-hidden shadow-sm">
-                <div className="px-4 pt-4 pb-2 border-b border-border bg-gray-50/50 dark:bg-gray-900/50">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="library" className="flex items-center gap-2">
-                      <BookOpen size={14} /> Library
-                    </TabsTrigger>
-                    <TabsTrigger value="admin" className="flex items-center gap-2">
-                      <Settings size={14} /> Admin
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-
-                <TabsContent value="library" className="flex-1 overflow-hidden m-0 p-0 border-none">
-                  <QuestionLibrarySidebar onSelectQuestion={handleLibraryQuestionSelect} />
-                </TabsContent>
-
-                <TabsContent value="admin" className="flex-1 overflow-y-auto m-0 p-4 space-y-6 custom-scrollbar">
-                  <Card className="border-none shadow-none bg-transparent">
-                    <CardHeader className="px-0 pt-0">
-                      <CardTitle className="text-sm">Knowledge Areas</CardTitle>
-                      <CardDescription className="text-xs text-muted-foreground">Upload documents or links.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-0 pb-0">
-                      {knowledgeAreas.map((area, index) => (
-                        <div
-                          key={index}
-                          className="flex items-start p-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 rounded-lg cursor-pointer transition-colors border border-border/50"
-                          onClick={() => openUploadModalForArea(area.title)}
-                        >
-                          <div className="bg-intranet-light dark:bg-intranet-dark p-2 rounded-lg mr-3">
-                            <area.icon size={18} className="text-intranet-primary" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-xs">{area.title}</h3>
-                            <p className="text-[10px] text-gray-500 leading-tight">{area.description}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-none shadow-none bg-transparent pt-4 border-t border-border mt-4">
-                    <CardHeader className="px-0 pt-0">
-                      <CardTitle className="text-sm">AI Configuration</CardTitle>
-                      <CardDescription className="text-[10px] text-muted-foreground">Manage API settings for the AI Assistant.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="px-0">
-                      {uiIsActuallyLoading ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          <div className="space-y-1.5">
-                            <Label htmlFor="aiApiKey" className="text-xs">API Key</Label>
-                            <Input
-                              id="aiApiKey"
-                              type="password"
-                              value={apiKey}
-                              onChange={(e) => setApiKey(e.target.value)}
-                              className="h-8 text-xs"
-                              placeholder="Enter API Key"
-                              disabled={!canEditSettings || isSaving || isTesting}
-                            />
-                          </div>
-                          <div className="space-y-1.5">
-                            <Label htmlFor="aiApiEndpoint" className="text-xs">Endpoint</Label>
-                            <Input
-                              id="aiApiEndpoint"
-                              value={apiEndpoint}
-                              onChange={(e) => setApiEndpoint(e.target.value)}
-                              className="h-8 text-xs"
-                              placeholder="Enter Endpoint"
-                              disabled={!canEditSettings || isSaving || isTesting}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-2 pt-2">
-                            <Button
-                              onClick={handleTestAiConnection}
-                              disabled={isTesting || isSaving || !canEditSettings || (!apiKey && !apiEndpoint)}
-                              variant="outline"
-                              size="sm"
-                              className="h-8 text-xs"
-                            >
-                              {isTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                              Test Connection
-                            </Button>
-                            <Button
-                              onClick={handleSaveAiSettings}
-                              disabled={isSaving || isTesting || !canEditSettings}
-                              size="sm"
-                              className="h-8 text-xs"
-                            >
-                              {isSaving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                              Save Settings
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="h-full border border-border rounded-xl bg-card overflow-hidden shadow-sm">
-                <QuestionLibrarySidebar onSelectQuestion={handleLibraryQuestionSelect} />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Full Screen View Layout */}
-      {isChatFullScreen && (
-        <div className="fixed inset-0 z-50 flex flex-col p-0 m-0 bg-background dark:bg-intranet-dark">
-          {renderAIChatInterface(true)} {/* AI Assistant Card in full screen mode */}
-        </div>
-      )}
+          {/* Full Screen View Layout */}
+          {isChatFullScreen && (
+            <div className="fixed inset-0 z-50 flex flex-col p-0 m-0 bg-background dark:bg-intranet-dark">
+              {renderAIChatInterface(true)} {/* AI Assistant Card in full screen mode */}
+            </div>
+          )}
+        </>
+      )
+      }
 
       <KnowledgeUploadModal
         isOpen={isUploadModalOpen}
@@ -2570,7 +2818,7 @@ const AIHub = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </PageLayout>
+    </PageLayout >
   );
 };
 

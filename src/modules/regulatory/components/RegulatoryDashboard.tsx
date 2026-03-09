@@ -3,16 +3,37 @@ import KPIBar from './KPIBar';
 import FilterPanel from './FilterPanel';
 import CaseTable from './CaseTable';
 import { MOCK_CASES, MOCK_KPI_STATS } from '../constants';
-import { Shield } from 'lucide-react';
+import { Shield, Loader2, AlertCircle } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaseType } from '../types';
 import RegulatoryAnalytics from './RegulatoryAnalytics';
+import RegulatoryAIChat from './RegulatoryAIChat';
+import { useRegulatoryCases } from '@/hooks/useRegulatoryCases';
 
 const RegulatoryDashboard: React.FC = () => {
-    // In a real app, these would come from a query or context
-    const cases = MOCK_CASES;
-    const stats = MOCK_KPI_STATS;
+    const { cases, stats, loading, error } = useRegulatoryCases();
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center p-20 min-h-[500px]">
+                <Loader2 className="h-12 w-12 animate-spin text-[#400010] mb-4" />
+                <p className="text-gray-500 font-medium tracking-tight">Syncing Live Regulatory Data...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center p-20 min-h-[500px]">
+                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+                <p className="text-gray-800 font-semibold mb-2">Secure Connection Failed</p>
+                <p className="text-gray-500 max-w-md text-center text-sm">
+                    Unable to retrieve regulatory cases from SharePoint. Verify permissions or API limits.
+                </p>
+            </div>
+        );
+    }
 
     const getFilteredCases = (type: CaseType) => cases.filter(c => c.type === type);
 
@@ -66,6 +87,8 @@ const RegulatoryDashboard: React.FC = () => {
                         </div>
                         <CaseTable data={cases} />
                     </div>
+                    {/* AI Chat Integration */}
+                    <RegulatoryAIChat cases={cases} stats={stats} />
                 </TabsContent>
 
                 {tabs.filter(t => t.id !== 'overview').map(tab => (

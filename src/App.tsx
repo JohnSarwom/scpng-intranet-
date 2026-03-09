@@ -26,6 +26,7 @@ import Contacts from "./pages/Contacts";
 import Strategy from "./pages/Strategy";
 import HRProfiles from "./pages/HRProfiles";
 import Unit from "./pages/Unit";
+import Division from "./pages/Division";
 import Calendar from "./pages/Calendar";
 import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
@@ -47,6 +48,7 @@ import TestGround from './pages/TestGround';
 import { EmployeesProvider } from '@/contexts/EmployeesContext';
 import { SlideshowProvider } from '@/contexts/SlideshowContext';
 import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
+import WorkPlanBuilderPage from './pages/WorkPlanBuilderPage';
 
 // MSAL Imports
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
@@ -193,6 +195,27 @@ const AppRoutes = () => {
       <Route path="/unit" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'units', action: 'read' }]}>
           <Unit />
+        </RoleProtectedRoute>
+      } />
+
+      <Route path="/division" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'divisions', action: 'read' }]}>
+          <Division />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/division/:divisionId" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'divisions', action: 'read' }]}>
+          <Division />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/division/:divisionId/workplan/new" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'divisions', action: 'read' }]}>
+          <WorkPlanBuilderPage />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/division/:divisionId/workplan/:planId/edit" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'divisions', action: 'read' }]}>
+          <WorkPlanBuilderPage />
         </RoleProtectedRoute>
       } />
 

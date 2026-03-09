@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { Task, KRA, UserContext } from '@/types';
 import { UserRole } from '@/services/userSharePointService';
 import DivisionStaffMap from '@/utils/divisionStaffMap';
+import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { StaffDetailModal } from './modals/StaffDetailModal';
 import { objectsToCSV } from '@/utils/csv-helpers';
 import { toast } from 'sonner';
@@ -56,6 +57,7 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
     const [selectedStaff, setSelectedStaff] = useState<any | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const { data: officerProfiles = [] } = useOfficerProfiles();
     const userUnit = userContext?.unit || '';
 
     // Calculate staff performance metrics (reusing logic from OverviewTab)
@@ -83,6 +85,19 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                     jobTitle: u.role_name || '',
                 }));
         } else {
+            // Prefer live officer profiles, fall back to static map
+            const liveMatched = officerProfiles.filter(p =>
+                p.unit?.toLowerCase() === userUnit.toLowerCase() &&
+                !isServiceEntry(p.name || '', p.jobTitle || '', p.email || '')
+            );
+
+            if (liveMatched.length > 0) {
+                rosterEntries = liveMatched.map(p => ({
+                    email: p.email,
+                    name: p.name,
+                    jobTitle: p.jobTitle,
+                }));
+            } else {
             const allStaff = DivisionStaffMap.getAllStaff();
 
             // Tier 1: exact unit match
@@ -130,6 +145,7 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
             }
 
             rosterEntries = matched.map(s => ({ email: s.email, name: s.name, jobTitle: s.job_title || (s as any).jobTitle || '' }));
+            } // end DivisionStaffMap fallback
         }
 
         if (rosterEntries.length === 0) return [];
@@ -234,7 +250,7 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                 };
             })
             .sort((a, b) => b.performanceScore - a.performanceScore);
-    }, [tasks, kras, unitRoster, userUnit]);
+    }, [tasks, kras, unitRoster, userUnit, officerProfiles]);
 
     // Derived filtered staff
     const filteredStaff = useMemo(() => {

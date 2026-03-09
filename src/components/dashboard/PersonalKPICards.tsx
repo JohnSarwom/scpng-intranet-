@@ -7,6 +7,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useGraphProfile } from '@/hooks/useGraphProfile';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
+import { PersonalKPICardsSkeleton } from './skeletons/PersonalKPICardsSkeleton';
 
 const PersonalKPICards: React.FC = () => {
   // 1. Context & User Setup (Copied/Adapted from Unit.tsx)
@@ -253,15 +254,7 @@ const PersonalKPICards: React.FC = () => {
   ];
 
   if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="bg-white p-4 rounded-xl shadow-sm h-32 animate-pulse flex items-center justify-center border">
-            <Loader2 className="h-6 w-6 text-gray-300 animate-spin" />
-          </div>
-        ))}
-      </div>
-    );
+    return <PersonalKPICardsSkeleton />;
   }
 
   return (

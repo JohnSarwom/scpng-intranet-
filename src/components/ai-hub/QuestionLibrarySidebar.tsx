@@ -7,6 +7,7 @@ import {
     Loader2,
     BookOpen
 } from 'lucide-react';
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -159,9 +160,20 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
 
             <div className="flex-1 overflow-y-auto px-4 py-4 custom-scrollbar">
                 {isLoading ? (
-                    <div className="flex flex-col items-center justify-center h-48 gap-2">
-                        <Loader2 className="w-6 h-6 animate-spin text-intranet-primary" />
-                        <span className="text-xs text-muted-foreground">Loading questions...</span>
+                    <div className="space-y-4 animate-in fade-in duration-500">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="border rounded-lg p-3 space-y-3 bg-card shadow-sm border-border">
+                                <div className="flex items-center gap-2">
+                                    <Skeleton className="h-4 w-6 rounded" />
+                                    <Skeleton className="h-4 w-12 rounded" />
+                                </div>
+                                <Skeleton className="h-5 w-full" />
+                                <div className="flex justify-between items-center pt-1">
+                                    <Skeleton className="h-3 w-2/3" />
+                                    <Skeleton className="h-3 w-3" />
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : filteredCategories.length > 0 ? (
                     <Accordion

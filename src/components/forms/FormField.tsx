@@ -20,10 +20,10 @@ interface FormFieldProps {
   className?: string;
 }
 
-export const FormField: React.FC<FormFieldProps> = ({ 
-  field, 
-  disabled = false, 
-  className 
+export const FormField: React.FC<FormFieldProps> = ({
+  field,
+  disabled = false,
+  className
 }) => {
   const {
     control,
@@ -40,8 +40,8 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   // Render field label
   const renderLabel = () => (
-    <Label 
-      htmlFor={fieldId} 
+    <Label
+      htmlFor={fieldId}
       className={cn(
         "text-sm font-medium",
         field.required && "after:content-['*'] after:text-destructive after:ml-1",
@@ -242,11 +242,14 @@ export const FormField: React.FC<FormFieldProps> = ({
             name={field.name}
             control={control}
             rules={{
-              required: field.required ? `${field.label} is required` : false
+              validate: (value) =>
+                !field.required ||
+                (Array.isArray(value) && value.length > 0) ||
+                `${field.label} is required`
             }}
             render={({ field: formField }) => {
               const selectedValues = Array.isArray(formField.value) ? formField.value : [];
-              
+
               return (
                 <div className="space-y-2">
                   {field.options?.map((option) => (
@@ -429,11 +432,14 @@ export const FormField: React.FC<FormFieldProps> = ({
             name={field.name}
             control={control}
             rules={{
-              required: field.required ? `${field.label} is required` : false
+              validate: (value) =>
+                !field.required ||
+                (Array.isArray(value) && value.length > 0) ||
+                `${field.label} is required`
             }}
             render={({ field: formField }) => {
               const selectedValues = Array.isArray(formField.value) ? formField.value : [];
-              
+
               return (
                 <div className="space-y-2">
                   {field.options?.map((option) => (
@@ -497,7 +503,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                     </span>
                   )}
                 </div>
-                
+
                 {/* Show selected files */}
                 {formField.value && (
                   <div className="space-y-1">

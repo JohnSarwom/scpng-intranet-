@@ -33,8 +33,7 @@ import DatePicker from '@/components/DatePicker';
 import FileUpload from '@/components/FileUpload';
 import { Upload, Check, ChevronsUpDown, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const conditionOptions = ["New", "Good", "Fair", "Poor", "Needs Repair", "For Disposal"];
+import { ASSET_CONDITIONS } from '@/constants/assetChoices';
 
 interface EditAssetModalProps {
   isOpen: boolean;
@@ -328,7 +327,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                   <SelectTrigger id="edit-asset-condition" className="bg-background/50 focus:bg-background transition-colors"><SelectValue placeholder="Select Condition" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="null">Select Condition</SelectItem>
-                    {conditionOptions.map((option) => (<SelectItem key={option} value={option}>{option}</SelectItem>))}
+                    {ASSET_CONDITIONS.map((option) => (<SelectItem key={option} value={option}>{option}</SelectItem>))}
                   </SelectContent>
                 </Select>
               </div>

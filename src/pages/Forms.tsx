@@ -26,12 +26,12 @@ import { FormTemplate as FormTemplateType } from '@/types/forms';
 import { useForms } from '@/hooks/useForms';
 import { AddGroupDialog } from '@/components/forms/AddGroupDialog';
 import { AddFormDialog } from '@/components/forms/AddFormDialog';
+import FormsPageSkeleton from '@/components/forms/skeletons/FormsPageSkeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   defaultFormTemplates,
   leaveApplicationTemplate,
   assetRequestTemplate,
-  itSupportTemplate,
   trainingRequestTemplate,
   itRequestTemplate
 } from '@/config/formTemplates';
@@ -67,7 +67,7 @@ const formCategories: FormCategory[] = [
     icon: Computer,
     divisionId: 'corporate-services-division',
     forms: mockFormTemplates.filter(form =>
-      ['it-support-request', 'it-equipment-access-request'].includes(form.id)
+      ['it-equipment-access-request'].includes(form.id)
     )
   },
   {
@@ -114,7 +114,7 @@ const Forms: React.FC = () => {
 
   // Helper to get Lucide icon from string
   const getIcon = (iconName: string): LucideIcon => {
-    const Icon = (LucideIcons as any)[iconName];
+    const Icon = (LucideIcons as Record<string, unknown>)[iconName] as LucideIcon | undefined;
     return Icon || LucideIcons.FileText;
   };
 
@@ -128,7 +128,7 @@ const Forms: React.FC = () => {
       forms: registrations
         .filter(reg => reg.groupId === group.id)
         .map(reg => {
-          const template = (defaultFormTemplates as any)[reg.templateId];
+          const template = (defaultFormTemplates as Record<string, any>)[reg.templateId];
           return {
             id: reg.id,
             title: reg.title || template?.title,
@@ -136,7 +136,7 @@ const Forms: React.FC = () => {
             status: reg.status,
             estimatedTime: reg.estimatedTime || template?.estimatedTime || '5-10 mins',
             lastUpdated: 'Recently',
-            requiredApprovals: template?.approvalSteps?.map((s: any) => s.approverRole) || []
+            requiredApprovals: template?.approvalSteps?.map((s: { approverRole: string }) => s.approverRole) || []
           } as FormTemplateType;
         })
     }));
@@ -150,7 +150,6 @@ const Forms: React.FC = () => {
   const formTemplates: FormTemplateType[] = [
     leaveApplicationTemplate,
     assetRequestTemplate,
-    itSupportTemplate,
     trainingRequestTemplate,
     itRequestTemplate
   ];
@@ -161,7 +160,7 @@ const Forms: React.FC = () => {
       // Filter forms within category
       const filteredForms = category.forms.filter(form => {
         // Division filter (hardcoded categories have divisionId, dynamic ones might need one too)
-        const matchesDivision = !selectedDivision || (category as any).divisionId === selectedDivision;
+        const matchesDivision = !selectedDivision || category.divisionId === selectedDivision;
 
         // Search filter
         const matchesSearch = !searchQuery ||
@@ -312,25 +311,60 @@ const Forms: React.FC = () => {
           </div>
         </div>
 
-        {/* Forms Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="all">All Forms ({allForms.length})</TabsTrigger>
-            {activeCategories.map(category => (
-              <TabsTrigger key={category.id} value={category.id}>
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {loading ? (
+          <FormsPageSkeleton />
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-6">
+              <TabsTrigger value="all">All Forms ({allForms.length})</TabsTrigger>
+              {activeCategories.map(category => (
+                <TabsTrigger key={category.id} value={category.id}>
+                  {category.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          {/* All Forms Tab */}
-          <TabsContent value="all" className="space-y-6 mt-6">
-            {filteredCategories.map(category => (
-              <div key={category.id}>
-                <div className="flex items-center gap-3 mb-4">
-                  <category.icon className="h-5 w-5 text-primary" />
-                  <h2 className="text-xl font-semibold">{category.name}</h2>
-                  <Badge variant="secondary">{category.forms.length}</Badge>
+            {/* All Forms Tab */}
+            <TabsContent value="all" className="space-y-6 mt-6">
+              {filteredCategories.map(category => (
+                <div key={category.id}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <category.icon className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-semibold">{category.name}</h2>
+                    <Badge variant="secondary">{category.forms.length}</Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {category.forms.map(form => (
+                      <FormCard key={form.id} form={form} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {allForms.length === 0 && (
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No forms found</h3>
+                  <p className="text-muted-foreground">
+                    {searchQuery
+                      ? `No forms match your search for "${searchQuery}"`
+                      : "No forms are available for your current division selection"
+                    }
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Category-specific tabs */}
+            {activeCategories.map(category => (
+              <TabsContent key={category.id} value={category.id} className="space-y-4 mt-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <category.icon className="h-6 w-6 text-primary" />
+                  <div>
+                    <h2 className="text-2xl font-semibold">{category.name}</h2>
+                    <p className="text-muted-foreground">{category.description}</p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -338,64 +372,32 @@ const Forms: React.FC = () => {
                     <FormCard key={form.id} form={form} />
                   ))}
                 </div>
-              </div>
+
+                {category.forms.length === 0 && (
+                  <div className="text-center py-12">
+                    <category.icon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No {category.name.toLowerCase()} forms available</h3>
+                    <p className="text-muted-foreground">
+                      Forms for this category will be added soon.
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
             ))}
-
-            {allForms.length === 0 && (
-              <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">No forms found</h3>
-                <p className="text-muted-foreground">
-                  {searchQuery
-                    ? `No forms match your search for "${searchQuery}"`
-                    : "No forms are available for your current division selection"
-                  }
-                </p>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Category-specific tabs */}
-          {activeCategories.map(category => (
-            <TabsContent key={category.id} value={category.id} className="space-y-4 mt-6">
-              <div className="flex items-center gap-3 mb-6">
-                <category.icon className="h-6 w-6 text-primary" />
-                <div>
-                  <h2 className="text-2xl font-semibold">{category.name}</h2>
-                  <p className="text-muted-foreground">{category.description}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {category.forms.map(form => (
-                  <FormCard key={form.id} form={form} />
-                ))}
-              </div>
-
-              {category.forms.length === 0 && (
-                <div className="text-center py-12">
-                  <category.icon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No {category.name.toLowerCase()} forms available</h3>
-                  <p className="text-muted-foreground">
-                    Forms for this category will be added soon.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-          ))}
-        </Tabs>
+          </Tabs>
+        )}
       </div>
 
       <AddGroupDialog
         open={isAddGroupOpen}
         onOpenChange={setIsAddGroupOpen}
-        onAdd={addGroup}
+        onAdd={async (group) => { await addGroup(group); }}
       />
       <AddFormDialog
         open={isAddFormOpen}
         onOpenChange={setIsAddFormOpen}
         groups={dbGroups}
-        onAdd={addForm}
+        onAdd={async (form) => { await addForm(form); }}
       />
 
     </PageLayout>

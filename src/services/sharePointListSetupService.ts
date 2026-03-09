@@ -994,7 +994,7 @@ export class SharePointListSetupService {
      * Create Forms Management Lists (Groups and Registrations)
      */
     async setupFormsEngine(): Promise<{ success: boolean; message: string; details: any }> {
-        console.log('🚀 [Setup] Starting Forms Engine Setup...');
+        console.log('🚀 [Setup] Setting up Forms Management engine...');
         const results = {
             groups: null as any,
             registrations: null as any
@@ -1021,6 +1021,58 @@ export class SharePointListSetupService {
             return {
                 success: false,
                 message: `Failed to setup Forms engine: ${error.message}`,
+                details: error
+            };
+        }
+    }
+
+    /**
+     * Setup IT_Request_Access_List standalone
+     */
+    async setupITRequestList(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Setting up IT Request Access list...');
+        try {
+            const listName = 'IT_Request_Access_List';
+
+            // 1. Check if exists
+            const check = await this.client.api(`/sites/${this.siteId}/lists`).filter(`displayName eq '${listName}'`).get();
+            if (check.value && check.value.length > 0) {
+                return { success: false, message: `List ${listName} already exists.`, details: check.value[0] };
+            }
+
+            // 2. Create List
+            const list = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .post({
+                    displayName: listName,
+                    description: 'Backend for IT Access and Equipment Request form',
+                    columns: [
+                        { name: 'StaffName', text: {} },
+                        { name: 'StaffEmail', text: {} },
+                        { name: 'StaffID', text: {} },
+                        { name: 'Department', text: {} },
+                        { name: 'JobTitle', text: {} },
+                        { name: 'RequestType', choice: { choices: ['New Access', 'Modify Access', 'Deactivate Access', 'Equipment Request'] } },
+                        { name: 'Systems', text: { allowMultipleLines: true } }, // Storing multi-selection as string for simplicity in Graph
+                        { name: 'Priority', choice: { choices: ['Low', 'Medium', 'High', 'Urgent'] } },
+                        { name: 'Notes', text: { allowMultipleLines: true } },
+                        { name: 'Status', choice: { choices: ['Draft', 'Pending', 'Approved', 'Rejected'] } },
+                        { name: 'SubmissionDate', dateTime: {} }
+                    ],
+                    list: { template: 'genericList' }
+                });
+
+            console.log('✅ [Setup] IT Request Access list created');
+            return {
+                success: true,
+                message: 'IT Request Access list created successfully!',
+                details: list
+            };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to setup IT Request list:', error);
+            return {
+                success: false,
+                message: `Failed up IT Request list: ${error.message}`,
                 details: error
             };
         }

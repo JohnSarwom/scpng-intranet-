@@ -1,62 +1,20 @@
-# Unitopia Hub Documentation
+# SCPNG Intranet Documentation
 
-This documentation provides comprehensive information about the Unitopia Hub application, its features, components, and implementation details.
+Welcome to the SCPNG Intranet documentation repository. To ensure efficient communication with AI assistants and clear onboarding for developers, we use a **Hub-and-Spoke** documentation model.
 
-## Documentation Structure
+## 🗺 Where to Start?
 
-### Main Sections
+1.  **[ARCHITECTURE.md](ARCHITECTURE.md) (The Hub)**: Read this first. It contains the "Current Source of Truth" for the entire application, including the Tech Stack, Auth/RBAC logic, and Division filtering.
+2.  **[ARCHIVE_MAP.md](ARCHIVE_MAP.md)**: If you are looking for context on a specific past bug fix, feature implementation, or historical "log," this map will point you to the correct file in the `history/` folder.
 
-- **pages/** - Documentation for each page/view in the application
-- **components/** - Documentation for reusable UI components
-- **api/** - API documentation and endpoints
-- **database/** - Database schema, models, and relationships
-- **architecture/** - System architecture, design patterns, and decisions
-- **getting-started/** - Setup guides and onboarding documentation
-- **features/** - Feature documentation across the application
-- **workflows/** - Common user workflows and processes
-- **ui/** - UI design, guidelines, and principles
+## 📂 Folder Structure
 
-### Page-specific Documentation
+-   `guides/`: Persistent, in-depth technical manuals for core systems (Auth, SharePoint, etc.).
+-   `history/`: Archive of 100+ implementation logs and one-off fixes. **Do not read these for current architectural truth.**
+-   `database/`: SQL migration scripts and schema definitions.
+-   `features/`: Feature-specific documentation and design notes.
 
-Each page has its own folder within `pages/` containing information about:
-- Purpose and functionality
-- UI components used
-- Data flow
-- Available operations
-- Special considerations
+## ✍️ Documentation Rules
 
-### Component Documentation
-
-The `components/` directory contains documentation for reusable UI components, organized by categories:
-- ticketing - Ticket management components
-- reports - Reporting components
-- ui - Basic UI elements
-- unit-tabs - Unit management tabs
-- kra - Key Result Area components
-- assets - Asset management components
-- admin - Administrative components
-- kpi - Key Performance Indicator components
-- auth - Authentication components
-- common - Common reusable components
-- charts - Data visualization components
-- organization - Organization structure components
-- layout - Layout components
-- dashboard - Dashboard components
-- contacts - Contact management components
-
-## How to Use This Documentation
-
-When adding new features or modifying existing ones:
-1. Update the relevant documentation in the appropriate section
-2. Include details about purpose, functionality, and implementation
-3. Add schema information when modifying data models
-4. Keep UI documentation in sync with actual implementation
-
-## Contributing to Documentation
-
-When contributing to this documentation:
-1. Follow the established structure
-2. Use Markdown for content formatting
-3. Include code examples where appropriate
-4. Add diagrams for complex workflows
-5. Update the documentation alongside code changes 
+-   **Updates**: When completing a major feature or fix, update `ARCHITECTURE.md` or a relevant file in `guides/`.
+-   **Archival**: One-off implementation logs and specific bug-fix notes should be placed in `history/` and indexed in `ARCHIVE_MAP.md`.

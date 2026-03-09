@@ -31,7 +31,7 @@ let cachedListIds: Record<string, string> = {};
 let globalInitializationPromise: Promise<void> | null = null;
 
 export class SharePointOpsService {
-    private client: Client;
+    public client: Client;
 
     // Use getters/setters to seamlessly bridge to the module-level globals
     // This ensures any `new SharePointOpsService(client)` shares the 

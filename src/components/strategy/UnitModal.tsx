@@ -193,7 +193,7 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                             <Dialog.Panel className="relative transform overflow-hidden rounded-xl bg-gray-50 text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col md:flex-row min-h-[500px] h-full max-h-[90vh] p-0">
 
                                 {/* Left Sidebar */}
-                                <div className="w-full md:w-80 bg-[#400010] text-white p-8 flex flex-col relative overflow-y-auto flex-shrink-0 custom-scrollbar">
+                                <div className="w-full md:w-80 bg-[#400010] text-white p-8 flex flex-col relative overflow-y-auto overflow-x-hidden flex-shrink-0 custom-scrollbar">
                                     <Building2 className="absolute -bottom-10 -right-10 w-64 h-64 text-white opacity-5 pointer-events-none" />
 
                                     <div className="mb-8">

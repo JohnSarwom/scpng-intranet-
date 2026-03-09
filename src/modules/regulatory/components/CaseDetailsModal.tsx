@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from 'date-fns';
 import {
     Shield, CheckCircle2, AlertTriangle, XCircle,
-    Calendar, User, FileText, Lock, Building
+    Calendar, User, FileText, Lock, Building, Paperclip
 } from 'lucide-react';
 
 interface CaseDetailsModalProps {
@@ -141,6 +141,34 @@ const CaseDetailsModal: React.FC<CaseDetailsModalProps> = ({ open, onOpenChange,
                             </div>
                         </div>
                     </div>
+
+                    {/* Attachments Section */}
+                    {caseData.attachments && (
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                                <Paperclip className="h-5 w-5 mr-2 text-gray-500" />
+                                Attachments
+                            </h3>
+                            <div className="bg-white p-4 border rounded-md">
+                                {caseData.attachments.startsWith('http') ? (
+                                    <a
+                                        href={caseData.attachments}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center text-blue-600 hover:text-blue-800"
+                                    >
+                                        <Paperclip className="h-4 w-4 mr-2" />
+                                        View Attachment
+                                    </a>
+                                ) : (
+                                    <div className="flex items-center text-gray-700">
+                                        <Paperclip className="h-4 w-4 mr-2 text-gray-400" />
+                                        <span className="break-all">{caseData.attachments}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Additional Metadata */}
                     {caseData.type === 'whistleblower' && (

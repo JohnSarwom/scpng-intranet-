@@ -13,7 +13,8 @@
       "Bash(ls -la \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\src\\\\components\\\\ui\"\" 2>/dev/null || echo \"Directory might not exist \")",
       "Bash(npx vite build)",
       "Bash(echo:*)",
-      "WebFetch(domain:envlaw.com.au)"
+      "WebFetch(domain:envlaw.com.au)",
+      "Bash(xargs grep -l \"cda_2015\\\\|cma_2015\\\\|sca_2015\\\\|sa_1997\\\\|merged_acts\")"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-// import { useDivisionContext } from './useDivisionContext'; // Temporarily commented out - Hook file missing
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'; // Corrected auth hook import
+import { useMemo } from 'react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import DivisionStaffMap from '../utils/divisionStaffMap';
 
 export interface StaffMember {
@@ -16,34 +16,51 @@ export interface StaffMember {
 }
 
 export function useDivisionStaff() {
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const currentDivisionId: string | null = null; // Placeholder: Division context hook missing
-  const { user } = useSupabaseAuth(); // Corrected auth hook usage
+  const { user } = useSupabaseAuth();
+  const { data: profiles = [], isLoading: loading } = useOfficerProfiles();
 
-  useEffect(() => {
-    setLoading(true);
+  const staffMembers = useMemo<StaffMember[]>(() => {
+    if (profiles.length > 0) {
+      // Find the user's division from their profile
+      const userProfile = profiles.find(p => p.email?.toLowerCase() === user?.email?.toLowerCase());
+      const userDivision = userProfile?.division?.toLowerCase() || '';
 
-    // Get staff members for the current user's division
-    if (currentDivisionId) {
-      const staff = DivisionStaffMap.getStaffByDivision(currentDivisionId);
-      setStaffMembers(staff);
-    } else if (user?.email) {
-      // If no division is selected, try to get staff based on the user's email
-      const staff = DivisionStaffMap.getStaffForUserDivision(user.email);
-      setStaffMembers(staff);
-    } else {
-      // Fallback to all staff if no context is available
-      setStaffMembers(DivisionStaffMap.getAllStaff());
+      const relevant = userDivision
+        ? profiles.filter(p => p.division?.toLowerCase() === userDivision)
+        : profiles;
+
+      return relevant.map(p => ({
+        id: p.id || p.email,
+        name: p.name,
+        email: p.email,
+        job_title: p.jobTitle,
+        department: p.unit,
+        mobile: p.phone || '',
+        business_phone: p.officeExtension || '',
+        office_location: p.division,
+        division_id: p.division?.toLowerCase().replace(/\s+/g, '-') || '',
+      }));
     }
 
-    setLoading(false);
-  }, [currentDivisionId, user?.email]);
+    // Fallback: static map
+    const staff = user?.email
+      ? DivisionStaffMap.getStaffForUserDivision(user.email)
+      : DivisionStaffMap.getAllStaff();
 
-  return {
-    staffMembers,
-    loading
-  };
+    return (staff.length > 0 ? staff : DivisionStaffMap.getAllStaff()).map(s => ({
+      id: s.id,
+      name: s.name,
+      email: s.email,
+      job_title: s.job_title,
+      department: s.unit,
+      mobile: s.mobile,
+      business_phone: s.business_phone,
+      office_location: s.office_location,
+      division_id: s.division_id,
+    }));
+  }, [profiles, user?.email]);
+
+  return { staffMembers, loading };
 }
 
-export default useDivisionStaff; 
+export default useDivisionStaff;

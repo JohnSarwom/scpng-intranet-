@@ -404,106 +404,6 @@ export const assetRequestTemplate: FormTemplate = {
   }
 };
 
-// IT Support Request Template
-export const itSupportTemplate: FormTemplate = {
-  id: 'it-support-request',
-  title: 'IT Support Request Form',
-  description: 'Request IT support, new accounts, or equipment',
-  version: '1.0',
-  divisionId: 'corporate-services-division',
-  category: 'it',
-  estimatedTime: '8-12 minutes',
-  status: 'active',
-  lastUpdated: '2024-07-30',
-
-  sections: [
-    {
-      id: 'user_info',
-      title: 'User Information',
-      fields: [
-        createTextField('user_name', 'Full Name', true),
-        createTextField('employee_id', 'Employee ID', true),
-        createEmailField('email', 'Email Address', true),
-        createTextField('phone', 'Phone Number', false),
-        createTextField('department', 'Department', true),
-        createTextField('location', 'Office Location', false)
-      ]
-    },
-    {
-      id: 'request_details',
-      title: 'Request Details',
-      fields: [
-        createSelectField('request_type', 'Request Type', [
-          { value: 'new_user', label: 'New User Account Setup' },
-          { value: 'password_reset', label: 'Password Reset' },
-          { value: 'software_install', label: 'Software Installation' },
-          { value: 'hardware_issue', label: 'Hardware Issue' },
-          { value: 'network_issue', label: 'Network/Internet Issue' },
-          { value: 'email_issue', label: 'Email Issue' },
-          { value: 'printer_issue', label: 'Printer Issue' },
-          { value: 'access_request', label: 'System Access Request' },
-          { value: 'other', label: 'Other' }
-        ], true),
-        createSelectField('priority', 'Priority', [
-          { value: 'low', label: 'Low - Within 5 business days' },
-          { value: 'medium', label: 'Medium - Within 2 business days' },
-          { value: 'high', label: 'High - Within 1 business day' },
-          { value: 'urgent', label: 'Urgent - Same day' }
-        ], true),
-        createTextareaField('description', 'Detailed Description', true, 5),
-        createTextareaField('steps_taken', 'Steps Already Taken', false, 3)
-      ]
-    },
-    {
-      id: 'system_info',
-      title: 'System Information',
-      description: 'Help us understand your technical environment',
-      fields: [
-        createSelectField('operating_system', 'Operating System', [
-          { value: 'windows_10', label: 'Windows 10' },
-          { value: 'windows_11', label: 'Windows 11' },
-          { value: 'macos', label: 'macOS' },
-          { value: 'linux', label: 'Linux' },
-          { value: 'mobile', label: 'Mobile Device' },
-          { value: 'unknown', label: 'Unknown' }
-        ], false),
-        createTextField('computer_name', 'Computer Name/Asset Tag', false),
-        createTextareaField('error_messages', 'Error Messages', false, 2)
-      ]
-    },
-    {
-      id: 'attachments',
-      title: 'Screenshots/Attachments',
-      fields: [
-        createFileField('screenshots', 'Screenshots or Files', '.png,.jpg,.pdf,.doc,.docx', false)
-      ]
-    }
-  ],
-
-  workflowEnabled: true,
-  approvalSteps: [
-    {
-      id: 'it_review',
-      order: 1,
-      title: 'IT Team Review',
-      approverRole: 'it_support',
-      required: true,
-      allowDelegation: true,
-      timeoutDays: 1
-    }
-  ],
-
-  createdBy: 'system',
-  createdAt: '2024-01-12',
-  tags: ['it', 'support', 'technology'],
-
-  permissions: {
-    view: ['all_employees'],
-    fill: ['all_employees'],
-    approve: ['it_support', 'it_manager'],
-    admin: ['it_admin', 'system_admin']
-  }
-};
 
 // Training Request Template
 export const trainingRequestTemplate: FormTemplate = {
@@ -631,7 +531,10 @@ export const itRequestTemplate: FormTemplate = {
           { value: 'access', label: 'Access Request' },
           { value: 'other', label: 'Other' },
         ], true),
-        createTextField('otherRequestType', 'Please specify', false, 'Specify other request type'),
+        {
+          ...createTextField('otherRequestType', 'Please specify', true, 'Specify other request type'),
+          showWhen: { field: 'requestAccessType', operator: 'equals', value: 'other' }
+        },
       ],
     },
     {
@@ -647,7 +550,10 @@ export const itRequestTemplate: FormTemplate = {
           { value: 'ups', label: 'UPS' },
           { value: 'other', label: 'Other' },
         ], true),
-        createTextField('otherEquipment', 'Please specify', false, 'Specify other equipment'),
+        {
+          ...createTextField('otherEquipment', 'Please specify other equipment', true),
+          showWhen: { field: 'equipment', operator: 'contains', value: 'other' }
+        },
       ],
     },
     {
@@ -662,12 +568,15 @@ export const itRequestTemplate: FormTemplate = {
           { value: 'printer_password_reset', label: 'Printer Password Reset' },
           { value: 'other', label: 'Other' },
         ], true),
-        createTextField('otherAccess', 'Please specify', false, 'Specify other access'),
+        {
+          ...createTextField('otherAccess', 'Please specify other access', true),
+          showWhen: { field: 'access', operator: 'contains', value: 'other' }
+        },
       ],
     },
     {
       id: 'request_details',
-      title: 'Request Details / Access Details',
+      title: 'Request / Access Details',
       fields: [
         createTextareaField('details', 'Details', true, 5),
         {
@@ -712,7 +621,6 @@ export const itRequestTemplate: FormTemplate = {
 export const defaultFormTemplates = {
   leave_application: leaveApplicationTemplate,
   asset_request: assetRequestTemplate,
-  it_support: itSupportTemplate,
   training_request: trainingRequestTemplate,
   it_equipment_access_request: itRequestTemplate,
 };
@@ -733,7 +641,7 @@ export const formCategories = [
     description: 'IT services and equipment requests',
     icon: 'Computer',
     color: '#3B82F6',
-    templates: ['it_support', 'it-equipment-access-request']
+    templates: ['it-equipment-access-request']
   },
   {
     id: 'procurement',

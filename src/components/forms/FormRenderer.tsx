@@ -68,29 +68,61 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         if (accessSection) {
           setVisibleSections([baseSections[0], accessSection, baseSections[1]]);
         }
+      } else if (requestAccessType === 'other') {
+        // 'Other' — skip both equipment and access sections entirely
+        setVisibleSections([baseSections[0], baseSections[1]]);
       } else {
         setVisibleSections(template.sections);
       }
+      // Reset to first section when logic changes the visible sections
+      setCurrentSection(0);
     } else {
       setVisibleSections(template.sections);
     }
   }, [watchedData['requestAccessType'], template.sections]);
+
+  // Check if field should be shown based on conditional logic
+  const shouldShowField = useCallback((field: FormFieldType): boolean => {
+    if (!field.showWhen) return true;
+
+    const { field: dependentField, operator, value } = field.showWhen;
+    const dependentValue = watchedData[dependentField];
+
+    switch (operator) {
+      case 'equals':
+        return dependentValue === value;
+      case 'notEquals':
+        return dependentValue !== value;
+      case 'contains':
+        return Array.isArray(dependentValue)
+          ? dependentValue.includes(value)
+          : String(dependentValue || '').includes(value);
+      case 'isEmpty':
+        return !dependentValue || dependentValue === '';
+      case 'isNotEmpty':
+        return dependentValue && dependentValue !== '';
+      default:
+        return true;
+    }
+  }, [watchedData]);
 
   // Calculate form completion percentage
   const calculateProgress = useCallback(() => {
     if (!visibleSections) return 0;
 
     const allFields = visibleSections.flatMap(section => section.fields);
-    const requiredFields = allFields.filter(field => field.required);
-    const filledRequiredFields = requiredFields.filter(field => {
+    // Filter by both required AND currently visible
+    const relevantRequiredFields = allFields.filter(field => field.required && shouldShowField(field));
+
+    if (relevantRequiredFields.length === 0) return 100;
+
+    const filledRequiredFields = relevantRequiredFields.filter(field => {
       const value = watchedData[field.name];
       return value !== undefined && value !== null && value !== '';
     });
 
-    return requiredFields.length > 0
-      ? Math.round((filledRequiredFields.length / requiredFields.length) * 100)
-      : 100;
-  }, [visibleSections, watchedData]);
+    return Math.round((filledRequiredFields.length / relevantRequiredFields.length) * 100);
+  }, [visibleSections, watchedData, shouldShowField]);
 
   const progress = calculateProgress();
 
@@ -198,30 +230,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
     }
   };
 
-  // Check if field should be shown based on conditional logic
-  const shouldShowField = (field: FormFieldType): boolean => {
-    if (!field.showWhen) return true;
 
-    const { field: dependentField, operator, value } = field.showWhen;
-    const dependentValue = watchedData[dependentField];
-
-    switch (operator) {
-      case 'equals':
-        return dependentValue === value;
-      case 'notEquals':
-        return dependentValue !== value;
-      case 'contains':
-        return Array.isArray(dependentValue)
-          ? dependentValue.includes(value)
-          : String(dependentValue || '').includes(value);
-      case 'isEmpty':
-        return !dependentValue || dependentValue === '';
-      case 'isNotEmpty':
-        return dependentValue && dependentValue !== '';
-      default:
-        return true;
-    }
-  };
 
   // Get status badge for readonly mode
   const getStatusBadge = () => {
@@ -251,9 +260,6 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
 
   return (
     <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
-      {/* Error Alert */}
-
-
       {/* Error Alert */}
       {submitError && (
         <Alert variant="destructive">

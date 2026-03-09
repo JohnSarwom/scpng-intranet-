@@ -11,6 +11,7 @@ import { TaskCompletionDonut } from './TaskCompletionDonut';
 import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps';
 import { Objective } from '@/types';
 import { calculateGoalProgressFromChildren } from '@/utils/kpiUtils';
+import { OrganizationalOverviewSkeleton } from './skeletons/OrganizationalOverviewSkeleton';
 
 const OrganizationalOverview = () => {
   const { strategyData, isLoading } = useStrategySharePoint();
@@ -56,6 +57,10 @@ const OrganizationalOverview = () => {
   // Calculate overall progress
   const totalProgress = objectives.reduce((acc, obj) => acc + (obj.progress || 0), 0);
   const averageProgress = objectives.length > 0 ? Math.round(totalProgress / objectives.length) : 0;
+
+  if (isLoading || isLoadingHierarchy) {
+    return <OrganizationalOverviewSkeleton />;
+  }
 
   return (
     <Card className="bg-gradient-to-br from-card to-muted/80 shadow-sm animate-fade-in rounded-xl flex-1 h-full">
@@ -109,42 +114,35 @@ const OrganizationalOverview = () => {
                 Strategic Objectives
               </h3>
 
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center flex-1 p-8 space-y-2">
-                  <Loader2 className="h-5 w-5 text-intranet-primary animate-spin" />
-                  <p className="text-[10px] text-muted-foreground">Loading objectives...</p>
+              <div className="flex flex-col justify-between flex-1 gap-4 min-h-[280px]">
+                <div className="flex flex-col items-center justify-center p-4">
+                  <TaskCompletionDonut
+                    segments={[
+                      { value: averageProgress, color: '#5C001E', label: 'Completed' },
+                      { value: 100 - averageProgress, color: '#cbd5e1', label: 'Remaining' }
+                    ]}
+                    centerLabel={`${averageProgress}%`}
+                    centerSubtext="Overall Status"
+                    size={180}
+                    thickness={18}
+                  />
                 </div>
-              ) : (
-                <div className="flex flex-col justify-between flex-1 gap-4 min-h-[280px]">
-                  <div className="flex flex-col items-center justify-center p-4">
-                    <TaskCompletionDonut
-                      segments={[
-                        { value: averageProgress, color: '#5C001E', label: 'Completed' },
-                        { value: 100 - averageProgress, color: '#cbd5e1', label: 'Remaining' }
-                      ]}
-                      centerLabel={`${averageProgress}%`}
-                      centerSubtext="Overall Status"
-                      size={180}
-                      thickness={18}
-                    />
-                  </div>
 
-                  <div className="flex flex-col gap-3 min-h-[150px] max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">
-                    {objectives.map((objective: StrategicItem, index: number) => (
-                      <div key={objective.id || index} className="space-y-1.5">
-                        <div className="flex justify-between text-[11px] font-semibold">
-                          <span className="flex-1 mr-2 text-gray-700 dark:text-gray-200 line-clamp-1">{objective.title}</span>
-                          <span className="text-intranet-primary text-[10px]">{objective.progress}%</span>
-                        </div>
-                        <Progress value={objective.progress} className="h-1.5" />
+                <div className="flex flex-col gap-3 min-h-[150px] max-h-[180px] overflow-y-auto pr-1 scrollbar-thin">
+                  {objectives.map((objective: StrategicItem, index: number) => (
+                    <div key={objective.id || index} className="space-y-1.5">
+                      <div className="flex justify-between text-[11px] font-semibold">
+                        <span className="flex-1 mr-2 text-gray-700 dark:text-gray-200 line-clamp-1">{objective.title}</span>
+                        <span className="text-intranet-primary text-[10px]">{objective.progress}%</span>
                       </div>
-                    ))}
-                    {objectives.length === 0 && (
-                      <p className="text-[11px] italic text-muted-foreground text-center">No strategic objectives found.</p>
-                    )}
-                  </div>
+                      <Progress value={objective.progress} className="h-1.5" />
+                    </div>
+                  ))}
+                  {objectives.length === 0 && (
+                    <p className="text-[11px] italic text-muted-foreground text-center">No strategic objectives found.</p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

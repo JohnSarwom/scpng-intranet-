@@ -1,66 +1,72 @@
-import { useState, useEffect } from 'react';
-import DivisionStaffMap from '@/utils/divisionStaffMap'; // Re-add DivisionStaffMap import
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'; // Correct the import path
+import { useMemo } from 'react';
+import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { StaffMember } from '@/types/staff';
+import DivisionStaffMap from '@/utils/divisionStaffMap';
 
-// Remove snakeToCamelCase helper if it was added specifically for the Supabase fetch
+const SERVICE_KEYWORDS = ['service account', 'facility', 'information service', 'boardroom', 'enquiries'];
+
+const isServiceAccount = (name: string, title: string, email: string) =>
+  SERVICE_KEYWORDS.some(kw =>
+    title?.toLowerCase().includes(kw) ||
+    name?.toLowerCase().includes(kw) ||
+    email?.toLowerCase().includes(kw)
+  );
 
 export function useStaffByDepartment() {
-  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // Remove currentUserDepartment state if added
-  const { user } = useSupabaseAuth(); // Correct the hook usage
+  const { user } = useSupabaseAuth();
+  const { data: profiles = [], isLoading } = useOfficerProfiles();
 
-  useEffect(() => {
-    setLoading(true);
-    setError(null);
+  const userEmail = user?.email?.toLowerCase() || '';
 
-    try {
-      // Restore original logic using DivisionStaffMap
-      if (!user?.email) {
-        setStaffMembers([]);
-        // setLoading(false); // Move to finally block
-        return;
-      }
+  // Find the current user's profile to determine their division
+  const userProfile = useMemo(() =>
+    profiles.find(p => p.email?.toLowerCase() === userEmail),
+    [profiles, userEmail]
+  );
 
-      // Find the current user's staff member record
-      const currentStaff = DivisionStaffMap.getStaffByEmail(user.email);
+  const currentUserDepartment = userProfile?.division || user?.user_metadata?.divisionName || null;
 
-      if (!currentStaff) {
-        setStaffMembers([]);
-        // setLoading(false); // Move to finally block
-        return;
-      }
-
-      // Get all staff members
-      const allStaff = DivisionStaffMap.getAllStaff();
-
-      // Filter staff to only include those in the same department/unit
-      const departmentStaff = allStaff.filter(
-        staff => staff.department === currentStaff.department
-      );
-
-      setStaffMembers(departmentStaff);
-    } catch (err) {
-      console.error('Error getting staff by department:', err);
-      setError('Failed to load staff members');
-      setStaffMembers([]);
-    } finally {
-      setLoading(false); // Ensure loading is always set to false
+  const staffMembers: StaffMember[] = useMemo(() => {
+    // Primary: use live SharePoint officer profiles
+    if (profiles.length > 0) {
+      return profiles
+        .filter(p => !isServiceAccount(p.name || '', p.jobTitle || '', p.email || ''))
+        .map(p => ({
+          id: p.id || p.email,
+          name: p.name,
+          email: p.email,
+          jobTitle: p.jobTitle,
+          department: p.unit,       // unit is what consumers call "department"
+          mobile: p.phone || '',
+          businessPhone: p.officeExtension || '',
+          officeLocation: p.division,
+          divisionId: p.division?.toLowerCase().replace(/\s+/g, '-') || '',
+        }));
     }
-  }, [user?.email]);
+
+    // Fallback: static map
+    return DivisionStaffMap.getAllStaff()
+      .filter(s => !isServiceAccount(s.name || '', s.job_title || '', s.email || ''))
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        jobTitle: s.job_title,
+        department: s.unit,
+        mobile: s.mobile,
+        businessPhone: s.business_phone,
+        officeLocation: s.office_location,
+        divisionId: s.division_id,
+      }));
+  }, [profiles]);
 
   return {
     staffMembers,
-    loading,
-    error,
-    // Restore original logic for currentUserDepartment
-    currentUserDepartment: staffMembers.length > 0 && user?.email
-      ? DivisionStaffMap.getStaffByEmail(user.email)?.department
-      : null,
-    isEmpty: staffMembers.length === 0 && !loading
+    loading: isLoading,
+    currentUserDepartment,
+    isEmpty: staffMembers.length === 0 && !isLoading,
   };
 }
 
-export default useStaffByDepartment; 
+export default useStaffByDepartment;

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#83002A',
+              secondary: '#5C001E',
+            },
+            fontFamily: {
+              sans: ['Montserrat', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #f8f9fa;
+        font-family: 'Montserrat', sans-serif;
+      }
+      .gradient-header {
+        background: linear-gradient(135deg, #83002A 0%, #5C001E 100%);
+      }
+      .btn-primary {
+        background-color: #83002A;
+        transition: all 0.3s ease;
+      }
+      .btn-primary:hover {
+        background-color: #5C001E;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+      .form-input:focus {
+        border-color: #83002A;
+        ring-color: rgba(131, 0, 42, 0.2);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+      <!-- Header -->
+      <div class="gradient-header p-8 text-white text-center">
+        <h1 class="text-3xl font-bold mb-2">Internal Regulatory Portal</h1>
+        <p class="opacity-90">Secure Reporting for Scams & Whistleblowers</p>
+      </div>
+
+      <!-- Form Content -->
+      <div class="p-8">
+        <form id="regulatoryForm" class="space-y-6" onsubmit="event.preventDefault(); submitForm();">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Reporter Name -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Reporter Name (Optional)</label>
+              <input type="text" name="reporterName" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="John Doe">
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Contact Email (Optional)</label>
+              <input type="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="john@example.com">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Report Type -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Report Type</label>
+              <select name="reportType" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
+                <option value="scam">Scam Report</option>
+                <option value="whistleblower">Whistleblower</option>
+                <option value="compliance">Compliance Breach</option>
+                <option value="other">Other Inquiry</option>
+              </select>
+            </div>
+
+            <!-- Risk Level -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">Urgency/Risk Level</label>
+              <select name="riskLevel" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+            <input type="text" name="category" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="e.g. Investment Scam, Insider Trading">
+          </div>
+
+          <!-- Title -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Report Title</label>
+            <input type="text" name="title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Brief summary of the issue">
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-2">Detailed Description</label>
+            <textarea name="description" required rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all" placeholder="Provide as much detail as possible..."></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="submitBtn" class="w-full btn-primary text-white font-bold py-3 px-6 rounded-lg text-lg uppercase tracking-wider">
+            Submit Report
+          </button>
+        </form>
+
+        <div id="statusMessage" class="mt-6 text-center hidden">
+          <div id="statusIcon" class="mb-2 transition-all"></div>
+          <p id="statusTxt" class="font-semibold"></p>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="bg-gray-50 p-4 border-t border-gray-100 text-center text-xs text-gray-500">
+        &copy; 2026 Securities Commission of Papua New Guinea. All rights reserved.
+      </div>
+    </div>
+
+    <script>
+      function submitForm() {
+        const btn = document.getElementById('submitBtn');
+        const statusDiv = document.getElementById('statusMessage');
+        const statusTxt = document.getElementById('statusTxt');
+        
+        btn.disabled = true;
+        btn.innerText = 'Submitting...';
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+        
+        const form = document.getElementById('regulatoryForm');
+        const data = {
+          reporterName: form.reporterName.value,
+          email: form.email.value,
+          reportType: form.reportType.value,
+          category: form.category.value,
+          title: form.title.value,
+          description: form.description.value,
+          riskLevel: form.riskLevel.value
+        };
+
+        google.script.run
+          .withSuccessHandler(function(response) {
+            statusDiv.classList.remove('hidden');
+            if (response.success) {
+              statusTxt.innerText = response.message;
+              statusTxt.className = 'font-semibold text-green-600 animate-fade-in';
+              form.reset();
+              btn.innerText = 'Submitted';
+            } else {
+              statusTxt.innerText = response.message;
+              statusTxt.className = 'font-semibold text-red-600';
+              btn.disabled = false;
+              btn.innerText = 'Retry Submission';
+              btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+          })
+          .withFailureHandler(function(err) {
+            statusDiv.classList.remove('hidden');
+            statusTxt.innerText = 'Submission failed: ' + err;
+            statusTxt.className = 'font-semibold text-red-600';
+            btn.disabled = false;
+            btn.innerText = 'Retry Submission';
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+          })
+          .processForm(data);
+      }
+    </script>
+  </body>
+</html>

@@ -42,7 +42,10 @@ const ITRequestPage: React.FC = () => {
     const submissionData = { ...userData };
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
-        submissionData[key] = String(data[key]);
+        // Format arrays (checkbox groups) as comma-separated strings
+        submissionData[key] = Array.isArray(data[key])
+          ? data[key].join(', ')
+          : String(data[key]);
       }
     }
 
@@ -55,7 +58,9 @@ const ITRequestPage: React.FC = () => {
 
       if (result) {
         toast.success('IT Request submitted successfully!');
+        setIsSuccessfullySubmitted(true);
         form.reset();
+        localStorage.removeItem(`form_draft_${itRequestTemplate.id}`);
       } else {
         toast.error('Failed to submit IT Request. Please try again.');
       }
@@ -66,18 +71,39 @@ const ITRequestPage: React.FC = () => {
   };
 
   const handleFormSave = async (data: Record<string, any>) => {
-    console.log('Form saved as draft:', data);
+    try {
+      localStorage.setItem(`form_draft_${itRequestTemplate.id}`, JSON.stringify(data));
+      console.log('Form saved as draft to localStorage:', data);
+    } catch (error) {
+      console.error('Failed to save draft to localStorage:', error);
+    }
   };
 
-  const mockSubmission: FormSubmission = {
-    id: 'sub123',
+  // Load draft from localStorage on mount
+  React.useEffect(() => {
+    const savedDraft = localStorage.getItem(`form_draft_${itRequestTemplate.id}`);
+    if (savedDraft) {
+      try {
+        const parsedDraft = JSON.parse(savedDraft);
+        form.reset(parsedDraft);
+        toast.info('Loaded your previously saved draft.');
+      } catch (error) {
+        console.error('Failed to parse saved draft:', error);
+      }
+    }
+  }, [form]);
+
+  const [isSuccessfullySubmitted, setIsSuccessfullySubmitted] = useState(false);
+
+  const mockSubmission: FormSubmission = React.useMemo(() => ({
+    id: `sub_${itRequestTemplate.id}_${Date.now()}`,
     formTemplateId: itRequestTemplate.id,
-    status: 'submitted',
+    status: isSuccessfullySubmitted ? 'submitted' : 'draft',
     data: form.getValues(),
-    submittedBy: 'user1',
-    submittedAt: new Date().toISOString(),
+    submittedBy: user?.email || 'unknown',
+    submittedAt: isSuccessfullySubmitted ? new Date().toISOString() : undefined as any,
     history: [],
-  };
+  }), [form, isSuccessfullySubmitted, user]);
 
   return (
     <FormProvider {...form}>

@@ -18,6 +18,7 @@ import { AddAppModal } from '@/components/apps/AddAppModal';
 import { EditAppModal } from '@/components/apps/EditAppModal';
 import { AppDetailsModal } from '@/components/apps/AppDetailsModal';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { AppGridSkeleton } from '@/components/dashboard/AppGridSkeleton';
 
 interface AppCardProps {
   app: AppLink;
@@ -246,9 +247,8 @@ const AppsSection: React.FC = () => {
         <CardContent>
           {/* Loading State */}
           {loading && useSharePoint && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-intranet-primary" />
-              <span className="ml-3 text-gray-600">Loading applications...</span>
+            <div className="py-6">
+              <AppGridSkeleton count={8} />
             </div>
           )}
 
