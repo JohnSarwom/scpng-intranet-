@@ -75,6 +75,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
       setIsProcessing(true);
       try {
         await onUpdateUser(editingUser.user_email, {
+          user_name: editingUser.user_name,
           role_name: editingUser.role_name,
           division_name: editingUser.division_name,
           unit_name: editingUser.unit_name,

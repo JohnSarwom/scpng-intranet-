@@ -493,7 +493,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     // Ensure we find the full KRA data from the original props, including its KPIs
     const kraToEdit = krasFromProps.find(k => k.id === kra.id);
     if (kraToEdit) {
-      console.log("Editing KRA:", kraToEdit); // Add log to check the data
+      console.log("Editing KRA:", kraToEdit);
+      console.log("🔍 [KRAsTab] kraToEdit.assignees:", kraToEdit.assignees, "| kraToEdit.owner:", kraToEdit.owner);
       setEditingKra(kraToEdit); // Pass the full KRA object with KPIs
       setEditingKpiDetails(undefined); // Ensure KPI-specific edit state is cleared
       setIsKpiModalOpen(true);
@@ -722,7 +723,11 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
     // --- Final Steps ---
     if (!operationError) {
       handleCloseKpiModal();
-      onDataRefresh?.();
+      // Delay the full data refresh so it doesn't overwrite the optimistic cache update
+      // that useSharePointKRAs.update/add already applied via setQueryData.
+      // Without this delay, the immediate refetch can return stale SharePoint data
+      // (especially for Assignees) before SharePoint indexing catches up.
+      setTimeout(() => { onDataRefresh?.(); }, 5000);
     }
   };
 

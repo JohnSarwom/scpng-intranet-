@@ -174,7 +174,6 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                       key={resource.id}
                       className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'bg-primary/10 border-primary' : 'bg-transparent border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
-                      onClick={() => togglePermission(resource.id)}
                     >
                       <Checkbox
                         checked={isChecked}

@@ -317,7 +317,7 @@ export class UserSharePointService {
             // Permissions column removed in favor of Group-based permissions
             if (updates.is_admin !== undefined) fields.IsAdmin = updates.is_admin ? 'Yes' : 'No';
             if (updates.user_name) fields.Name = updates.user_name;
-            if (updates.groups) fields.Groups = updates.groups.join(', ');
+            if (updates.groups !== undefined) fields.Groups = updates.groups.join(', ');
 
             const response = await this.client
                 .api(`/sites/${this.siteId}/lists/${this.listId}/items/${existingUser.id}`)

@@ -22,13 +22,20 @@ const OPS_CONFIG = {
         OBJECTIVES: 'Unit_Objectives',
         REPORTS: 'Performance_Reports',
         SETTINGS: 'System_View_Settings',
-        TASK_GROUPS: 'Operations_TaskGroups'
+        TASK_GROUPS: 'Operations_TaskGroups',
+        COMPONENT_VISIBILITY: 'System_Component_Visibility'
     }
 };
 
 let cachedSiteId: string = '';
 let cachedListIds: Record<string, string> = {};
 let globalInitializationPromise: Promise<void> | null = null;
+
+/** Call this after creating a new SharePoint list so the next initialize() re-resolves IDs. */
+export const resetOpsServiceCache = () => {
+    cachedListIds = {};
+    globalInitializationPromise = null;
+};
 
 export class SharePointOpsService {
     public client: Client;
@@ -67,6 +74,12 @@ export class SharePointOpsService {
                 // Get List IDs
                 await this.resolveListIds();
                 console.log('✅ [SharePointOpsService] Initialization complete');
+
+                // Auto-ensure the Assignees column exists on Performance_KRAs
+                // (fire-and-forget — doesn't block initialization)
+                this.ensureAssigneesColumnOnKRAs().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure Assignees column failed (non-blocking):', err.message)
+                );
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
                 this.initializationPromise = null; // Reset on error
@@ -78,27 +91,58 @@ export class SharePointOpsService {
     }
 
     private async resolveListIds() {
-        const lists = await this.client
-            .api(`/sites/${this.siteId}/lists`)
-            .select('id,displayName')
-            .get();
-
         const normalize = (s: string) => s.toLowerCase().replace(/[\s_-]/g, '');
 
-        // Create a map of Normalized Config Name -> Config Key
+        // Build a map of normalized config list name → config key
         const configMap: Record<string, string> = {};
         Object.entries(OPS_CONFIG.LISTS).forEach(([key, value]) => {
             configMap[normalize(value)] = key;
         });
 
-        lists.value.forEach((list: any) => {
-            const listNorm = normalize(list.displayName);
-            if (configMap[listNorm]) {
-                const key = configMap[listNorm];
-                this.listIds[key] = list.id;
-                console.log(`✅ [SharePointOpsService] Resolved List: ${key} -> ${list.id} (${list.displayName})`);
+        // Follow @odata.nextLink pages so lists beyond the default page size are found
+        let nextUrl: string | null = `/sites/${this.siteId}/lists?$select=id,displayName`;
+        while (nextUrl) {
+            const response = await this.client.api(nextUrl).get();
+            (response.value || []).forEach((list: any) => {
+                const listNorm = normalize(list.displayName);
+                if (configMap[listNorm]) {
+                    const key = configMap[listNorm];
+                    this.listIds[key] = list.id;
+                    console.log(`✅ [SharePointOpsService] Resolved List: ${key} -> ${list.id} (${list.displayName})`);
+                }
+            });
+            nextUrl = response['@odata.nextLink'] ?? null;
+        }
+    }
+
+    /**
+     * Lightweight check: ensure the Assignees multi-line text column exists on key lists.
+     * Runs once during init (fire-and-forget). If the column already exists, this is a no-op.
+     */
+    private async ensureAssigneesColumnOnKRAs(): Promise<void> {
+        const listsToCheck = ['KRAS', 'KPIS', 'TASKS', 'PROJECTS'];
+        for (const key of listsToCheck) {
+            const listId = this.listIds[key];
+            if (!listId) continue;
+            try {
+                // Check if Assignees column exists by trying to read its definition
+                await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter("name eq 'Assignees'").select('id,name').get()
+                    .then((res: any) => {
+                        if (!res.value || res.value.length === 0) {
+                            // Column doesn't exist — create it
+                            console.log(`🔧 [SP Ops] Creating Assignees column on list ${key}...`);
+                            return this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({
+                                name: 'Assignees',
+                                text: { allowMultipleLines: true, textType: 'plain' },
+                            });
+                        } else {
+                            console.log(`✅ [SP Ops] Assignees column exists on ${key}`);
+                        }
+                    });
+            } catch (err: any) {
+                console.warn(`⚠️ [SP Ops] Failed to check/create Assignees on ${key}:`, err.message);
             }
-        });
+        }
     }
 
     // --- Fetch Methods ---
@@ -684,20 +728,94 @@ export class SharePointOpsService {
         };
     }
 
+    // --- Component Visibility Methods ---
+
+    async getComponentVisibilitySettings(): Promise<any[]> {
+        if (!this.listIds['COMPONENT_VISIBILITY']) return [];
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['COMPONENT_VISIBILITY']}/items`)
+                .expand('fields')
+                .get();
+
+            return response.value.map((item: any) => {
+                let visibleTo: string[] = [];
+                try { visibleTo = JSON.parse(item.fields.VisibleTo || '[]'); } catch { /* ignore */ }
+                return {
+                    id: item.id,
+                    settingKey: item.fields.Title,
+                    page: item.fields.PageName,
+                    component: item.fields.ComponentName,
+                    description: item.fields.Description,
+                    visibleTo,
+                };
+            });
+        } catch (error) {
+            console.error('Failed to get component visibility settings', error);
+            return [];
+        }
+    }
+
+    async updateComponentVisibilitySetting(itemId: string, visibleTo: string[]): Promise<void> {
+        if (!this.listIds['COMPONENT_VISIBILITY']) throw new Error('Component Visibility list not found');
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['COMPONENT_VISIBILITY']}/items/${itemId}`)
+            .patch({ fields: { VisibleTo: JSON.stringify(visibleTo) } });
+    }
+
+    async addComponentVisibilitySetting(entry: {
+        settingKey: string;
+        page: string;
+        component: string;
+        description: string;
+        visibleTo: string[];
+    }): Promise<any> {
+        if (!this.listIds['COMPONENT_VISIBILITY']) throw new Error('Component Visibility list not found');
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['COMPONENT_VISIBILITY']}/items`)
+            .post({
+                fields: {
+                    Title: entry.settingKey,
+                    PageName: entry.page,
+                    ComponentName: entry.component,
+                    Description: entry.description,
+                    VisibleTo: JSON.stringify(entry.visibleTo),
+                }
+            });
+        return {
+            id: response.id,
+            settingKey: entry.settingKey,
+            page: entry.page,
+            component: entry.component,
+            description: entry.description,
+            visibleTo: entry.visibleTo,
+        };
+    }
+
+    async deleteComponentVisibilitySetting(itemId: string): Promise<void> {
+        if (!this.listIds['COMPONENT_VISIBILITY']) throw new Error('Component Visibility list not found');
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['COMPONENT_VISIBILITY']}/items/${itemId}`)
+            .delete();
+    }
+
     async addKRA(kra: Partial<KRA>): Promise<KRA> {
         if (!this.listIds['KRAS']) throw new Error('KRAs list not found');
 
         // Write owner name to the Responsible text field (for SharePoint list display).
         // Also embed full owner object (id/name/email) into the Assignees JSON with isOwner:true
         // so the UI can reconstruct the full owner on edit without extra lookups.
-        const mergedAssignees: any[] = [...((kra.assignees as any[]) || [])];
+        // Build the Assignees JSON: regular assignees (without isOwner) + owner entry (with isOwner).
+        // If the same person is both owner AND assignee, they get TWO entries — one as regular
+        // assignee (shown in "Additional Assignees") and one as owner (shown in "Owner/Lead").
+        // This prevents mapKRA from filtering them out of regularAssignees.
+        const cleanAssignees = ((kra.assignees as any[]) || []).map(a => {
+            const { isOwner, ...rest } = a; // Strip any stale isOwner flag from regular assignees
+            return rest;
+        });
+        const mergedAssignees: any[] = [...cleanAssignees];
         if (kra.owner) {
-            const ownerIdx = mergedAssignees.findIndex(a => a.id === (kra.owner as any).id);
-            if (ownerIdx !== -1) {
-                mergedAssignees[ownerIdx] = { ...mergedAssignees[ownerIdx], isOwner: true };
-            } else {
-                mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
-            }
+            mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
         }
 
         const payload: any = {
@@ -716,8 +834,20 @@ export class SharePointOpsService {
 
         console.log('📝 [SP Ops] Adding KRA Payload:', JSON.stringify(payload, null, 2));
         try {
-            const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`).post(payload);
-            return this.mapKRA(response);
+            // Use expand('fields') so the POST response includes all field values (incl. Assignees)
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
+                .expand('fields')
+                .post(payload);
+            const rawAssignees = response?.fields?.Assignees;
+            console.log(`🔍 [SP Ops] POST response for new KRA — Assignees raw:`, rawAssignees);
+            console.log(`🔍 [SP Ops] POST response — ALL fields:`, Object.keys(response?.fields || {}));
+            if (!rawAssignees && payload.fields.Assignees) {
+                console.error(`🚨 [SP Ops] ASSIGNEES COLUMN LIKELY MISSING! We sent Assignees but POST returned undefined. Run ensureAssigneesColumn from TestGround.`);
+            }
+            const mapped = this.mapKRA(response);
+            console.log(`🔍 [SP Ops] mapKRA result — assignees:`, mapped.assignees, '| owner:', mapped.owner);
+            return mapped;
         } catch (error: any) {
             console.error('❌ [SP Ops] Failed to add KRA:', error);
             if (error.body) {
@@ -738,24 +868,42 @@ export class SharePointOpsService {
         if (kra.progress !== undefined) fields.Progress = kra.progress;
         if (kra.description !== undefined) fields.Description = kra.description;
         if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = kra.objective_id ? Number(kra.objective_id) : null;
-        // Rebuild Assignees JSON with owner embedded (same logic as addKRA)
+        // Rebuild Assignees JSON with owner embedded (same logic as addKRA).
+        // Regular assignees get their own entries (no isOwner flag).
+        // Owner gets a separate entry with isOwner:true.
+        // If the same person is both, they appear twice — once as assignee, once as owner.
         if (kra.assignees !== undefined || kra.owner !== undefined) {
-            const mergedAssignees: any[] = [...((kra.assignees as any[]) || [])];
+            const cleanAssignees = ((kra.assignees as any[]) || []).map(a => {
+                const { isOwner, ...rest } = a;
+                return rest;
+            });
+            const mergedAssignees: any[] = [...cleanAssignees];
             if (kra.owner) {
-                const ownerIdx = mergedAssignees.findIndex(a => a.id === (kra.owner as any).id);
-                if (ownerIdx !== -1) {
-                    mergedAssignees[ownerIdx] = { ...mergedAssignees[ownerIdx], isOwner: true };
-                } else {
-                    mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
-                }
+                mergedAssignees.push({ ...(kra.owner as any), isOwner: true });
             }
             fields.Assignees = JSON.stringify(mergedAssignees);
         }
 
         console.log(`📝 [SP Ops] Updating KRA ${id} Payload:`, JSON.stringify({ fields }, null, 2));
         try {
-            const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`).patch({ fields });
-            return this.mapKRA(response);
+            // PATCH response from Graph API does not include fields by default.
+            // After patching, do a GET with expand('fields') to get the full updated item
+            // (including Assignees). Without this, mapKRA would return empty assignees
+            // and the React Query cache would be overwritten with stale/empty data.
+            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`).patch({ fields });
+            const updated = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`)
+                .expand('fields')
+                .get();
+            const rawAssignees = updated?.fields?.Assignees;
+            console.log(`🔍 [SP Ops] GET after PATCH for KRA ${id} — Assignees raw:`, rawAssignees);
+            console.log(`🔍 [SP Ops] GET after PATCH — ALL fields:`, Object.keys(updated?.fields || {}));
+            if (!rawAssignees && fields.Assignees) {
+                console.error(`🚨 [SP Ops] ASSIGNEES COLUMN LIKELY MISSING! We sent Assignees=${fields.Assignees} but GET returned undefined. Run ensureAssigneesColumn from TestGround.`);
+            }
+            const mapped = this.mapKRA(updated);
+            console.log(`🔍 [SP Ops] mapKRA result — assignees:`, mapped.assignees, '| owner:', mapped.owner);
+            return mapped;
         } catch (error: any) {
             console.error(`❌ [SP Ops] Failed to update KRA ${id}:`, error);
             if (error.body) {

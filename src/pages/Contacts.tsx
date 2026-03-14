@@ -531,30 +531,32 @@ const Contacts = () => {
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                className="whitespace-nowrap animate-fade-in btn-hover-effect"
-                style={{ animationDelay: '0.2s' }}
-                onClick={refetch}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <Button
+                  className="whitespace-nowrap animate-fade-in btn-hover-effect"
+                  style={{ animationDelay: '0.2s' }}
+                  onClick={refetch}
+                  disabled={isLoading}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
 
-              <Button className="whitespace-nowrap animate-fade-in btn-hover-effect" style={{ animationDelay: '0.2s' }} onClick={() => setIsAddContactOpen(true)}>
-                <Plus size={16} className="mr-1" />
-                Add Contact
-              </Button>
-              <Button
-                className="whitespace-nowrap animate-fade-in btn-hover-effect"
-                style={{ animationDelay: '0.2s' }}
-                onClick={handleCopyAll}
-              >
-                <Copy size={16} className="mr-1" />
-                Copy All
-              </Button>
-            </div>
+                <Button className="whitespace-nowrap animate-fade-in btn-hover-effect" style={{ animationDelay: '0.2s' }} onClick={() => setIsAddContactOpen(true)}>
+                  <Plus size={16} className="mr-1" />
+                  Add Contact
+                </Button>
+                <Button
+                  className="whitespace-nowrap animate-fade-in btn-hover-effect"
+                  style={{ animationDelay: '0.2s' }}
+                  onClick={handleCopyAll}
+                >
+                  <Copy size={16} className="mr-1" />
+                  Copy All
+                </Button>
+              </div>
+            )}
           </div>
 
           {error && (
@@ -578,15 +580,17 @@ const Contacts = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button
-              className="whitespace-nowrap animate-fade-in btn-hover-effect"
-              style={{ animationDelay: '0.2s' }}
-              onClick={refetch}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            {isAdmin && (
+              <Button
+                className="whitespace-nowrap animate-fade-in btn-hover-effect"
+                style={{ animationDelay: '0.2s' }}
+                onClick={refetch}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            )}
           </div>
 
           {error && (
@@ -610,15 +614,17 @@ const Contacts = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Button
-              className="whitespace-nowrap animate-fade-in btn-hover-effect"
-              style={{ animationDelay: '0.2s' }}
-              onClick={refetch}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+            {isAdmin && (
+              <Button
+                className="whitespace-nowrap animate-fade-in btn-hover-effect"
+                style={{ animationDelay: '0.2s' }}
+                onClick={refetch}
+                disabled={isLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            )}
           </div>
 
           {error && (

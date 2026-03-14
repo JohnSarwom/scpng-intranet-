@@ -1,5 +1,5 @@
 // src/components/kpi/KpiModal.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Kra, Kpi, User, Objective } from '@/types'; // Use the centralized types
 import { StaffMember } from '@/types/staff'; // Import StaffMember type
 import KraFormSection from './KraFormSection';
@@ -53,11 +53,21 @@ const KpiModal: React.FC<KpiModalProps> = ({
   // Determine if we are adding a new KRA
   const isAddingNew = !kraData?.id;
 
+  // Track whether the modal has been initialized for the current open session.
+  // This prevents a re-render triggered by async `units` or `userContext` updates
+  // from resetting the form (and wiping out user-selected assignees) while the modal is open.
+  const modalInitializedRef = useRef(false);
+
   // Effect to reset form when kraData changes (for edit) or modal opens for add
   useEffect(() => {
-    console.log("[KpiModal useEffect] Running. isOpen:", isOpen, "isAddingNew:", isAddingNew);
-    if (isOpen) {
-      console.log("[KpiModal useEffect] Modal is open. Received kraData:", kraData);
+    const justOpened = isOpen && !modalInitializedRef.current;
+    const justClosed = !isOpen && modalInitializedRef.current;
+
+    if (justOpened) {
+      modalInitializedRef.current = true;
+      console.log("[KpiModal useEffect] Modal just opened. Received kraData:", kraData);
+      console.log("[KpiModal useEffect] kraData.assignees:", kraData?.assignees, "| kraData.owner:", kraData?.owner);
+
       if (kraData && !isAddingNew) {
         // Editing existing KRA
         if (editingKpi) {
@@ -67,13 +77,12 @@ const KpiModal: React.FC<KpiModalProps> = ({
           setKpiBlocks([editingKpi.kpi]); // Only show the specific KPI being edited
         } else {
           // Case: Editing KRA and ALL KPIs
-          console.log("[KpiModal useEffect] Editing FULL KRA mode.");
+          console.log("[KpiModal useEffect] Editing FULL KRA mode. Assignees being set:", kraData.assignees);
           setFormData({ ...kraData });
           // Ensure KPI blocks are initialized correctly
           const kpisToSet = kraData.unitKpis ? kraData.unitKpis.map(kpi => ({ ...kpi })) : [{}];
           setKpiBlocks(kpisToSet);
         }
-
       } else {
         // Adding new KRA - reset to defaults
         console.log("[KpiModal useEffect] Add mode. Resetting formData and kpiBlocks.");
@@ -94,8 +103,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
             matchedUnit = units.find(u => u.name.toLowerCase() === userUnitRaw.toLowerCase());
           }
 
-          // 3. Try Partial Match (e.g. "Information Technology" vs "IT Unit" - difficult without map)
-          // But checking if context unit is contained in list unit or vice versa
+          // 3. Try Partial Match
           if (!matchedUnit) {
             matchedUnit = units.find(u => u.name.toLowerCase().includes(userUnitRaw.toLowerCase()) || userUnitRaw.toLowerCase().includes(u.name.toLowerCase()));
           }
@@ -105,10 +113,8 @@ const KpiModal: React.FC<KpiModalProps> = ({
             defaultUnitName = matchedUnit.name;
             defaultUnitId = String(matchedUnit.id);
           } else {
-            // Fallback: Use the raw value, even if not in list (Select might support it or show as value)
-            // Or better, leave empty to force user selection if ambiguous
             console.warn(`[KpiModal] No matching unit found for "${userUnitRaw}"`);
-            defaultUnitName = userUnitRaw; // Try setting it anyway
+            defaultUnitName = userUnitRaw;
           }
         }
 
@@ -126,12 +132,15 @@ const KpiModal: React.FC<KpiModalProps> = ({
         // Ensure default KPI block has assignees array
         setKpiBlocks([{ assignees: [] }]);
       }
-    } else {
+    }
+
+    if (justClosed) {
+      modalInitializedRef.current = false;
       // Reset form when modal closes
       setFormData({});
       setKpiBlocks([]);
     }
-  }, [isOpen, kraData, isAddingNew, userContext, units]); // Add userContext and units to deps
+  }, [isOpen, kraData, isAddingNew, userContext, units, editingKpi]);
 
   const handleKraChange = useCallback((field: keyof Kra, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));

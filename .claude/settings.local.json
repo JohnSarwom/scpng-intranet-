@@ -14,7 +14,11 @@
       "Bash(npx vite build)",
       "Bash(echo:*)",
       "WebFetch(domain:envlaw.com.au)",
-      "Bash(xargs grep -l \"cda_2015\\\\|cma_2015\\\\|sca_2015\\\\|sa_1997\\\\|merged_acts\")"
+      "Bash(xargs grep -l \"cda_2015\\\\|cma_2015\\\\|sca_2015\\\\|sa_1997\\\\|merged_acts\")",
+      "Bash(grep -r \"group\\\\|Group\\\\|role\\\\|Role\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
+      "Bash(xargs grep -l \"group\\\\|Group\\\\|role\\\\|Role\")",
+      "Bash(grep -r \"division\\\\|Division\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
+      "Bash(grep -r \"division_memberships\\\\|user_roles\\\\|group_access\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)"
     ],
     "deny": [],
     "ask": []

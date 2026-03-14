@@ -83,9 +83,9 @@ const RegulatoryDashboard: React.FC = () => {
                     <div className="mt-6">
                         <div className="flex items-center justify-between mb-4">
                             <h2 className="text-lg font-semibold text-gray-800">Recent Cases & Reports</h2>
-                            <span className="text-sm text-gray-500">Showing {cases.length} active records</span>
+                            <span className="text-sm text-gray-500">Showing {Math.min(cases.length, 5)} recent records</span>
                         </div>
-                        <CaseTable data={cases} />
+                        <CaseTable data={cases.slice(0, 5)} />
                     </div>
                     {/* AI Chat Integration */}
                     <RegulatoryAIChat cases={cases} stats={stats} />

@@ -108,7 +108,7 @@ export const useRoleBasedAuth = (): RoleBasedAuth => {
     }
 
     // Super admin has all permissions
-    if (user.is_admin) {
+    if (user.is_admin || user.role_name === 'super_admin' || user.role_name === 'admin') {
       return true;
     }
 
@@ -172,7 +172,7 @@ export const useRoleBasedAuth = (): RoleBasedAuth => {
     loading,
     error,
     hasPermission,
-    isAdmin: user?.is_admin || false,
+    isAdmin: user?.is_admin || user?.role_name === 'super_admin' || user?.role_name === 'admin' || false,
     refreshRole,
     checkResourceAccess
   };

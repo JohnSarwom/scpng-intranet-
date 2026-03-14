@@ -36,7 +36,7 @@ import { toast } from 'sonner';
 import { useSearchParams } from 'react-router-dom';
 
 const Admin = () => {
-    const { hasPermission, isAdmin } = useRoleBasedAuth();
+    const { hasPermission, isAdmin, loading: authLoading } = useRoleBasedAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const initialTab = searchParams.get('tab') || 'users';
     const [activeTab, setActiveTab] = useState(initialTab);
@@ -82,10 +82,10 @@ const Admin = () => {
     };
 
     useEffect(() => {
-        if (isAdmin || hasPermission('admin', 'access')) {
+        if (!authLoading && (isAdmin || hasPermission('admin', 'access'))) {
             fetchData();
         }
-    }, [isAdmin]);
+    }, [isAdmin, authLoading]);
 
     // User Handlers
     const handleAddUser = async (user: Partial<UserRole>) => {

@@ -795,22 +795,28 @@ export class SharePointListSetupService {
      */
     async ensureAssigneesColumn(): Promise<{ success: boolean; message: string }> {
         try {
-            console.log('🔍 Checking Operations_Tasks list...');
-            const list = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Operations_Tasks'").select('id').get();
+            const listsToCheck = ['Operations_Tasks', 'Performance_KRAs', 'Performance_KPIs', 'Operations_Projects'];
+            const results: string[] = [];
 
-            if (!list.value || list.value.length === 0) {
-                return { success: false, message: 'Operations_Tasks list not found' };
+            for (const listName of listsToCheck) {
+                console.log(`🔍 Checking ${listName} for Assignees column...`);
+                const list = await this.client.api(`/sites/${this.siteId}/lists`).filter(`displayName eq '${listName}'`).select('id').get();
+
+                if (!list.value || list.value.length === 0) {
+                    results.push(`${listName}: not found`);
+                    continue;
+                }
+
+                const listId = list.value[0].id;
+                const result = await this.ensureColumn(listId, 'Assignees', { text: { allowMultipleLines: true } });
+                results.push(`${listName}: ${result ? 'OK' : 'failed'}`);
             }
 
-            const listId = list.value[0].id;
-            console.log(`✅ Found Operations_Tasks List ID: ${listId}`);
+            const allOk = results.every(r => r.includes('OK'));
+            const message = `Assignees column check: ${results.join(', ')}`;
+            console.log(`✅ ${message}`);
 
-            const result = await this.ensureColumn(listId, 'Assignees', { text: { allowMultipleLines: true } });
-
-            return {
-                success: result,
-                message: result ? 'Assignees column ensured successfully' : 'Failed to ensure Assignees column'
-            };
+            return { success: allOk, message };
         } catch (e: any) {
             console.error('Failed to ensure Assignees column:', e);
             return { success: false, message: e.message };
@@ -1553,6 +1559,62 @@ export class SharePointListSetupService {
             { fields: { Title: 'UnitPage_Tasks', PageName: 'Unit Page', ComponentName: 'Tasks', VisibilityScope: 'Unit', Description: 'Daily Tasks' } },
             { fields: { Title: 'UnitPage_Risks', PageName: 'Unit Page', ComponentName: 'Risks', VisibilityScope: 'Division', Description: 'Risk Register' } }
         ];
+
+        for (const item of defaults) {
+            await this.client.api(`/sites/${this.siteId}/lists/${list.id}/items`).post(item);
+        }
+
+        return list;
+    }
+
+    /**
+     * Create System_Component_Visibility List
+     * Stores per-role visibility settings for page components (e.g. hide Reports Tab from staff).
+     */
+    async createComponentVisibilityList(): Promise<any> {
+        const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'System_Component_Visibility'").get();
+
+        // Seed with defaults — VisibleTo is a JSON array of role_name values
+        const defaults = [
+            { fields: { Title: 'strategy-reports',        PageName: 'Strategy',    ComponentName: 'Reports Tab',           Description: 'Reports and data tables tab on the Strategy page',                          VisibleTo: '["admin","super_admin"]' } },
+            { fields: { Title: 'strategy-analytics',      PageName: 'Strategy',    ComponentName: 'Analytics Tab',         Description: 'KPI analytics and performance charts on the Strategy page',                 VisibleTo: '["admin","super_admin","manager"]' } },
+            { fields: { Title: 'strategy-ai-chat',        PageName: 'Strategy',    ComponentName: 'Strategy Intelligence', Description: 'AI-powered strategic analysis and insights panel on the Analytics tab',     VisibleTo: '["admin","super_admin","manager"]' } },
+            { fields: { Title: 'unit-staff-metrics',      PageName: 'Unit',        ComponentName: 'Staff Metrics Tab',     Description: 'Headcount and staff performance metrics on the Unit page',                  VisibleTo: '["admin","super_admin","manager"]' } },
+            { fields: { Title: 'hr-stats-panel',          PageName: 'HR Profiles', ComponentName: 'Stats Panel',           Description: 'Total employees, active count, and contract expiry stats',                  VisibleTo: '["admin","super_admin","manager"]' } },
+            { fields: { Title: 'hr-delete-employee',      PageName: 'HR Profiles', ComponentName: 'Delete Employee',       Description: 'Button to permanently remove an employee profile',                          VisibleTo: '["admin","super_admin"]' } },
+            { fields: { Title: 'market-admin-controls',   PageName: 'Market Data', ComponentName: 'Admin Controls',        Description: 'Data management and upload controls on the Market Data page',               VisibleTo: '["admin","super_admin"]' } },
+            { fields: { Title: 'assets-add-button',       PageName: 'Assets',      ComponentName: 'Add Asset Button',      Description: 'Button to register a new asset in the Asset Registry',                     VisibleTo: '["admin","super_admin","manager"]' } },
+        ];
+
+        // List already exists — upsert any missing default entries
+        if (check.value && check.value.length > 0) {
+            const list = check.value[0];
+            const existing = await this.client
+                .api(`/sites/${this.siteId}/lists/${list.id}/items`)
+                .expand('fields($select=Title)')
+                .get();
+            const existingKeys = new Set<string>((existing.value || []).map((i: any) => i.fields?.Title));
+            for (const item of defaults) {
+                if (!existingKeys.has(item.fields.Title)) {
+                    await this.client.api(`/sites/${this.siteId}/lists/${list.id}/items`).post(item);
+                }
+            }
+            return list;
+        }
+
+        // List does not exist — create it and seed all defaults
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'System_Component_Visibility',
+                columns: [
+                    { name: 'PageName', text: {} },
+                    { name: 'ComponentName', text: {} },
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'VisibleTo', text: { allowMultipleLines: true } },
+                ],
+                list: { template: 'genericList' }
+            });
 
         for (const item of defaults) {
             await this.client.api(`/sites/${this.siteId}/lists/${list.id}/items`).post(item);

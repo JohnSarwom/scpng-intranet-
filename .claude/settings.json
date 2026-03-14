@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/IT_UNIT/.gemini/antigravity/brain/**)"
+    ]
+  }
+}

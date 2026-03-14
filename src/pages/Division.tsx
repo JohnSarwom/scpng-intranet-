@@ -87,7 +87,7 @@ const Division = () => {
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start overflow-x-auto flex-nowrap">
+        <TabsList className="overflow-x-auto flex-nowrap">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="units">Units</TabsTrigger>
           <TabsTrigger value="workplans">Work Plans</TabsTrigger>

@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import StrategySetupWizard from '@/components/strategy/StrategySetupWizard';
 import { Settings2, Plus, Pencil } from 'lucide-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useComponentVisibility } from '@/hooks/useComponentVisibility';
 import EditStrategicObjectiveModal from '@/components/strategy/EditStrategicObjectiveModal';
 import StrategyAnalytics from '@/components/strategy/StrategyAnalytics';
 import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps'; // Import KRA, KPI and Objectives hooks
@@ -211,6 +212,8 @@ const Strategy = () => {
     const [isWizardOpen, setIsWizardOpen] = useState(false);
 
     const { isAdmin } = useRoleBasedAuth();
+    const { isComponentVisible } = useComponentVisibility();
+    const canSeeReports = isComponentVisible('Strategy', 'Reports Tab');
     const { refreshStrategy } = useStrategySharePoint();
 
     // Fetch ALL KRAs for dynamic progress calculation
@@ -542,16 +545,18 @@ const Strategy = () => {
 
                 {/* Tabs Section */}
                 <Tabs defaultValue="strategy" className="w-full space-y-6">
-                    <TabsList className="bg-card shadow-sm p-1 h-auto grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <TabsList className={`bg-card shadow-sm p-1 h-auto grid gap-2 grid-cols-2 ${canSeeReports ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                         <TabsTrigger value="strategy" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
                             <DashboardIcon className="w-4 h-4 mr-2" /> Strategy
                         </TabsTrigger>
                         <TabsTrigger value="analytics" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
                             <BarChartIcon className="w-4 h-4 mr-2" /> Analytics
                         </TabsTrigger>
-                        <TabsTrigger value="reports" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
-                            <TableIcon className="w-4 h-4 mr-2" /> Reports
-                        </TabsTrigger>
+                        {canSeeReports && (
+                            <TabsTrigger value="reports" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
+                                <TableIcon className="w-4 h-4 mr-2" /> Reports
+                            </TabsTrigger>
+                        )}
                         <TabsTrigger value="org" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
                             <Network className="w-4 h-4 mr-2" /> Org Structure
                         </TabsTrigger>
@@ -1261,6 +1266,7 @@ const Strategy = () => {
                         />
                     </TabsContent>
 
+                    {canSeeReports && (
                     <TabsContent value="reports" className="space-y-8 mt-0 outline-none">
                         {/* 1. Executive Summary & Actions */}
                         <div className="flex flex-col md:flex-row gap-6">
@@ -1454,6 +1460,7 @@ const Strategy = () => {
                             </Card>
                         </div>
                     </TabsContent>
+                    )}
 
                     <TabsContent value="org" className="mt-0 outline-none">
                         <OrgChart />

@@ -29,6 +29,7 @@ import { useStaffMembers } from '@/hooks/useStaffMembers'; // Import staff membe
 import { formatDate } from '@/lib/utils'; // Import formatDate from utils
 import { cn } from '@/lib/utils'; // Import cn utility
 import { getConditionBadgeClass, ASSET_CONDITIONS } from '@/config/assetConditions';
+import { useComponentVisibility } from '@/hooks/useComponentVisibility';
 
 // Import modal components
 import AddAssetModal from '@/components/unit-tabs/modals/AddAssetModal';
@@ -70,6 +71,9 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   const authLoading = useMemo(() => inProgress !== InteractionStatus.None, [inProgress]); // Determine loading state
 
   const { toast } = useToast();
+  const { isComponentVisible } = useComponentVisibility();
+  const canAddAsset = isComponentVisible('Assets', 'Add Asset Button');
+
   // Feature flag for SharePoint migration
   const USE_SHAREPOINT_ASSETS = import.meta.env.VITE_USE_SHAREPOINT_ASSETS === 'true';
 
@@ -409,15 +413,15 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
       <Card className={cn("w-full shadow-sm border", isFullScreen && "h-full")}>
         <CardContent className="p-6 space-y-6 flex flex-col h-full">
           {/* Fixed Header with Search and Actions */}
-          <div className="shrink-0 pb-2 mb-2 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-            <div>
+          <div className="shrink-0 pb-2 mb-2 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            <div className="flex-shrink-0">
               <h2 className="text-2xl font-bold tracking-tight">Asset Registry</h2>
-              <p className="text-muted-foreground">Manage and track all organizational assets.</p>
+              <p className="text-muted-foreground w-max text-sm">Manage and track all organizational assets.</p>
             </div>
 
             {/* Search + Action Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full xl:w-auto xl:flex-1 xl:justify-end">
-              <div className="relative flex-1 min-w-[200px] xl:max-w-md">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto lg:flex-1 lg:justify-end">
+              <div className="relative flex-1 min-w-[200px] lg:max-w-md">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
@@ -460,7 +464,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                   </Button>
                 </TooltipWrapper>
 
-                {/* Add Asset Button */}
+                {/* Add Asset Button — visibility controlled via Admin > View Settings */}
+                {canAddAsset && (
                 <Dialog
                   open={activeModal.type === 'add'}
                   onOpenChange={(open) => setActiveModal(open ? { type: 'add', asset: null } : { type: null, asset: null })}
@@ -484,6 +489,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                     />
                   )}
                 </Dialog>
+                )}
 
                 {/* More Options Dropdown */}
                 <DropdownMenu>

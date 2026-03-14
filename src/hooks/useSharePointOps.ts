@@ -157,6 +157,12 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
 
                 console.log('✅ [useSharePointOps] Loaded KRAs:', kras.length);
                 console.log('✅ [useSharePointOps] Loaded KPIs for merging:', kpis.length);
+                // DIAGNOSTIC: Log assignees from every KRA returned by SharePoint
+                kras.forEach(kra => {
+                    if (kra.assignees?.length > 0 || kra.owner) {
+                        console.log(`🔍 [Refetch] KRA "${kra.title}" (${kra.id}) — assignees:`, kra.assignees, '| owner:', kra.owner);
+                    }
+                });
 
                 // Merge KPIs into their parent KRAs
                 // This ensures unitKpis is populated, which the UI relies on
@@ -216,7 +222,19 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
             try {
                 const service = await getService();
                 const newKra = await service.addKRA(item);
-                query.refetch();
+
+                // Immediately add to cache so the UI shows the new KRA with assignees
+                // without waiting for the async refetch
+                queryClient.setQueryData(queryKey, (oldData: Kra[] | undefined) => {
+                    if (!oldData) return [newKra as unknown as Kra];
+                    // Avoid duplicates
+                    if (oldData.some(k => String(k.id) === String(newKra.id))) return oldData;
+                    return [...oldData, newKra as unknown as Kra];
+                });
+
+                // Background refetch to get full data (with KPIs merged)
+                setTimeout(() => { query.refetch(); }, 3000);
+
                 toast({ title: "Success", description: "KRA added successfully" });
                 return newKra; // Return the created KRA so we can use its ID
             } catch (error: any) {

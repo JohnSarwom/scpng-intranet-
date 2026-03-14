@@ -45,7 +45,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   fallbackPath = '/unauthorized',
   showAccessDenied = true
 }) => {
-  const { user, loading, error, hasPermission } = useRoleBasedAuth();
+  const { user, loading, error, hasPermission, isAdmin } = useRoleBasedAuth();
   const location = useLocation();
 
   // Only show loading within PageLayout on initial load (when there's no user data yet)
@@ -81,7 +81,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   // Check specific role requirement
-  if (requiredRole && user.role_name !== requiredRole && !user.is_admin) {
+  if (requiredRole && user.role_name !== requiredRole && !isAdmin) {
     const message = `This resource requires ${requiredRole} role. Your current role: ${user.role_name}`;
     if (showAccessDenied) {
       return <AccessDeniedCard message={message} />;
@@ -90,7 +90,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
   }
 
   // Check allowed roles (if user role is in the allowed list)
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role_name) && !user.is_admin) {
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role_name) && !isAdmin) {
     const message = `Access restricted to: ${allowedRoles.join(', ')}. Your role: ${user.role_name}`;
     if (showAccessDenied) {
       return <AccessDeniedCard message={message} />;

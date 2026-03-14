@@ -7,6 +7,7 @@ import ProgressTrends from './analytics/ProgressTrends';
 import DivisionalComparison from './analytics/DivisionalComparison';
 import MilestonesTimeline from './analytics/MilestonesTimeline';
 import StrategyAIChat from './analytics/StrategyAIChat';
+import { useComponentVisibility } from '@/hooks/useComponentVisibility';
 import { TimePeriod, filterByTimePeriod, computeDateRange } from '@/utils/strategyAnalyticsUtils';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 
@@ -62,6 +63,8 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
     officerProfiles = [],
 }) => {
     const [timePeriod, setTimePeriod] = useState<TimePeriod>('all');
+    const { isComponentVisible } = useComponentVisibility();
+    const canSeeStrategyAI = isComponentVisible('Strategy', 'Strategy Intelligence');
 
     const filteredObjectives = useMemo(() =>
         filterByTimePeriod(objectives, timePeriod), [objectives, timePeriod]);
@@ -114,17 +117,19 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
             <MilestonesTimeline milestones={filteredMilestones} />
 
             {/* AI-Powered Analysis */}
-            <StrategyAIChat
-                objectives={objectives}
-                kras={kras}
-                kpis={kpis}
-                milestones={milestones}
-                unitObjectives={unitObjectives}
-                orgHierarchy={orgHierarchy}
-                divisions={divisions}
-                units={units}
-                officerProfiles={officerProfiles}
-            />
+            {canSeeStrategyAI && (
+                <StrategyAIChat
+                    objectives={objectives}
+                    kras={kras}
+                    kpis={kpis}
+                    milestones={milestones}
+                    unitObjectives={unitObjectives}
+                    orgHierarchy={orgHierarchy}
+                    divisions={divisions}
+                    units={units}
+                    officerProfiles={officerProfiles}
+                />
+            )}
         </div>
     );
 };

@@ -119,7 +119,7 @@ const FeedbackWidget: React.FC = () => {
   const pageName =
     PAGE_NAME_MAP[currentRoute] ??
     PAGE_NAME_MAP[
-      Object.keys(PAGE_NAME_MAP).find(k => k !== '/' && currentRoute.startsWith(k)) ?? ''
+    Object.keys(PAGE_NAME_MAP).find(k => k !== '/' && currentRoute.startsWith(k)) ?? ''
     ] ??
     'This Page';
 
@@ -206,7 +206,7 @@ const FeedbackWidget: React.FC = () => {
               <div>
                 <p className="text-white font-semibold text-sm">Share Your Feedback</p>
                 <p className="text-white/70 text-xs mt-0.5">
-                  {pageName} &mdash; UAT Testing Phase
+                  {pageName}
                 </p>
               </div>
               <Button

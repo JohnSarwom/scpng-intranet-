@@ -93,6 +93,7 @@ import { SharePointListSetupService } from '@/services/sharePointListSetupServic
 import { getGraphClient } from '@/services/graphService';
 import { useMsal } from '@azure/msal-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useComponentVisibility } from '@/hooks/useComponentVisibility';
 
 
 // Define status options for dropdowns
@@ -243,13 +244,9 @@ const Unit = () => {
     return isAdmin || isManager;
   }, [roleUser]);
 
-  // Only Managers and Admins can view Staff Metrics
-  const canViewStaffMetrics = useMemo(() => {
-    const role = roleUser?.role_name?.toLowerCase();
-    const isAdmin = roleUser?.is_admin || role === 'super_admin' || role === 'admin';
-    const isManager = role === 'manager';
-    return isAdmin || isManager;
-  }, [roleUser]);
+  // Staff Metrics visibility — controlled by admin via Component Visibility settings
+  const { isComponentVisible } = useComponentVisibility();
+  const canViewStaffMetrics = isComponentVisible('Unit', 'Staff Metrics Tab');
 
   // --- Wrapper for refreshing all data ---
   const handleRefreshAllData = useCallback(() => {
@@ -568,11 +565,11 @@ const Unit = () => {
         status: mappedStatus,
         kpis: kraKpis.map(k => ({
           ...k,
-          id: k.id.toString(),
+          id: k.id?.toString() ?? '',
           date: k.startDate ? new Date(k.startDate) : new Date(),
           notes: k.comments || '',
-          target: k.target.toString(),
-          actual: k.actual?.toString() || '0',
+          target: k.target?.toString() ?? '0',
+          actual: k.actual?.toString() ?? '0',
           status: (k.status === 'on-track' || k.status === 'at-risk' || k.status === 'behind' || k.status === 'completed') ? k.status : 'on-track',
         })) as unknown as KPI[], // Cast to KPI[] as strict mapping might still miss fields
         createdAt: kra.createdAt ?? new Date().toISOString(),
