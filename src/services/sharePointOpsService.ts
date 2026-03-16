@@ -8,6 +8,7 @@ import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext, Tas
 import { ChecklistItem } from '@/components/ChecklistSection';
 import { Report } from '@/types/reports';
 import { Logger } from '@/utils/logger';
+import { WorkPlan, WorkPlanGoal } from '@/types/division.types';
 
 // Configuration for SharePoint Lists
 const OPS_CONFIG = {
@@ -23,7 +24,9 @@ const OPS_CONFIG = {
         REPORTS: 'Performance_Reports',
         SETTINGS: 'System_View_Settings',
         TASK_GROUPS: 'Operations_TaskGroups',
-        COMPONENT_VISIBILITY: 'System_Component_Visibility'
+        COMPONENT_VISIBILITY: 'System_Component_Visibility',
+        WORKPLANS: 'Division_WorkPlans',
+        NOTIFICATIONS: 'System_Notifications'
     }
 };
 
@@ -79,6 +82,11 @@ export class SharePointOpsService {
                 // (fire-and-forget — doesn't block initialization)
                 this.ensureAssigneesColumnOnKRAs().catch(err =>
                     console.warn('⚠️ [SP Ops] Auto-ensure Assignees column failed (non-blocking):', err.message)
+                );
+
+                // Auto-ensure the System_Notifications list exists (fire-and-forget)
+                this.ensureNotificationsList().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure Notifications list failed (non-blocking):', err.message)
                 );
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
@@ -1773,5 +1781,433 @@ export class SharePointOpsService {
         } catch (error) {
             console.error(`❌ [SP Ops] Failed to sync Objective ${objectiveId}:`, error);
         }
+    }
+
+    // ─── WorkPlan CRUD ─────────────────────────────────────────────────────────
+
+    async getWorkPlans(divisionId: string): Promise<WorkPlan[]> {
+        if (!this.listIds['WORKPLANS']) return [];
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
+                .expand('fields')
+                .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                .filter(`fields/DivisionId eq '${divisionId}'`)
+                .get();
+            return (response.value || []).map((item: any) => this.mapWorkPlan(item));
+        } catch (error) {
+            console.error('❌ [SP Ops] getWorkPlans failed:', error);
+            return [];
+        }
+    }
+
+    async addWorkPlan(plan: Partial<WorkPlan>): Promise<WorkPlan> {
+        if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
+        const payload = { fields: this.buildWorkPlanFields(plan) };
+        console.log('📝 [SP Ops] Adding WorkPlan:', plan.title);
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
+            .expand('fields')
+            .post(payload);
+        return this.mapWorkPlan(response);
+    }
+
+    async updateWorkPlan(id: string, plan: Partial<WorkPlan>): Promise<WorkPlan> {
+        if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
+        const fields = this.buildWorkPlanFields(plan);
+        console.log(`📝 [SP Ops] Updating WorkPlan ${id}`);
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+            .patch({ fields });
+        // PATCH doesn't return fields — GET after
+        const updated = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+            .expand('fields')
+            .get();
+        return this.mapWorkPlan(updated);
+    }
+
+    async deleteWorkPlan(id: string): Promise<void> {
+        if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+            .delete();
+    }
+
+    /**
+     * Activate a WorkPlan: creates real Objectives, KRAs, and KPIs in SharePoint
+     * for each goal/activity, then stores the linked IDs back on the plan.
+     * Idempotent — skips items that already have linked IDs.
+     */
+    async activateWorkPlan(plan: WorkPlan): Promise<WorkPlan> {
+        console.log(`🚀 [SP Ops] Activating WorkPlan "${plan.title}" — creating Objectives/KRAs/KPIs...`);
+
+        const updatedGoals: WorkPlanGoal[] = JSON.parse(JSON.stringify(plan.goals));
+
+        for (let gi = 0; gi < updatedGoals.length; gi++) {
+            const goal = updatedGoals[gi];
+
+            // 1. Create Unit Objective for this Goal (if not already linked)
+            if (!goal.linkedObjectiveId) {
+                const objective = await this.addObjective({
+                    title: goal.title,
+                    description: goal.description || '',
+                    goalType: 'Unit',
+                    division: plan.divisionName,
+                    unit: goal.responsibleUnitNames?.[0] || '',
+                    status: 'Not Started',
+                    progress: 0,
+                    year: plan.year?.toString(),
+                    startDate: plan.startDate ? new Date(plan.startDate) : undefined,
+                    endDate: plan.endDate ? new Date(plan.endDate) : undefined,
+                    parentGoalId: plan.linkedStrategicObjectiveId
+                        ? Number(plan.linkedStrategicObjectiveId)
+                        : undefined,
+                    linkedDeliverable: goal.title,
+                }, plan.divisionName);
+                goal.linkedObjectiveId = objective.id.toString();
+                goal.linkedObjectiveTitle = objective.title;
+                console.log(`  ✅ Goal "${goal.title}" → Objective ID: ${goal.linkedObjectiveId}`);
+            }
+
+            // 2. Create KRAs + KPIs for each Activity
+            for (let ai = 0; ai < goal.activities.length; ai++) {
+                const activity = goal.activities[ai];
+
+                // Create KRA (if not already linked)
+                if (!activity.linkedKraId && activity.title) {
+                    const kra = await this.addKRA({
+                        title: activity.title,
+                        description: activity.expectedOutput || activity.description || '',
+                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
+                        division: plan.divisionName,
+                        objective_id: goal.linkedObjectiveId,
+                        owner: activity.responsiblePersonName
+                            ? { id: '', name: activity.responsiblePersonName, email: activity.responsiblePersonEmail || '' }
+                            : undefined,
+                        status: 'open',
+                        progress: 0,
+                    });
+                    activity.linkedKraId = kra.id.toString();
+                    console.log(`    ✅ Activity "${activity.title}" → KRA ID: ${activity.linkedKraId}`);
+                }
+
+                // Create KPI from kpiDescription (if not already linked)
+                if (activity.kpiDescription && !activity.linkedKpiId && activity.linkedKraId) {
+                    const kpi = await this.addKPI({
+                        name: activity.kpiDescription,
+                        description: activity.kpiDescription,
+                        kra_id: activity.linkedKraId,
+                        target: 100,
+                        actual: 0,
+                        status: 'on-track',
+                        metric: '%',
+                        calculationType: 'manual',
+                        startDate: activity.startDate || plan.startDate || undefined,
+                        targetDate: activity.endDate || plan.endDate || undefined,
+                    });
+                    activity.linkedKpiId = kpi.id.toString();
+                    console.log(`      ✅ KPI "${activity.kpiDescription}" → KPI ID: ${activity.linkedKpiId}`);
+                }
+            }
+        }
+
+        // 3. Update WorkPlan with linked IDs and status = 'active'
+        const activated = await this.updateWorkPlan(plan.id, {
+            ...plan,
+            goals: updatedGoals,
+            status: 'active',
+        });
+
+        console.log(`🚀 [SP Ops] WorkPlan activated successfully.`);
+        return { ...activated, goals: updatedGoals, status: 'active' };
+    }
+
+    /**
+     * Sync an already-activated WorkPlan: updates existing linked items
+     * and creates any new ones added after activation.
+     */
+    async syncWorkPlanToSharePoint(plan: WorkPlan): Promise<WorkPlan> {
+        if (plan.status !== 'active') {
+            return this.updateWorkPlan(plan.id, plan);
+        }
+
+        console.log(`🔄 [SP Ops] Syncing activated WorkPlan "${plan.title}"...`);
+        const updatedGoals: WorkPlanGoal[] = JSON.parse(JSON.stringify(plan.goals));
+
+        for (const goal of updatedGoals) {
+            if (goal.linkedObjectiveId) {
+                // Update existing Objective
+                await this.updateObjective(goal.linkedObjectiveId, {
+                    title: goal.title,
+                    description: goal.description || '',
+                    unit: goal.responsibleUnitNames?.[0],
+                });
+            } else {
+                // New goal added after activation — create Objective
+                const objective = await this.addObjective({
+                    title: goal.title,
+                    description: goal.description || '',
+                    goalType: 'Unit',
+                    division: plan.divisionName,
+                    unit: goal.responsibleUnitNames?.[0] || '',
+                    status: 'Not Started',
+                    progress: 0,
+                    year: plan.year?.toString(),
+                    startDate: plan.startDate ? new Date(plan.startDate) : undefined,
+                    endDate: plan.endDate ? new Date(plan.endDate) : undefined,
+                    parentGoalId: plan.linkedStrategicObjectiveId
+                        ? Number(plan.linkedStrategicObjectiveId)
+                        : undefined,
+                    linkedDeliverable: goal.title,
+                }, plan.divisionName);
+                goal.linkedObjectiveId = objective.id.toString();
+                goal.linkedObjectiveTitle = objective.title;
+            }
+
+            for (const activity of goal.activities) {
+                if (activity.linkedKraId) {
+                    // Update existing KRA
+                    await this.updateKRA(activity.linkedKraId, {
+                        title: activity.title,
+                        description: activity.expectedOutput || activity.description || '',
+                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
+                        objective_id: goal.linkedObjectiveId,
+                    });
+                } else if (activity.title) {
+                    // New activity — create KRA
+                    const kra = await this.addKRA({
+                        title: activity.title,
+                        description: activity.expectedOutput || activity.description || '',
+                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
+                        division: plan.divisionName,
+                        objective_id: goal.linkedObjectiveId,
+                        owner: activity.responsiblePersonName
+                            ? { id: '', name: activity.responsiblePersonName, email: activity.responsiblePersonEmail || '' }
+                            : undefined,
+                        status: 'open',
+                        progress: 0,
+                    });
+                    activity.linkedKraId = kra.id.toString();
+                }
+
+                if (activity.kpiDescription && activity.linkedKpiId) {
+                    // Update existing KPI
+                    await this.updateKPI(activity.linkedKpiId, {
+                        name: activity.kpiDescription,
+                        description: activity.kpiDescription,
+                    });
+                } else if (activity.kpiDescription && !activity.linkedKpiId && activity.linkedKraId) {
+                    // New KPI — create it
+                    const kpi = await this.addKPI({
+                        name: activity.kpiDescription,
+                        description: activity.kpiDescription,
+                        kra_id: activity.linkedKraId,
+                        target: 100,
+                        actual: 0,
+                        status: 'on-track',
+                        metric: '%',
+                        calculationType: 'manual',
+                        startDate: activity.startDate || plan.startDate || undefined,
+                        targetDate: activity.endDate || plan.endDate || undefined,
+                    });
+                    activity.linkedKpiId = kpi.id.toString();
+                }
+            }
+        }
+
+        const updated = await this.updateWorkPlan(plan.id, { ...plan, goals: updatedGoals });
+        return { ...updated, goals: updatedGoals };
+    }
+
+    // ─── WorkPlan helpers ──────────────────────────────────────────────────────
+
+    private buildWorkPlanFields(plan: Partial<WorkPlan>): Record<string, any> {
+        const fields: Record<string, any> = {};
+        if (plan.title !== undefined) fields.Title = plan.title;
+        if (plan.description !== undefined) fields.Description = plan.description;
+        if (plan.divisionId !== undefined) fields.DivisionId = plan.divisionId;
+        if (plan.divisionName !== undefined) fields.DivisionName = plan.divisionName;
+        if (plan.status !== undefined) fields.Status = plan.status;
+        if (plan.timePeriod !== undefined) fields.TimePeriod = plan.timePeriod;
+        if (plan.year !== undefined) fields.Year = plan.year;
+        if (plan.startDate !== undefined) fields.StartDate = plan.startDate ? new Date(plan.startDate).toISOString() : null;
+        if (plan.endDate !== undefined) fields.EndDate = plan.endDate ? new Date(plan.endDate).toISOString() : null;
+        if (plan.goals !== undefined) fields.GoalsJSON = JSON.stringify(plan.goals);
+        if (plan.linkedStrategicObjectiveId !== undefined) fields.LinkedStrategicObjectiveId = plan.linkedStrategicObjectiveId || '';
+        if (plan.linkedStrategicObjectiveTitle !== undefined) fields.LinkedStrategicObjectiveTitle = plan.linkedStrategicObjectiveTitle || '';
+        if (plan.organization !== undefined) fields.Organization = plan.organization || '';
+        if (plan.preparedBy !== undefined) fields.PreparedBy = plan.preparedBy || '';
+        if (plan.mandate !== undefined) fields.Mandate = plan.mandate || '';
+        if (plan.monitoringAndReporting !== undefined) fields.MonitoringAndReporting = plan.monitoringAndReporting || '';
+        if (plan.reviewFrequency !== undefined) fields.ReviewFrequency = plan.reviewFrequency || '';
+        if (plan.reportingTo !== undefined) fields.ReportingTo = plan.reportingTo || '';
+        if (plan.overallProgress !== undefined) fields.OverallProgress = plan.overallProgress;
+        if (plan.createdBy !== undefined) fields.CreatedByName = plan.createdBy;
+        if (plan.createdByEmail !== undefined) fields.CreatedByEmail = plan.createdByEmail;
+        return fields;
+    }
+
+    private mapWorkPlan(item: any): WorkPlan {
+        const f = item.fields || {};
+        let goals: WorkPlanGoal[] = [];
+        try { goals = JSON.parse(f.GoalsJSON || '[]'); } catch { /* empty */ }
+        return {
+            id: item.id?.toString(),
+            title: f.Title || '',
+            description: f.Description || '',
+            divisionId: f.DivisionId || '',
+            divisionName: f.DivisionName || '',
+            status: (f.Status || 'draft') as WorkPlan['status'],
+            timePeriod: (f.TimePeriod || 'annual') as WorkPlan['timePeriod'],
+            year: f.Year || new Date().getFullYear(),
+            startDate: f.StartDate || '',
+            endDate: f.EndDate || '',
+            goals,
+            linkedStrategicObjectiveId: f.LinkedStrategicObjectiveId || undefined,
+            linkedStrategicObjectiveTitle: f.LinkedStrategicObjectiveTitle || undefined,
+            overallProgress: f.OverallProgress || 0,
+            createdBy: f.CreatedByName || '',
+            createdByEmail: f.CreatedByEmail || '',
+            createdAt: item.createdDateTime || '',
+            updatedAt: item.lastModifiedDateTime || '',
+            organization: f.Organization || undefined,
+            preparedBy: f.PreparedBy || undefined,
+            planningPeriodLabel: f.PlanningPeriodLabel || undefined,
+            mandate: f.Mandate || undefined,
+            monitoringAndReporting: f.MonitoringAndReporting || undefined,
+            reviewFrequency: f.ReviewFrequency || undefined,
+            reportingTo: f.ReportingTo || undefined,
+        };
+    }
+
+    // ─── Notifications ───────────────────────────────────────────────
+
+    /**
+     * Ensure the System_Notifications list exists. Fire-and-forget during init.
+     */
+    async ensureNotificationsList(): Promise<void> {
+        if (this.listIds['NOTIFICATIONS']) return;
+
+        try {
+            // Try to create the list — will 409 if it already exists
+            await this.client.api(`/sites/${this.siteId}/lists`).post({
+                displayName: OPS_CONFIG.LISTS.NOTIFICATIONS,
+                list: { template: 'genericList' },
+            });
+            console.log('✅ [SP Ops] Created System_Notifications list');
+
+            // Add custom columns
+            const listUrl = `/sites/${this.siteId}/lists/${OPS_CONFIG.LISTS.NOTIFICATIONS}/columns`;
+            const columns = [
+                { name: 'Message', text: { allowMultipleLines: true, textType: 'plain' } },
+                { name: 'RecipientEmail', text: {} },
+                { name: 'Type', text: {} },
+                { name: 'Category', text: {} },
+                { name: 'ActionUrl', text: {} },
+                { name: 'IsRead', boolean: { } },
+                { name: 'CreatedBy_Custom', text: {} },
+            ];
+            for (const col of columns) {
+                try {
+                    await this.client.api(listUrl).post(col);
+                } catch { /* column may already exist */ }
+            }
+
+            // Re-resolve list IDs so NOTIFICATIONS is available
+            await this.resolveListIds();
+        } catch (err: any) {
+            if (err.statusCode === 409 || err.code === 'nameAlreadyExists') {
+                console.log('✅ [SP Ops] System_Notifications list already exists');
+                await this.resolveListIds();
+            } else {
+                console.warn('⚠️ [SP Ops] Failed to ensure notifications list:', err.message);
+            }
+        }
+    }
+
+    /**
+     * Get notifications for a user, ordered by newest first.
+     */
+    async getNotifications(email: string): Promise<any[]> {
+        const listId = this.listIds['NOTIFICATIONS'];
+        if (!listId) {
+            console.warn('⚠️ [SP Ops] Notifications list not resolved');
+            return [];
+        }
+
+        try {
+            const normalizedEmail = email.toLowerCase();
+            let allItems: any[] = [];
+            let nextUrl: string | null =
+                `/sites/${this.siteId}/lists/${listId}/items?$expand=fields&$top=50&$orderby=createdDateTime desc`;
+
+            while (nextUrl) {
+                const response = await this.client.api(nextUrl).get();
+                const items = (response.value || []).filter((item: any) =>
+                    item.fields?.RecipientEmail?.toLowerCase() === normalizedEmail
+                );
+                allItems = allItems.concat(items);
+                // Only follow pagination if we haven't hit 50 yet
+                if (allItems.length >= 50) {
+                    allItems = allItems.slice(0, 50);
+                    break;
+                }
+                nextUrl = response['@odata.nextLink'] ?? null;
+            }
+
+            return allItems.map((item: any) => this.mapNotification(item));
+        } catch (err: any) {
+            console.error('❌ [SP Ops] getNotifications failed:', err.message);
+            return [];
+        }
+    }
+
+    /**
+     * Get unread notification count for a user.
+     */
+    async getUnreadNotificationCount(email: string): Promise<number> {
+        const notifications = await this.getNotifications(email);
+        return notifications.filter((n: any) => !n.isRead).length;
+    }
+
+    /**
+     * Mark a single notification as read.
+     */
+    async markNotificationRead(itemId: string): Promise<void> {
+        const listId = this.listIds['NOTIFICATIONS'];
+        if (!listId) return;
+
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}/fields`)
+            .patch({ IsRead: true });
+    }
+
+    /**
+     * Mark all notifications as read for a user.
+     */
+    async markAllNotificationsRead(email: string): Promise<void> {
+        const notifications = await this.getNotifications(email);
+        const unread = notifications.filter((n: any) => !n.isRead);
+
+        await Promise.all(
+            unread.map((n: any) => this.markNotificationRead(n.id))
+        );
+    }
+
+    private mapNotification(item: any) {
+        const f = item.fields || {};
+        return {
+            id: item.id,
+            title: f.Title || '',
+            message: f.Message || '',
+            recipientEmail: f.RecipientEmail || '',
+            type: f.Type || 'info',
+            category: f.Category || '',
+            actionUrl: f.ActionUrl || '',
+            isRead: f.IsRead === true || f.IsRead === 'true',
+            createdBy: f.CreatedBy_Custom || '',
+            createdAt: item.createdDateTime || '',
+        };
     }
 }

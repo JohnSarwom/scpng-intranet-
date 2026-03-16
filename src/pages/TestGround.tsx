@@ -39,6 +39,7 @@ import {
     Copy,
     Search,
     MessageSquarePlus,
+    Bell,
 } from "lucide-react";
 import {
     Table,
@@ -1662,6 +1663,202 @@ const TestGround = () => {
             toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
         } finally {
             setIsCreatingFeedbackList(false);
+        }
+    };
+
+    // ==========================================
+    // DIVISION WORKPLANS LIST SETUP
+    // ==========================================
+    const [isCreatingWorkPlansList, setIsCreatingWorkPlansList] = useState(false);
+
+    const handleCreateWorkPlansList = async () => {
+        setIsCreatingWorkPlansList(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "Creating Division_WorkPlans List", description: "Setting up SharePoint list..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const siteId = site.id;
+
+            // 1. Create the list
+            const listPayload = {
+                displayName: 'Division_WorkPlans',
+                list: { template: 'genericList' },
+            };
+
+            let listId: string;
+            try {
+                const listResp = await graphClient.api(`/sites/${siteId}/lists`).post(listPayload);
+                listId = listResp.id;
+            } catch (err: any) {
+                if (err.statusCode === 409 || err.message?.includes('already exists')) {
+                    // List exists — resolve its ID
+                    const existing = await graphClient.api(`/sites/${siteId}/lists`).filter(`displayName eq 'Division_WorkPlans'`).get();
+                    if (existing.value?.length > 0) {
+                        listId = existing.value[0].id;
+                        toast({ title: "List already exists", description: "Adding missing columns..." });
+                    } else {
+                        throw err;
+                    }
+                } else {
+                    throw err;
+                }
+            }
+
+            // 2. Define columns
+            const columns: Array<{ name: string; type: string; choices?: string[] }> = [
+                { name: 'Description', type: 'text' },
+                { name: 'DivisionId', type: 'text' },
+                { name: 'DivisionName', type: 'text' },
+                { name: 'Status', type: 'choice', choices: ['draft', 'active', 'completed', 'archived'] },
+                { name: 'TimePeriod', type: 'choice', choices: ['Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2', 'annual', 'custom'] },
+                { name: 'Year', type: 'number' },
+                { name: 'StartDate', type: 'dateTime' },
+                { name: 'EndDate', type: 'dateTime' },
+                { name: 'GoalsJSON', type: 'text' },
+                { name: 'LinkedStrategicObjectiveId', type: 'text' },
+                { name: 'LinkedStrategicObjectiveTitle', type: 'text' },
+                { name: 'Organization', type: 'text' },
+                { name: 'PreparedBy', type: 'text' },
+                { name: 'PlanningPeriodLabel', type: 'text' },
+                { name: 'Mandate', type: 'text' },
+                { name: 'MonitoringAndReporting', type: 'text' },
+                { name: 'ReviewFrequency', type: 'text' },
+                { name: 'ReportingTo', type: 'text' },
+                { name: 'OverallProgress', type: 'number' },
+                { name: 'CreatedByName', type: 'text' },
+                { name: 'CreatedByEmail', type: 'text' },
+            ];
+
+            let created = 0;
+            let skipped = 0;
+            for (const col of columns) {
+                try {
+                    let colPayload: any;
+                    if (col.type === 'text') {
+                        // Use multiline for large JSON fields
+                        const isMultiline = ['GoalsJSON', 'Description', 'Mandate', 'MonitoringAndReporting'].includes(col.name);
+                        colPayload = {
+                            name: col.name,
+                            text: { allowMultipleLines: isMultiline, maxLength: isMultiline ? undefined : 255 },
+                        };
+                    } else if (col.type === 'number') {
+                        colPayload = { name: col.name, number: {} };
+                    } else if (col.type === 'dateTime') {
+                        colPayload = { name: col.name, dateTime: { format: 'dateTime' } };
+                    } else if (col.type === 'choice') {
+                        colPayload = { name: col.name, choice: { choices: col.choices, allowTextEntry: false } };
+                    }
+                    await graphClient.api(`/sites/${siteId}/lists/${listId}/columns`).post(colPayload);
+                    created++;
+                } catch (colErr: any) {
+                    if (colErr.statusCode === 409 || colErr.message?.includes('already exists')) {
+                        skipped++;
+                    } else {
+                        console.warn(`Failed to create column ${col.name}:`, colErr.message);
+                    }
+                }
+            }
+
+            const msg = `List ready. ${created} columns created, ${skipped} already existed.`;
+            setSetupResult({ success: true, message: msg });
+            toast({ title: "Division_WorkPlans List Ready", description: msg });
+
+            // Reset service cache so it picks up the new list
+            const { resetOpsServiceCache } = await import('@/services/sharePointOpsService');
+            resetOpsServiceCache();
+
+        } catch (error: any) {
+            console.error('Division_WorkPlans list creation failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({ title: "Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsCreatingWorkPlansList(false);
+        }
+    };
+
+    // ==========================================
+    // SYSTEM NOTIFICATIONS LIST SETUP
+    // ==========================================
+    const [isCreatingNotificationsList, setIsCreatingNotificationsList] = useState(false);
+
+    const handleCreateNotificationsList = async () => {
+        setIsCreatingNotificationsList(true);
+        setSetupResult(null);
+        try {
+            toast({ title: "Creating System_Notifications List", description: "Setting up SharePoint list..." });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const siteId = site.id;
+
+            // 1. Create the list
+            let listId: string;
+            try {
+                const listResp = await graphClient.api(`/sites/${siteId}/lists`).post({
+                    displayName: 'System_Notifications',
+                    list: { template: 'genericList' },
+                });
+                listId = listResp.id;
+            } catch (err: any) {
+                if (err.statusCode === 409 || err.message?.includes('already exists')) {
+                    const existing = await graphClient.api(`/sites/${siteId}/lists`).filter(`displayName eq 'System_Notifications'`).get();
+                    if (existing.value?.length > 0) {
+                        listId = existing.value[0].id;
+                        toast({ title: "List already exists", description: "Adding missing columns..." });
+                    } else {
+                        throw err;
+                    }
+                } else {
+                    throw err;
+                }
+            }
+
+            // 2. Define columns
+            const columns: Array<{ name: string; payload: any }> = [
+                { name: 'Message', payload: { name: 'Message', text: { allowMultipleLines: true, textType: 'plain' } } },
+                { name: 'RecipientEmail', payload: { name: 'RecipientEmail', text: { maxLength: 255 } } },
+                { name: 'Type', payload: { name: 'Type', text: { maxLength: 50 } } },
+                { name: 'Category', payload: { name: 'Category', text: { maxLength: 50 } } },
+                { name: 'ActionUrl', payload: { name: 'ActionUrl', text: { maxLength: 255 } } },
+                { name: 'IsRead', payload: { name: 'IsRead', boolean: {} } },
+                { name: 'CreatedBy_Custom', payload: { name: 'CreatedBy_Custom', text: { maxLength: 255 } } },
+            ];
+
+            let created = 0;
+            let skipped = 0;
+            for (const col of columns) {
+                try {
+                    await graphClient.api(`/sites/${siteId}/lists/${listId}/columns`).post(col.payload);
+                    created++;
+                } catch (colErr: any) {
+                    if (colErr.statusCode === 409 || colErr.message?.includes('already exists')) {
+                        skipped++;
+                    } else {
+                        console.warn(`Failed to create column ${col.name}:`, colErr.message);
+                    }
+                }
+            }
+
+            const msg = `List ready. ${created} columns created, ${skipped} already existed.`;
+            setSetupResult({ success: true, message: msg });
+            toast({ title: "System_Notifications List Ready", description: msg });
+
+            // Reset service cache so it picks up the new list
+            const { resetOpsServiceCache } = await import('@/services/sharePointOpsService');
+            resetOpsServiceCache();
+
+        } catch (error: any) {
+            console.error('System_Notifications list creation failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({ title: "Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsCreatingNotificationsList(false);
         }
     };
 
@@ -3389,6 +3586,112 @@ const TestGround = () => {
                                 <>
                                     <Database className="h-5 w-5" />
                                     Create UAT_Feedback List
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Division WorkPlans List Setup */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Database className="h-5 w-5" />
+                            Division WorkPlans List Setup
+                        </CardTitle>
+                        <CardDescription>
+                            Creates the <code>Division_WorkPlans</code> SharePoint list with all required columns for persisting work plans and linking them to Objectives/KRAs/KPIs.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="bg-muted rounded-lg p-3">
+                            <p className="text-sm font-medium mb-2">Columns to be created:</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Title (built-in)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Description (multiline)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> DivisionId (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> DivisionName (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Status (choice)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> TimePeriod (choice)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Year (number)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> StartDate / EndDate</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> GoalsJSON (multiline)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> LinkedStrategicObjectiveId</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Organization / PreparedBy</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Mandate (multiline)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> MonitoringAndReporting</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> OverallProgress (number)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> CreatedByName / Email</span>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={handleCreateWorkPlansList}
+                            disabled={isCreatingWorkPlansList}
+                            size="lg"
+                            className="w-full gap-2 bg-intranet-primary hover:bg-intranet-secondary"
+                        >
+                            {isCreatingWorkPlansList ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    Creating List...
+                                </>
+                            ) : (
+                                <>
+                                    <Database className="h-5 w-5" />
+                                    Create Division_WorkPlans List
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* System Notifications List Setup */}
+                <Card className="border-2 border-amber-500/30 bg-gradient-to-br from-white to-amber-50/50 dark:from-gray-900 dark:to-amber-950/10">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-xl flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                                    <Bell className="h-6 w-6" />
+                                    System Notifications List Setup
+                                </CardTitle>
+                                <CardDescription className="mt-1">
+                                    Creates the <strong>System_Notifications</strong> SharePoint list used by Power Automate to push notifications to users. The bell icon in the header reads from this list.
+                                </CardDescription>
+                            </div>
+                            <Badge className="bg-amber-600 text-white shrink-0">Notifications</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="bg-muted/50 rounded-lg border p-4 space-y-2 text-sm">
+                            <p className="font-semibold text-muted-foreground uppercase text-xs tracking-wider">Columns created</p>
+                            <div className="grid grid-cols-2 gap-1.5 text-muted-foreground">
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Title (built-in)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Message (multiline)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> RecipientEmail (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Type (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> Category (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> ActionUrl (text)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> IsRead (boolean)</span>
+                                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-green-500" /> CreatedBy_Custom (text)</span>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={handleCreateNotificationsList}
+                            disabled={isCreatingNotificationsList}
+                            size="lg"
+                            className="w-full gap-2 bg-amber-600 hover:bg-amber-700"
+                        >
+                            {isCreatingNotificationsList ? (
+                                <>
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    Creating List...
+                                </>
+                            ) : (
+                                <>
+                                    <Database className="h-5 w-5" />
+                                    Create System_Notifications List
                                 </>
                             )}
                         </Button>

@@ -45,8 +45,9 @@ export interface WorkPlanBuilderProps {
   createdByEmail: string;
   strategicObjectives: StrategicObjectiveOption[];
   staff: StaffOption[];
-  onSave: (plan: WorkPlan) => void;
+  onSave: (plan: WorkPlan) => void | Promise<void>;
   onCancel: () => void;
+  saving?: boolean;
 }
 
 // Flat row model used internally in the table
@@ -431,6 +432,7 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
   staff,
   onSave,
   onCancel,
+  saving = false,
 }) => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
@@ -615,17 +617,17 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
                 {totalRows} {totalRows === 1 ? 'activity' : 'activities'} · {overallProgress}% complete
               </span>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleSave('draft')}>
-              Save Draft
+            <Button variant="outline" size="sm" onClick={() => handleSave('draft')} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Draft'}
             </Button>
             <Button
               size="sm"
               className="bg-[#83002A] hover:bg-[#5C001E] gap-1.5"
               onClick={() => handleSave('active')}
-              disabled={!isValid}
+              disabled={!isValid || saving}
             >
               <Save className="h-3.5 w-3.5" />
-              Save & Activate
+              {saving ? 'Activating...' : 'Save & Activate'}
             </Button>
           </div>
         </div>
@@ -1106,16 +1108,16 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
             Cancel
           </Button>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={() => handleSave('draft')}>
-              Save as Draft
+            <Button variant="outline" onClick={() => handleSave('draft')} disabled={saving}>
+              {saving ? 'Saving...' : 'Save as Draft'}
             </Button>
             <Button
               className="bg-[#83002A] hover:bg-[#5C001E] gap-1.5"
               onClick={() => handleSave('active')}
-              disabled={!isValid}
+              disabled={!isValid || saving}
             >
               <Save className="h-4 w-4" />
-              Save & Activate
+              {saving ? 'Activating...' : 'Save & Activate'}
             </Button>
           </div>
         </div>

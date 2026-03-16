@@ -342,24 +342,54 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
 
   const { workPlans, deleteWorkPlan } = useWorkPlans(divisionId, divisionName);
 
+  // Enrich active plans with live progress from linked Objectives/KRAs
+  const enrichedPlans = useMemo(() => {
+    const objectives = data.objectives || [];
+    const kras = data.combinedKras || [];
+
+    return workPlans.map(plan => {
+      if (plan.status !== 'active') return plan;
+
+      const enrichedGoals = plan.goals.map(goal => {
+        if (!goal.linkedObjectiveId) return goal;
+        const obj = objectives.find(o => String(o.id) === goal.linkedObjectiveId);
+        const goalProgress = obj?.progress ?? goal.progress;
+
+        const enrichedActivities = goal.activities.map(act => {
+          if (!act.linkedKraId) return act;
+          const kra = kras.find(k => String(k.id) === act.linkedKraId);
+          return { ...act, progress: kra?.progress ?? act.progress };
+        });
+
+        return { ...goal, progress: goalProgress, activities: enrichedActivities };
+      });
+
+      const overallProgress = enrichedGoals.length > 0
+        ? Math.round(enrichedGoals.reduce((s, g) => s + g.progress, 0) / enrichedGoals.length)
+        : 0;
+
+      return { ...plan, goals: enrichedGoals, overallProgress };
+    });
+  }, [workPlans, data.objectives, data.combinedKras]);
+
   const [selectedPlan, setSelectedPlan] = useState<WorkPlan | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filteredPlans = useMemo(() => {
-    if (statusFilter === 'all') return workPlans;
-    return workPlans.filter(p => p.status === statusFilter);
-  }, [workPlans, statusFilter]);
+    if (statusFilter === 'all') return enrichedPlans;
+    return enrichedPlans.filter(p => p.status === statusFilter);
+  }, [enrichedPlans, statusFilter]);
 
   const goToNew = () => navigate(`/division/${divisionId}/workplan/new`);
   const goToEdit = (plan: WorkPlan) => navigate(`/division/${divisionId}/workplan/${plan.id}/edit`);
 
   // Stats for header
   const stats = useMemo(() => ({
-    total: workPlans.length,
-    active: workPlans.filter(p => p.status === 'active').length,
-    completed: workPlans.filter(p => p.status === 'completed').length,
-    draft: workPlans.filter(p => p.status === 'draft').length,
-  }), [workPlans]);
+    total: enrichedPlans.length,
+    active: enrichedPlans.filter(p => p.status === 'active').length,
+    completed: enrichedPlans.filter(p => p.status === 'completed').length,
+    draft: enrichedPlans.filter(p => p.status === 'draft').length,
+  }), [enrichedPlans]);
 
   // ── Detail view ──
   if (selectedPlan) {

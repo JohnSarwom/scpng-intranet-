@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/IT_UNIT/.gemini/antigravity/brain/**)"
+      "Read(//c/Users/IT_UNIT/.gemini/antigravity/brain/**)",
+      "Bash(xargs grep -l \"Strategic.*Division.*Unit\")"
     ]
   }
 }

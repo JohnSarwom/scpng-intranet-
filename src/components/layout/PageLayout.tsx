@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useMsal } from "@azure/msal-react";
 import MainSidebar from './MainSidebar';
-import { Bell, Search, Menu, X, User as UserIcon, LogOut, Loader2, ArrowLeft, Image, Newspaper, TrendingUp, Grid3x3 } from 'lucide-react';
+import { Search, Menu, X, User as UserIcon, LogOut, Loader2, ArrowLeft, Image, Newspaper, TrendingUp, Grid3x3 } from 'lucide-react';
+import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { useToast } from '@/hooks/use-toast';
 import ThemeToggle from './ThemeToggle';
 import { supabase, logger } from '@/lib/supabaseClient';
@@ -78,12 +79,6 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
     }
   }, [isMobile]);
 
-  const handleNotificationClick = () => {
-    toast({
-      title: "Notifications",
-      description: "You have 3 unread notifications",
-    });
-  };
 
   const handleSignOut = async () => {
     logger.info('PageLayout: Initiating MSAL sign out');
@@ -164,14 +159,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
                 <Grid3x3 size={20} />
               </Button>
 
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNotificationClick}
-                className="text-white hover:bg-white/10 icon-hover-effect"
-              >
-                <Bell size={20} />
-              </Button>
+              <NotificationPanel />
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDivisionData } from '@/hooks/useDivisionData';
@@ -14,7 +14,7 @@ const WorkPlanBuilderPage: React.FC = () => {
   const resolvedDivisionId = divisionData.division?.id || divisionId || '';
   const resolvedDivisionName = divisionData.division?.name || '';
 
-  const { workPlans, addWorkPlan, updateWorkPlan } = useWorkPlans(
+  const { workPlans, addWorkPlan, updateWorkPlan, activateWorkPlan, syncWorkPlan } = useWorkPlans(
     resolvedDivisionId,
     resolvedDivisionName,
   );
@@ -22,15 +22,40 @@ const WorkPlanBuilderPage: React.FC = () => {
   const isNew = !planId || planId === 'new';
   const existingPlan = isNew ? undefined : workPlans.find(p => p.id === planId);
 
-  const handleSave = (plan: WorkPlan) => {
-    if (isNew) {
-      addWorkPlan(plan);
-    } else {
-      updateWorkPlan(plan.id, plan);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (plan: WorkPlan) => {
+    setSaving(true);
+    try {
+      if (isNew) {
+        if (plan.status === 'active') {
+          // New plan being activated — save as draft first, then activate
+          const saved = await addWorkPlan({ ...plan, status: 'draft' });
+          await activateWorkPlan({ ...plan, id: saved.id });
+        } else {
+          await addWorkPlan(plan);
+        }
+      } else {
+        if (plan.status === 'active' && existingPlan?.status !== 'active') {
+          // Transitioning from draft to active — run cascade
+          await updateWorkPlan(plan.id, { ...plan, status: 'draft' });
+          await activateWorkPlan(plan);
+        } else if (plan.status === 'active' && existingPlan?.status === 'active') {
+          // Already active — sync changes to existing SharePoint items
+          await syncWorkPlan(plan);
+        } else {
+          // Saving as draft
+          await updateWorkPlan(plan.id, plan);
+        }
+      }
+      // Navigate back to division work plans tab
+      const target = divisionId ? `/division/${divisionId}` : '/division';
+      navigate(target, { state: { activeTab: 'workplans' } });
+    } catch (error) {
+      console.error('[WorkPlanBuilderPage] Save failed:', error);
+    } finally {
+      setSaving(false);
     }
-    // Navigate back to division work plans tab
-    const target = divisionId ? `/division/${divisionId}` : '/division';
-    navigate(target, { state: { activeTab: 'workplans' } });
   };
 
   const handleCancel = () => {
@@ -60,6 +85,7 @@ const WorkPlanBuilderPage: React.FC = () => {
       staff={divisionData.staff}
       onSave={handleSave}
       onCancel={handleCancel}
+      saving={saving}
     />
   );
 };
