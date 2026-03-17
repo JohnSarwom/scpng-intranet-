@@ -21,10 +21,13 @@ import { MoreHorizontal, Eye, Lock, ShieldAlert, Edit2, Trash2, Paperclip } from
 import { RegulatoryCase, CaseRisk, CaseStatus, CaseType } from '../types';
 import { format } from 'date-fns';
 import CaseDetailsModal from './CaseDetailsModal';
+import CaseEditModal from './CaseEditModal';
 import { toast } from '@/components/ui/use-toast';
 
 interface CaseTableProps {
     data: RegulatoryCase[];
+    onUpdateCase?: (caseId: string, updates: Partial<RegulatoryCase>) => Promise<any>;
+    isUpdating?: boolean;
 }
 
 const getRiskBadgeVariant = (risk: CaseRisk) => {
@@ -67,20 +70,31 @@ const getTypeIcon = (type: CaseType) => {
     }
 }
 
-const CaseTable: React.FC<CaseTableProps> = ({ data }) => {
+const CaseTable: React.FC<CaseTableProps> = ({ data, onUpdateCase, isUpdating }) => {
     const [selectedCase, setSelectedCase] = useState<RegulatoryCase | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editCase, setEditCase] = useState<RegulatoryCase | null>(null);
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     const handleViewCase = (caseItem: RegulatoryCase) => {
         setSelectedCase(caseItem);
         setIsModalOpen(true);
     };
 
-    const handleEditCase = (caseId: string) => {
-        toast({
-            title: "Edit Mode",
-            description: `Editing functionality for case ${caseId} will be implemented soon.`,
-        });
+    const handleEditCase = (caseItem: RegulatoryCase) => {
+        setEditCase(caseItem);
+        setIsEditOpen(true);
+    };
+
+    const handleSaveCase = async (caseId: string, updates: Partial<RegulatoryCase>) => {
+        if (!onUpdateCase) return;
+        try {
+            await onUpdateCase(caseId, updates);
+            toast({ title: "Case Updated", description: `Case ${caseId} has been updated successfully.` });
+        } catch (err: any) {
+            toast({ title: "Update Failed", description: err.message || "Failed to update case.", variant: "destructive" });
+            throw err;
+        }
     };
 
     return (
@@ -174,7 +188,7 @@ const CaseTable: React.FC<CaseTableProps> = ({ data }) => {
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCase(item.caseId); }}>
+                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCase(item); }}>
                                                     <Edit2 className="mr-2 h-4 w-4" />
                                                     Edit Case
                                                 </DropdownMenuItem>
@@ -203,6 +217,14 @@ const CaseTable: React.FC<CaseTableProps> = ({ data }) => {
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 caseData={selectedCase}
+            />
+
+            <CaseEditModal
+                open={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                caseData={editCase}
+                onSave={handleSaveCase}
+                isSaving={isUpdating}
             />
         </>
     );

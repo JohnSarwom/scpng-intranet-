@@ -15,6 +15,7 @@ import {
     Package,
     Ticket,
     Shield,
+    BarChart3,
     Settings,
     Database,
     TestTube,
@@ -56,6 +57,7 @@ export const mainNavItems: NavItem[] = [
     { icon: Ticket, path: '/tickets', label: 'Tickets', resource: 'tickets' },
     { icon: FileText, path: '/licensing-registry', label: 'Licensing', resource: 'licenses' },
     { icon: Shield, path: '/regulatory-intelligence', label: 'Regulatory', resource: 'regulatory' },
+    { icon: BarChart3, path: '/website-analytics', label: 'Analytics', resource: 'analytics' },
 ];
 
 export const adminNavItems: NavItem[] = [

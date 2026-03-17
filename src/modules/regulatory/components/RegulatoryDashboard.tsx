@@ -12,7 +12,7 @@ import RegulatoryAIChat from './RegulatoryAIChat';
 import { useRegulatoryCases } from '@/hooks/useRegulatoryCases';
 
 const RegulatoryDashboard: React.FC = () => {
-    const { cases, stats, loading, error } = useRegulatoryCases();
+    const { cases, stats, loading, error, updateCase, isUpdating } = useRegulatoryCases();
 
     if (loading) {
         return (
@@ -85,7 +85,7 @@ const RegulatoryDashboard: React.FC = () => {
                             <h2 className="text-lg font-semibold text-gray-800">Recent Cases & Reports</h2>
                             <span className="text-sm text-gray-500">Showing {Math.min(cases.length, 5)} recent records</span>
                         </div>
-                        <CaseTable data={cases.slice(0, 5)} />
+                        <CaseTable data={cases.slice(0, 5)} onUpdateCase={updateCase} isUpdating={isUpdating} />
                     </div>
                     {/* AI Chat Integration */}
                     <RegulatoryAIChat cases={cases} stats={stats} />
@@ -98,7 +98,7 @@ const RegulatoryDashboard: React.FC = () => {
                                 <h2 className="text-lg font-semibold text-gray-800">{tab.label}</h2>
                                 <span className="text-sm text-gray-500">Showing {getFilteredCases(tab.type!).length} records</span>
                             </div>
-                            <CaseTable data={getFilteredCases(tab.type!)} />
+                            <CaseTable data={getFilteredCases(tab.type!)} onUpdateCase={updateCase} isUpdating={isUpdating} />
                         </div>
                     </TabsContent>
                 ))}

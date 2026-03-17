@@ -11,13 +11,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
-// Mock business units data - can be replaced with DB fetch later
-const mockUnits = [
-  { id: 'finance', name: 'Finance Department' },
-  { id: 'hr', name: 'Human Resources' },
-  { id: 'it', name: 'IT Department' },
-  { id: 'operations', name: 'Operations' },
-];
+// Organizational structure: Divisions and their Units
+const divisionsAndUnits: Record<string, string[]> = {
+  'Executive Division': ['Executive Unit', 'Secretariat Unit'],
+  'Corporate Services Division': ['Finance Unit', 'Human Resources Unit', 'IT Unit', 'Corporate Services Unit', 'Administrative Services'],
+  'Licensing Market & Supervision Division': ['Market Data Unit', 'Licensing Unit', 'Supervision Unit', 'Investigations Unit'],
+  'Legal Services Division': ['Legal Advisory Unit'],
+  'Research & Publication Division': ['Research Unit', 'Media & Publication Unit'],
+  'Secretariat Unit': ['Secretariat Unit'],
+};
+
+const divisionsList = Object.keys(divisionsAndUnits);
 
 interface UserManagementProps {
   users: UserRole[];
@@ -188,18 +192,34 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Business Unit</label>
+                <label className="block text-sm font-medium mb-1">Division</label>
+                <select
+                  value={newUser.division_name || ''}
+                  onChange={e => {
+                    setNewUser({ ...newUser, division_name: e.target.value, unit_name: '' });
+                  }}
+                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                  disabled={isProcessing}
+                >
+                  <option value="">Select Division</option>
+                  {divisionsList.map(div => (
+                    <option key={div} value={div}>{div}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Unit</label>
                 <select
                   value={newUser.unit_name || ''}
                   onChange={e => {
                     setNewUser({ ...newUser, unit_name: e.target.value });
                   }}
                   className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                  disabled={isProcessing}
+                  disabled={isProcessing || !newUser.division_name}
                 >
                   <option value="">Select Unit</option>
-                  {mockUnits.map(unit => (
-                    <option key={unit.id} value={unit.name}>{unit.name}</option>
+                  {(newUser.division_name && divisionsAndUnits[newUser.division_name] || []).map(unit => (
+                    <option key={unit} value={unit}>{unit}</option>
                   ))}
                 </select>
               </div>
@@ -241,7 +261,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Division / Unit</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Groups</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
@@ -278,17 +298,30 @@ const UserManagement: React.FC<UserManagementProps> = ({
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={editingUser.unit_name || ''}
-                          onChange={e => setEditingUser({ ...editingUser, unit_name: e.target.value })}
-                          className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                          disabled={isProcessing}
-                        >
-                          <option value="">Select Unit</option>
-                          {mockUnits.map(unit => (
-                            <option key={unit.id} value={unit.name}>{unit.name}</option>
-                          ))}
-                        </select>
+                        <div className="space-y-2">
+                          <select
+                            value={editingUser.division_name || ''}
+                            onChange={e => setEditingUser({ ...editingUser, division_name: e.target.value, unit_name: '' })}
+                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-sm"
+                            disabled={isProcessing}
+                          >
+                            <option value="">Select Division</option>
+                            {divisionsList.map(div => (
+                              <option key={div} value={div}>{div}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={editingUser.unit_name || ''}
+                            onChange={e => setEditingUser({ ...editingUser, unit_name: e.target.value })}
+                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-sm"
+                            disabled={isProcessing || !editingUser.division_name}
+                          >
+                            <option value="">Select Unit</option>
+                            {(editingUser.division_name && divisionsAndUnits[editingUser.division_name] || []).map(unit => (
+                              <option key={unit} value={unit}>{unit}</option>
+                            ))}
+                          </select>
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Popover>
@@ -337,7 +370,10 @@ const UserManagement: React.FC<UserManagementProps> = ({
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {user.unit_name || '-'}
+                        <div>
+                          {user.division_name && <div className="text-sm font-medium">{user.division_name}</div>}
+                          <div className="text-sm text-gray-500">{user.unit_name || '-'}</div>
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">

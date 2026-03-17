@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useOpsService } from './useSharePointOps';
 import { RegulatoryCase, KPIStats, CaseType, CaseRisk, CaseStatus } from '@/modules/regulatory/types';
 
@@ -111,11 +111,71 @@ export function useRegulatoryCases() {
         criticalAlerts: criticalAlertsCount
     };
 
+    const queryClient = useQueryClient();
+
+    const updateMutation = useMutation({
+        mutationFn: async ({ caseId, updates }: { caseId: string; updates: Partial<RegulatoryCase> }) => {
+            const service = await getService();
+
+            if (!service.listIds['REGULATORY_CASES']) {
+                const lists = await service.client.api(`/sites/${service.siteId}/lists`).select('id,displayName').get();
+                const targetList = lists.value.find((l: any) => l.displayName === LIST_NAME);
+                if (targetList) {
+                    service.listIds['REGULATORY_CASES'] = targetList.id;
+                } else {
+                    throw new Error(`SharePoint list ${LIST_NAME} not found.`);
+                }
+            }
+
+            const listId = service.listIds['REGULATORY_CASES'];
+
+            // Find the SharePoint item ID by CaseId field
+            const items = await service.client
+                .api(`/sites/${service.siteId}/lists/${listId}/items`)
+                .expand('fields')
+                .filter(`fields/CaseId eq '${caseId}'`)
+                .top(1)
+                .get();
+
+            if (!items.value || items.value.length === 0) {
+                throw new Error(`Case ${caseId} not found in SharePoint.`);
+            }
+
+            const spItemId = items.value[0].id;
+
+            // Map RegulatoryCase fields to SharePoint columns
+            const fields: Record<string, any> = {};
+            if (updates.category !== undefined) fields.Category = updates.category;
+            if (updates.risk !== undefined) fields.RiskLevel = updates.risk;
+            if (updates.status !== undefined) fields.Status = updates.status;
+            if (updates.assignedUnit !== undefined) fields.AssignedUnit = updates.assignedUnit;
+            if (updates.assignedOfficer !== undefined) fields.AssignedOfficer = updates.assignedOfficer;
+            if (updates.description !== undefined) fields.Description = updates.description;
+            if (updates.summary !== undefined) fields.Summary = updates.summary;
+            if (updates.source !== undefined) fields.Source = updates.source;
+            if (updates.anonymous !== undefined) fields.Anonymous = updates.anonymous;
+            if (updates.reporterName !== undefined) fields.ReporterName = updates.reporterName;
+            if (updates.reporterContact !== undefined) fields.ReporterContact = updates.reporterContact;
+            fields.LastUpdate = new Date().toISOString();
+
+            await service.client
+                .api(`/sites/${service.siteId}/lists/${listId}/items/${spItemId}/fields`)
+                .patch(fields);
+
+            return { caseId, updates };
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['sharePoint', 'regulatoryCases'] });
+        },
+    });
+
     return {
         cases,
         stats,
         loading: query.isLoading,
         error: query.error,
-        refresh: query.refetch
+        refresh: query.refetch,
+        updateCase: updateMutation.mutateAsync,
+        isUpdating: updateMutation.isPending,
     };
 }

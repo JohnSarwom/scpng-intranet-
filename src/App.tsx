@@ -50,6 +50,7 @@ import { EmployeesProvider } from '@/contexts/EmployeesContext';
 import { SlideshowProvider } from '@/contexts/SlideshowContext';
 import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
 import WorkPlanBuilderPage from './pages/WorkPlanBuilderPage';
+import WebsiteAnalytics from './pages/WebsiteAnalytics';
 
 // MSAL Imports
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
@@ -266,6 +267,13 @@ const AppRoutes = () => {
       <Route path="/regulatory-intelligence" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'regulatory', action: 'read' }]}>
           <RegulatoryIntelligence />
+        </RoleProtectedRoute>
+      } />
+
+      {/* Website Analytics */}
+      <Route path="/website-analytics" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'analytics', action: 'read' }]}>
+          <WebsiteAnalytics />
         </RoleProtectedRoute>
       } />
 
