@@ -129,7 +129,7 @@ export function NotificationPanel() {
             </PopoverTrigger>
             <PopoverContent
                 align="end"
-                className="w-80 p-0"
+                className="w-80 p-0 overflow-hidden flex flex-col max-h-[min(calc(100vh-100px),500px)]"
                 sideOffset={8}
             >
                 <div className="flex items-center justify-between px-4 py-3">
@@ -146,8 +146,8 @@ export function NotificationPanel() {
                         </Button>
                     )}
                 </div>
-                <Separator />
-                <ScrollArea className="max-h-[400px]">
+                <Separator className="shrink-0" />
+                <ScrollArea className="flex-1 overflow-y-auto">
                     {isLoading ? (
                         <div className="py-8 text-center text-sm text-muted-foreground">
                             Loading...
