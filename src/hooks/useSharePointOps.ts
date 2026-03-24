@@ -463,13 +463,11 @@ export function useSharePointTasks(
                 console.log('✅ [useSharePointOps] Loaded Tasks:', data.length);
 
                 // 🔒 ROLE-BASED FILTERING:
-                //   - Admin / Super Admin → no filter, see everything
-                //   - Manager → see all tasks belonging to their unit staff (via DivisionStaffMap)
-                //   - Staff → only see tasks they created or are assigned to
-                const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
+                //   - All roles (including Admin) → only see tasks they created or are assigned to
+                //   - Manager → additionally sees tasks from their unit staff
                 const isManager = context?.role === 'manager';
 
-                if (!isAdmin && context?.email) {
+                if (context?.email) {
                     if (isManager && context?.unit) {
                         // Prefer the live roster (from useUnitRoster / SharePoint UserRoles).
                         // Fall back to the static DivisionStaffMap when the roster hasn't loaded yet.
@@ -490,8 +488,8 @@ export function useSharePointTasks(
                                 assigneeEmails.some(e => e && unitStaffEmails.has(e));
                         });
                         console.log(`🔒 [Manager Filter] Unit "${context.unit}" tasks for ${context.email}: ${data.length} items`);
-                    } else if (!isManager) {
-                        // Staff members only see tasks they created or are assigned to
+                    } else {
+                        // All other roles (admin, super_admin, staff) — only see tasks they created or are assigned to
                         data = data.filter(task => {
                             const userEmail = context.email!.toLowerCase();
                             const isCreator = task.createdByEmail?.toLowerCase() === userEmail ||
@@ -499,7 +497,7 @@ export function useSharePointTasks(
                             const isAssigned = task.assignees?.some(a => a.email?.toLowerCase() === userEmail);
                             return isCreator || isAssigned;
                         });
-                        console.log(`🔒 [Staff Filter] Tasks for ${context.email}: ${data.length} items`);
+                        console.log(`🔒 [Personal Filter] Tasks for ${context.email} (${context.role}): ${data.length} items`);
                     }
                 }
 

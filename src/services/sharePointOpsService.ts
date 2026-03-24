@@ -441,36 +441,9 @@ export class SharePointOpsService {
 
         query = query.header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly');
 
-        // Admin Bypass
-        const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
-
-        if (isAdmin) {
-            console.log(`🔓 [Admin Bypass] User: ${context?.email} | Role: ${context?.role} | Fetching ALL Tasks (no filter)`);
-        } else {
-            let filter = '';
-            // Tasks List Schema: 'Department' column holds Unit Name.
-            // 🚨 CHANGE: We are removing the server-side Department filter for Tasks.
-            // This allows "Direct Visibility" of tasks assigned to the user from OTHER departments.
-            // The client-side hook (useSharePointTasks) already filters by (Creator OR Assignee).
-            // if (scope === 'Division' && context?.division) {
-            //     // See Projects note.
-            // } else if (scope === 'Unit' && context?.unit) {
-            //     // filter = `fields/Department eq '${context.unit}'`; 
-            //     // ^ ENABLED: Filters out tasks from other units assigned to me.
-            //     // ^ DISABLED: Fetches all, Client filters relevant ones.
-            // } else if (scope === 'Individual' && context?.email) {
-            //     // filter = `fields/AssignedTo/Email eq '${context.email}'`;
-            // }
-
-            // Optimization: If list > 5000, this will need a more complex OR query or Search API.
-            // For now, fetching all (scoped by permissions/view) is safe for < 2000 items.
-            if (filter) {
-                query = query.filter(filter);
-                console.log(`🔒 [Scoped Query] User: ${context?.email} | Filter: ${filter}`);
-            } else {
-                console.log(`🌐 [Global Fetch] User: ${context?.email} | No server-side filter (cross-unit visibility enabled)`);
-            }
-        }
+        // No server-side role-based filtering — all tasks are fetched, then filtered
+        // client-side in useSharePointTasks by creator/assignee for all roles (including admin).
+        console.log(`🌐 [Global Fetch] User: ${context?.email} | Role: ${context?.role} | No server-side filter (client-side filtering applied)`)
 
         // Paginate through all results — Graph API caps at 200 items per page by default.
         // Without pagination, newly added tasks beyond item #200 are silently dropped.
