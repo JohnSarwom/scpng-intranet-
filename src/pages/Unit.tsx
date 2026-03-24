@@ -245,9 +245,9 @@ const Unit = () => {
     return isAdmin || isManager;
   }, [roleUser]);
 
-  // Staff Metrics visibility — controlled by admin via Component Visibility settings
+  // Staff Metrics visibility — temporarily hidden (uncomment to re-enable)
   const { isComponentVisible } = useComponentVisibility();
-  const canViewStaffMetrics = isComponentVisible('Unit', 'Staff Metrics Tab');
+  const canViewStaffMetrics = false; // isComponentVisible('Unit', 'Staff Metrics Tab');
 
   // --- Wrapper for refreshing all data ---
   const handleRefreshAllData = useCallback(() => {
