@@ -1697,7 +1697,7 @@ export default function Documents() {
       </div>
 
       <Tabs value={activePrimaryTab} onValueChange={handlePrimaryTabChange} className="w-full">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-0.5 md:pr-1.5">
           <TabsList>
             {primaryTabsConfig.map(tab => (
               <TabsTrigger key={tab.id} value={tab.id} disabled={isLoading || isUploading}>
