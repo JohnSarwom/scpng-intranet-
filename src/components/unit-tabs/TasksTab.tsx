@@ -29,7 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import TaskCard from '@/components/unit-tabs/TaskCard';
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { StaffMember } from '@/types/staff';
-import { Objective, Kra, Kpi, Task, Project, TaskGroup } from '@/types';
+import { Objective, Kra, Kpi, Task, Project, TaskGroup, Bucket } from '@/types';
 import { useOpsService } from '@/hooks/useSharePointOps';
 import {
   DndContext,
@@ -82,13 +82,8 @@ interface BoardData {
   [key: string]: Task[];
 }
 
-export interface Bucket {
-  id: string;
-  title: string;
-  isCustom?: boolean;
-  order?: number;
-  isAtm?: boolean;
-}
+// Bucket is now imported from '@/types' and re-exported below
+export type { Bucket } from '@/types';
 
 interface ItemToDelete {
   type: 'task' | 'group';

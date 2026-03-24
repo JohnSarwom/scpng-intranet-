@@ -2,6 +2,15 @@
 import { ChecklistItem } from '@/components/ChecklistSection';
 export type { ChecklistItem };
 
+// Task board bucket/column
+export interface Bucket {
+  id: string;
+  title: string;
+  isCustom?: boolean;
+  order?: number;
+  isAtm?: boolean;
+}
+
 // Define Risk interface with all required properties
 export interface Risk {
   id: string;

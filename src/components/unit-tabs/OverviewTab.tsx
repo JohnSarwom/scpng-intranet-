@@ -24,13 +24,11 @@ import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
 import DivisionStaffMap from '@/utils/divisionStaffMap';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Objective, Task, Project, KRA, UserContext } from '@/types';
+import { Objective, Task, Project, KRA, UserContext, Bucket } from '@/types';
 import { UserRole } from '@/services/userSharePointService';
 
 import { TaskCompletionDonut } from '@/components/dashboard/TaskCompletionDonut';
 import LocalStorageFallbackNotice from '@/components/setup-wizard/components/LocalStorageFallbackNotice';
-
-import { Bucket } from '@/components/unit-tabs/TasksTab';
 
 type DashboardViewScope = 'individual' | 'unit' | 'division';
 
@@ -373,6 +371,27 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   const taskTrendData = React.useMemo(() => calculateTaskTrends(scopedTasks), [scopedTasks]);
   const trafficLightMetrics = React.useMemo(() => calculateTrafficLightMetrics(scopedTasks, projects, scopedObjectives), [scopedTasks, projects, scopedObjectives]);
 
+  // --- Prepare KRA Status Counts (must be before insights useMemo) ---
+  const kraStatusCounts = {
+    onTrack: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'in-progress' || s === 'on-track';
+    }).length,
+    atRisk: scopedKras.filter(k => (k.status as string)?.toLowerCase() === 'at-risk').length,
+    offTrack: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'off-track' || s === 'behind';
+    }).length,
+    completed: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return s === 'completed' || s === 'closed' || s === 'done';
+    }).length,
+    open: scopedKras.filter(k => {
+      const s = (k.status as string)?.toLowerCase();
+      return !s || s === 'open' || s === 'pending' || s === 'not-started';
+    }).length
+  };
+
   // ─── Dynamic Insights Logic (Local/Free) ─────────────────────
   const insights = useMemo(() => {
     const getInsight = (value: number, thresholds: { neutral: number, positive: number }, templates: { high: string, mid: string, low: string }, data: any) => {
@@ -420,28 +439,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   }, [scopedTasks, completedTasks, reviewTasks, scopedKras, kraStatusCounts, inProgressTasks]);
 
   // --- Prepare KRA Chart Data ---
-  // KRA statuses from SharePoint map to: 'open', 'in-progress', 'closed'
-  // Additionally check raw status values that may come through unmapped
-  const kraStatusCounts = {
-    onTrack: scopedKras.filter(k => {
-      const s = (k.status as string)?.toLowerCase();
-      return s === 'in-progress' || s === 'on-track';
-    }).length,
-    atRisk: scopedKras.filter(k => (k.status as string)?.toLowerCase() === 'at-risk').length,
-    offTrack: scopedKras.filter(k => {
-      const s = (k.status as string)?.toLowerCase();
-      return s === 'off-track' || s === 'behind';
-    }).length,
-    completed: scopedKras.filter(k => {
-      const s = (k.status as string)?.toLowerCase();
-      return s === 'completed' || s === 'closed' || s === 'done';
-    }).length,
-    open: scopedKras.filter(k => {
-      const s = (k.status as string)?.toLowerCase();
-      return !s || s === 'open' || s === 'pending' || s === 'not-started';
-    }).length
-  };
-
   const kraChartData = [
     { status: 'On Track', count: kraStatusCounts.onTrack, color: '#34d399' },
     { status: 'Completed', count: kraStatusCounts.completed, color: '#3b82f6' },
@@ -690,9 +687,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </DialogTrigger>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{scopedKpis.length}</div>
+                <div className="text-2xl font-bold">{allKpis.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {kpiStatusCounts.onTrack + kpiStatusCounts.completed} healthy metrics
+                  {kpiStats.onTrack + kpiStats.completed} healthy metrics
                 </p>
                 <div className="flex h-2 mt-2 w-full rounded-full overflow-hidden bg-secondary">
                   <div style={{ width: `${(kpiStats.onTrack / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-emerald-500" title="On Track" />
