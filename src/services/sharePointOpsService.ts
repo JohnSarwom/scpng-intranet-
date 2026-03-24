@@ -510,6 +510,7 @@ export class SharePointOpsService {
                 Tags: tags.join(','),
                 Assignees: task.assignees ? JSON.stringify(task.assignees) : undefined,
                 AssigneeViewMap: task.assigneeViewMap ? JSON.stringify(task.assigneeViewMap) : undefined,
+                AttachmentsJSON: task.attachments ? JSON.stringify(task.attachments) : undefined,
                 // Lookups
                 RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
                 RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
@@ -562,6 +563,9 @@ export class SharePointOpsService {
         }
         if (task.assigneeViewMap !== undefined) {
             fields.AssigneeViewMap = JSON.stringify(task.assigneeViewMap);
+        }
+        if (task.attachments !== undefined) {
+            fields.AttachmentsJSON = JSON.stringify(task.attachments);
         }
 
         // Completion Date Logic
@@ -1578,6 +1582,7 @@ export class SharePointOpsService {
             authorEmail: createdByEmail, // Alias
             // Per-assignee board placement map
             assigneeViewMap: (() => { try { return f.AssigneeViewMap ? JSON.parse(f.AssigneeViewMap) : undefined; } catch { return undefined; } })(),
+            attachments: (() => { try { return f.AttachmentsJSON ? JSON.parse(f.AttachmentsJSON) : undefined; } catch { return undefined; } })(),
         };
     }
 

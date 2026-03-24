@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, User as UserIcon, Send, PaperclipIcon, LinkIcon, Repeat, Trash2, PlusCircle, Loader2 } from 'lucide-react';
+import { CalendarIcon, User as UserIcon, Send, PaperclipIcon, Repeat, Trash2, PlusCircle, Loader2, X, FileIcon, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';
@@ -30,6 +30,8 @@ import { StaffMember } from '@/types/staff';
 import { Task, TaskComment, Kra, Kpi, User } from '@/types';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useSharePointUpload } from '@/hooks/useSharePointUpload';
+import { toast } from '@/components/ui/use-toast';
 
 type Subtask = { id: string; text: string; completed: boolean };
 
@@ -53,6 +55,8 @@ interface TaskDialogProps {
   kras: Kra[];
 
   kpis: Kpi[];
+  currentDivision?: string;
+  currentUnit?: string;
   container?: HTMLElement | null;
 }
 
@@ -86,6 +90,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   staffMembers,
   kras = [],
   kpis = [],
+  currentDivision,
+  currentUnit,
   container
 }) => {
   const [title, setTitle] = useState('');
@@ -104,8 +110,14 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const [selectedKpiId, setSelectedKpiId] = useState<string | undefined>(undefined);
   const [selectedAssignees, setSelectedAssignees] = useState<User[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [existingAttachments, setExistingAttachments] = useState<{ name: string; url: string; size?: number }[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const commentsScrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const { uploadFile } = useSharePointUpload();
 
   const scrollToBottom = () => {
     // Small delay to ensure DOM is rendered before scrolling
@@ -226,6 +238,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       setSubtasks(initialData.subtasks || []);
       setSelectedKraId(initialData.kra_id);
       setSelectedKpiId(initialData.kpi_id);
+      setExistingAttachments(initialData.attachments || []);
+      setPendingFiles([]);
 
       if (initialData.startDate) {
         setDateRange({
@@ -262,11 +276,67 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       setSubtasks([]);
       setSelectedKraId(undefined);
       setSelectedKpiId(undefined);
+      setExistingAttachments([]);
+      setPendingFiles([]);
     }
     setNewCommentText('');
     setNewSubtaskText('');
   }, [initialData, isOpen, defaultStatus, defaultGroup, buckets, effectiveBuckets]); // Added buckets dependency
 
+
+  // Sanitize folder names for SharePoint paths
+  const sanitizeFolderName = (name: string) =>
+    name.replace(/[#%*:<>?/\\|"]/g, '').replace(/\s+/g, ' ').trim() || 'Untitled';
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+    // Reset input so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const handleRemovePendingFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveExistingAttachment = (index: number) => {
+    setExistingAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (e.dataTransfer.files) {
+      const newFiles = Array.from(e.dataTransfer.files);
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const uploadPendingFiles = async (taskTitle: string): Promise<{ name: string; url: string; size?: number }[]> => {
+    if (pendingFiles.length === 0) return [];
+
+    const division = sanitizeFolderName(currentDivision || 'General');
+    const unit = sanitizeFolderName(currentUnit || 'General');
+    const taskFolder = sanitizeFolderName(taskTitle);
+    const folderPath = `${division}/${unit}/${taskFolder}`;
+
+    const uploaded: { name: string; url: string; size?: number }[] = [];
+
+    for (const file of pendingFiles) {
+      const url = await uploadFile(
+        file,
+        '/sites/scpngintranet',
+        'Task_Registry_Attachements',
+        folderPath
+      );
+      if (url) {
+        uploaded.push({ name: file.name, url, size: file.size });
+      }
+    }
+
+    return uploaded;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -306,6 +376,26 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Upload pending files to SharePoint (Division/Unit/TaskTitle folder)
+      let allAttachments = [...existingAttachments];
+      if (pendingFiles.length > 0) {
+        setIsUploading(true);
+        try {
+          const uploaded = await uploadPendingFiles(trimmedTitle);
+          allAttachments = [...allAttachments, ...uploaded];
+          setPendingFiles([]);
+        } catch (err) {
+          console.error('File upload failed:', err);
+          toast({ title: "Upload Error", description: "Some files failed to upload. Task will be saved without them.", variant: "destructive" });
+        } finally {
+          setIsUploading(false);
+        }
+      }
+
+      if (allAttachments.length > 0) {
+        taskData.attachments = allAttachments;
+      }
+
       await onSubmit(taskData);
       console.log(`[Metrics] TaskDialog onSubmit Called at ${performance.now().toFixed(2)}ms`);
     } finally {
@@ -568,16 +658,60 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="sm:col-span-2 space-y-1">
+              <div className="sm:col-span-2 space-y-2">
                 <Label htmlFor="attachments">Attachments</Label>
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50 dark:bg-gray-800/30">
-                  <Button type="button" variant="outline" size="sm">
-                    <PaperclipIcon className="h-4 w-4 mr-1" /> Add File
-                  </Button>
-                  <Button type="button" variant="outline" size="sm">
-                    <LinkIcon className="h-4 w-4 mr-1" /> Add Link
-                  </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-colors"
+                  onClick={() => fileInputRef.current?.click()}
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                >
+                  <Upload className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Click or drag files here to attach
+                  </p>
                 </div>
+
+                {/* Existing attachments (from saved task) */}
+                {existingAttachments.length > 0 && (
+                  <div className="space-y-1">
+                    {existingAttachments.map((att, i) => (
+                      <div key={`existing-${i}`} className="flex items-center gap-2 text-sm p-2 bg-muted/50 rounded-md">
+                        <FileIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="truncate flex-1 hover:underline text-primary">
+                          {att.name}
+                        </a>
+                        {att.size && <span className="text-xs text-muted-foreground flex-shrink-0">{(att.size / 1024).toFixed(0)} KB</span>}
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => handleRemoveExistingAttachment(i)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Pending files (not yet uploaded) */}
+                {pendingFiles.length > 0 && (
+                  <div className="space-y-1">
+                    {pendingFiles.map((file, i) => (
+                      <div key={`pending-${i}`} className="flex items-center gap-2 text-sm p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
+                        <PaperclipIcon className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                        <span className="truncate flex-1">{file.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">{(file.size / 1024).toFixed(0)} KB</span>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0" onClick={() => handleRemovePendingFile(i)}>
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </form>
@@ -690,7 +824,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {initialData ? 'Saving...' : 'Creating...'}
+                {isUploading ? 'Uploading files...' : (initialData ? 'Saving...' : 'Creating...')}
               </>
             ) : (
               initialData ? 'Save Changes' : 'Create Task'

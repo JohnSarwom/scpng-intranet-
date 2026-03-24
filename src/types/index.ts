@@ -125,6 +125,7 @@ export interface Task {
   createdByEmail?: string;   // Creator's email (primary field for filtering)
   authorEmail?: string;      // Alias for backward compatibility
   assigneeViewMap?: Record<string, string>; // email -> groupId for per-assignee board placement
+  attachments?: { name: string; url: string; size?: number }[];
 }
 
 export interface Project {

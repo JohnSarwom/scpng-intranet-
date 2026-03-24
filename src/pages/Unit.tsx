@@ -868,6 +868,7 @@ const Unit = () => {
                   viewMode={viewMode}
                   setViewMode={setViewMode}
                   currentUnit={userContext?.unit}
+                  currentDivision={userContext?.division}
                   setPreselectedGroup={setDefaultGroupId}
                   preselectedGroup={defaultGroupId}
                   isDialogOpen={isDialogOpen}

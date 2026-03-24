@@ -674,6 +674,7 @@ interface NewTasksTabProps {
   deleteCustomGroup?: (id: string) => Promise<void>;
   onRenameGroup?: (groupId: string, newTitle: string) => void;
   currentUnit?: string;
+  currentDivision?: string;
   setPreselectedGroup?: (groupId: string | null) => void;
   isDialogOpen: boolean;
   editingTask: Task | null;
@@ -701,6 +702,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   deleteCustomGroup,
   onRenameGroup,
   currentUnit,
+  currentDivision,
   setPreselectedGroup,
   isDialogOpen,
   editingTask,
@@ -2038,6 +2040,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         container={isFullScreen ? containerRef.current : null}
         kras={kras}
         kpis={kpis}
+        currentDivision={currentDivision}
+        currentUnit={currentUnit}
         onSaveComment={async (taskId, comments) => {
           await editTask(taskId, { comments }, { suppressToast: true });
         }}
