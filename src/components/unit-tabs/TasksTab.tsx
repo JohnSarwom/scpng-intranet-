@@ -1398,7 +1398,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         const newGroup = await addCustomGroup({
           name: trimmedName,
           status: 'in-progress',
-          order: order
+          order: order,
+          ownerEmail: currentUserEmail?.toLowerCase() || '',
         });
 
         // Trigger validation/scroll using the fresh ID directly from backend

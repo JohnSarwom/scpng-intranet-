@@ -598,24 +598,29 @@ const Unit = () => {
   const calculatedBuckets = useMemo(() => {
     if (!taskGroupState.data) return [];
 
-    // 1. Get task groups — filter out other users' "Assigned to Me" groups
+    // 1. Get task groups — show only groups owned by the current user
+    // Groups with ownerEmail show only to their owner (includes ATM + user-created groups)
+    // Legacy groups without ownerEmail remain visible to everyone (backward compat)
     const normalizedEmail = userContext.email?.toLowerCase() || '';
     const customGroups: Bucket[] = taskGroupState.data
       .filter(p => {
-        // If this is an "Assigned to Me" group (has ownerEmail), only show to its owner
         if (p.ownerEmail) {
           return p.ownerEmail.toLowerCase() === normalizedEmail;
         }
-        // Regular groups: show to everyone
+        // Legacy groups without ownerEmail: visible to everyone
         return true;
       })
-      .map(p => ({
-        id: String(p.id),
-        title: p.ownerEmail ? 'Assigned to Me' : p.name,
-        isCustom: true,
-        isAtm: !!p.ownerEmail,
-        order: p.ownerEmail ? 999999 : (p.order || 9999)
-      }));
+      .map(p => {
+        // ATM groups are identified by order 999999 (auto-created for assignees)
+        const isAtm = p.order === 999999;
+        return {
+          id: String(p.id),
+          title: isAtm ? 'Assigned to Me' : p.name,
+          isCustom: true,
+          isAtm,
+          order: isAtm ? 999999 : (p.order || 9999)
+        };
+      });
 
     // Sort by order ("Assigned to Me" pinned last, just before Add Group)
     customGroups.sort((a, b) => (a.order || 0) - (b.order || 0));

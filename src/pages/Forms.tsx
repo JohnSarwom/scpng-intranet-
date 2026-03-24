@@ -27,6 +27,7 @@ import { useForms } from '@/hooks/useForms';
 import { AddGroupDialog } from '@/components/forms/AddGroupDialog';
 import { AddFormDialog } from '@/components/forms/AddFormDialog';
 import FormsPageSkeleton from '@/components/forms/skeletons/FormsPageSkeleton';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
   defaultFormTemplates,
@@ -110,6 +111,7 @@ const Forms: React.FC = () => {
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
 
   const navigate = useNavigate();
+  const { isAdmin } = useRoleBasedAuth();
   const { groups: dbGroups, registrations, loading, addGroup, addForm } = useForms();
 
   // Helper to get Lucide icon from string
@@ -290,23 +292,25 @@ const Forms: React.FC = () => {
                 </SelectContent>
               </Select>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setIsAddFormOpen(true)}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Add New Form
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsAddGroupOpen(true)}>
-                    <Users className="h-4 w-4 mr-2" />
-                    Create New Group
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setIsAddFormOpen(true)}>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Add New Form
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsAddGroupOpen(true)}>
+                      <Users className="h-4 w-4 mr-2" />
+                      Create New Group
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
