@@ -50,7 +50,7 @@ export const mainNavItems: NavItem[] = [
     { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: null },
     { icon: GalleryHorizontal, path: '/gallery', label: 'Gallery', resource: 'gallery' },
     { icon: Users, path: '/contacts', label: 'Contacts', resource: 'contacts' },
-    { icon: Target, path: '/unit', label: 'Unit', resource: 'units' },
+    { icon: Target, path: '/unit', label: 'Task Registry', resource: 'units' },
     { icon: Building2, path: '/division', label: 'Division', resource: 'divisions' },
     { icon: Package, path: '/asset-management', label: 'Assets', resource: 'assets' },
     { icon: Users, path: '/hr-profiles', label: 'HR Profiles', resource: 'hr' },

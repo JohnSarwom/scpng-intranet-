@@ -34,7 +34,7 @@ const PAGE_NAME_MAP: Record<string, string> = {
   '/contacts': 'Contacts',
   '/strategy': 'Strategy',
   '/hr-profiles': 'HR Profiles',
-  '/unit': 'Unit',
+  '/unit': 'Task Registry',
   '/division': 'Division',
   '/calendar': 'Calendar',
   '/gallery': 'Gallery',

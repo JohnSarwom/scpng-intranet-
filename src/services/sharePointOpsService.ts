@@ -525,10 +525,16 @@ export class SharePointOpsService {
         try {
             response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
         } catch (err: any) {
-            // If AssigneeViewMap column doesn't exist yet, retry without it
-            if (payload.fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
-                console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
-                delete payload.fields.AssigneeViewMap;
+            // If AttachmentsJSON or AssigneeViewMap columns don't exist yet, retry without them
+            if (err?.message?.includes('AttachmentsJSON') || err?.message?.includes('AssigneeViewMap')) {
+                if (payload.fields.AttachmentsJSON !== undefined) {
+                    console.warn('⚠️ [SP Ops] AttachmentsJSON column not recognized, retrying without it');
+                    delete payload.fields.AttachmentsJSON;
+                }
+                if (payload.fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
+                    console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
+                    delete payload.fields.AssigneeViewMap;
+                }
                 response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
             } else {
                 throw err;
@@ -624,10 +630,16 @@ export class SharePointOpsService {
         try {
             response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
         } catch (err: any) {
-            // If AssigneeViewMap column doesn't exist yet, retry without it
-            if (fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
-                console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
-                delete fields.AssigneeViewMap;
+            // If AttachmentsJSON or AssigneeViewMap columns don't exist yet, retry without them
+            if (err?.message?.includes('AttachmentsJSON') || err?.message?.includes('AssigneeViewMap')) {
+                if (fields.AttachmentsJSON !== undefined) {
+                    console.warn('⚠️ [SP Ops] AttachmentsJSON column not recognized, retrying without it');
+                    delete fields.AttachmentsJSON;
+                }
+                if (fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
+                    console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
+                    delete fields.AssigneeViewMap;
+                }
                 response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
             } else {
                 throw err;
