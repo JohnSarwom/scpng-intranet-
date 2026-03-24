@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getEffectiveGroupId } from '@/utils/taskBoardUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -29,6 +30,7 @@ import TaskCard from '@/components/unit-tabs/TaskCard';
 import TaskDialog from '@/components/unit-tabs/TaskDialog';
 import { StaffMember } from '@/types/staff';
 import { Objective, Kra, Kpi, Task, Project, TaskGroup } from '@/types';
+import { useOpsService } from '@/hooks/useSharePointOps';
 import {
   DndContext,
   DragEndEvent,
@@ -74,6 +76,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { addDays, addWeeks, addMonths, format, isBefore, isValid } from 'date-fns';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 interface BoardData {
   [key: string]: Task[];
@@ -84,6 +87,7 @@ export interface Bucket {
   title: string;
   isCustom?: boolean;
   order?: number;
+  isAtm?: boolean;
 }
 
 interface ItemToDelete {
@@ -107,6 +111,7 @@ const BoardLane = ({
   onDeleteGroup,
   onEdit,
   isOver = false,
+  isAtm = false,
   onRenameGroup,
   onToggleComplete,
   onPriorityChange,
@@ -127,6 +132,7 @@ const BoardLane = ({
   onDeleteGroup: (groupId: string) => void;
   onEdit: (id: string) => void;
   isOver?: boolean;
+  isAtm?: boolean;
   onRenameGroup: (groupId: string, newTitle: string) => void;
   onToggleComplete: (id: string, completed: boolean) => void;
   onPriorityChange: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
@@ -187,10 +193,18 @@ const BoardLane = ({
 
   return (
     <div className={cn(
-      "w-72 flex-shrink-0 flex flex-col bg-muted/30 dark:bg-muted/20 rounded-lg transition-colors border-2",
+      "w-72 flex-shrink-0 flex flex-col rounded-lg transition-colors border-2",
+      isAtm
+        ? "bg-stone-100 dark:bg-muted/50 shadow-sm"
+        : "bg-muted/30 dark:bg-muted/20",
       isActuallyOver ? "bg-accent/50 border-primary border-dashed ring-2 ring-primary/10 shadow-lg" : "border-transparent"
     )}>
-      <div className="p-3 font-medium flex items-center justify-between bg-muted/50 dark:bg-muted/30 rounded-t-lg">
+      <div className={cn(
+        "p-3 font-medium flex items-center justify-between rounded-t-lg",
+        isAtm
+          ? "bg-stone-200/80 dark:bg-muted/60"
+          : "bg-muted/50 dark:bg-muted/30"
+      )}>
         {isEditing ? (
           <input
             ref={inputRef}
@@ -697,6 +711,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   setViewMode,
   onDataRefresh
 }) => {
+  const getService = useOpsService();
+  const { user: authUser } = useRoleBasedAuth();
   const [boardData, setBoardData] = useState<BoardData>({});
   // Use props if provided, otherwise local state (though mostly we expect props from Unit.tsx now)
   const [localBuckets, setLocalBuckets] = useState<Bucket[]>([]);
@@ -852,61 +868,26 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     });
 
     filteredAndDeduplicatedTasks.forEach(task => {
-      // 1. Priority: Explicit Group (Project ID) assignment
-      // MOVED TO TOP: This ensures that if a user manually assigns a Group, the task stays there regardless of Status or Unit.
-      if (task.projectId) {
-        const projectBucket = activeBuckets.find(b => b.id === task.projectId);
+      // Determine effective group based on creator vs assignee independent views
+      const effectiveProjectId = getEffectiveGroupId(task, currentUserEmail || '');
 
-        // Ensure the bucket exists in our board data (it should if it's in activeBuckets)
-        if (projectBucket && newBoardData[projectBucket.id]) {
-          newBoardData[projectBucket.id].push(task);
-          return; // Successfully assigned to explicit group
+      // Place task in the resolved bucket
+      if (effectiveProjectId) {
+        const targetBucket = activeBuckets.find(b => b.id === effectiveProjectId);
+        if (targetBucket && newBoardData[targetBucket.id]) {
+          newBoardData[targetBucket.id].push(task);
+          return;
         } else {
-          // 🚨 Orphaned Task Logic:
-          // The task has a projectId, but the bucket is not in activeBuckets.
-          // We will place it in the 'uncategorized' virtual bucket instead of dropping it or crashing.
-          console.warn(`⚠️ [TasksTab] Orphaned Project: Task '${task.title}' has projectId '${task.projectId}' but bucket not found. Moving to Uncategorized.`);
+          // Orphaned: bucket not found in active buckets
           if (!newBoardData['uncategorized-virtual']) {
             newBoardData['uncategorized-virtual'] = [];
           }
           newBoardData['uncategorized-virtual'].push(task);
-          return; // Successfully handled the orphaned task
-        }
-
-        // 🚨 Virtual Bucket Fallback (Legacy / Edge Cases):
-        // If task has a projectId but the bucket is missing (e.g. shared from another unit),
-        // and we have a 'Shared Projects' virtual bucket, put it there.
-        // 🔒 SHARED GROUP FIX: Only if NOT created by me
-        const isCreatedByMe = currentUserEmail && (
-          task.createdByEmail?.toLowerCase() === currentUserEmail.toLowerCase() ||
-          task.authorEmail?.toLowerCase() === currentUserEmail.toLowerCase()
-        );
-
-        if (newBoardData['shared-tasks-virtual'] && !isCreatedByMe) {
-          newBoardData['shared-tasks-virtual'].push(task);
           return;
         }
       }
 
-      // 0. Priority: External Unit Tasks (Shared)
-      // If task is from another unit, force it to 'shared-tasks-virtual' if that bucket exists.
-      // This catches tasks with OR without Project IDs.
-      if (currentUnit && task.unit_id && task.unit_id !== currentUnit) {
-        console.log(`🔍 [TasksTab] Shared Task Detected: Task '${task.title}' (ID: ${task.id}) unit '${task.unit_id}' !== current '${currentUnit}'`);
-
-        // 🔒 SHARED GROUP FIX: Only if NOT created by me
-        const isCreatedByMe = currentUserEmail && (
-          task.createdByEmail?.toLowerCase() === currentUserEmail.toLowerCase() ||
-          task.authorEmail?.toLowerCase() === currentUserEmail.toLowerCase()
-        );
-
-        if (newBoardData['shared-tasks-virtual'] && !isCreatedByMe) {
-          newBoardData['shared-tasks-virtual'].push(task);
-          return;
-        }
-      }
-
-      // 2. Fallback: Uncategorized (no project assignment)
+      // Fallback: no group assignment
       if (newBoardData['uncategorized-virtual']) {
         newBoardData['uncategorized-virtual'].push(task);
       } else {
@@ -1053,8 +1034,35 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
     // Check if moved to a different column
     if (sourceColumnId !== destinationColumnId) {
+      // Determine if current user is creator or assignee for independent view updates
+      const normalizedCurrentEmail = currentUserEmail?.toLowerCase() || '';
+      const isDragCreator = !normalizedCurrentEmail ||
+        taskToMove.createdByEmail?.toLowerCase() === normalizedCurrentEmail ||
+        taskToMove.authorEmail?.toLowerCase() === normalizedCurrentEmail;
+      const isDragAssigneeOnly = !isDragCreator &&
+        taskToMove.assignees?.some(a => a.email?.toLowerCase() === normalizedCurrentEmail);
+
+      // Build the update payload based on who is dragging
+      let dragUpdatePayload: Partial<Task>;
+      let dragUndoPayload: Partial<Task>;
+
+      if (isDragAssigneeOnly) {
+        // Pure assignee (not creator) drags: update their assigneeViewMap entry
+        const currentMap = taskToMove.assigneeViewMap || {};
+        dragUpdatePayload = {
+          assigneeViewMap: { ...currentMap, [normalizedCurrentEmail]: destinationColumnId }
+        };
+        dragUndoPayload = {
+          assigneeViewMap: { ...currentMap, [normalizedCurrentEmail]: sourceColumnId }
+        };
+      } else {
+        // Creator (or unknown) drags: update projectId → writes to RelatedTaskGroupLookupId
+        dragUpdatePayload = { projectId: destinationColumnId };
+        dragUndoPayload = { projectId: sourceColumnId };
+      }
+
       // 1. Optimistic Update: Update local state immediately
-      const updatedTask = { ...taskToMove!, projectId: destinationColumnId };
+      const updatedTask = { ...taskToMove!, ...dragUpdatePayload };
 
       // Store in ref to persist across prop updates
       optimisticUpdates.current.set(activeId, updatedTask);
@@ -1086,7 +1094,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       // We do NOT await this, letting it happen in background.
       const performUpdate = async () => {
         try {
-          await editTask(activeId, { projectId: destinationColumnId }, { suppressToast: true });
+          await editTask(activeId, dragUpdatePayload, { suppressToast: true });
 
           // Success confirmed by backend
           const taskTitle = taskToMove?.title || 'Task';
@@ -1097,7 +1105,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             title: "Task Moved",
             description: `Moved "${taskTitle}" to ${destTitle}`,
             action: (
-              <ToastAction altText="Undo" onClick={() => editTask(activeId, { projectId: sourceColumnId }, { suppressToast: false })}>
+              <ToastAction altText="Undo" onClick={() => editTask(activeId, dragUndoPayload, { suppressToast: false })}>
                 Undo
               </ToastAction>
             ),
@@ -1193,8 +1201,20 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     if (task) {
       setEditingTask(task);
       setIsDialogOpen(true);
+      // Trigger background refetch to get latest comments from other users
+      onDataRefresh?.();
     }
   };
+
+  // Keep editingTask in sync with latest data from the tasks prop (e.g. after refetch)
+  React.useEffect(() => {
+    if (editingTask && isDialogOpen) {
+      const freshTask = tasks.find(t => t.id === editingTask.id);
+      if (freshTask && freshTask !== editingTask) {
+        setEditingTask(freshTask);
+      }
+    }
+  }, [tasks, editingTask, isDialogOpen, setEditingTask]);
 
   const handleDeleteTask = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
@@ -1864,6 +1884,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                         title={bucket.title}
                         tasks={boardData[bucket.id] || []}
                         staffMembers={staffMembers}
+                        isAtm={bucket.isAtm}
                         onAddTask={() => handleCreateTask(bucket.id)}
                         onEditTask={handleEditTask}
                         onEdit={() => { }}
@@ -2016,14 +2037,81 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         container={isFullScreen ? containerRef.current : null}
         kras={kras}
         kpis={kpis}
+        onSaveComment={async (taskId, comments) => {
+          await editTask(taskId, { comments }, { suppressToast: true });
+        }}
+        onNotifyComment={async (params) => {
+          try {
+            const service = await getService();
+            await service.notifyComment(params);
+          } catch (err) {
+            console.error('Failed to send comment notifications', err);
+          }
+        }}
         onSubmit={async (taskData) => {
           console.log(`[Metrics] TaskDialog onSubmit triggered in TasksTab at ${performance.now().toFixed(2)}ms`);
           console.time('TaskSubmit-Processing');
           if (editingTask) {
+            // Detect newly added assignees for notifications
+            const oldAssignees = editingTask.assignees || [];
+            const newAssignees = taskData.assignees || [];
+            const addedAssignees = newAssignees.filter(
+              na => !oldAssignees.some(oa => oa.email?.toLowerCase() === na.email?.toLowerCase())
+            );
+
             await editTask(editingTask.id, taskData);
             console.log(`[Metrics] Edit Task API Completed at ${performance.now().toFixed(2)}ms`);
             try { console.timeEnd('TaskSubmit-Processing'); } catch (e) { }
             setIsDialogOpen(false);
+
+            // Fire-and-forget: notifications + assignee group creation for new assignees
+            if (addedAssignees.length > 0) {
+              (async () => {
+                try {
+                  const service = await getService();
+                  const currentName = authUser?.user_name || authUser?.user_email || 'Someone';
+                  const currentEmail = currentUserEmail || '';
+
+                  // Send assignment notifications
+                  service.notifyAssignment({
+                    taskId: editingTask.id,
+                    taskTitle: taskData.title || editingTask.title,
+                    assignerName: currentName,
+                    assignerEmail: currentEmail,
+                    assignees: addedAssignees,
+                  }).catch(err => console.error('Assignment notification failed', err));
+
+                  // Auto-create "Assigned to Me" groups and build assigneeViewMap
+                  const viewMap: Record<string, string> = { ...(editingTask.assigneeViewMap || {}) };
+                  for (const assignee of addedAssignees) {
+                    if (!assignee.email) continue;
+                    const email = assignee.email.toLowerCase();
+                    if (!viewMap[email]) {
+                      try {
+                        const group = await service.getOrCreateAssignedToMeGroup(email, currentUnit || '');
+                        viewMap[email] = String(group.id);
+                      } catch (err) {
+                        console.error(`Failed to create Assigned to Me group for ${email}`, err);
+                      }
+                    }
+                  }
+
+                  // Clean up entries for removed assignees
+                  const currentAssigneeEmails = new Set(newAssignees.map(a => a.email?.toLowerCase()));
+                  for (const email of Object.keys(viewMap)) {
+                    if (!currentAssigneeEmails.has(email)) {
+                      delete viewMap[email];
+                    }
+                  }
+
+                  // Update the task with the assigneeViewMap
+                  await editTask(editingTask.id, { assigneeViewMap: viewMap }, { suppressToast: true });
+                  onDataRefresh?.();
+                } catch (err) {
+                  console.error('Failed to process assignment groups', err);
+                }
+              })();
+            }
           } else {
             // Create new task with optimistic UI
             let targetProjectId = undefined;
@@ -2048,6 +2136,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               kra_id: taskData.kra_id,
               kpi_id: taskData.kpi_id,
               subtasks: taskData.subtasks,
+              comments: taskData.comments,
               recurrence: taskData.recurrence,
               unit_id: currentUnit,
             };
@@ -2086,10 +2175,54 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
             // Fire API call in background — on success, the refetch will replace the temp task with real data
             try {
-              await addTask(newTaskData);
+              const createdTask = await addTask(newTaskData);
               console.log(`[Metrics] Add Task API Completed at ${performance.now().toFixed(2)}ms`);
               try { console.timeEnd('TaskSubmit-Processing'); } catch (e) { }
-              // The hook's background refetch (after ~1.2s) will replace the temp task with real data
+
+              // Fire-and-forget: notifications + assignee group creation
+              const taskAssignees = taskData.assignees || [];
+              if (taskAssignees.length > 0 && createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
+                (async () => {
+                  try {
+                    const service = await getService();
+                    const currentName = authUser?.user_name || authUser?.user_email || 'Someone';
+                    const currentEmail = currentUserEmail || '';
+                    const taskId = (createdTask as Task).id;
+
+                    // Send assignment notifications
+                    service.notifyAssignment({
+                      taskId,
+                      taskTitle: taskData.title || '',
+                      assignerName: currentName,
+                      assignerEmail: currentEmail,
+                      assignees: taskAssignees,
+                    }).catch(err => console.error('Assignment notification failed', err));
+
+                    // Auto-create "Assigned to Me" groups and build assigneeViewMap
+                    const viewMap: Record<string, string> = {};
+                    for (const assignee of taskAssignees) {
+                      if (!assignee.email) continue;
+                      const email = assignee.email.toLowerCase();
+                      // Skip creator — they use projectId
+                      if (email === currentEmail.toLowerCase()) continue;
+                      try {
+                        const group = await service.getOrCreateAssignedToMeGroup(email, currentUnit || '');
+                        viewMap[email] = String(group.id);
+                      } catch (err) {
+                        console.error(`Failed to create Assigned to Me group for ${email}`, err);
+                      }
+                    }
+
+                    // Update the task with the assigneeViewMap if we have entries
+                    if (Object.keys(viewMap).length > 0) {
+                      await editTask(taskId, { assigneeViewMap: viewMap }, { suppressToast: true });
+                      onDataRefresh?.();
+                    }
+                  } catch (err) {
+                    console.error('Failed to process assignment groups', err);
+                  }
+                })();
+              }
             } catch (error) {
               // Rollback: remove optimistic task from board
               setBoardData(prev => {

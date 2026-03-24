@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Calendar, BarChart2, Target, Clock, Flag,
-  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2
+  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2, Crosshair, TrendingUp, Zap
 } from 'lucide-react';
 import { KPIPerformanceBar } from '@/components/dashboard/KPIPerformanceBar';
 import { TaskTrendsLine } from '@/components/dashboard/TaskTrendsLine';
@@ -265,20 +265,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     }
 
     if (!matchedBucket) {
-      // Logic 2: Check for Virtual Buckets (e.g. Shared Tasks)
-      // If we have 'shared-tasks-virtual' bucket, and the task has a project ID that we didn't find above,
-      // it likely belongs there (orphaned project task).
-      // Or if it's a cross-unit task.
-      const isSharedBucketAvailable = taskCountsByBucket['shared-tasks-virtual'] !== undefined;
-
-      // Simple heuristic for Overview: If it has a project ID but didn't match a bucket above, and we have shared bucket -> put it there.
-      if (isSharedBucketAvailable && task.projectId && task.projectId !== 'undefined') {
-        taskCountsByBucket['shared-tasks-virtual']++;
-        matchedBucket = true; // Counted in shared
-      }
-    }
-
-    if (!matchedBucket) {
       // Logic 3: Fallback to Status Mapping
       const status = task.status?.toLowerCase().trim() || 'todo';
       let targetBucketId = 'todo';
@@ -386,6 +372,52 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   // --- Derived Metrics ---
   const taskTrendData = React.useMemo(() => calculateTaskTrends(scopedTasks), [scopedTasks]);
   const trafficLightMetrics = React.useMemo(() => calculateTrafficLightMetrics(scopedTasks, projects, scopedObjectives), [scopedTasks, projects, scopedObjectives]);
+
+  // ─── Dynamic Insights Logic (Local/Free) ─────────────────────
+  const insights = useMemo(() => {
+    const getInsight = (value: number, thresholds: { neutral: number, positive: number }, templates: { high: string, mid: string, low: string }, data: any) => {
+      let template = templates.mid;
+      if (value >= thresholds.positive) template = templates.high;
+      if (value < thresholds.neutral) template = templates.low;
+      return template.replace(/{(\w+)}/g, (match, key) => data[key] || match);
+    };
+
+    // 1. Task Velocity
+    const taskVelocity = scopedTasks.length > 0 ? (completedTasks / scopedTasks.length) * 100 : 0;
+    const velocityTemplates = {
+      high: "High operational velocity detected: {pct}% of tasks are now complete, indicating efficient unit delivery.",
+      mid: "Operational velocity is steady at {pct}%. Focus on transitioning 'In Review' items to completion.",
+      low: "Operational velocity is currently limited ({pct}%). Potential bottlenecks identified in the review pipeline."
+    };
+    const velocityText = getInsight(taskVelocity, { neutral: 30, positive: 60 }, velocityTemplates, { pct: Math.round(taskVelocity) });
+
+    // 2. Strategic Health (KRAs)
+    const healthyKras = kraStatusCounts.onTrack + kraStatusCounts.completed;
+    const kraHealthPct = scopedKras.length > 0 ? (healthyKras / scopedKras.length) * 100 : 0;
+    const healthTemplates = {
+      high: "Strategic alignment is exceptional ({pct}%). Your unit's core results are consistently hitting targets.",
+      mid: "KRAs show healthy progress ({pct}%). Minor adjustments to 'At Risk' areas will solidify strategic goals.",
+      low: "Strategic health is under pressure ({pct}%). Redirecting focus to off-track KRAs is recommended for alignment."
+    };
+    const healthText = getInsight(kraHealthPct, { neutral: 40, positive: 75 }, healthTemplates, { pct: Math.round(kraHealthPct) });
+
+    // 3. Resource Balance
+    const totalWorking = inProgressTasks + reviewTasks;
+    const focusRatio = totalWorking > 0 ? (inProgressTasks / (totalWorking || 1)) * 100 : 0;
+    const balanceTemplates = {
+      high: "Resource focus is highly active: {pct}% of current workload is in active execution phase.",
+      mid: "Workload distribution is balanced. Active tasks are progressing steadily through the pipeline.",
+      low: "Executing resources are currently fragmented. High volume of 'On Hold' items may slow down momentum."
+    };
+    const balanceText = getInsight(focusRatio, { neutral: 40, positive: 70 }, balanceTemplates, { pct: Math.round(focusRatio) });
+
+    return {
+      velocity: velocityText,
+      health: healthText,
+      balance: balanceText,
+      kraHealthPct
+    };
+  }, [scopedTasks, completedTasks, reviewTasks, scopedKras, kraStatusCounts, inProgressTasks]);
 
   // --- Prepare KRA Chart Data ---
   // KRA statuses from SharePoint map to: 'open', 'in-progress', 'closed'
@@ -518,7 +550,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   }, []);
 
   return (
-    <div ref={containerRef} className={cn("space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6 transition-all duration-300", isFullScreen ? "bg-background overflow-y-auto h-screen fixed inset-0 z-50 border-0 m-0 rounded-none" : "")}>
+    <div ref={containerRef} className={cn("space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6 transition-all duration-300", isFullScreen ? "bg-background overflow-y-auto h-screen fixed inset-0 z-50 border-0 m-0 rounded-none" : "bg-gradient-to-br from-card to-muted/30 shadow-sm")}>
       <div className="flex flex-row items-start justify-between gap-4">
         <div className="flex flex-col space-y-1.5">
           <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
@@ -547,10 +579,65 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       )}
 
       <div className="space-y-6">
+        {/* Unit Performance Highlights */}
+        <div className="grid grid-cols-1 gap-4">
+          <Card className="bg-gradient-to-br from-[#400010]/5 to-transparent border-[#400010]/10 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Zap className="w-32 h-32 text-primary rotate-12" />
+            </div>
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-primary" />
+                <CardTitle className="text-lg">Unit Insights & Performance Analysis</CardTitle>
+              </div>
+              <CardDescription>Automated operational intelligence for {userUnit || 'the Unit'}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                    <TrendingUp size={12} className="text-green-600" /> Operational Velocity
+                  </p>
+                  <p className="text-sm font-medium leading-relaxed">{insights.velocity}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                    <Target size={12} className="text-blue-600" /> Strategic Health
+                  </p>
+                  <p className="text-sm font-medium leading-relaxed">{insights.health}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                    <Activity size={12} className="text-amber-600" /> Resource Balance
+                  </p>
+                  <p className="text-sm font-medium leading-relaxed">{insights.balance}</p>
+                </div>
+              </div>
+              <div className="pt-4 border-t border-[#400010]/10 mt-2">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
+                    <Crosshair size={14} className="text-primary animate-pulse" /> Unit Strategic Alignment Signal
+                  </span>
+                  <span className="text-xs font-bold text-primary">{Math.round(insights.kraHealthPct)}% synchronized with Enterprise Strategy</span>
+                </div>
+                <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-primary transition-all duration-1000 ease-out" 
+                    style={{ width: `${insights.kraHealthPct}%` }}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Stats cards - Expanded to 4 columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Dialog>
-            <Card className="group relative">
+            <Card className="group relative overflow-hidden transition-all hover:shadow-md border-primary/5 bg-card/50 backdrop-blur-sm">
+              <div className="absolute -right-2 -bottom-2 opacity-[0.03] transition-transform group-hover:scale-110">
+                <CheckCircle size={80} />
+              </div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Tasks/Daily Operations</CardTitle>
                 <DialogTrigger asChild>
@@ -558,7 +645,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DialogTrigger>
-                <CheckCircle className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{scopedTasks.length}</div>
@@ -590,24 +676,23 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
             </DialogContent>
           </Dialog>
-
           <Dialog>
-            <Card className="group relative">
+            <Card className="group relative overflow-hidden transition-all hover:shadow-md border-primary/5 bg-card/50 backdrop-blur-sm">
+              <div className="absolute -right-2 -bottom-2 opacity-[0.03] transition-transform group-hover:scale-110">
+                <Activity size={80} />
+              </div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">KPIs</CardTitle>
+                <CardTitle className="text-sm font-medium">KPIs/Operational Metrics</CardTitle>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DialogTrigger>
-                <Briefcase className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {scopedKras.reduce((acc, kra) => acc + (kra.unitKpis?.length || kra.kpis?.length || 0), 0)}
-                </div>
+                <div className="text-2xl font-bold">{scopedKpis.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Total KPIs tracked across all KRAs
+                  {kpiStatusCounts.onTrack + kpiStatusCounts.completed} healthy metrics
                 </p>
                 <div className="flex h-2 mt-2 w-full rounded-full overflow-hidden bg-secondary">
                   <div style={{ width: `${(kpiStats.onTrack / (Object.values(kpiStats).reduce((a, b) => a + b, 0) || 1)) * 100}%` }} className="bg-emerald-500" title="On Track" />
@@ -651,24 +736,23 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               </div>
             </DialogContent>
           </Dialog>
-
           <Dialog>
-            <Card className="group relative">
+            <Card className="group relative overflow-hidden transition-all hover:shadow-md border-primary/5 bg-card/50 backdrop-blur-sm">
+              <div className="absolute -right-2 -bottom-2 opacity-[0.03] transition-transform group-hover:scale-110">
+                <Target size={80} />
+              </div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">KRA Progress</CardTitle>
+                <CardTitle className="text-sm font-medium">KRAs/Strategic Alignment</CardTitle>
                 <DialogTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DialogTrigger>
-                <Target className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {Math.round(scopedKras.reduce((acc, kra) => acc + calculateKraProgress(kra, allKpis), 0) / (scopedKras.length || 1))}%
-                </div>
+                <div className="text-2xl font-bold">{scopedKras.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  {kpiStats.completed} of {allKpis.length} KPIs completed
+                  {kraStatusCounts.onTrack + kraStatusCounts.completed} on track/done
                 </p>
                 <Progress
                   className="h-2 mt-2"
@@ -708,7 +792,10 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
           </Dialog>
 
           <Dialog>
-            <Card className="group relative">
+            <Card className="group relative overflow-hidden transition-all hover:shadow-md border-primary/5 bg-card/50 backdrop-blur-sm">
+              <div className="absolute -right-2 -bottom-2 opacity-[0.03] transition-transform group-hover:scale-110">
+                <Flag size={80} />
+              </div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Objectives Summary</CardTitle>
                 <DialogTrigger asChild>
@@ -716,7 +803,6 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                     <Info className="h-4 w-4 text-muted-foreground" />
                   </Button>
                 </DialogTrigger>
-                <Flag className="h-6 w-6 text-muted-foreground opacity-50 absolute right-6 top-6" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalObjectives}</div>

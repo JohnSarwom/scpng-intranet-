@@ -3,13 +3,49 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Pencil, Trash, UserPlus, Save, X, Bell, Settings as SettingsIcon, Check, Loader2 } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Bell, Settings as SettingsIcon, Check, Loader2, DatabaseZap } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserRole, PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+
+// Seed data for bulk user creation
+const seedUsers: Array<{ user_name: string; user_email: string; division_name: string; unit_name: string }> = [
+  { user_name: 'Andy Ambulu', user_email: 'aambulu@scpng.gov.pg', division_name: 'Executive Division', unit_name: 'Secretariat Unit' },
+  { user_name: 'Anita Kosnga', user_email: 'akosnga@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Finance Unit' },
+  { user_name: 'Donald Sinogerel Samson', user_email: 'dsamson@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'IT Unit' },
+  { user_name: 'Esther Alia', user_email: 'ealia@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Market Data Unit' },
+  { user_name: 'Eric Kipongi', user_email: 'ekipongi@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'IT Unit' },
+  { user_name: 'Enly Yakop', user_email: 'eyakop@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Investigations Unit' },
+  { user_name: 'Harold Mek Kape', user_email: 'hkape@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Supervision Unit' },
+  { user_name: 'Isaac Mel', user_email: 'imel@scpng.gov.pg', division_name: 'Legal Services Division', unit_name: 'Legal Advisory Unit' },
+  { user_name: 'Immanuel Minoga', user_email: 'iminoga@scpng.gov.pg', division_name: 'Legal Services Division', unit_name: 'Legal Advisory Unit' },
+  { user_name: 'James Joshua', user_email: 'jjoshua@scpng.gov.pg', division_name: 'Executive Division', unit_name: 'Executive Unit' },
+  { user_name: 'Jacob Kom', user_email: 'jkom@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Investigations Unit' },
+  { user_name: 'Joy Komba', user_email: 'jkomba@scpng.gov.pg', division_name: 'Research & Publication Division', unit_name: 'Research Unit' },
+  { user_name: 'John Sarwom', user_email: 'jsarwom@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'IT Unit' },
+  { user_name: 'Kylie Karis', user_email: 'kkaris@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Licensing Unit' },
+  { user_name: 'Lovelyn Karlyo', user_email: 'lkarlyo@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Laviniah Michael', user_email: 'lmichael@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Finance Unit' },
+  { user_name: 'Lenome Rex MBalupa', user_email: 'lrmbalupa@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Leah Samuel', user_email: 'lsamuel@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Leeroy Wambillie', user_email: 'lwambillie@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Licensing Unit' },
+  { user_name: 'Monica Abau-Sapulai', user_email: 'msapulai@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'IT Unit' },
+  { user_name: 'Max Siwi', user_email: 'msiwi@scpng.gov.pg', division_name: 'Research & Publication Division', unit_name: 'Research Unit' },
+  { user_name: 'Mark Timea', user_email: 'mtimea@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Mercy Tipitap', user_email: 'mtipitap@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Finance Unit' },
+  { user_name: 'Ninipe Gurumo', user_email: 'ngurumo@scpng.gov.pg', division_name: 'Executive Division', unit_name: 'Secretariat Unit' },
+  { user_name: 'Rosie Stevenou', user_email: 'rstevenou@scpng.gov.pg', division_name: 'Research & Publication Division', unit_name: 'Media & Publication Unit' },
+  { user_name: 'Regina Wai', user_email: 'rwai@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Supervision Unit' },
+  { user_name: 'Sophia Marai', user_email: 'smarai@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Sam Taki', user_email: 'staki@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Finance Unit' },
+  { user_name: 'Tony Kawas', user_email: 'tkawas@scpng.gov.pg', division_name: 'Legal Services Division', unit_name: 'Legal Advisory Unit' },
+  { user_name: 'Thomas Mondaya', user_email: 'tmondaya@scpng.gov.pg', division_name: 'Corporate Services Division', unit_name: 'Human Resources Unit' },
+  { user_name: 'Tyson Yapao', user_email: 'tyapao@scpng.gov.pg', division_name: 'Legal Services Division', unit_name: 'Legal Advisory Unit' },
+  { user_name: 'Zomay Apini', user_email: 'zapini@scpng.gov.pg', division_name: 'Licensing Market & Supervision Division', unit_name: 'Market Data Unit' },
+];
 
 // Organizational structure: Divisions and their Units
 const divisionsAndUnits: Record<string, string[]> = {
@@ -46,6 +82,52 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [editingUser, setEditingUser] = useState<UserRole | null>(null);
   const [newUser, setNewUser] = useState<Partial<UserRole> | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [seedProgress, setSeedProgress] = useState({ current: 0, total: 0 });
+
+  const handleSeedUsers = async () => {
+    const existingEmails = new Set(users.map(u => u.user_email.toLowerCase()));
+    const usersToAdd = seedUsers.filter(u => !existingEmails.has(u.user_email.toLowerCase()));
+
+    if (usersToAdd.length === 0) {
+      toast.info('All seed users already exist');
+      return;
+    }
+
+    if (!confirm(`This will add ${usersToAdd.length} new users as staff_member with IT Group. ${seedUsers.length - usersToAdd.length} users already exist and will be skipped. Continue?`)) {
+      return;
+    }
+
+    setIsSeeding(true);
+    setSeedProgress({ current: 0, total: usersToAdd.length });
+    let added = 0;
+    let failed = 0;
+
+    for (const seedUser of usersToAdd) {
+      try {
+        await onAddUser({
+          user_name: seedUser.user_name,
+          user_email: seedUser.user_email,
+          role_name: 'staff_member',
+          division_name: seedUser.division_name,
+          unit_name: seedUser.unit_name,
+          groups: ['IT Group'],
+        });
+        added++;
+      } catch (error) {
+        console.error(`Failed to add ${seedUser.user_name}:`, error);
+        failed++;
+      }
+      setSeedProgress({ current: added + failed, total: usersToAdd.length });
+    }
+
+    setIsSeeding(false);
+    if (failed === 0) {
+      toast.success(`Successfully added ${added} users`);
+    } else {
+      toast.warning(`Added ${added} users, ${failed} failed`);
+    }
+  };
 
   // Helper to toggle groups in edit/add mode
   const toggleGroup = (groupTitle: string, isEditing: boolean) => {
@@ -145,10 +227,31 @@ const UserManagement: React.FC<UserManagementProps> = ({
       <CardHeader>
         <CardTitle className="flex justify-between">
           <span>Users</span>
-          <Button onClick={startAddingUser} size="sm" className="flex items-center gap-1">
-            <UserPlus size={16} />
-            <span>Add User</span>
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleSeedUsers}
+              size="sm"
+              variant="outline"
+              disabled={isSeeding || isProcessing}
+              className="flex items-center gap-1"
+            >
+              {isSeeding ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>{seedProgress.current}/{seedProgress.total}</span>
+                </>
+              ) : (
+                <>
+                  <DatabaseZap size={16} />
+                  <span>Seed Users</span>
+                </>
+              )}
+            </Button>
+            <Button onClick={startAddingUser} size="sm" className="flex items-center gap-1" disabled={isSeeding}>
+              <UserPlus size={16} />
+              <span>Add User</span>
+            </Button>
+          </div>
         </CardTitle>
         <CardDescription>
           Manage user accounts and permissions via SharePoint UserRoles list.

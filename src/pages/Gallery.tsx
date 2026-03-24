@@ -22,6 +22,7 @@ import GalleryDebug from '@/components/gallery/GalleryDebug';
 import { galleryService, type GalleryEventWithPhotos, type GalleryData, type GalleryPhoto } from '@/integrations/supabase/galleryService';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 type GalleryImage = {
   id: string;
@@ -37,6 +38,7 @@ const VirtualizedEventGrid = ({
   handleImageClick,
   openEditModal,
   openDeleteConfirm,
+  isAdmin,
 }: {
   event: GalleryEventWithPhotos;
   isSelectMode: boolean;
@@ -45,6 +47,7 @@ const VirtualizedEventGrid = ({
   handleImageClick: (image: GalleryImage, event: GalleryEventWithPhotos, index: number) => void;
   openEditModal: (photo: GalleryPhoto, e: React.MouseEvent) => void;
   openDeleteConfirm: (image: GalleryImage, e: React.MouseEvent) => void;
+  isAdmin: boolean;
 }) => {
   const getColumns = () => (window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2);
   const [columns, setColumns] = useState(getColumns());
@@ -139,7 +142,7 @@ const VirtualizedEventGrid = ({
                         <span className="text-xs line-clamp-2">
                           {image.caption || `Photo from ${event.title}`}
                         </span>
-                        {!isSelectMode && (
+                        {!isSelectMode && isAdmin && (
                           <div className="absolute top-2 right-2 flex gap-1.5">
                             <Button
                               variant="secondary"
@@ -193,6 +196,7 @@ const Gallery = () => {
   const [isConfirmEventDeleteDialogOpen, setIsConfirmEventDeleteDialogOpen] = useState(false);
   const tabsContentRef = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const location = useLocation();
+  const { isAdmin } = useRoleBasedAuth();
 
   // Load gallery data
   const loadGalleryData = useCallback(async () => {
@@ -498,13 +502,17 @@ const Gallery = () => {
             <Button onClick={() => setShowDebug(!showDebug)} variant="outline">
               {showDebug ? 'Hide Debug' : 'Debug Data'}
             </Button>
-            <Button onClick={toggleSelectMode} variant={isSelectMode ? 'secondary' : 'outline'}>
-              {isSelectMode ? 'Cancel' : 'Select Photos'}
-            </Button>
-            <Button onClick={() => setIsAddPhotoModalOpen(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Photos
-            </Button>
+            {isAdmin && (
+              <>
+                <Button onClick={toggleSelectMode} variant={isSelectMode ? 'secondary' : 'outline'}>
+                  {isSelectMode ? 'Cancel' : 'Select Photos'}
+                </Button>
+                <Button onClick={() => setIsAddPhotoModalOpen(true)} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Photos
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -537,7 +545,7 @@ const Gallery = () => {
 
   return (
     <PageLayout>
-      {isSelectMode && (
+      {isSelectMode && isAdmin && (
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 border-b mb-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">
@@ -571,14 +579,18 @@ const Gallery = () => {
           <Button onClick={() => setShowDebug(!showDebug)} variant="outline">
             {showDebug ? 'Hide Debug' : 'Debug Data'}
           </Button>
-          <Button onClick={toggleSelectMode} variant={isSelectMode ? 'secondary' : 'outline'}>
-            <CheckSquare className="h-4 w-4 mr-2" />
-            {isSelectMode ? 'Cancel' : 'Select Photos'}
-          </Button>
-          <Button onClick={() => setIsAddPhotoModalOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Photos
-          </Button>
+          {isAdmin && (
+            <>
+              <Button onClick={toggleSelectMode} variant={isSelectMode ? 'secondary' : 'outline'}>
+                <CheckSquare className="h-4 w-4 mr-2" />
+                {isSelectMode ? 'Cancel' : 'Select Photos'}
+              </Button>
+              <Button onClick={() => setIsAddPhotoModalOpen(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Photos
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -623,7 +635,7 @@ const Gallery = () => {
                       )}
                     </div>
                   </div>
-                  {!isSelectMode && (
+                  {!isSelectMode && isAdmin && (
                     <Button
                       variant="ghost"
                       size="icon"
@@ -644,6 +656,7 @@ const Gallery = () => {
                     handleImageClick={handleImageClick}
                     openEditModal={openEditModal}
                     openDeleteConfirm={openDeleteConfirm}
+                    isAdmin={isAdmin}
                   />
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
@@ -682,27 +695,31 @@ const Gallery = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={(e) => {
-                    const fullPhoto = currentEvent?.images.find(p => p.id === selectedImage?.id);
-                    if (fullPhoto) openEditModal(fullPhoto, e);
-                  }}
-                  disabled={!selectedImage}
-                >
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={(e) => selectedImage && openDeleteConfirm(selectedImage, e)}
-                  disabled={!selectedImage}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
+                {isAdmin && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        const fullPhoto = currentEvent?.images.find(p => p.id === selectedImage?.id);
+                        if (fullPhoto) openEditModal(fullPhoto, e);
+                      }}
+                      disabled={!selectedImage}
+                    >
+                      <Pencil className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => selectedImage && openDeleteConfirm(selectedImage, e)}
+                      disabled={!selectedImage}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="outline"
                   size="icon"

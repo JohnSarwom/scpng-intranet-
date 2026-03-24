@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -27,18 +27,9 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DateRangePicker from '@/components/ui/DateRangePicker';
 import { StaffMember } from '@/types/staff';
-import { Task, Kra, Kpi, User } from '@/types';
+import { Task, TaskComment, Kra, Kpi, User } from '@/types';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
-
-// Define the shape of a comment
-interface Comment {
-  id: string;
-  authorName: string;
-  authorAvatarFallback: string;
-  timestamp: Date;
-  text: string;
-}
 
 type Subtask = { id: string; text: string; completed: boolean };
 
@@ -51,6 +42,8 @@ interface TaskDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (taskData: Partial<Task>) => void | Promise<void>;
+  onSaveComment?: (taskId: string, comments: TaskComment[]) => Promise<void>;
+  onNotifyComment?: (params: { taskId: string; taskTitle: string; commenterName: string; commenterEmail: string; commentText: string; assignees?: { email?: string; name?: string }[]; creatorEmail?: string }) => void;
   initialData?: Partial<Task> | null; // For editing
   statuses?: StatusOption[]; // Available status options
   defaultStatus?: string | null; // Added prop for default status on create
@@ -83,6 +76,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  onSaveComment,
+  onNotifyComment,
   initialData,
   statuses = DEFAULT_STATUSES,
   defaultStatus,
@@ -99,7 +94,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const [status, setStatus] = useState<string>('todo');
   const [groupId, setGroupId] = useState<string | undefined>(undefined);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-  const [comments, setComments] = useState<Comment[]>([]); // State for comments
+  const [comments, setComments] = useState<TaskComment[]>([]);
   const [newCommentText, setNewCommentText] = useState(''); // State for new comment input
   const [assignee, setAssignee] = useState<string | undefined>(undefined);
   const [recurrence, setRecurrence] = useState<string>('none');
@@ -109,6 +104,31 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
   const [selectedKpiId, setSelectedKpiId] = useState<string | undefined>(undefined);
   const [selectedAssignees, setSelectedAssignees] = useState<User[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const commentsEndRef = useRef<HTMLDivElement>(null);
+  const commentsScrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    // Small delay to ensure DOM is rendered before scrolling
+    setTimeout(() => {
+      if (commentsScrollAreaRef.current) {
+        // Find the Radix ScrollArea viewport to scroll ONLY that container
+        const viewport = commentsScrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (viewport) {
+          viewport.scrollTo({
+            top: viewport.scrollHeight,
+            behavior: 'smooth'
+          });
+          return; // Success, don't use fallback
+        }
+      }
+
+      // Fallback if we can't find the viewport or ref is missing
+      if (commentsEndRef.current) {
+        // 'nearest' avoids scrolling parent containers if the element is already visible in them
+        commentsEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }, 150);
+  };
 
   // Authentication & Roles
   const { user: authUser } = useRoleBasedAuth();
@@ -216,7 +236,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
         setDateRange(undefined);
       }
 
-      setComments([]);
+      setComments(initialData.comments || []);
     } else {
       setTitle('');
       setDescription('');
@@ -278,6 +298,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       assignees: selectedAssignees,
       recurrence: recurrence,
       subtasks: subtasks,
+      comments: comments,
       tags: initialData?.tags, // Pass existing tags so service can update bucket tag
       kra_id: inferredKraId,
       kpi_id: selectedKpiId,
@@ -299,6 +320,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       try { console.timeEnd('UI-Reaction-TaskDialog-Open'); } catch (e) { }
       console.log(`[Metrics] TaskDialog (${initialData ? 'Edit' : 'Add'}) Opened at ${performance.now().toFixed(2)}ms`);
       console.time(`TaskDialog-${initialData ? 'Edit' : 'Add'}-OpenDuration`);
+      scrollToBottom();
     } else {
       console.log(`[Metrics] TaskDialog Closed at ${performance.now().toFixed(2)}ms`);
       try { console.timeEnd(`TaskDialog-Add-OpenDuration`); } catch (e) { }
@@ -306,19 +328,52 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
     }
   }, [isOpen, initialData]);
 
-  // Function to handle adding a new comment
-  const handleAddComment = () => {
-    if (!newCommentText.trim()) return;
-    const currentUser = { name: "Current User", avatarFallback: "CU" };
-    const newComment: Comment = {
+  // Scroll to bottom when comments are updated
+  useEffect(() => {
+    if (isOpen && comments.length > 0) {
+      scrollToBottom();
+    }
+  }, [comments, isOpen]);
+
+  // Function to handle adding a new comment — saves immediately to SharePoint
+  const [isSavingComment, setIsSavingComment] = useState(false);
+  const handleAddComment = async () => {
+    if (!newCommentText.trim() || isSavingComment) return;
+    const userName = authUser?.user_name || authUser?.user_email || 'Unknown User';
+    const newComment: TaskComment = {
       id: `comment-${Date.now()}`,
-      authorName: currentUser.name,
-      authorAvatarFallback: currentUser.avatarFallback,
-      timestamp: new Date(),
+      authorName: userName,
+      authorEmail: authUser?.user_email || '',
+      timestamp: new Date().toISOString(),
       text: newCommentText,
     };
-    setComments(prevComments => [...prevComments, newComment]);
+    const updatedComments = [...comments, newComment];
+    setComments(updatedComments);
     setNewCommentText('');
+
+    // Persist immediately if editing an existing task
+    if (initialData?.id && onSaveComment) {
+      setIsSavingComment(true);
+      try {
+        await onSaveComment(initialData.id, updatedComments);
+        // Fire-and-forget: notify assignees & creator
+        onNotifyComment?.({
+          taskId: initialData.id,
+          taskTitle: initialData.title || '',
+          commenterName: userName,
+          commenterEmail: authUser?.user_email || '',
+          commentText: newCommentText.trim() || newComment.text,
+          assignees: initialData.assignees,
+          creatorEmail: initialData.createdByEmail || initialData.authorEmail,
+        });
+      } catch (err) {
+        console.error('Failed to save comment', err);
+        // Revert on failure
+        setComments(comments);
+      } finally {
+        setIsSavingComment(false);
+      }
+    }
   };
 
   const handleAddSubtask = () => {
@@ -562,33 +617,51 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
           <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700/50">
             <h3 className="text-lg font-medium mb-3">Comments</h3>
-            <ScrollArea className="h-[150px] w-full mb-4 border rounded-lg p-3 bg-gray-50 dark:bg-gray-800/30">
+            <ScrollArea ref={commentsScrollAreaRef} className="h-[200px] w-full mb-4 border rounded-lg p-3 bg-gray-50 dark:bg-gray-800/30">
               {comments.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
+                <div className="flex flex-col items-center justify-center h-full min-h-[100px]">
+                  <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
+                  <div ref={commentsEndRef} />
+                </div>
               ) : (
-                <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="flex items-start space-x-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{comment.authorAvatarFallback}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{comment.authorName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {format(comment.timestamp, "PPp")}
+                <div className="space-y-3">
+                  {comments.map((comment) => {
+                    const isMe = comment.authorEmail?.toLowerCase() === authUser?.user_email?.toLowerCase();
+                    const initials = comment.authorName
+                      .split(' ')
+                      .map(n => n[0])
+                      .join('')
+                      .substring(0, 2)
+                      .toUpperCase();
+                    return (
+                      <div key={comment.id} className={cn("flex items-end gap-2", isMe ? "flex-row-reverse" : "flex-row")}>
+                        <Avatar className="h-7 w-7 flex-shrink-0">
+                          <AvatarFallback className={cn("text-xs", isMe ? "bg-primary text-primary-foreground" : "")}>{initials}</AvatarFallback>
+                        </Avatar>
+                        <div className={cn("max-w-[75%] rounded-lg px-3 py-2", isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-bl-none")}>
+                          {!isMe && <p className="text-xs font-semibold mb-0.5">{comment.authorName}</p>}
+                          <p className={cn("text-sm", isMe ? "text-primary-foreground/90" : "text-foreground")}>{comment.text}</p>
+                          <p className={cn("text-[10px] mt-1", isMe ? "text-primary-foreground/60 text-right" : "text-muted-foreground")}>
+                            {format(new Date(comment.timestamp), "p")}
                           </p>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{comment.text}</p>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+                  <div ref={commentsEndRef} />
                 </div>
               )}
             </ScrollArea>
             <div className="flex gap-2 items-start mb-4">
               <Avatar className="h-9 w-9 mt-1">
-                <AvatarFallback>CU</AvatarFallback>
+                <AvatarFallback>
+                  {(authUser?.user_name || authUser?.user_email || 'U')
+                    .split(' ')
+                    .map(n => n[0])
+                    .join('')
+                    .substring(0, 2)
+                    .toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <Textarea
                 placeholder="Add a comment..."
@@ -601,10 +674,10 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 type="button"
                 size="icon"
                 onClick={handleAddComment}
-                disabled={!newCommentText.trim()}
+                disabled={!newCommentText.trim() || isSavingComment}
                 className="mt-1"
               >
-                <Send className="h-4 w-4" />
+                {isSavingComment ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 <span className="sr-only">Send comment</span>
               </Button>
             </div>

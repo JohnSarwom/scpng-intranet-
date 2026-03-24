@@ -29,7 +29,7 @@ export const getAccessToken = async (msalInstance: IPublicClientApplication): Pr
     throw new Error('No active MSAL account found.');
   }
 
-  const scopes = ['Sites.ReadWrite.All', 'Files.ReadWrite.All', 'User.Read.All'];
+  const scopes = ['Sites.ReadWrite.All', 'Files.ReadWrite.All', 'User.Read.All', 'Mail.Send'];
   Logger.debug('   📋 Requesting scopes:', scopes.join(', '));
 
   try {

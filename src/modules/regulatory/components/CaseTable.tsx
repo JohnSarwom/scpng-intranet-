@@ -28,6 +28,7 @@ interface CaseTableProps {
     data: RegulatoryCase[];
     onUpdateCase?: (caseId: string, updates: Partial<RegulatoryCase>) => Promise<any>;
     isUpdating?: boolean;
+    isAdmin?: boolean;
 }
 
 const getRiskBadgeVariant = (risk: CaseRisk) => {
@@ -70,7 +71,7 @@ const getTypeIcon = (type: CaseType) => {
     }
 }
 
-const CaseTable: React.FC<CaseTableProps> = ({ data, onUpdateCase, isUpdating }) => {
+const CaseTable: React.FC<CaseTableProps> = ({ data, onUpdateCase, isUpdating, isAdmin }) => {
     const [selectedCase, setSelectedCase] = useState<RegulatoryCase | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editCase, setEditCase] = useState<RegulatoryCase | null>(null);
@@ -188,21 +189,25 @@ const CaseTable: React.FC<CaseTableProps> = ({ data, onUpdateCase, isUpdating })
                                                     <Eye className="mr-2 h-4 w-4" />
                                                     View Details
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCase(item); }}>
-                                                    <Edit2 className="mr-2 h-4 w-4" />
-                                                    Edit Case
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    className="text-red-600 focus:text-red-600"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        toast({ title: "Delete", description: "Delete functionality coming soon." });
-                                                    }}
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete Case
-                                                </DropdownMenuItem>
+                                                {isAdmin && (
+                                                    <>
+                                                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleEditCase(item); }}>
+                                                            <Edit2 className="mr-2 h-4 w-4" />
+                                                            Edit Case
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-red-600 focus:text-red-600"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toast({ title: "Delete", description: "Delete functionality coming soon." });
+                                                            }}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete Case
+                                                        </DropdownMenuItem>
+                                                    </>
+                                                )}
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>

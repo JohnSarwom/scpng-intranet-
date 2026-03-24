@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { getEffectiveGroupId } from '@/utils/taskBoardUtils';
 import { Skeleton } from "@/components/ui/skeleton";
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -597,98 +598,37 @@ const Unit = () => {
   const calculatedBuckets = useMemo(() => {
     if (!taskGroupState.data) return [];
 
-    // 1. Get task groups
+    // 1. Get task groups — filter out other users' "Assigned to Me" groups
+    const normalizedEmail = userContext.email?.toLowerCase() || '';
     const customGroups: Bucket[] = taskGroupState.data
       .filter(p => {
-        // Task Group Logic:
-        // 1. Admins see everything
-        const isAdmin = userContext.role === 'admin' || userContext.role === 'super_admin';
-        // 2. Assignees of tasks in this group see it
-        const hasAssignedTask = taskState.data?.some(t =>
-          t.groupId === String(p.id) &&
-          (t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase() ||
-            t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()))
-        );
-
-        if (isAdmin || hasAssignedTask) {
-          return true;
+        // If this is an "Assigned to Me" group (has ownerEmail), only show to its owner
+        if (p.ownerEmail) {
+          return p.ownerEmail.toLowerCase() === normalizedEmail;
         }
-
-        // 3. Fallback: if no tasks, still show it to everyone for now (or could use department match)
+        // Regular groups: show to everyone
         return true;
       })
       .map(p => ({
         id: String(p.id),
-        title: p.name,
+        title: p.ownerEmail ? 'Assigned to Me' : p.name,
         isCustom: true,
-        order: p.order || 9999 // Default order if missing
+        isAtm: !!p.ownerEmail,
+        order: p.ownerEmail ? 999999 : (p.order || 9999)
       }));
 
-    // Sort by order
+    // Sort by order ("Assigned to Me" pinned last, just before Add Group)
     customGroups.sort((a, b) => (a.order || 0) - (b.order || 0));
 
     // No initial buckets anymore - start with custom groups
     const uniqueBuckets = [...customGroups];
 
-    // 2. Add "Shared Projects" virtual bucket logic
-    // Identify tasks that:
-    // 1. Are visible to the user (filtered by useSharePointTasks)
-    // 2. Have a projectId that matches NO visible bucket
-    // 3. Are from a different unit (cross-unit assignment)
-    // 4. Are assigned to user but have no project (fallback)
-    const allBucketIds = new Set(uniqueBuckets.map(b => b.id));
-
-    // Logger.debug(`🔍 [Virtual Bucket Debug] Checking ${taskState.data?.length || 0} tasks for orphans. User: ${userContext.email}, Unit: ${userContext.unit}`);
-
-    const orphanedTasks = taskState.data?.filter(t => {
-      // Orphan condition 1: Has groupId but bucket is missing
-      const hasOrphanedGroup = t.groupId && !allBucketIds.has(t.groupId) && t.groupId !== 'undefined';
-
-      // Orphan condition 2: From another unit (cross-unit assignment)
-      const isCrossUnit = t.unit_id && t.unit_id !== userContext.unit;
-
-      // Orphan condition 3: Assigned to user but no matching project (fallback)
-      const isAssignedOrphan = !t.projectId &&
-        (t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()) ||
-          t.assignedTo?.toLowerCase() === userContext.email?.toLowerCase());
-
-      // 🔒 SHARED GROUP FIX:
-      // A task is only "Shared" if it is assigned to me BUT NOT created by me.
-      // If I created it, it should stay in my view as just "Uncategorized" or "To Do",
-      // not trigger a special "Shared Projects" group.
-      const isCreatedByMe = t.createdByEmail?.toLowerCase() === userContext.email?.toLowerCase() ||
-        t.authorEmail?.toLowerCase() === userContext.email?.toLowerCase();
-
-      // If I created it, it is NOT an orphan for the purpose of "Shared Projects"
-      if (isCreatedByMe) {
-        return false;
-      }
-
-      const isOrphaned = hasOrphanedGroup || isCrossUnit || isAssignedOrphan;
-
-      return isOrphaned;
-    }) || [];
-
-    if (orphanedTasks.length > 0) {
-      // Logger.info(`📦 [Virtual Bucket] Adding 'Shared Projects' bucket (${orphanedTasks.length} tasks)`);
-      uniqueBuckets.push({
-        id: 'shared-tasks-virtual', // Special ID
-        title: 'Shared Projects',
-        isCustom: true,
-      });
-    }
-
-    // 3. Add "Uncategorized" virtual bucket logic
-    // For tasks that have NO project ID and are NOT in the Shared bucket
-    // (i.e., tasks belonging to this unit but without a group)
-    const uncategorizedTasks = taskState.data?.filter(t =>
-      !t.projectId &&
-      (!t.unit_id || t.unit_id === userContext.unit) &&
-      // Exclude if it was already caught by "Shared Projects" (though logic above separates them, double check)
-      !(t.assignees?.some(a => a.email?.toLowerCase() === userContext.email?.toLowerCase()) && !t.projectId)
-    ) || [];
-
-    const hasUncategorized = taskState.data?.some(t => !t.projectId && t.status !== 'done');
+    // 2. Add "Uncategorized" virtual bucket logic
+    // For tasks that have NO effective group for the current user
+    const hasUncategorized = taskState.data?.some(t => {
+      const effectiveId = getEffectiveGroupId(t, normalizedEmail);
+      return !effectiveId && t.status !== 'done';
+    });
 
     if (hasUncategorized) {
       uniqueBuckets.push({
@@ -699,7 +639,7 @@ const Unit = () => {
     }
 
     return uniqueBuckets;
-  }, [projectState.data, taskState.data, userContext.email, userContext.unit, userContext.role, taskGroupState.data]);
+  }, [taskState.data, userContext.email, userContext.unit, userContext.role, taskGroupState.data]);
 
   // Only update state if buckets actually changed to avoid re-render loops
   useEffect(() => {

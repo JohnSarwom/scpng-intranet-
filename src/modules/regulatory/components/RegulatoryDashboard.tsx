@@ -4,6 +4,7 @@ import FilterPanel from './FilterPanel';
 import CaseTable from './CaseTable';
 import { MOCK_CASES, MOCK_KPI_STATS } from '../constants';
 import { Shield, Loader2, AlertCircle } from 'lucide-react';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CaseType } from '../types';
@@ -13,6 +14,7 @@ import { useRegulatoryCases } from '@/hooks/useRegulatoryCases';
 
 const RegulatoryDashboard: React.FC = () => {
     const { cases, stats, loading, error, updateCase, isUpdating } = useRegulatoryCases();
+    const { isAdmin } = useRoleBasedAuth();
 
     if (loading) {
         return (
@@ -85,7 +87,7 @@ const RegulatoryDashboard: React.FC = () => {
                             <h2 className="text-lg font-semibold text-gray-800">Recent Cases & Reports</h2>
                             <span className="text-sm text-gray-500">Showing {Math.min(cases.length, 5)} recent records</span>
                         </div>
-                        <CaseTable data={cases.slice(0, 5)} onUpdateCase={updateCase} isUpdating={isUpdating} />
+                        <CaseTable data={cases.slice(0, 5)} onUpdateCase={updateCase} isUpdating={isUpdating} isAdmin={isAdmin} />
                     </div>
                     {/* AI Chat Integration */}
                     <RegulatoryAIChat cases={cases} stats={stats} />
@@ -98,7 +100,7 @@ const RegulatoryDashboard: React.FC = () => {
                                 <h2 className="text-lg font-semibold text-gray-800">{tab.label}</h2>
                                 <span className="text-sm text-gray-500">Showing {getFilteredCases(tab.type!).length} records</span>
                             </div>
-                            <CaseTable data={getFilteredCases(tab.type!)} onUpdateCase={updateCase} isUpdating={isUpdating} />
+                            <CaseTable data={getFilteredCases(tab.type!)} onUpdateCase={updateCase} isUpdating={isUpdating} isAdmin={isAdmin} />
                         </div>
                     </TabsContent>
                 ))}

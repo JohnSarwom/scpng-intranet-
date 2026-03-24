@@ -18,7 +18,7 @@ const WelcomeCard: React.FC<WelcomeCardProps> = ({
     <div className="bg-intranet-primary text-white p-6 rounded-xl relative overflow-hidden shadow-md animate-fade-in">
       <div className="absolute right-0 top-0 h-full w-1/3 flex items-center justify-center opacity-90">
         <img 
-          src="/lovable-uploads/b166a9bc-0aab-4f5a-be16-646f0fb087cc.png" 
+          src="/images/SCPNG Original Logo.png" 
           alt="Dashboard illustration" 
           className="h-full object-contain"
         />

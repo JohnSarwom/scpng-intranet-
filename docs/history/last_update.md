@@ -3605,3 +3605,22 @@ The documentation is saved in your artifacts directory and includes everything y
 - Typed `initialBuckets` explicitly.
 - Fixed `avatarUrl` access safety for mixed `User` | `StaffMember` types.
 **Impact:** resolved build errors and improved type safety.
+
+2026-03-22 08:25 AM
+# Contacts Sync & Administrative Logic Restoration
+
+## 1. Restored "Copy All" & Admin Functionality
+**Problem:** The "Copy All" contacts feature (MS Graph JSON export) was missing from the UI.
+**Cause:** The `Contacts.tsx` page was consuming `useSupabaseAuth` directly, which did not provide the `isAdmin` property. This caused all administrative buttons to be hidden.
+**Fix:**
+- Switched the authentication hook in `src/pages/Contacts.tsx` to `useRoleBasedAuth`.
+- Restored visibility for "Refresh", "Add Contact", and "Copy All" buttons based on derived `isAdmin` status.
+- Implemented `selectedDivision` as a local state in `Contacts.tsx` to ensure filter functionality remains intact.
+
+## 2. Optimized UX for Contacts Page
+**Problem:** Non-administrative users saw a generic contact list without their division context on load.
+**Fix:**
+- Added an `useEffect` to automatically detect the user's division (from `roleUser.division_name`) and apply the appropriate filter on page load.
+- Implemented a specialized loading state that waits for both MS Graph contacts and SharePoint role permissions to be ready.
+- Cleaned up duplicate helper logic for division ID normalization.
+**Impact:** A more personalized and secure experience for all users, with fully restored administrative tools.

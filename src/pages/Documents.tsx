@@ -716,9 +716,7 @@ export default function Documents() {
   const { instance } = useMsal();
   const { user } = useSupabaseAuth();
   const { isAdmin, isSuperAdmin } = useRoleBasedAuth();
-  // Temporary fix: Allow all users to see the button for testing/usage recovery
-  // const canAddDocument = isAdmin || isSuperAdmin;
-  const canAddDocument = true;
+  const canAddDocument = isAdmin;
 
   const [documents, setDocuments] = useState<DisplayableDocument[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<DisplayableDocument[]>([]);

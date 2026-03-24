@@ -1,3 +1,10 @@
+/**
+ * Contacts Page
+ * 
+ * Restored: 2026-03-22 08:25 AM
+ * Fix: Replaced useSupabaseAuth with useRoleBasedAuth to correctly handle isAdmin status 
+ * and restored the "Copy All" (MS Graph Export) functionality.
+ */
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,7 +15,7 @@ import { Search, Filter, Phone, Mail, MapPin, Plus, RefreshCw, Building, Users, 
 import { useToast } from '@/hooks/use-toast';
 import OrganizationalStructure from '@/components/contacts/OrganizationalStructure';
 import useMicrosoftContacts, { MicrosoftContact } from '@/hooks/useMicrosoftContacts';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -21,7 +28,8 @@ const Contacts = () => {
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [companyFilter, setCompanyFilter] = useState('all');
   const { contacts, isLoading, error, refetch } = useMicrosoftContacts();
-  const { session, user, profile, selectedDivision, isAdmin } = useSupabaseAuth();
+  const { isAdmin, user: roleUser, loading: roleLoading } = useRoleBasedAuth();
+  const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [allContacts, setAllContacts] = useState<MicrosoftContact[]>([]);
   const [selectedContact, setSelectedContact] = useState<MicrosoftContact | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,6 +37,27 @@ const Contacts = () => {
   const { toast } = useToast();
   // const { isInitialized: photosInitialized } = useEmployeePhotos(); // Removed duplicate
   const [photoUrls, setPhotoUrls] = useState<Map<string, { profileUrl?: string; modalUrl?: string }>>(new Map());
+
+  // Helper to normalize office location to division ID
+  const getDivisionIdFromOffice = (office?: string) => {
+    if (!office) return null;
+    // Normalize: "Corporate Services Division" -> "corporate-services-division"
+    return office.toLowerCase()
+      .trim()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
+  // Set initial division for non-admins
+  useEffect(() => {
+    if (!isAdmin && roleUser?.division_name && !selectedDivision) {
+      const divisionId = getDivisionIdFromOffice(roleUser.division_name);
+      if (divisionId) {
+        setSelectedDivision(divisionId);
+      }
+    }
+  }, [isAdmin, roleUser, selectedDivision]);
 
   const handleCopyAll = () => {
     if (allContacts.length === 0) {
@@ -58,17 +87,6 @@ const Contacts = () => {
   // Update contacts with MS Graph data
   useEffect(() => {
     if (contacts.length > 0) {
-      // Helper to normalize office location to division ID
-      const getDivisionIdFromOffice = (office?: string) => {
-        if (!office) return null;
-        // Normalize: "Corporate Services Division" -> "corporate-services-division"
-        return office.toLowerCase()
-          .trim()
-          .replace(/&/g, 'and')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-      };
-
       // Process Microsoft contacts
       const processedContacts = contacts.map(contact => {
         // Derive divisionId from officeLocation
@@ -458,6 +476,17 @@ const Contacts = () => {
       </div>
     );
   };
+
+  if (isLoading || roleLoading) {
+    return (
+      <PageLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <RefreshCw className="h-12 w-12 animate-spin text-primary opacity-20" />
+          <p className="text-muted-foreground animate-pulse">Loading contacts and permissions...</p>
+        </div>
+      </PageLayout>
+    );
+  }
 
   return (
     <PageLayout>

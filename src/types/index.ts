@@ -81,8 +81,17 @@ export interface TaskGroup {
   department?: string;
   order?: number;
   authorEmail?: string;
+  ownerEmail?: string; // email of user this "Assigned to Me" group belongs to
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface TaskComment {
+  id: string;
+  authorName: string;
+  authorEmail: string;
+  timestamp: string;
+  text: string;
 }
 
 export interface Task {
@@ -108,12 +117,14 @@ export interface Task {
   recurrence?: string;
   tags?: string[];
   subtasks?: { id: string; text: string; completed: boolean }[];
+  comments?: TaskComment[];
   createdAt?: string;
   completedAt?: string;
   completionDate?: string; // New field for accurate tracking
   createdBy?: string;        // Creator's display name
   createdByEmail?: string;   // Creator's email (primary field for filtering)
   authorEmail?: string;      // Alias for backward compatibility
+  assigneeViewMap?: Record<string, string>; // email -> groupId for per-assignee board placement
 }
 
 export interface Project {

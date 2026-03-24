@@ -1,7 +1,16 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Target, Activity, Briefcase, Users } from 'lucide-react';
+import { Target, Activity, Briefcase, Users, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { DivisionMetrics } from '@/types/division.types';
 import { RAGStatus } from '@/types/division.types';
 
@@ -11,6 +20,11 @@ interface RAGCardProps {
   status: RAGStatus;
   score: number;
   items: { label: string; value: string | number }[];
+  info?: {
+    title: string;
+    description: string;
+    content: React.ReactNode;
+  };
 }
 
 const ragColors: Record<RAGStatus, { bg: string; text: string; dot: string; border: string }> = {
@@ -19,11 +33,11 @@ const ragColors: Record<RAGStatus, { bg: string; text: string; dot: string; bord
   red: { bg: 'bg-red-50 dark:bg-red-950/30', text: 'text-red-700 dark:text-red-400', dot: 'bg-red-500', border: 'border-red-200 dark:border-red-800' },
 };
 
-const RAGCard: React.FC<RAGCardProps> = ({ title, icon, status, score, items }) => {
+const RAGCard: React.FC<RAGCardProps> = ({ title, icon, status, score, items, info }) => {
   const colors = ragColors[status];
 
-  return (
-    <Card className={`${colors.bg} ${colors.border} border`}>
+  const cardContent = (
+    <Card className={`${colors.bg} ${colors.border} border h-full relative group transition-all hover:shadow-md cursor-help`}>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -31,6 +45,13 @@ const RAGCard: React.FC<RAGCardProps> = ({ title, icon, status, score, items }) 
             <span className="text-sm font-semibold">{title}</span>
           </div>
           <div className="flex items-center gap-1.5">
+            {info && (
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity p-0">
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
+              </DialogTrigger>
+            )}
             <div className={`h-2.5 w-2.5 rounded-full ${colors.dot} animate-pulse`} />
             <span className={`text-sm font-bold ${colors.text}`}>{score}%</span>
           </div>
@@ -46,6 +67,25 @@ const RAGCard: React.FC<RAGCardProps> = ({ title, icon, status, score, items }) 
       </CardContent>
     </Card>
   );
+
+  if (info) {
+    return (
+      <Dialog>
+        {cardContent}
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{info.title}</DialogTitle>
+            <DialogDescription>{info.description}</DialogDescription>
+          </DialogHeader>
+          <div className="text-sm space-y-4">
+            {info.content}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return cardContent;
 };
 
 function getRAGStatus(score: number): RAGStatus {
@@ -79,6 +119,20 @@ export const DivisionTrafficLightPanel: React.FC<DivisionTrafficLightPanelProps>
         { label: 'KRAs active', value: metrics.activeKRAs },
         { label: 'At-risk KRAs', value: metrics.atRiskKRAs },
       ],
+      info: {
+        title: "Strategic Alignment Status",
+        description: "Corporate Strategy Integration",
+        content: (
+          <>
+            <p>This panel evaluates how effectively the division's localized goals are integrated with the broader corporate strategy.</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Objectives Linked:</strong> Measures the depth of strategic connectivity.</li>
+              <li><strong>KRAs Active:</strong> Highlights the volume of high-level result areas currently in motion.</li>
+              <li><strong>At-Risk KRAs:</strong> Flags strategic categories where performance is significantly lagging.</li>
+            </ul>
+          </>
+        )
+      }
     },
     {
       title: 'Operational Health',
@@ -90,6 +144,20 @@ export const DivisionTrafficLightPanel: React.FC<DivisionTrafficLightPanelProps>
         { label: 'Overdue tasks', value: metrics.overdueTasks },
         { label: 'In progress', value: metrics.inProgressTasks },
       ],
+      info: {
+        title: "Operational Health Status",
+        description: "Execution Efficiency Monitoring",
+        content: (
+          <>
+            <p>A real-time snapshot of the division's daily operational efficiency and task-level execution.</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Task Completion:</strong> Overall velocity of work finishing.</li>
+              <li><strong>Overdue:</strong> The number of items that have missed their commitment dates.</li>
+              <li><strong>In Progress:</strong> The volume of active, open work items.</li>
+            </ul>
+          </>
+        )
+      }
     },
     {
       title: 'Project Delivery',
@@ -101,6 +169,20 @@ export const DivisionTrafficLightPanel: React.FC<DivisionTrafficLightPanelProps>
         { label: 'Completed', value: metrics.completedProjects },
         { label: 'Overdue', value: metrics.overdueProjects },
       ],
+      info: {
+        title: "Project Delivery Status",
+        description: "Capital Initiative Performance",
+        content: (
+          <>
+            <p>Monitors the success rate and deadline compliance of significant division-wide projects.</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Active:</strong> Major projects currently consuming development resources.</li>
+              <li><strong>Completed:</strong> Successful milestone realizations in the current cycle.</li>
+              <li><strong>Overdue:</strong> Projects currently behind their project plan timeline.</li>
+            </ul>
+          </>
+        )
+      }
     },
     {
       title: 'Staff Performance',
@@ -112,6 +194,19 @@ export const DivisionTrafficLightPanel: React.FC<DivisionTrafficLightPanelProps>
         { label: 'Total staff', value: metrics.staffCount },
         { label: 'KPI on track', value: `${metrics.kpiOnTrackPercentage}%` },
       ],
+      info: {
+        title: "Staff Performance Status",
+        description: "Workforce Output & Health",
+        content: (
+          <>
+            <p>Evaluates the productivity and efficiency of the human resources assigned to the division.</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li><strong>Avg Tasks:</strong> Indicates the relative workload pressure on individual team members.</li>
+              <li><strong>KPI On Track:</strong> Shows the percentage of specific staff targets that are being successfully met.</li>
+            </ul>
+          </>
+        )
+      }
     },
   ];
 

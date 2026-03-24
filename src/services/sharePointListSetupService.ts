@@ -1488,6 +1488,7 @@ export class SharePointListSetupService {
                     { name: 'Priority', choice: { choices: ['Low', 'Medium', 'High', 'Urgent'] } },
                     { name: 'Description', text: { allowMultipleLines: true } },
                     { name: 'SubtasksJSON', text: { allowMultipleLines: true } },
+                    { name: 'CommentsJSON', text: { allowMultipleLines: true } },
                     { name: 'Tags', text: { allowMultipleLines: true } },
                     { name: 'Recurrence', text: {} },
                     { name: 'Assignees', text: { allowMultipleLines: true } }, // JSON for multiple assignees
@@ -3509,7 +3510,8 @@ export class SharePointListSetupService {
                     { name: 'Description', text: { allowMultipleLines: true } },
                     { name: 'Status', choice: { choices: ['Planned', 'In Progress', 'Completed', 'On Hold'] } },
                     { name: 'Department', text: {} },
-                    { name: 'Order', number: { decimalPlaces: 'none' } }
+                    { name: 'Order', number: { decimalPlaces: 'none' } },
+                    { name: 'OwnerEmail', text: { allowMultipleLines: false } }
                 ],
                 list: { template: 'genericList' }
             });
@@ -3541,7 +3543,34 @@ export class SharePointListSetupService {
 
             const tasksListId = tasksListCheck.value[0].id;
             console.log('🔗 [Setup] Ensuring RelatedTaskGroup lookup on Operations_Tasks...');
-            await this.addLookupColumn(tasksListId, 'RelatedTaskGroup', taskGroupsList.id, 'Title');
+
+            // Find the RelatedTaskGroup lookup column by iterating all columns
+            // (Graph API $filter on column name is unreliable — it can return the wrong column)
+            try {
+                const allCols = await this.client
+                    .api(`/sites/${this.siteId}/lists/${tasksListId}/columns`)
+                    .get();
+
+                const existingCol = allCols.value?.find((c: any) => c.name === 'RelatedTaskGroup' && c.lookup);
+
+                if (existingCol) {
+                    console.log(`🔄 [Setup] Found RelatedTaskGroup lookup (column ID: ${existingCol.id}, target: ${existingCol.lookup?.listId}). Deleting and recreating to point to ${taskGroupsList.id}...`);
+                    await this.client
+                        .api(`/sites/${this.siteId}/lists/${tasksListId}/columns/${existingCol.id}`)
+                        .delete();
+                    console.log('🗑️ [Setup] Old RelatedTaskGroup lookup deleted.');
+                    await this.addLookupColumn(tasksListId, 'RelatedTaskGroup', taskGroupsList.id, 'Title');
+                    console.log('✅ [Setup] RelatedTaskGroup lookup recreated.');
+                } else {
+                    console.log('📝 [Setup] RelatedTaskGroup column not found, creating fresh...');
+                    await this.addLookupColumn(tasksListId, 'RelatedTaskGroup', taskGroupsList.id, 'Title');
+                }
+            } catch (lookupErr: any) {
+                console.warn('⚠️ [Setup] Lookup column check/fix failed:', lookupErr.message);
+                // Last resort: try creating anyway
+                await this.addLookupColumn(tasksListId, 'RelatedTaskGroup', taskGroupsList.id, 'Title');
+            }
+
             console.log('✅ [Setup] Lookup column ensured.');
 
             return { success: true, message: 'Operations_TaskGroups created and linked to Operations_Tasks successfully!', details: taskGroupsList };

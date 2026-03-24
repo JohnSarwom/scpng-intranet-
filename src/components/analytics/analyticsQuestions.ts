@@ -12,7 +12,25 @@ export const ANALYTICS_QUICK_QUESTIONS: string[] = [
     "Identify traffic trends this month"
 ];
 
+export const OVERVIEW_QUICK_QUESTIONS: string[] = [
+    "Cross-Platform Summary",
+    "Which platform has most reach?",
+    "Engagement trends across sources",
+    "Audience growth comparison",
+    "Top performing content"
+];
+
 export const ANALYTICS_QUESTION_LIBRARY: AnalyticsQuestionCategory[] = [
+    {
+        id: 'cross-platform',
+        title: 'Cross-Platform Performance',
+        questions: [
+            { id: 'cp1', text: 'Compare reach across Website, Facebook, and LinkedIn.' },
+            { id: 'cp2', text: 'Which platform is currently seeing the highest engagement rate?' },
+            { id: 'cp3', text: 'Analyze the cross-platform trend for the last 14 days.' },
+            { id: 'cp4', text: 'Which audience segment is growing fastest across all channels?' }
+        ]
+    },
     {
         id: 'overview',
         title: 'Traffic Overview',
@@ -21,6 +39,16 @@ export const ANALYTICS_QUESTION_LIBRARY: AnalyticsQuestionCategory[] = [
             { id: 'o2', text: 'What is the overall trend in page views and unique visitors?' },
             { id: 'o3', text: 'How does this month compare to last month in key metrics?' },
             { id: 'o4', text: 'What is the current bounce rate and what might be causing it?' }
+        ]
+    },
+    {
+        id: 'social-media',
+        title: 'Social Media Insights',
+        questions: [
+            { id: 'sm1', text: 'How is our Facebook reach trending compared to LinkedIn?' },
+            { id: 'sm2', text: 'Which social media platform drives more traffic to the website?' },
+            { id: 'sm3', text: 'Analyze social media engagement trends this month.' },
+            { id: 'sm4', text: 'What content performs best on our social channels?' }
         ]
     },
     {

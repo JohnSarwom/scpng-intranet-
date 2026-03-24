@@ -88,6 +88,16 @@ export class SharePointOpsService {
                 this.ensureNotificationsList().catch(err =>
                     console.warn('⚠️ [SP Ops] Auto-ensure Notifications list failed (non-blocking):', err.message)
                 );
+
+                // Auto-ensure AssigneeViewMap column on Tasks list (fire-and-forget)
+                this.ensureAssigneeViewMapColumn().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure AssigneeViewMap column failed (non-blocking):', err.message)
+                );
+
+                // Auto-ensure OwnerEmail column on TaskGroups list (fire-and-forget)
+                this.ensureOwnerEmailColumn().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure OwnerEmail column failed (non-blocking):', err.message)
+                );
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
                 this.initializationPromise = null; // Reset on error
@@ -150,6 +160,44 @@ export class SharePointOpsService {
             } catch (err: any) {
                 console.warn(`⚠️ [SP Ops] Failed to check/create Assignees on ${key}:`, err.message);
             }
+        }
+    }
+
+    private async ensureAssigneeViewMapColumn(): Promise<void> {
+        const listId = this.listIds['TASKS'];
+        if (!listId) return;
+        try {
+            const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter("name eq 'AssigneeViewMap'").select('id,name').get();
+            if (!res.value || res.value.length === 0) {
+                console.log('🔧 [SP Ops] Creating AssigneeViewMap column on Operations_Tasks...');
+                await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({
+                    name: 'AssigneeViewMap',
+                    text: { allowMultipleLines: true, textType: 'plain' },
+                });
+            } else {
+                console.log('✅ [SP Ops] AssigneeViewMap column exists on Operations_Tasks');
+            }
+        } catch (err: any) {
+            console.warn('⚠️ [SP Ops] Failed to check/create AssigneeViewMap on Tasks:', err.message);
+        }
+    }
+
+    private async ensureOwnerEmailColumn(): Promise<void> {
+        const listId = this.listIds['TASK_GROUPS'];
+        if (!listId) return;
+        try {
+            const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter("name eq 'OwnerEmail'").select('id,name').get();
+            if (!res.value || res.value.length === 0) {
+                console.log('🔧 [SP Ops] Creating OwnerEmail column on Operations_TaskGroups...');
+                await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({
+                    name: 'OwnerEmail',
+                    text: { allowMultipleLines: false, textType: 'plain' },
+                });
+            } else {
+                console.log('✅ [SP Ops] OwnerEmail column exists on Operations_TaskGroups');
+            }
+        } catch (err: any) {
+            console.warn('⚠️ [SP Ops] Failed to check/create OwnerEmail on TaskGroups:', err.message);
         }
     }
 
@@ -458,20 +506,33 @@ export class SharePointOpsService {
                 StartDate: task.startDate ? new Date(task.startDate).toISOString() : null,
                 Department: task.unit_id || department || 'General',
                 SubtasksJSON: JSON.stringify(task.subtasks || []),
+                CommentsJSON: JSON.stringify(task.comments || []),
                 Tags: tags.join(','),
                 Assignees: task.assignees ? JSON.stringify(task.assignees) : undefined,
+                AssigneeViewMap: task.assigneeViewMap ? JSON.stringify(task.assigneeViewMap) : undefined,
                 // Lookups
                 RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
                 RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
-                // Write group ID to BOTH lookups for consistency
-                RelatedProjectLookupId: numericGroupId,
+                // Write group ID to TaskGroup lookup only (Projects lookup targets a different list)
                 RelatedTaskGroupLookupId: numericGroupId
             }
         };
 
 
         // console.log('📝 [SP Ops] Adding Task Payload:', JSON.stringify(payload, null, 2));
-        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
+        let response: any;
+        try {
+            response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
+        } catch (err: any) {
+            // If AssigneeViewMap column doesn't exist yet, retry without it
+            if (payload.fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
+                console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
+                delete payload.fields.AssigneeViewMap;
+                response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).post(payload);
+            } else {
+                throw err;
+            }
+        }
 
         // Sync KPI checklist if task is linked to a KPI
         if (task.kpi_id) {
@@ -494,10 +555,13 @@ export class SharePointOpsService {
         if (task.startDate !== undefined) fields.StartDate = task.startDate ? new Date(task.startDate).toISOString() : null;
         if (task.unit_id !== undefined) fields.Department = task.unit_id;
         if (task.subtasks !== undefined) fields.SubtasksJSON = JSON.stringify(task.subtasks);
-        if (task.subtasks !== undefined) fields.SubtasksJSON = JSON.stringify(task.subtasks);
+        if (task.comments !== undefined) fields.CommentsJSON = JSON.stringify(task.comments);
         if (task.assignees !== undefined) {
             console.log('📝 [SP Ops] Setting Assignees for Task:', task.assignees);
             fields.Assignees = JSON.stringify(task.assignees);
+        }
+        if (task.assigneeViewMap !== undefined) {
+            fields.AssigneeViewMap = JSON.stringify(task.assigneeViewMap);
         }
 
         // Completion Date Logic
@@ -512,13 +576,13 @@ export class SharePointOpsService {
         }
 
         // Handle Project ID / Task Group ID logic for Updates
-        // Buckets in the UI come from Task Groups, so we always sync projectId to RelatedTaskGroupLookupId
+        // Buckets in the UI come from Task Groups, so projectId maps to RelatedTaskGroupLookupId ONLY.
+        // RelatedProjectLookupId is a lookup to Operations_Projects (different list) and must NOT
+        // receive TaskGroup IDs — SharePoint rejects IDs that don't exist in the target list.
         if (task.projectId !== undefined) {
             let numericGroupId = task.projectId ? Number(task.projectId) : null;
             if (isNaN(numericGroupId as number)) numericGroupId = null;
 
-            // Write to BOTH lookups for backwards compatibility
-            fields.RelatedProjectLookupId = numericGroupId;
             fields.RelatedTaskGroupLookupId = numericGroupId;
 
             // Also update tags
@@ -535,11 +599,10 @@ export class SharePointOpsService {
         // Lookups
         if (task.kra_id !== undefined) fields.RelatedKRALookupId = task.kra_id ? Number(task.kra_id) : null;
         if (task.kpi_id !== undefined) fields.RelatedKPILookupId = task.kpi_id ? Number(task.kpi_id) : null;
-        // Also handle explicit groupId updates (sync both directions)
+        // Also handle explicit groupId updates
         if (task.groupId !== undefined && task.projectId === undefined) {
             const numericGroupId = task.groupId ? Number(task.groupId) : null;
             fields.RelatedTaskGroupLookupId = isNaN(numericGroupId as number) ? null : numericGroupId;
-            fields.RelatedProjectLookupId = isNaN(numericGroupId as number) ? null : numericGroupId;
         }
 
         // Fetch old task data to detect KPI linkage changes
@@ -553,7 +616,19 @@ export class SharePointOpsService {
         } catch { /* proceed without old data */ }
 
         console.log(`📝 [SP Ops] Updating Task ${id} Payload:`, JSON.stringify({ fields }, null, 2));
-        const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+        let response: any;
+        try {
+            response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+        } catch (err: any) {
+            // If AssigneeViewMap column doesn't exist yet, retry without it
+            if (fields.AssigneeViewMap !== undefined && err?.message?.includes('AssigneeViewMap')) {
+                console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
+                delete fields.AssigneeViewMap;
+                response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+            } else {
+                throw err;
+            }
+        }
 
         // Sync KPI checklist(s) after task update
         const newKpiId = task.kpi_id !== undefined
@@ -1484,6 +1559,7 @@ export class SharePointOpsService {
             dueDate: f.DueDate ? f.DueDate.split('T')[0] : '',
             startDate: f.StartDate ? new Date(f.StartDate) : undefined,
             subtasks: f.SubtasksJSON ? JSON.parse(f.SubtasksJSON) : [],
+            comments: f.CommentsJSON ? JSON.parse(f.CommentsJSON) : [],
             tags: tags,
             projectId: projectId, // Use our resolved ID
             groupId: groupId,
@@ -1500,6 +1576,8 @@ export class SharePointOpsService {
             createdByEmail: createdByEmail,
             createdBy: createdByName, // Mapped to Task.createdBy
             authorEmail: createdByEmail, // Alias
+            // Per-assignee board placement map
+            assigneeViewMap: (() => { try { return f.AssigneeViewMap ? JSON.parse(f.AssigneeViewMap) : undefined; } catch { return undefined; } })(),
         };
     }
 
@@ -1688,15 +1766,18 @@ export class SharePointOpsService {
 
     async addTaskGroup(group: Partial<TaskGroup>): Promise<TaskGroup> {
         if (!this.listIds['TASK_GROUPS']) throw new Error('Task Groups list not found');
-        const payload = {
-            fields: {
-                Title: group.name,
-                Description: group.description || '',
-                Status: group.status === 'in-progress' ? 'In Progress' : (group.status === 'completed' ? 'Completed' : 'Planned'),
-                Department: group.department || '',
-                Order: group.order || 0
-            }
+        const fields: any = {
+            Title: group.name,
+            Description: group.description || '',
+            Status: group.status === 'in-progress' ? 'In Progress' : (group.status === 'completed' ? 'Completed' : 'Planned'),
+            Department: group.department || '',
+            Order: group.order || 0,
         };
+        // Only include OwnerEmail when it has a value (avoids errors if column doesn't exist yet)
+        if (group.ownerEmail) {
+            fields.OwnerEmail = group.ownerEmail;
+        }
+        const payload = { fields };
 
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`).post(payload);
         return this.mapTaskGroup(response);
@@ -1730,6 +1811,7 @@ export class SharePointOpsService {
             department: f.Department || '',
             order: f.Order || 0,
             authorEmail: item.createdBy?.user?.email || item.lastModifiedBy?.user?.email || '',
+            ownerEmail: f.OwnerEmail || '',
             createdAt: item.createdDateTime,
             updatedAt: item.lastModifiedDateTime,
         };
@@ -2209,5 +2291,233 @@ export class SharePointOpsService {
             createdBy: f.CreatedBy_Custom || '',
             createdAt: item.createdDateTime || '',
         };
+    }
+
+    /**
+     * Create an in-app notification for a user.
+     */
+    async addNotification(params: {
+        title: string;
+        message: string;
+        recipientEmail: string;
+        type?: string;
+        category?: string;
+        actionUrl?: string;
+        createdBy?: string;
+    }): Promise<void> {
+        const listId = this.listIds['NOTIFICATIONS'];
+        if (!listId) {
+            console.warn('⚠️ [SP Ops] Notifications list not resolved, skipping notification');
+            return;
+        }
+
+        try {
+            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post({
+                fields: {
+                    Title: params.title,
+                    Message: params.message,
+                    RecipientEmail: params.recipientEmail.toLowerCase(),
+                    Type: params.type || 'info',
+                    Category: params.category || '',
+                    ActionUrl: params.actionUrl || '',
+                    IsRead: false,
+                    CreatedBy_Custom: params.createdBy || '',
+                },
+            });
+        } catch (err: any) {
+            console.error('❌ [SP Ops] addNotification failed:', err.message);
+        }
+    }
+
+    /**
+     * Send an email notification via Microsoft Graph API.
+     */
+    async sendEmailNotification(params: {
+        toEmail: string;
+        subject: string;
+        body: string;
+    }): Promise<void> {
+        try {
+            await this.client.api('/me/sendMail').post({
+                message: {
+                    subject: params.subject,
+                    body: {
+                        contentType: 'HTML',
+                        content: params.body,
+                    },
+                    toRecipients: [
+                        { emailAddress: { address: params.toEmail } },
+                    ],
+                },
+                saveToSentItems: false,
+            });
+            console.log(`📧 [SP Ops] Email sent to ${params.toEmail}`);
+        } catch (err: any) {
+            console.error(`❌ [SP Ops] sendEmail to ${params.toEmail} failed:`, err.message);
+        }
+    }
+
+    /**
+     * Notify task stakeholders about a new comment.
+     * Creates in-app notifications + sends emails to assignees & creator (excluding commenter).
+     */
+    async getOrCreateAssignedToMeGroup(assigneeEmail: string, department: string): Promise<TaskGroup> {
+        const groups = await this.getTaskGroups();
+        const existing = groups.find(
+            g => g.ownerEmail?.toLowerCase() === assigneeEmail.toLowerCase()
+        );
+        if (existing) return existing;
+
+        console.log(`🔧 [SP Ops] Creating 'Assigned to Me' group for ${assigneeEmail}`);
+        return await this.addTaskGroup({
+            name: 'Assigned to Me',
+            description: `Auto-created group for tasks assigned to ${assigneeEmail}`,
+            status: 'in-progress',
+            department,
+            ownerEmail: assigneeEmail.toLowerCase(),
+            order: 999999, // Appears last, just before Add Group
+        });
+    }
+
+    async notifyAssignment(params: {
+        taskId: string;
+        taskTitle: string;
+        assignerName: string;
+        assignerEmail: string;
+        assignees: { email?: string; name?: string }[];
+    }): Promise<void> {
+        const { taskId, taskTitle, assignerName, assignerEmail, assignees } = params;
+        const normalizedAssigner = assignerEmail.toLowerCase();
+
+        // Collect unique recipient emails, excluding self-assignment
+        const recipientEmails = new Set<string>();
+        for (const a of assignees) {
+            if (a.email) recipientEmails.add(a.email.toLowerCase());
+        }
+        recipientEmails.delete(normalizedAssigner);
+
+        if (recipientEmails.size === 0) return;
+
+        const actionUrl = `/unit?tab=tasks&taskId=${taskId}`;
+
+        const emailBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #8B0000; color: white; padding: 16px 24px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; font-size: 18px;">Task Assigned to You</h2>
+                </div>
+                <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Task:</p>
+                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${taskTitle}</p>
+                    <p style="margin: 0 0 16px; font-size: 14px; color: #374151;">
+                        ${assignerName} has assigned this task to you.
+                    </p>
+                    <a href="${typeof window !== 'undefined' ? window.location.origin : ''}${actionUrl}"
+                       style="display: inline-block; background: #8B0000; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px;">
+                        View Task
+                    </a>
+                </div>
+            </div>
+        `;
+
+        const promises: Promise<void>[] = [];
+        for (const email of recipientEmails) {
+            promises.push(
+                this.addNotification({
+                    title: `${assignerName} assigned you to "${taskTitle}"`,
+                    message: `You have been assigned to the task "${taskTitle}"`,
+                    recipientEmail: email,
+                    type: 'task',
+                    category: 'task',
+                    actionUrl,
+                    createdBy: normalizedAssigner,
+                })
+            );
+            promises.push(
+                this.sendEmailNotification({
+                    toEmail: email,
+                    subject: `Task assigned: ${taskTitle}`,
+                    body: emailBody,
+                })
+            );
+        }
+
+        await Promise.allSettled(promises);
+        console.log(`🔔 [SP Ops] Assignment notifications sent to ${recipientEmails.size} recipient(s)`);
+    }
+
+    async notifyComment(params: {
+        taskId: string;
+        taskTitle: string;
+        commenterName: string;
+        commenterEmail: string;
+        commentText: string;
+        assignees?: { email?: string; name?: string }[];
+        creatorEmail?: string;
+    }): Promise<void> {
+        const { taskId, taskTitle, commenterName, commenterEmail, commentText, assignees, creatorEmail } = params;
+        const normalizedCommenter = commenterEmail.toLowerCase();
+
+        // Collect unique recipient emails (assignees + creator, minus commenter)
+        const recipientEmails = new Set<string>();
+        if (creatorEmail) recipientEmails.add(creatorEmail.toLowerCase());
+        if (assignees) {
+            for (const a of assignees) {
+                if (a.email) recipientEmails.add(a.email.toLowerCase());
+            }
+        }
+        recipientEmails.delete(normalizedCommenter);
+
+        if (recipientEmails.size === 0) return;
+
+        const actionUrl = `/unit?tab=tasks&taskId=${taskId}`;
+        const truncatedComment = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+
+        const emailBody = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <div style="background: #8B0000; color: white; padding: 16px 24px; border-radius: 8px 8px 0 0;">
+                    <h2 style="margin: 0; font-size: 18px;">New Comment on Task</h2>
+                </div>
+                <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+                    <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Task:</p>
+                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${taskTitle}</p>
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+                        <p style="margin: 0 0 4px; font-weight: 600; font-size: 14px;">${commenterName}</p>
+                        <p style="margin: 0; font-size: 14px; color: #374151;">${commentText}</p>
+                    </div>
+                    <a href="${typeof window !== 'undefined' ? window.location.origin : ''}${actionUrl}"
+                       style="display: inline-block; background: #8B0000; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px;">
+                        View Task
+                    </a>
+                </div>
+            </div>
+        `;
+
+        // Fire-and-forget: send all notifications in parallel
+        const promises: Promise<void>[] = [];
+        for (const email of recipientEmails) {
+            // In-app notification
+            promises.push(
+                this.addNotification({
+                    title: `${commenterName} commented on "${taskTitle}"`,
+                    message: truncatedComment,
+                    recipientEmail: email,
+                    type: 'info',
+                    category: 'task',
+                    actionUrl,
+                    createdBy: normalizedCommenter,
+                })
+            );
+            // Email notification
+            promises.push(
+                this.sendEmailNotification({
+                    toEmail: email,
+                    subject: `New comment on task: ${taskTitle}`,
+                    body: emailBody,
+                })
+            );
+        }
+
+        await Promise.allSettled(promises);
+        console.log(`🔔 [SP Ops] Comment notifications sent to ${recipientEmails.size} recipient(s)`);
     }
 }

@@ -5,7 +5,7 @@
 const LOCAL_ORIGIN = "http://localhost:8082"; // Updated to match Vite server port from logs
 
 // The redirect URI currently configured in Azure AD
-const AZURE_CONFIGURED_URI = "https://id-preview--3816f188-bb84-4c3d-963d-5a30c86f087c.lovable.app";
+const AZURE_CONFIGURED_URI = "https://unitopia-hub.vercel.app";
 
 // Choose which URI to use (uncomment the one you want to use)
 const REDIRECT_URI = LOCAL_ORIGIN;

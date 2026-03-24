@@ -19,7 +19,7 @@ import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useMsal } from '@azure/msal-react';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
-import { ANALYTICS_QUICK_QUESTIONS, ANALYTICS_QUESTION_LIBRARY } from './analyticsQuestions';
+import { ANALYTICS_QUICK_QUESTIONS, OVERVIEW_QUICK_QUESTIONS, ANALYTICS_QUESTION_LIBRARY } from './analyticsQuestions';
 import { cn } from '@/lib/utils';
 import {
     AIChatPanel,
@@ -88,6 +88,13 @@ export interface WebsiteAnalyticsData {
     activeVisitors: number;
     newVisitorPct: number;
     returningVisitorPct: number;
+    socialStats?: {
+        facebook: { reach: number; engagement: number; followers: number; trend: number };
+        linkedin: { impressions: number; clicks: number; followers: number; trend: number };
+    };
+    crossPlatformTrends?: { date: string; website: number; facebook: number; linkedin: number; }[];
+    audienceGrowth?: { date: string; total: number }[];
+    contentPerformance?: { category: string; engagement: number }[];
 }
 
 type DataSourceFilter = 'all' | 'pages' | 'traffic_sources' | 'devices' | 'geography';
@@ -123,16 +130,23 @@ At the VERY end of your response, provide 3 relevant follow-up questions:
 
 interface WebsiteAnalyticsAIChatProps {
     data: WebsiteAnalyticsData;
+    type?: 'website' | 'overview';
 }
 
-const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data }) => {
+const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, type = 'website' }) => {
+    const isOverview = type === 'overview';
     const [expanded, setExpanded] = useState(false);
     const [query, setQuery] = useState('');
+
+    const INITIAL_GREETING = isOverview 
+        ? "Hello! I'm your Cross-Platform Analytics Assistant. I can analyze trends and engagement across your Website, Facebook, and LinkedIn channels."
+        : "Hello! I'm your Website Analytics Assistant. Ask me about traffic trends, top pages, visitor demographics, referral sources, and actionable insights for the SCPNG public website.";
+
     const [chatMessages, setChatMessages] = useState<AIChatMessage[]>([
         {
             id: uuidv4(),
             sender: 'ai',
-            text: "Hello! I'm your Website Analytics Assistant. Ask me about traffic trends, top pages, visitor demographics, referral sources, and actionable insights for the SCPNG public website.",
+            text: INITIAL_GREETING,
             isTyping: false,
             timestamp: new Date(),
         },
@@ -156,7 +170,6 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data })
     const { inProgress: msalInProgress } = useMsal();
     const graphContext = useMicrosoftGraph();
 
-    const INITIAL_GREETING = "Hello! I'm your Website Analytics Assistant. Ask me about traffic trends, top pages, visitor demographics, referral sources, and actionable insights for the SCPNG public website.";
 
     const dataSourceOptions = useMemo(() => [
         { value: 'all', label: 'All Analytics', count: '' },
@@ -167,10 +180,41 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data })
     ], [data]);
 
     const serializeAnalyticsContext = (filter: DataSourceFilter) => {
-        let context = `TIMESTAMP: ${new Date().toISOString()}\n\n`;
+        let context = `TIMESTAMP: ${new Date().toISOString()}\n`;
+        context += `ASSISTANT_TYPE: ${type.toUpperCase()} ANALYTICS\n\n`;
+
+        if (isOverview && data.socialStats) {
+            context += `--- SOCIAL MEDIA OVERVIEW ---\n`;
+            context += `FACEBOOK: Reach ${data.socialStats.facebook.reach.toLocaleString()}, Engagement ${data.socialStats.facebook.engagement.toLocaleString()}, Followers ${data.socialStats.facebook.followers.toLocaleString()} (${data.socialStats.facebook.trend}% trend)\n`;
+            context += `LINKEDIN: Impressions ${data.socialStats.linkedin.impressions.toLocaleString()}, Clicks ${data.socialStats.linkedin.clicks.toLocaleString()}, Followers ${data.socialStats.linkedin.followers.toLocaleString()} (${data.socialStats.linkedin.trend}% trend)\n\n`;
+            
+            if (data.crossPlatformTrends) {
+                context += `--- CROSS-PLATFORM TRENDS (Daily Activity) ---\n`;
+                data.crossPlatformTrends.forEach(t => {
+                    context += `${t.date}: Website ${t.website}, Facebook ${t.facebook}, LinkedIn ${t.linkedin}\n`;
+                });
+                context += `\n`;
+            }
+
+            if (data.audienceGrowth) {
+                context += `--- AUDIENCE GROWTH TREND ---\n`;
+                data.audienceGrowth.forEach(g => {
+                    context += `${g.date}: ${g.total.toLocaleString()} total audience\n`;
+                });
+                context += `\n`;
+            }
+
+            if (data.contentPerformance) {
+                context += `--- CONTENT ENGAGEMENT BY CATEGORY ---\n`;
+                data.contentPerformance.forEach(c => {
+                    context += `${c.category}: ${c.engagement.toLocaleString()} interactions\n`;
+                });
+                context += `\n`;
+            }
+        }
 
         if (filter === 'all' || filter === 'pages') {
-            context += `--- OVERVIEW METRICS ---\n`;
+            context += `--- WEBSITE OVERVIEW METRICS ---\n`;
             context += `Total Page Views: ${data.overview.totalPageViews.toLocaleString()} (${data.overview.pageViewsTrend > 0 ? '+' : ''}${data.overview.pageViewsTrend}% vs last month)\n`;
             context += `Unique Visitors: ${data.overview.uniqueVisitors.toLocaleString()} (${data.overview.visitorsTrend > 0 ? '+' : ''}${data.overview.visitorsTrend}% vs last month)\n`;
             context += `Avg Session Duration: ${data.overview.avgSessionDuration} (${data.overview.sessionTrend > 0 ? '+' : ''}${data.overview.sessionTrend}% vs last month)\n`;
@@ -527,7 +571,7 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data })
                     Quick Analysis
                 </p>
                 <div className="flex flex-wrap gap-2">
-                    {ANALYTICS_QUICK_QUESTIONS.map((q, i) => (
+                    {(isOverview ? OVERVIEW_QUICK_QUESTIONS : ANALYTICS_QUICK_QUESTIONS).map((q, i) => (
                         <Button
                             key={i}
                             variant="outline"
@@ -564,7 +608,9 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data })
                             <img src="/images/SCPNG Original Logo.png" alt="SCPNG Logo" className="h-8 w-auto" />
                         )}
                         {!isFullScreenInstance && <Bot className="w-5 h-5 text-[#400010]" />}
-                        <CardTitle className="text-lg">Website Analytics AI Analyst</CardTitle>
+                        <CardTitle className="text-lg">
+                            {isOverview ? 'Cross-Platform AI Analyst' : 'Website Analytics AI Analyst'}
+                        </CardTitle>
                     </div>
                     <div className="flex items-center gap-2">
                         {(expanded || isFullScreenInstance) && (
@@ -619,7 +665,11 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data })
                 </div>
                 {!isFullScreenInstance && !expanded && (
                     <div className="mt-2 cursor-pointer" onClick={() => setExpanded(true)}>
-                        <CardDescription className="mb-2">AI-powered website traffic analysis and performance insights</CardDescription>
+                        <CardDescription className="mb-2">
+                            {isOverview 
+                                ? 'AI-powered cross-channel analysis for Website, Facebook, and LinkedIn'
+                                : 'AI-powered website traffic analysis and performance insights'}
+                        </CardDescription>
                         <div className="flex flex-wrap gap-3">
                             <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
                                 <Eye className="w-3 h-3 text-[#400010]" />
