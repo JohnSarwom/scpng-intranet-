@@ -794,7 +794,7 @@ const Strategy = () => {
                             </div>
                         </div>
 
-                        {/* 4. Division Alignment & KRAs (Simplified Accordion Section) */}
+                        {/* 4. Cascading Strategic Goals into KRAs (Simplified Accordion Section) */}
                         <div className="space-y-8 pt-4">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-6">
                                 <div className="space-y-1">
@@ -805,10 +805,10 @@ const Strategy = () => {
                                         <span className="text-xs font-bold uppercase tracking-widest opacity-70">Operational Execution</span>
                                     </div>
                                     <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                                        Division Alignment & KRAs
+                                        Cascading Strategic Goals into KRAs
                                     </h2>
                                     <p className="text-sm text-muted-foreground">
-                                        Strategic objectives cascaded into divisional Key Result Areas (KRAs).
+                                        Strategic goals cascaded into divisional Key Result Areas (KRAs).
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -825,7 +825,7 @@ const Strategy = () => {
                                                 navigator.clipboard.writeText(JSON.stringify(rawData, null, 2));
                                                 toast({
                                                     title: "Data Copied",
-                                                    description: "Raw SharePoint list data for Division Alignment & KRAs copied to clipboard.",
+                                                    description: "Raw SharePoint list data for Cascading Strategic Goals into KRAs copied to clipboard.",
                                                 });
                                             }}
                                             className="text-xs h-8 border-intranet-primary/20 hover:bg-intranet-primary/5 text-intranet-primary"

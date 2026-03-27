@@ -147,7 +147,7 @@ export const StrategyPageSkeleton = () => {
                             </div>
                         </div>
 
-                        {/* Division Alignment Header Skeleton */}
+                        {/* Cascading Strategic Goals Header Skeleton */}
                         <div className="space-y-8 pt-4">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b pb-6">
                                 <div className="space-y-2">
