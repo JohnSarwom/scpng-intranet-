@@ -23,6 +23,12 @@ const STRATEGY_CONFIG = {
     }
 };
 
+// Helper to escape values for OData filter queries
+const escapeFilter = (val: string) => {
+    if (!val) return '';
+    return val.replace(/'/g, "''").replace(/&/g, '%26').replace(/\+/g, '%2B').replace(/#/g, '%23');
+};
+
 let cachedStrategySiteId: string = '';
 let cachedStrategyListIds: Record<string, string> = {};
 let globalStrategyInitPromise: Promise<void> | null = null;
@@ -294,7 +300,8 @@ export class StrategyService {
 
         // Find item ID
         const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['CONFIG']}/items`)
-            .filter(`fields/Title eq '${key}'`)
+            .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+            .filter(`fields/Title eq '${escapeFilter(key)}'`)
             .get();
 
         if (items.value && items.value.length > 0) {
@@ -313,6 +320,27 @@ export class StrategyService {
     private async updatePillarsBulk(pillars: any[]): Promise<void> {
         if (!this.listIds['PILLARS']) return;
 
+        // Fetch existing items to handle deletions (clean up corrupted/obsolete items)
+        const allExisting = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['PILLARS']}/items`)
+            .expand('fields')
+            .get();
+
+        const validTitles = pillars.map(p => (p.name || p.title).trim().toLowerCase());
+
+        if (allExisting.value && allExisting.value.length > 0) {
+            for (const item of allExisting.value) {
+                const itemTitle = (item.fields.Title || '').trim().toLowerCase();
+                if (!validTitles.includes(itemTitle)) {
+                    console.log(`[StrategyService] Deleting obsolete pillar: ${item.fields.Title}`);
+                    try {
+                        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['PILLARS']}/items/${item.id}`).delete();
+                    } catch (err) {
+                        console.error(`Failed to delete obsolete pillar ${item.fields.Title}:`, err);
+                    }
+                }
+            }
+        }
+
         // Simple strategy: iterate and update/create. For simplicity in wizard, 
         // we often assume pillars are fixed names or we match by Title.
         for (let i = 0; i < pillars.length; i++) {
@@ -320,7 +348,8 @@ export class StrategyService {
             const title = pillar.name || pillar.title;
 
             const existing = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['PILLARS']}/items`)
-                .filter(`fields/Title eq '${title}'`)
+                .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                .filter(`fields/Title eq '${escapeFilter(title)}'`)
                 .get();
 
             const payload = {
@@ -347,7 +376,8 @@ export class StrategyService {
 
         for (const align of alignments) {
             const existing = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['ALIGNMENT']}/items`)
-                .filter(`fields/Title eq '${align.name}'`)
+                .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                .filter(`fields/Title eq '${escapeFilter(align.name)}'`)
                 .get();
 
             const payload = {

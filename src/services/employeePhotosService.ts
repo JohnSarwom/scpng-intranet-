@@ -13,6 +13,12 @@ export interface EmployeePhoto {
     photoUrl: string;
 }
 
+// Helper to safely escape OData filter values
+const escapeFilter = (val: string) => {
+    if (!val) return '';
+    return encodeURIComponent(val.replace(/'/g, "''"));
+};
+
 export class EmployeePhotosService {
     private client: Client;
     private static siteId: string | null = null;
@@ -106,7 +112,7 @@ export class EmployeePhotosService {
                 const items = await this.client
                     .api(`/sites/${EmployeePhotosService.siteId}/lists/${EmployeePhotosService.profileListId}/items`)
                     .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
-                    .filter(`fields/Title eq '${email}'`)
+                    .filter(`fields/Title eq '${escapeFilter(email)}'`)
                     .expand('fields')
                     .get();
 
@@ -390,7 +396,7 @@ export class EmployeePhotosService {
             const batch = uniqueEmails.slice(i, i + batchSize);
 
             // Construct Filter Query
-            const filterQuery = batch.map(email => `fields/Title eq '${email}'`).join(' or ');
+            const filterQuery = batch.map(email => `fields/Title eq '${escapeFilter(email)}'`).join(' or ');
 
             try {
                 // Fetch Metadata for Batch
@@ -498,7 +504,7 @@ export class EmployeePhotosService {
             const itemsReq = await this.client
                 .api(`/sites/${EmployeePhotosService.siteId}/lists/${listId}/items`)
                 .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
-                .filter(`fields/Title eq '${email}'`)
+                .filter(`fields/Title eq '${escapeFilter(email)}'`)
                 .get();
 
             let itemId;

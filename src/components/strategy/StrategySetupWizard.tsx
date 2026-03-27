@@ -169,7 +169,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
     };
 
     const handleSave = () => {
-        onSave({ mission, vision, organizationValues: pillars, pillars: objectives, alignments });
+        onSave({ mission, vision, pillars, objectives, alignments });
         toast({
             title: "Strategy Updated",
             description: "The strategic framework has been successfully updated and published.",

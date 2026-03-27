@@ -25,6 +25,12 @@ export interface UserRole {
     groups?: string[]; // Array of group names
 }
 
+// Helper to safely escape OData filter values
+const escapeFilter = (val: string) => {
+    if (!val) return '';
+    return encodeURIComponent(val.replace(/'/g, "''"));
+};
+
 export class UserSharePointService {
     private client: Client;
     private siteId: string | null = null;
@@ -231,7 +237,7 @@ export class UserSharePointService {
                 .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
                 .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
                 .expand('fields')
-                .filter(`fields/Title eq '${email}'`)
+                .filter(`fields/Title eq '${escapeFilter(email)}'`)
                 .get();
 
             if (response.value && response.value.length > 0) {
