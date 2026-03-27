@@ -670,11 +670,11 @@ const Strategy = () => {
                             </p>
                         </div>
 
-                        {/* 3. Strategic Objectives & Execution (Provided Content) */}
+                        {/* 3. Strategy Goals (Provided Content) */}
                         <div className="space-y-6">
                             <h2 className="text-xl font-semibold px-1 flex items-center gap-2">
                                 <Zap className="w-5 h-5 text-yellow-500" />
-                                Strategic Objectives & Execution
+                                Strategy Goals
                             </h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

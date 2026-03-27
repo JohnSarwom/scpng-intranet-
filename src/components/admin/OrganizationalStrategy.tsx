@@ -284,7 +284,7 @@ const OrganizationalStrategy = () => {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex justify-between items-center">
-                    <span>Strategic Objectives</span>
+                    <span>Strategy Goals</span>
                     <Button 
                       size="sm" 
                       onClick={startAddingObjective}

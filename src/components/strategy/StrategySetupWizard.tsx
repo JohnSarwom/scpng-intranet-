@@ -34,7 +34,7 @@ interface StrategySetupWizardProps {
 const STEPS = [
     { title: "Foundation", icon: Target, desc: "Mission & Vision" },
     { title: "Strategic Pillars", icon: Award, desc: "Core Mandate & Pillars" },
-    { title: "Strategic Objectives", icon: Layers, desc: "5 Focus Areas & Execution" },
+    { title: "Strategy Goals", icon: Layers, desc: "5 Focus Areas & Execution" },
     { title: "Alignment", icon: Users, desc: "Division KRAs" },
     { title: "Review", icon: CheckCircle2, desc: "Strategy Summary" }
 ];
@@ -314,7 +314,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                             <div className="flex items-center justify-between mb-2">
                                                 <h3 className="text-sm font-black uppercase tracking-widest text-intranet-primary flex items-center gap-2">
                                                     <Layers className="w-4 h-4" />
-                                                    Strategic Objectives & Execution
+                                                    Strategy Goals
                                                 </h3>
                                                 <Button
                                                     onClick={() => {

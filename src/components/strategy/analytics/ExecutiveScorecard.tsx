@@ -79,7 +79,7 @@ const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ objectives }) =
 
     const stats = [
         {
-            label: 'Strategic Objectives',
+            label: 'Strategy Goals',
             value: objectives.length.toString(),
             sub: 'Core Focus Areas',
             icon: Layers,

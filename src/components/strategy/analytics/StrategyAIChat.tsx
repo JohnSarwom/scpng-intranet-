@@ -138,7 +138,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     // Data source options for the dropdown
     const dataSourceOptions: { value: DataSourceFilter; label: string; count: number }[] = [
         { value: 'all', label: 'All Data', count: objectives.length + unitObjectives.length + kras.length + kpis.length + milestones.length + divisions.length + units.length + officerProfiles.length + orgHierarchy.length },
-        { value: 'objectives', label: 'Strategic Objectives', count: objectives.length },
+        { value: 'objectives', label: 'Strategy Goals', count: objectives.length },
         { value: 'unit_objectives', label: 'Unit Objectives', count: unitObjectives.length },
         { value: 'kras', label: 'KRAs', count: kras.length },
         { value: 'kpis', label: 'KPIs', count: kpis.length },
