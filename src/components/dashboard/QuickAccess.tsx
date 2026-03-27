@@ -59,7 +59,7 @@ const QuickAccess: React.FC = () => {
     },
     {
       icon: <Target size={18} />,
-      title: "Strategy Goals",
+      title: "Strategic Goals",
       description: "Company goals and KPIs",
       badge: "Important",
       url: "/organization"

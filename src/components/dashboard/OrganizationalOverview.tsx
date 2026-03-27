@@ -111,7 +111,7 @@ const OrganizationalOverview = () => {
             <div className="flex flex-col flex-1">
               <h3 className="text-sm font-bold flex items-center gap-1.5 mb-3 text-intranet-primary uppercase tracking-wider shrink-0">
                 <Target className="h-4 w-4" />
-                Strategy Goals
+                Strategic Goals
               </h3>
 
               <div className="flex flex-col justify-between flex-1 gap-4 min-h-[280px]">
