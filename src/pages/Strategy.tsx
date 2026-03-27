@@ -566,6 +566,33 @@ const Strategy = () => {
                     <TabsContent value="strategy" className="space-y-10 mt-0 outline-none">
                         {/* 1. Mission & Vision (Provided Content) */}
                         <div className="grid grid-cols-1 gap-6">
+                            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-white/10">
+                                <div className="absolute inset-0 z-0">
+                                    <img
+                                        src="/images/Vision.jpg"
+                                        alt="Vision Background"
+                                        className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-800 dark:via-gray-800/90" />
+                                </div>
+                                <CardHeader className="relative z-10">
+                                    <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-lg">
+                                        <Target className="w-5 h-5" /> Vision
+                                    </CardTitle>
+                                </CardHeader>
+
+                                <CardContent className="relative z-10 max-w-2xl">
+                                    <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
+                                        "{effectiveVision}"
+                                    </p>
+                                    <div className="mt-4 border-t pt-4 border-gray-100 dark:border-gray-800">
+                                        <p className="text-xs text-muted-foreground leading-relaxed italic">
+                                            This vision reflects a strategic goal for PNG to be a regional capital-raising hub and key player in Pacific capital markets.
+                                        </p>
+                                    </div>
+                                </CardContent>
+                            </Card>
+
                             <Card className="relative overflow-hidden border-l-4 border-l-intranet-primary shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-white/10">
                                 <div className="absolute inset-0 z-0">
                                     <img
@@ -599,33 +626,6 @@ const Strategy = () => {
                                                 </li>
                                             ))}
                                         </ul>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-white/10">
-                                <div className="absolute inset-0 z-0">
-                                    <img
-                                        src="/images/Vision.jpg"
-                                        alt="Vision Background"
-                                        className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-800 dark:via-gray-800/90" />
-                                </div>
-                                <CardHeader className="relative z-10">
-                                    <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-lg">
-                                        <Target className="w-5 h-5" /> Vision
-                                    </CardTitle>
-                                </CardHeader>
-
-                                <CardContent className="relative z-10 max-w-2xl">
-                                    <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
-                                        "{effectiveVision}"
-                                    </p>
-                                    <div className="mt-4 border-t pt-4 border-gray-100 dark:border-gray-800">
-                                        <p className="text-xs text-muted-foreground leading-relaxed italic">
-                                            This vision reflects a strategic goal for PNG to be a regional capital-raising hub and key player in Pacific capital markets.
-                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -723,7 +723,7 @@ const Strategy = () => {
                                                     </div>
 
                                                     <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
-                                                        <div className="font-bold text-[10px] mb-2 uppercase tracking-widest text-intranet-primary">Key Deliverables:</div>
+                                                        <div className="font-bold text-[10px] mb-2 uppercase tracking-widest text-intranet-primary">Key Resource Areas (KRAs):</div>
                                                         <ul className="space-y-2">
                                                             {(objective.goals || []).map((goal: string, idx: number) => (
                                                                 <li key={idx} className="flex items-start gap-2 text-[10px] leading-relaxed text-gray-600 dark:text-gray-400">

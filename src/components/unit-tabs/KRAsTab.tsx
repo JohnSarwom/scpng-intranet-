@@ -1488,7 +1488,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     const deliverables = parentParams?.deliverables || [];
 
                     if (deliverables.length === 0) {
-                      return <p className="text-sm text-red-500 pt-2 font-medium">No key deliverables found for the selected objective.</p>;
+                      return <p className="text-sm text-red-500 pt-2 font-medium">No key resource areas (KRAs) found for the selected objective.</p>;
                     }
 
                     return (

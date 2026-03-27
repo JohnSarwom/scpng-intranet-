@@ -263,7 +263,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
                     {/* Key Deliverables / Goals */}
                     <div className="space-y-3 pt-2 border-t dark:border-white/10">
-                        <Label className="dark:text-gray-300">Key Deliverables & Milestones</Label>
+                        <Label className="dark:text-gray-300">Key Resource Areas (KRAs) & Milestones</Label>
 
 
                         <div className="space-y-2">

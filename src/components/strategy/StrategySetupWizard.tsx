@@ -237,19 +237,6 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                         <div className="space-y-6">
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                                    <Flag className="w-3 h-3 text-intranet-primary" />
-                                                    Mission Statement
-                                                </Label>
-                                                <Textarea
-                                                    value={mission}
-                                                    onChange={(e) => setMission(e.target.value)}
-                                                    placeholder="Describe the overall purpose of the commission..."
-                                                    className="min-h-[80px] text-xs leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800 focus:border-intranet-primary transition-all"
-                                                />
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                                     <Lightbulb className="w-3 h-3 text-yellow-500" />
                                                     Vision 2040
                                                 </Label>
@@ -257,6 +244,19 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                     value={vision}
                                                     onChange={(e) => setVision(e.target.value)}
                                                     placeholder="Where do you see the commission by 2040?"
+                                                    className="min-h-[80px] text-xs leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800 focus:border-intranet-primary transition-all"
+                                                />
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                                    <Flag className="w-3 h-3 text-intranet-primary" />
+                                                    Mission Statement
+                                                </Label>
+                                                <Textarea
+                                                    value={mission}
+                                                    onChange={(e) => setMission(e.target.value)}
+                                                    placeholder="Describe the overall purpose of the commission..."
                                                     className="min-h-[80px] text-xs leading-relaxed bg-gray-50/50 dark:bg-gray-800/30 border-gray-100 dark:border-gray-800 focus:border-intranet-primary transition-all"
                                                 />
                                             </div>
@@ -379,7 +379,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                 <div className="space-y-2">
                                                                     <div className="text-[9px] font-black tracking-widest text-intranet-primary flex items-center gap-1.5">
                                                                         <Activity className="w-3 h-3" />
-                                                                        KEY DELIVERABLES
+                                                                        KEY RESOURCE AREAS (KRAs)
                                                                     </div>
                                                                     <div className="space-y-2">
                                                                         {pillar.goals.map((goal, gIdx) => (
