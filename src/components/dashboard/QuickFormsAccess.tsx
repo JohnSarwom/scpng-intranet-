@@ -23,7 +23,7 @@ const QuickFormItem: React.FC<QuickFormItemProps> = ({
   onClick
 }) => (
   <div
-    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/30 transition-colors cursor-pointer group"
+    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/30 dark:hover:bg-white/5 transition-colors cursor-pointer group"
     onClick={onClick}
   >
     <div className="p-2 rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
@@ -31,7 +31,7 @@ const QuickFormItem: React.FC<QuickFormItemProps> = ({
     </div>
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-1">
-        <p className="text-sm font-semibold truncate">{title}</p>
+        <p className="text-sm font-semibold truncate dark:text-gray-200">{title}</p>
         <Badge variant="secondary" className="text-xs shrink-0">
           {category}
         </Badge>
@@ -101,9 +101,9 @@ const QuickFormsAccess: React.FC = () => {
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm animate-fade-in h-full flex flex-col">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in h-full flex flex-col border dark:border-white/10">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold dark:text-gray-100">
           <FileText className="h-5 w-5 text-intranet-primary" />
           Quick Forms Access
         </CardTitle>
@@ -120,7 +120,7 @@ const QuickFormsAccess: React.FC = () => {
         </div>
         <button
           onClick={handleViewAllForms}
-          className="w-full mt-4 text-sm text-primary hover:text-primary/80 font-medium flex items-center justify-center gap-1 transition-colors"
+          className="w-full mt-4 text-sm text-primary dark:text-intranet-accent-light hover:text-primary/80 dark:hover:text-white font-medium flex items-center justify-center gap-1 transition-colors"
         >
           View all forms
           <ChevronRight className="h-4 w-4" />

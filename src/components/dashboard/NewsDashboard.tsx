@@ -60,7 +60,7 @@ const NewsDashboard: React.FC<NewsDashboardProps> = ({
                     </h2>
                     {currentFeatured ? (
                         <div className="relative group" key={currentFeatured.id}>
-                            <Card className="overflow-hidden rounded-xl shadow-md flex flex-col relative animate-in fade-in slide-in-from-right-2 duration-700 ease-in-out">
+                            <Card className="overflow-hidden rounded-xl shadow-md flex flex-col relative animate-in fade-in slide-in-from-right-2 duration-700 ease-in-out dark:bg-gray-800 dark:border-white/10">
                                 {currentFeatured.urlToImage && (
                                     <div className="relative h-64 w-full overflow-hidden">
                                         <img
@@ -70,7 +70,7 @@ const NewsDashboard: React.FC<NewsDashboardProps> = ({
                                             onError={(e) => (e.currentTarget.style.display = 'none')}
                                         />
                                         <div className="absolute top-4 left-4">
-                                            <Badge className="bg-intranet-primary hover:bg-intranet-primary-dark text-white">
+                                            <Badge className="bg-intranet-primary hover:bg-intranet-primary-dark text-white border-none shadow-lg">
                                                 {currentFeatured.category}
                                             </Badge>
                                         </div>
@@ -78,22 +78,22 @@ const NewsDashboard: React.FC<NewsDashboardProps> = ({
                                 )}
                                 <CardHeader>
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm text-gray-500">{currentFeatured.date}</span>
+                                        <span className="text-sm text-gray-500 dark:text-gray-400">{currentFeatured.date}</span>
                                         {currentFeatured.sourceName && (
-                                            <span className="text-xs font-medium px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 rounded">
                                                 {currentFeatured.sourceName}
                                             </span>
                                         )}
                                     </div>
-                                    <CardTitle className="text-2xl hover:text-intranet-primary transition-colors cursor-pointer" onClick={() => onReadMore(currentFeatured)}>
+                                    <CardTitle className="text-2xl hover:text-intranet-primary transition-colors cursor-pointer dark:text-gray-100 dark:hover:text-intranet-accent-light" onClick={() => onReadMore(currentFeatured)}>
                                         {currentFeatured.title}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="flex-grow">
-                                    <p className="text-gray-600 dark:text-gray-300 line-clamp-3 mb-4">
+                                    <p className="text-gray-600 dark:text-gray-400 line-clamp-3 mb-4">
                                         {currentFeatured.summary}
                                     </p>
-                                    <Button onClick={() => onReadMore(currentFeatured)} className="w-full sm:w-auto">
+                                    <Button onClick={() => onReadMore(currentFeatured)} className="w-full sm:w-auto bg-intranet-primary hover:bg-intranet-primary-dark text-white border-none">
                                         Read Full Story <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 </CardContent>
@@ -139,28 +139,28 @@ const NewsDashboard: React.FC<NewsDashboardProps> = ({
                     <h2 className="text-xl font-semibold mb-4">Latest Updates</h2>
                     <div className="space-y-4">
                         {latestUpdates.map((article) => (
-                            <Card key={article.id} className="rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer group flex items-center overflow-hidden" onClick={() => onReadMore(article)}>
+                            <Card key={article.id} className="rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer group flex items-center overflow-hidden dark:bg-gray-800 dark:border-white/10" onClick={() => onReadMore(article)}>
                                 {article.urlToImage && (
-                                    <div className="w-24 h-24 flex-shrink-0 ml-2">
+                                    <div className="w-24 h-24 flex-shrink-0 ml-2 py-2">
                                         <img
                                             src={article.urlToImage}
                                             alt={article.title}
-                                            className="w-full h-full object-cover rounded-md"
+                                            className="w-full h-full object-cover rounded-md shadow-sm"
                                             onError={(e) => (e.currentTarget.style.display = 'none')}
                                         />
                                     </div>
                                 )}
                                 <CardContent className="p-3 flex-grow min-w-0">
                                     <div className="flex justify-between items-start mb-1">
-                                        <Badge variant="outline" className="text-[10px] px-1 py-0 h-5">
+                                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 border-gray-200 dark:border-white/10 dark:text-gray-400">
                                             {article.category}
                                         </Badge>
                                         <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">{article.date}</span>
                                     </div>
-                                    <h4 className="font-semibold text-sm group-hover:text-intranet-primary transition-colors line-clamp-2 mb-1 leading-tight">
+                                    <h4 className="font-bold text-sm group-hover:text-intranet-primary transition-colors line-clamp-2 mb-1 leading-tight dark:text-gray-200">
                                         {article.title}
                                     </h4>
-                                    <p className="text-xs text-gray-500 line-clamp-2">
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2">
                                         {article.summary}
                                     </p>
                                 </CardContent>
@@ -181,51 +181,51 @@ const NewsDashboard: React.FC<NewsDashboardProps> = ({
                 <h2 className="text-xl font-semibold mb-4">Category Highlights</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* SCPNG Highlight */}
-                    <Card className="rounded-xl bg-gradient-to-br from-red-50 to-white dark:from-red-900/10 dark:to-gray-900 border-red-100 dark:border-red-900/30">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg text-red-700 dark:text-red-400">
+                    <Card className="rounded-xl bg-gradient-to-br from-red-50 to-white dark:from-red-900/20 dark:to-gray-800 border-red-100 dark:border-white/10 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-lg text-red-700 dark:text-red-400 font-bold">
                                 <Building2 className="h-5 w-5" /> SCPNG News
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {scpngNews.slice(0, 2).map(article => (
-                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-red-100 dark:border-red-900/30">
-                                    <h4 className="text-sm font-medium hover:underline cursor-pointer" onClick={() => onReadMore(article)}>{article.title}</h4>
-                                    <p className="text-xs text-gray-500 mt-1">{article.date}</p>
+                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-red-100 dark:border-white/5">
+                                    <h4 className="text-sm font-semibold hover:underline cursor-pointer dark:text-gray-200" onClick={() => onReadMore(article)}>{article.title}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{article.date}</p>
                                 </div>
                             ))}
                         </CardContent>
                     </Card>
 
                     {/* National Highlight */}
-                    <Card className="rounded-xl bg-gradient-to-br from-green-50 to-white dark:from-green-900/10 dark:to-gray-900 border-green-100 dark:border-green-900/30">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg text-green-700 dark:text-green-400">
+                    <Card className="rounded-xl bg-gradient-to-br from-green-50 to-white dark:from-green-900/20 dark:to-gray-800 border-green-100 dark:border-white/10 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-lg text-green-700 dark:text-green-400 font-bold">
                                 <MapPin className="h-5 w-5" /> National News
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {nationalNews.slice(0, 2).map(article => (
-                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-green-100 dark:border-green-900/30">
-                                    <h4 className="text-sm font-medium hover:underline cursor-pointer" onClick={() => onReadMore(article)}>{article.title}</h4>
-                                    <p className="text-xs text-gray-500 mt-1">{article.date}</p>
+                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-green-100 dark:border-white/5">
+                                    <h4 className="text-sm font-semibold hover:underline cursor-pointer dark:text-gray-200" onClick={() => onReadMore(article)}>{article.title}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{article.date}</p>
                                 </div>
                             ))}
                         </CardContent>
                     </Card>
 
                     {/* Global Highlight */}
-                    <Card className="rounded-xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/10 dark:to-gray-900 border-purple-100 dark:border-purple-900/30">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg text-purple-700 dark:text-purple-400">
+                    <Card className="rounded-xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-gray-800 border-purple-100 dark:border-white/10 shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="flex items-center gap-2 text-lg text-purple-700 dark:text-purple-400 font-bold">
                                 <Globe className="h-5 w-5" /> Global Insights
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             {globalNews.slice(0, 2).map(article => (
-                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-purple-100 dark:border-purple-900/30">
-                                    <h4 className="text-sm font-medium hover:underline cursor-pointer" onClick={() => onReadMore(article)}>{article.title}</h4>
-                                    <p className="text-xs text-gray-500 mt-1">{article.date}</p>
+                                <div key={article.id} className="mb-3 last:mb-0 pb-3 last:pb-0 border-b last:border-0 border-purple-100 dark:border-white/5">
+                                    <h4 className="text-sm font-semibold hover:underline cursor-pointer dark:text-gray-200" onClick={() => onReadMore(article)}>{article.title}</h4>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{article.date}</p>
                                 </div>
                             ))}
                         </CardContent>

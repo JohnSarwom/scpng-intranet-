@@ -41,12 +41,13 @@ const AddCategoryDialog: React.FC<AddCategoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 dark:text-gray-100">
             <FolderPlus className="h-5 w-5 text-primary" />
             Create New Category
           </DialogTitle>
+
           <DialogDescription>
             Add a new document category folder. Documents can be uploaded to this category after creation.
           </DialogDescription>

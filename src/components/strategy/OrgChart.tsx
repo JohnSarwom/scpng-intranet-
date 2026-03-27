@@ -41,8 +41,9 @@ const OrgNode = ({
             break;
         case 'highlight':
             // The Secretariat Unit style
-            variantStyles = "bg-[#FFF8E7] border-amber-300 text-[#600018] font-bold text-sm shadow-md";
+            variantStyles = "bg-[#FFF8E7] dark:bg-amber-950/20 border-amber-300 dark:border-amber-500/50 text-[#600018] dark:text-amber-200 font-bold text-sm shadow-md";
             break;
+
         case 'unit':
         default:
             variantStyles = "bg-[#901025] border-[#800020] text-white font-medium text-xs hover:bg-[#800020] shadow-sm";
@@ -118,7 +119,7 @@ const OfficerCard = ({ officer, onClick }: { officer: OfficerProfile; onClick?: 
 
     return (
         <div
-            className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow w-full cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow w-full cursor-pointer"
             onClick={() => onClick?.(officer)}
         >
             <div className="flex items-start gap-3">
@@ -126,7 +127,7 @@ const OfficerCard = ({ officer, onClick }: { officer: OfficerProfile; onClick?: 
                     <img
                         src={officer.photoUrl}
                         alt={officer.name}
-                        className="w-10 h-10 rounded-full border border-gray-100 object-cover flex-shrink-0 shadow-sm"
+                        className="w-10 h-10 rounded-full border border-gray-100 dark:border-white/5 object-cover flex-shrink-0 shadow-sm"
                     />
                 ) : (
                     <div className="w-10 h-10 rounded-full bg-[#600018] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
@@ -134,23 +135,24 @@ const OfficerCard = ({ officer, onClick }: { officer: OfficerProfile; onClick?: 
                     </div>
                 )}
                 <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{officer.name}</p>
-                    <p className="text-xs text-[#800020] font-medium truncate">{officer.jobTitle}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{officer.name}</p>
+                    <p className="text-xs text-[#800020] dark:text-intranet-primary-light font-medium truncate">{officer.jobTitle}</p>
                     <div className="flex items-center gap-1 mt-1">
                         <Mail className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                        <span className="text-[10px] text-gray-500 truncate">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
                             {officer.email}
                         </span>
                     </div>
                     {officer.phone && (
                         <div className="flex items-center gap-1 mt-0.5">
                             <Phone className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="text-[10px] text-gray-500">{officer.phone}</span>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">{officer.phone}</span>
                         </div>
                     )}
                 </div>
             </div>
         </div>
+
     );
 };
 
@@ -159,8 +161,9 @@ const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { pro
         {/* CEO Node */}
         <div className="flex flex-col items-center relative mb-12">
             <OrgNode title="Chief Executive Officer (CEO)" type="ceo" />
-            <div className="w-px h-8 bg-gray-300 absolute -bottom-8 left-1/2 -translate-x-1/2"></div>
+            <div className="w-px h-8 bg-gray-300 dark:bg-white/20 absolute -bottom-8 left-1/2 -translate-x-1/2"></div>
         </div>
+
 
         {/* Office of the Chairman - intermediate tier */}
         <div className="flex flex-col items-center relative mb-12">
@@ -168,12 +171,12 @@ const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { pro
             {/* Units under Chairman */}
             <div className="flex flex-col items-center w-full gap-3 relative">
                 <div
-                    className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
+                    className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 dark:bg-white/20 z-0"
                     style={{ height: `calc(100% - 20px)` }}
                 ></div>
                 {CHAIRMAN_OFFICE.units.map((unit, uIndex) => (
                     <div key={uIndex} className="relative z-10 w-full flex justify-center">
-                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300"></div>
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300 dark:bg-white/20"></div>
                         <OrgNode
                             title={unit.unitName}
                             type={unit.isHighlight ? 'highlight' : 'unit'}
@@ -184,8 +187,9 @@ const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { pro
                 ))}
             </div>
             {/* Vertical line down to divisions */}
-            <div className="w-px h-8 bg-gray-300 mt-4"></div>
+            <div className="w-px h-8 bg-gray-300 dark:bg-white/20 mt-4"></div>
         </div>
+
 
         {/* Divisions row */}
         <div className="flex justify-center items-start w-full">
@@ -195,9 +199,10 @@ const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { pro
 
                 return (
                     <div key={index} className="flex flex-col items-center relative flex-1 min-w-[180px] px-2 lg:px-4">
-                        {!isFirst && <div className="absolute -top-4 left-0 w-1/2 h-px bg-gray-300"></div>}
-                        {!isLast && <div className="absolute -top-4 right-0 w-1/2 h-px bg-gray-300"></div>}
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 h-4 w-px bg-gray-300"></div>
+                        {!isFirst && <div className="absolute -top-4 left-0 w-1/2 h-px bg-gray-300 dark:bg-white/20"></div>}
+                        {!isLast && <div className="absolute -top-4 right-0 w-1/2 h-px bg-gray-300 dark:bg-white/20"></div>}
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 h-4 w-px bg-gray-300 dark:bg-white/20"></div>
+
 
                         <OrgNode
                             title={division.divisionName}
@@ -210,12 +215,13 @@ const StructureView = ({ profileDivisions, onDivisionClick, onUnitClick }: { pro
                             {division.units.length > 0 && (
                                 <>
                                     <div
-                                        className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
+                                        className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 dark:bg-white/20 z-0"
                                         style={{ height: `calc(100% - 20px)` }}
                                     ></div>
                                     {division.units.map((unit, uIndex) => (
                                         <div key={uIndex} className="relative z-10 w-full flex justify-center">
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300"></div>
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300 dark:bg-white/20"></div>
+
                                             <OrgNode
                                                 title={unit.unitName}
                                                 type={'unit'}
@@ -253,14 +259,15 @@ const ProfilesView = ({
         {/* CEO Node + James Joshua card */}
         <div className="flex flex-col items-center relative mb-12">
             <OrgNode title="Chief Executive Officer (CEO)" type="ceo" />
-            <div className="w-px h-4 bg-gray-300"></div>
+            <div className="w-px h-4 bg-gray-300 dark:bg-white/20"></div>
             {ceoOfficer && (
                 <div className="w-[260px]">
                     <OfficerCard officer={ceoOfficer} onClick={onOfficerClick} />
                 </div>
             )}
-            <div className="w-px h-8 bg-gray-300 absolute -bottom-8 left-1/2 -translate-x-1/2"></div>
+            <div className="w-px h-8 bg-gray-300 dark:bg-white/20 absolute -bottom-8 left-1/2 -translate-x-1/2"></div>
         </div>
+
 
         {/* Office of the Chairman - intermediate tier */}
         <div className="flex flex-col items-center relative mb-12">
@@ -268,13 +275,15 @@ const ProfilesView = ({
             {/* Executive Division on top, then Secretariat Unit below */}
             <div className="flex flex-col items-center gap-3 relative">
                 <div
-                    className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
+                    className="absolute top-0 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 dark:bg-white/20 z-0"
                     style={{ height: `calc(100% - 20px)` }}
                 ></div>
 
+
                 {/* Executive Division */}
                 <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-px h-3 bg-gray-300"></div>
+                    <div className="w-px h-3 bg-gray-300 dark:bg-white/20"></div>
+
                     <OrgNode
                         title={chairmanOfficeProfile.executiveDivision.unitName}
                         type="unit"
@@ -285,11 +294,11 @@ const ProfilesView = ({
 
                 {/* Secretariat Unit with officers */}
                 <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-px h-3 bg-gray-300"></div>
+                    <div className="w-px h-3 bg-gray-300 dark:bg-white/20"></div>
                     <OrgNode
                         title={chairmanOfficeProfile.secretariatUnit.unitName}
                         type="highlight"
-                        className="mb-2"
+                        className="mb-2 dark:bg-amber-900/20 dark:border-amber-500/30 dark:text-amber-200"
                         onClick={() => onUnitClick(chairmanOfficeProfile.secretariatUnit.unitName)}
                     />
                     <div className="w-[220px] flex flex-col gap-1.5">
@@ -300,8 +309,9 @@ const ProfilesView = ({
                 </div>
             </div>
             {/* Vertical line down to divisions */}
-            <div className="w-px h-8 bg-gray-300 mt-4"></div>
+            <div className="w-px h-8 bg-gray-300 dark:bg-white/20 mt-4"></div>
         </div>
+
 
         {/* Divisions row with officer profiles */}
         <div className="flex justify-center items-start w-full">
@@ -311,9 +321,10 @@ const ProfilesView = ({
 
                 return (
                     <div key={index} className="flex flex-col items-center relative flex-1 min-w-[220px] px-2 lg:px-3">
-                        {!isFirst && <div className="absolute -top-4 left-0 w-1/2 h-px bg-gray-300"></div>}
-                        {!isLast && <div className="absolute -top-4 right-0 w-1/2 h-px bg-gray-300"></div>}
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 h-4 w-px bg-gray-300"></div>
+                        {!isFirst && <div className="absolute -top-4 left-0 w-1/2 h-px bg-gray-300 dark:bg-white/20"></div>}
+                        {!isLast && <div className="absolute -top-4 right-0 w-1/2 h-px bg-gray-300 dark:bg-white/20"></div>}
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 h-4 w-px bg-gray-300 dark:bg-white/20"></div>
+
 
                         <OrgNode
                             title={division.divisionName}
@@ -326,8 +337,9 @@ const ProfilesView = ({
                             {(division.units.length > 0 || division.headOfficer) && (
                                 <>
                                     <div
-                                        className="absolute -top-6 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 z-0"
+                                        className="absolute -top-6 bottom-4 left-1/2 -translate-x-1/2 w-px bg-gray-300 dark:bg-white/20 z-0"
                                     ></div>
+
 
                                     {division.headOfficer && (
                                         <div className="relative z-10 w-[95%] flex flex-col items-center mb-2">
@@ -337,7 +349,8 @@ const ProfilesView = ({
 
                                     {division.units.length > 0 && division.units.map((unit, uIndex) => (
                                         <div key={uIndex} className="relative z-10 w-full flex flex-col items-center">
-                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300"></div>
+                                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-300 dark:bg-white/20"></div>
+
                                             <OrgNode
                                                 title={unit.unitName}
                                                 type="unit"
@@ -457,18 +470,20 @@ const OrgChart = () => {
     if (isLoading) {
         return (
             <div className="flex h-96 items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-[#600018]" />
-                <span className="ml-4 text-[#600018] font-medium">Loading Organization Structure...</span>
+                <Loader2 className="h-10 w-10 animate-spin text-[#600018] dark:text-intranet-primary-light" />
+                <span className="ml-4 text-[#600018] dark:text-gray-100 font-medium">Loading Organization Structure...</span>
             </div>
+
         );
     }
     if (fetchError) {
         return (
-            <div className="flex h-96 items-center justify-center text-red-500">
+            <div className="flex h-96 items-center justify-center text-red-500 dark:text-red-400">
                 Failed to load data. Please ensure the SharePoint lists are created and seeded.
             </div>
         );
     }
+
 
     const ceoOfficer = profiles.find(p => p.division === "Office of the Chairman" && p.unit === "Executive Division") || null;
     const secretariatOfficers = profiles.filter(p => p.division === "Office of the Chairman" && p.unit === "Secretariat Unit");
@@ -614,25 +629,28 @@ const OrgChart = () => {
     return (
         <div
             ref={containerRef}
-            className={`w-full overflow-auto p-8 min-h-[600px] flex flex-col items-center ${isFullscreen ? 'bg-white' : 'bg-transparent'
+            className={`w-full overflow-auto p-8 min-h-[600px] flex flex-col items-center ${isFullscreen ? 'bg-white dark:bg-gray-900' : 'bg-transparent'
                 }`}
         >
+
             {/* Title + Controls Row */}
             <div className="w-full flex items-start justify-between mb-12">
                 <div className="flex-1" />
-                <h2 className="text-[#600018] text-2xl font-sans font-bold uppercase tracking-widest text-center flex-1">
+                <h2 className="text-[#600018] dark:text-gray-100 text-2xl font-sans font-bold uppercase tracking-widest text-center flex-1">
                     Securities Commission of Papua New Guinea
                 </h2>
+
                 <div className="flex-1 flex justify-end items-center gap-2">
                     {/* View Toggle */}
-                    <div className="inline-flex rounded-lg border border-gray-300 bg-gray-100 p-0.5 shadow-sm">
+                    <div className="inline-flex rounded-lg border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5 shadow-sm">
                         <button
                             onClick={() => setView('structure')}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'structure'
                                 ? 'bg-[#600018] text-white shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
                                 }`}
                         >
+
                             <Building2 className="w-3.5 h-3.5" />
                             Structure
                         </button>
@@ -640,49 +658,54 @@ const OrgChart = () => {
                             onClick={() => setView('profiles')}
                             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${view === 'profiles'
                                 ? 'bg-[#600018] text-white shadow-sm'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700'
                                 }`}
                         >
+
                             <Users className="w-3.5 h-3.5" />
                             Profiles
                         </button>
                     </div>
 
                     {/* Zoom Controls */}
-                    <div className="inline-flex items-center rounded-lg border border-gray-300 bg-gray-100 p-0.5 shadow-sm">
+                    <div className="inline-flex items-center rounded-lg border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5 shadow-sm">
                         <button
                             onClick={handleZoomOut}
                             disabled={zoom <= ZOOM_MIN}
-                            className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                             title="Zoom out"
                         >
+
                             <ZoomOut className="w-3.5 h-3.5" />
                         </button>
                         <button
                             onClick={handleResetZoom}
-                            className="px-1.5 py-1 text-[10px] font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-all min-w-[40px] text-center"
+                            className="px-1.5 py-1 text-[10px] font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-all min-w-[40px] text-center"
                             title="Reset zoom"
                         >
                             {zoomPercent}%
                         </button>
+
                         <button
                             onClick={handleZoomIn}
                             disabled={zoom >= ZOOM_MAX}
-                            className="p-1.5 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="p-1.5 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                             title="Zoom in"
                         >
                             <ZoomIn className="w-3.5 h-3.5" />
                         </button>
                     </div>
 
+
                     {/* Fullscreen Button */}
                     <button
                         onClick={toggleFullscreen}
-                        className="inline-flex items-center p-1.5 rounded-lg border border-gray-300 bg-gray-100 shadow-sm text-gray-600 hover:text-gray-900 hover:bg-gray-200 transition-all"
+                        className="inline-flex items-center p-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-gray-100 dark:bg-gray-800 shadow-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
                         title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
                     >
                         {isFullscreen ? <Minimize className="w-3.5 h-3.5" /> : <Maximize className="w-3.5 h-3.5" />}
                     </button>
+
                 </div>
             </div>
 

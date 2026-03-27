@@ -32,7 +32,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2, Eye } from 'lucide-react';
+import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2, Eye, Settings, XCircle } from 'lucide-react';
 import StatusBadge from '@/components/common/StatusBadge';
 import { calculateObjectiveStatus, calculateStrategicProgress } from '@/utils/kpiUtils';
 import KRATimelineTab from '@/components/KRATimelineTab';
@@ -980,23 +980,28 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
   return (
     <TooltipProvider>
-
-      <div ref={containerRef} className={cn("transition-all duration-300", isFullScreen ? "bg-background overflow-y-auto" : "")}>
-        <Card className={cn("mt-0", isFullScreen ? "border-0 shadow-none h-full" : "")}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="space-y-0.5">
-              <CardTitle>{isStaff ? 'KRAs / KPIs' : 'KRAs / KPIs / Objectives'}</CardTitle>
-              <CardDescription>
+      <div ref={containerRef} className={cn("transition-all duration-300", isFullScreen ? "bg-gray-950 overflow-y-auto" : "")}>
+        <Card className={cn("mt-0", isFullScreen ? "border-0 shadow-none h-full bg-gray-950" : "dark:bg-gray-900 dark:border-white/10")}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b dark:border-white/10 bg-white/50 dark:bg-gray-800/20 backdrop-blur-sm">
+            <div className="space-y-1">
+              <CardTitle className="text-2xl font-bold dark:text-gray-100">{isStaff ? 'KRAs / KPIs' : 'KRAs / KPIs / Objectives'}</CardTitle>
+              <CardDescription className="dark:text-gray-400">
                 {isStaff ? 'Track performance and view timelines.' : 'Track performance, manage objectives, and view timelines.'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={toggleFullscreen} 
+                title={isFullScreen ? "Exit Full Screen" : "Full Screen"}
+                className="dark:border-white/10 dark:bg-gray-800 dark:hover:bg-gray-700"
+              >
                 {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
               {canEdit && (
                 <Button
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
                   onClick={handleAddButtonClick}
                 >
                   <Plus className="h-4 w-4" /> {addButtonLabel}
@@ -1004,77 +1009,74 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               )}
             </div>
           </CardHeader>
-
-          <CardContent>
+          <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-              <div className="flex justify-between items-center mb-4">
-                <TabsList>
-                  <TabsTrigger value="kpis">KRA/KPIs</TabsTrigger>
-                  {!isStaff && <TabsTrigger value="objectives">Objectives</TabsTrigger>}
-                  <TabsTrigger value="timeline">Timeline</TabsTrigger>
-                  <TabsTrigger value="insights">Insights</TabsTrigger>
+              <div className="flex justify-between items-center px-6 py-4 border-b dark:border-white/10 bg-gray-50/30 dark:bg-gray-800/10">
+                <TabsList className="bg-slate-200/50 dark:bg-gray-900 p-1 rounded-xl">
+                  <TabsTrigger value="kpis" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">KRA/KPIs</TabsTrigger>
+                  {!isStaff && <TabsTrigger value="objectives" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Objectives</TabsTrigger>}
+                  <TabsTrigger value="timeline" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Timeline</TabsTrigger>
+                  <TabsTrigger value="insights" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Insights</TabsTrigger>
                 </TabsList>
 
                 {activeTab === 'timeline' && (
-                  <div className="flex bg-muted/50 rounded-lg p-1 ml-auto mr-4">
+                  <div className="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg border dark:border-white/10 ml-auto mr-4">
                     <Button
-                      variant={timelineViewMode === 'quarters' ? 'default' : 'ghost'}
+                      variant={timelineViewMode === 'quarters' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setTimelineViewMode('quarters')}
-                      className="px-3 h-7 text-xs"
+                      className="px-3 h-7 text-xs dark:data-[variant=secondary]:bg-gray-700 dark:text-gray-300"
                     >
                       Quarterly
                     </Button>
                     <Button
-                      variant={timelineViewMode === 'months' ? 'default' : 'ghost'}
+                      variant={timelineViewMode === 'months' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setTimelineViewMode('months')}
-                      className="px-3 h-7 text-xs"
+                      className="px-3 h-7 text-xs dark:data-[variant=secondary]:bg-gray-700 dark:text-gray-300"
                     >
                       Monthly
                     </Button>
                     <Button
-                      variant={timelineViewMode === 'weeks' ? 'default' : 'ghost'}
+                      variant={timelineViewMode === 'weeks' ? 'secondary' : 'ghost'}
                       size="sm"
                       onClick={() => setTimelineViewMode('weeks')}
-                      className="px-3 h-7 text-xs"
+                      className="px-3 h-7 text-xs dark:data-[variant=secondary]:bg-gray-700 dark:text-gray-300"
                     >
                       Weekly
                     </Button>
                   </div>
                 )}
-
-
               </div>
 
 
               <TabsContent value="kpis">
-                <div className="overflow-auto kanban-scrollbar border rounded-md h-[calc(100vh-220px)] relative border-b-2">
+                <div className="overflow-auto kanban-scrollbar border-x dark:border-white/10 h-[calc(100vh-220px)] relative border-b dark:border-white/10">
                   <table className="w-full caption-bottom text-sm min-w-full table-fixed md:table-auto border-separate border-spacing-0">
-                    <TableHeader className="sticky top-0 z-50 bg-background">
-                      <TableRow className="border-b-2">
-                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
-                        <TableHead className="w-[180px] min-w-[180px] sticky left-[150px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
-                        <TableHead className="w-[100px] min-w-[100px] sticky left-[330px] top-0 z-[60] bg-background border-r border-b-2 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA Status</TableHead>
-                        <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-background border-b-2">KPI</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Start Date</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Target Date</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2">Quarter</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2 text-right">Target</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-background border-b-2 text-right">Actual</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2">Status</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-background border-b-2 text-right">Cost</TableHead>
-                        <TableHead className="min-w-[120px] sticky top-0 z-40 bg-background border-b-2">Assignees</TableHead>
-                        <TableHead className="min-w-[150px] sticky top-0 z-40 bg-background border-b-2">Comments</TableHead>
-                        <TableHead className="sticky top-0 z-40 bg-background border-b-2">Linked Tasks</TableHead>
-                        <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-background border-l border-b-2 z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">Actions</TableHead>
+                    <TableHeader className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
+                      <TableRow className="border-b dark:border-white/10">
+                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
+                        <TableHead className="w-[180px] min-w-[180px] sticky left-[150px] top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
+                        <TableHead className="w-[100px] min-w-[100px] sticky left-[330px] top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Status</TableHead>
+                        <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">KPI Deliverables</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Start</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Target Date</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Qtr</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Target</TableHead>
+                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Actual</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">KPI Status</TableHead>
+                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Cost (K)</TableHead>
+                        <TableHead className="min-w-[120px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Assignees</TableHead>
+                        <TableHead className="min-w-[150px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Comments</TableHead>
+                        <TableHead className="sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Links</TableHead>
+                        <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-gray-50 dark:bg-gray-900 border-l dark:border-white/10 border-b dark:border-white/10 z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] font-bold dark:text-gray-200">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
 
                     <TableBody>
                       {processedRows.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={13} className="h-24 text-center">
+                          <TableCell colSpan={15} className="h-24 text-center dark:text-gray-400">
                             No KPIs found matching the current filters.
                           </TableCell>
                         </TableRow>
@@ -1091,89 +1093,88 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                             kraTitle
                           } = row;
                           const targetQuarter = getQuarter(kpi?.target_date || kpi?.targetDate);
-                          const isFirstKpiOfOriginalKra = (originalKra as any).unitKpis?.[0]?.id === kpi.id || (!kpi.id && !(originalKra as any).unitKpis?.length);
-
+                          
                           const linkedTasks = tasks.filter(
                             (task) => task.kpi_id === kpi.id?.toString()
                           );
 
                           return (
-                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`} className="group hover:bg-muted/50 border-b">
+                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b dark:border-white/10">
                               {isFirstRowOfObjective && (
-                                <TableCell className="align-top border-r text-sm font-medium sticky left-0 z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={objectiveRowSpan}>
-                                  <div className="bg-background w-full h-full min-h-full">
+                                <TableCell className="align-top border-r dark:border-white/10 text-sm font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:text-gray-300" rowSpan={objectiveRowSpan}>
+                                  <div className="w-full h-full min-h-full py-2">
                                     {objectiveName}
                                   </div>
                                 </TableCell>
                               )}
                               {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r sticky left-[150px] z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={kraTitleRowSpan}>
-                                  <div className="bg-background w-full h-full min-h-full">
+                                <TableCell className="align-top border-r dark:border-white/10 sticky left-[150px] z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:text-gray-300" rowSpan={kraTitleRowSpan}>
+                                  <div className="w-full h-full min-h-full py-2 font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                     {kraTitle}
                                   </div>
                                 </TableCell>
                               )}
                               {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r sticky left-[330px] z-30 bg-background shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-b" rowSpan={kraTitleRowSpan}>
-                                  <div className="bg-background w-full h-full min-h-full flex items-center">
+                                <TableCell className="align-top border-r dark:border-white/10 sticky left-[330px] z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={kraTitleRowSpan}>
+                                  <div className="w-full h-full min-h-full flex items-center py-2">
                                     <Badge variant={
                                       originalKra.status?.toLowerCase() === 'closed' ? 'secondary' :
                                         originalKra.status?.toLowerCase() === 'in progress' ? 'default' :
                                           'outline'
-                                    }>
+                                    } className="dark:border-white/20">
                                       {originalKra.status || 'Open'}
                                     </Badge>
                                   </div>
                                 </TableCell>
                               )}
                               {/* KPI Cells */}
-                              <TableCell className="align-top text-sm border-b">{kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground">-</span>}</TableCell>
-
-                              <TableCell className="align-top text-sm whitespace-nowrap border-b">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap border-b">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
-                              <TableCell className="align-top text-sm border-b">{targetQuarter}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">{kpi?.target ?? '-'}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">{kpi?.actual ?? '-'}</TableCell>
-                              <TableCell className="align-top whitespace-nowrap border-b">
-                                {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground">-</span>}
+                              <TableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-300 py-4">
+                                {kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground dark:text-gray-500">-</span>}
                               </TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b">
-                                {kpi?.cost ? `K ${Number(kpi.cost).toLocaleString()}` : <span className="text-muted-foreground">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top border-b">
 
+                              <TableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
+                              <TableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
+                              <TableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{targetQuarter}</TableCell>
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.target ?? '-'}</TableCell>
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.actual ?? '-'}</TableCell>
+                              <TableCell className="align-top whitespace-nowrap border-b dark:border-white/10 py-4">
+                                {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground dark:text-gray-500">-</span>}
+                              </TableCell>
+                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">
+                                {kpi?.cost ? `K ${Number(kpi.cost).toLocaleString()}` : <span className="text-muted-foreground dark:text-gray-500">-</span>}
+                              </TableCell>
+                              <TableCell className="align-top border-b dark:border-white/10 py-4">
                                 {kpi?.assignees && kpi.assignees.length > 0 ? (
                                   <div className="flex -space-x-2 overflow-hidden">
                                     {(kpi.assignees as any[]).map((assignee: any, index: number) => (
                                       <Tooltip key={assignee.id || `assignee-${index}`}>
                                         <TooltipTrigger asChild>
-                                          <Avatar className="h-6 w-6 border-2 border-background">
+                                          <Avatar className="h-6 w-6 border-2 border-white dark:border-gray-900 shadow-sm">
                                             <AvatarImage src={assignee.avatarUrl} />
-                                            <AvatarFallback>{assignee.initials || assignee.name?.substring(0, 2) || '?'}</AvatarFallback>
+                                            <AvatarFallback className="dark:bg-gray-800 dark:text-gray-400">{assignee.initials || assignee.name?.substring(0, 2) || '?'}</AvatarFallback>
                                           </Avatar>
                                         </TooltipTrigger>
-                                        <TooltipContent><p>{assignee.name || 'Unknown Assignee'}</p></TooltipContent>
+                                        <TooltipContent className="dark:bg-gray-950 dark:border-white/10"><p>{assignee.name || 'Unknown Assignee'}</p></TooltipContent>
                                       </Tooltip>
                                     ))}
                                   </div>
-                                ) : <span className="text-muted-foreground">-</span>}
+                                ) : <span className="text-muted-foreground dark:text-gray-500">-</span>}
                               </TableCell>
-                              <TableCell className="align-top text-xs text-muted-foreground border-b">{kpi?.comments || '-'}</TableCell>
-                              <TableCell className="align-top border-b">
-
+                              <TableCell className="align-top text-xs text-muted-foreground dark:text-gray-500 border-b dark:border-white/10 py-4 max-w-[150px] truncate">{kpi?.comments || '-'}</TableCell>
+                              <TableCell className="align-top border-b dark:border-white/10 py-4">
                                 {linkedTasks.length > 0 ? (
                                   <Popover>
                                     <PopoverTrigger asChild>
-                                      <Button variant="outline" size="sm" className="h-auto py-1 px-2">
+                                      <Button variant="outline" size="sm" className="h-7 py-0.5 px-2 text-[10px] dark:bg-gray-800 dark:border-white/10 dark:text-gray-300 dark:hover:bg-gray-700">
                                         {linkedTasks.length} {linkedTasks.length === 1 ? 'Task' : 'Tasks'}
                                         <ChevronDown className="h-3 w-3 ml-1" />
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-2" container={isFullScreen ? containerRef.current : null}>
+                                    <PopoverContent className="w-64 p-2 dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
                                       <div className="space-y-1">
-                                        <p className="font-semibold text-sm mb-1">Linked Tasks</p>
+                                        <p className="font-semibold text-sm mb-1 dark:text-gray-200">Linked Tasks</p>
                                         {linkedTasks.map(task => (
-                                          <div key={task.id} className="text-xs p-1.5 bg-muted/50 rounded-sm">
+                                          <div key={task.id} className="text-xs p-1.5 bg-muted/50 dark:bg-gray-800/50 rounded-sm dark:text-gray-400">
                                             {task.title}
                                           </div>
                                         ))}
@@ -1181,12 +1182,12 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                     </PopoverContent>
                                   </Popover>
                                 ) : (
-                                  <span className="text-muted-foreground text-xs">-</span>
+                                  <span className="text-muted-foreground dark:text-gray-500 text-xs">-</span>
                                 )}
                               </TableCell>
 
-                              <TableCell className="align-top text-right sticky right-0 bg-background border-l px-2 py-1 whitespace-nowrap align-middle border-b">
-                                <div className="flex justify-end items-center space-x-1 bg-background">
+                              <TableCell className="align-top text-right sticky right-0 bg-white dark:bg-gray-900 border-l dark:border-white/10 px-2 py-1 whitespace-nowrap align-middle border-b dark:border-white/10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                                <div className="flex justify-end items-center space-x-1">
 
                                   {canEdit ? (
                                     <>
@@ -1197,14 +1198,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="p-1 h-auto text-destructive hover:text-destructive"
+                                                className="p-1 h-8 w-8 text-destructive hover:text-destructive dark:hover:bg-red-900/20"
                                                 onClick={() => handleDeleteKpiClick(row.originalKra.id, kpi)}
                                                 aria-label="Delete KPI"
                                               >
                                                 <Trash2 className="h-4 w-4" />
                                               </Button>
                                             </TooltipTrigger>
-                                            <TooltipContent className="z-[100]">Delete KPI</TooltipContent>
+                                            <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Delete KPI</TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
@@ -1215,14 +1216,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="p-1 h-auto"
+                                                className="p-1 h-8 w-8 dark:text-gray-400 dark:hover:bg-gray-800"
                                                 onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
                                                 aria-label="Edit KPI"
                                               >
                                                 <Edit className="h-4 w-4" />
                                               </Button>
                                             </TooltipTrigger>
-                                            <TooltipContent className="z-[100]">Edit KPI</TooltipContent>
+                                            <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Edit KPI</TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
@@ -1232,14 +1233,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="p-1 h-auto mr-1"
+                                              className="p-1 h-8 w-8 mr-1 dark:text-gray-400 dark:hover:bg-gray-800"
                                               onClick={() => handleOpenEditKraModal(row.originalKra)}
                                               aria-label="Edit KRA"
                                             >
-                                              <Edit className="h-4 w-4" />
+                                              <Settings className="h-4 w-4" />
                                             </Button>
                                           </TooltipTrigger>
-                                          <TooltipContent className="z-[100]">Edit KRA (and its KPIs)</TooltipContent>
+                                          <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Edit KRA Settings</TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
 
@@ -1249,14 +1250,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              className="p-1 h-auto text-destructive hover:text-destructive"
+                                              className="p-1 h-8 w-8 text-destructive hover:text-destructive dark:hover:bg-red-900/20"
                                               onClick={() => handleDeleteKra(row.originalKra.id)}
                                               aria-label="Delete KRA"
                                             >
-                                              <Trash2 className="h-4 w-4" />
+                                              <XCircle className="h-4 w-4" />
                                             </Button>
                                           </TooltipTrigger>
-                                          <TooltipContent className="z-[100]">Delete KRA (and its KPIs)</TooltipContent>
+                                          <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Delete KRA</TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
                                     </>
@@ -1269,14 +1270,14 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                               <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                className="p-1 h-auto"
+                                                className="p-1 h-8 w-8 dark:text-gray-400 dark:hover:bg-gray-800"
                                                 onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
                                                 aria-label="View KPI"
                                               >
-                                                <Eye className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                                                <Eye className="h-4 w-4 text-muted-foreground hover:text-primary dark:hover:text-blue-400" />
                                               </Button>
                                             </TooltipTrigger>
-                                            <TooltipContent className="z-[100]">View KPI</TooltipContent>
+                                            <TooltipContent className="dark:bg-gray-950 dark:border-white/10">View KPI Details</TooltipContent>
                                           </Tooltip>
                                         </TooltipProvider>
                                       )}
@@ -1294,32 +1295,31 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               </TabsContent>
 
               <TabsContent value="objectives">
-                <div className="overflow-auto border rounded-md border-b-2">
-                  <Table className="border-b">
-
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[20%] font-bold">Objective Name</TableHead>
-                        <TableHead className="w-[20%]">Strategic Alignment</TableHead>
-                        <TableHead className="w-[20%]">Key Deliverable</TableHead>
-                        <TableHead className="w-[10%]">Goal Type</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="w-[10%]">Status</TableHead>
-                        <TableHead className="w-[10%] text-center">Progress</TableHead>
-                        <TableHead className="text-right w-[10%]">Actions</TableHead>
+                <div className="overflow-auto border dark:border-white/10 rounded-xl bg-white dark:bg-gray-950 shadow-sm">
+                  <Table>
+                    <TableHeader className="bg-gray-50/50 dark:bg-gray-800/50">
+                      <TableRow className="dark:border-white/10">
+                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Objective Name</TableHead>
+                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Strategic Alignment</TableHead>
+                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Key Deliverable</TableHead>
+                        <TableHead className="w-[10%] font-bold dark:text-gray-200">Goal Type</TableHead>
+                        <TableHead className="font-bold dark:text-gray-200">Description</TableHead>
+                        <TableHead className="w-[10%] font-bold dark:text-gray-200">Status</TableHead>
+                        <TableHead className="w-[10%] text-center font-bold dark:text-gray-200">Progress</TableHead>
+                        <TableHead className="text-right w-[10%] font-bold dark:text-gray-200">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {objectivesData.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={8} className="h-24 text-center">
+                          <TableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
                             No Objectives defined yet. Use the "Add Objective" button.
                           </TableCell>
                         </TableRow>
                       ) : (
                         objectivesData.map((objective) => (
-                          <TableRow key={objective.id}>
-                            <TableCell className="font-bold">{objective.title}</TableCell>
+                          <TableRow key={objective.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors dark:border-white/10">
+                            <TableCell className="font-bold dark:text-gray-200">{objective.title}</TableCell>
                             <TableCell>
                               {(() => {
                                 // Try to resolve title from prop or lookup
@@ -1327,30 +1327,32 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                                   (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
 
                                 return title ? (
-                                  <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20">
+                                  <Badge variant="outline" className="bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/30">
                                     {title}
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted-foreground text-[10px] italic">Direct/Board</span>
+                                  <span className="text-muted-foreground dark:text-gray-500 text-[10px] italic">Direct/Board</span>
                                 );
                               })()}
                             </TableCell>
                             <TableCell>
                               {objective.linkedDeliverable ? (
-                                <span className="text-sm font-medium">{objective.linkedDeliverable}</span>
+                                <span className="text-sm font-medium dark:text-gray-300">{objective.linkedDeliverable}</span>
                               ) : (
-                                <span className="text-muted-foreground text-xs">-</span>
+                                <span className="text-muted-foreground dark:text-gray-500 text-xs">-</span>
                               )}
                             </TableCell>
                             <TableCell>
                               <Badge
                                 variant={objective.goalType === 'Org' ? 'default' : 'secondary'}
-                                className={objective.goalType === 'Org' ? 'bg-intranet-primary' : ''}
+                                className={cn(
+                                  objective.goalType === 'Org' ? 'bg-intranet-primary' : 'dark:bg-gray-800 dark:text-gray-300 dark:border-white/10'
+                                )}
                               >
                                 {objective.goalType || 'Unit'}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-sm text-muted-foreground">{objective.description || '-'}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground dark:text-gray-400 max-w-[200px] truncate">{objective.description || '-'}</TableCell>
                             <TableCell>
                               <StatusBadge status={calculateObjectiveStatus(objective, kras) || 'Not Started'} />
                             </TableCell>
@@ -1366,24 +1368,24 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
                                 return (
                                   <div className="flex flex-col gap-1 min-w-[80px]">
-                                    <div className="flex justify-between text-[10px] font-medium">
+                                    <div className="flex justify-between text-[10px] font-medium dark:text-gray-400">
                                       <span>{progress}%</span>
                                     </div>
-                                    <Progress value={progress} className="h-1.5" />
+                                    <Progress value={progress} className="h-1.5 dark:bg-gray-800" />
                                   </div>
                                 );
                               })()}
                             </TableCell>
                             <TableCell className="text-right">
                               {canEdit && (
-                                <>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEditObjectiveModal(objective)}>
+                                <div className="flex justify-end gap-1">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => handleOpenEditObjectiveModal(objective)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteObjective(objective.id)}>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive dark:hover:bg-red-900/20" onClick={() => handleDeleteObjective(objective.id)}>
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
-                                </>
+                                </div>
                               )}
                             </TableCell>
                           </TableRow>
@@ -1429,27 +1431,27 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
         />
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
-          <DialogContent className="sm:max-w-3xl" container={isFullScreen ? containerRef.current : null}>
+          <DialogContent className="sm:max-w-3xl dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
             <DialogHeader>
-              <DialogTitle>{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-gray-100">{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 {editingObjective ? 'Update the objective details.' : 'Define a new objective for KRAs.'}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2">
+            <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2 kanban-scrollbar">
               {/* Strategic Alignment */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right whitespace-nowrap">Strategic Alignment</Label>
+                <Label className="text-right whitespace-nowrap dark:text-gray-300">Strategic Alignment</Label>
                 <div className="col-span-3">
                   <Select
                     value={newObjectiveData.parentGoalId?.toString() || 'none'}
                     onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
                     disabled={isSavingObjective}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                       <SelectValue placeholder="Align with Strategic Objective..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="dark:bg-gray-950 dark:border-white/10">
                       <SelectItem value="none">Standalone (No Alignment)</SelectItem>
                       {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
                         .map(obj => (
@@ -1460,7 +1462,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                       }
                     </SelectContent>
                   </Select>
-                  <p className="text-[10px] text-muted-foreground mt-1">
+                  <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-1">
                     Link this unit objective to a high-level Board/Strategic objective.
                   </p>
                 </div>
@@ -1468,15 +1470,15 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
               {/* Key Deliverables (Executions) Radio Group */}
               <div className="grid grid-cols-4 items-start gap-4">
-                <Label className="text-right whitespace-nowrap pt-2">
+                <Label className="text-right whitespace-nowrap pt-2 dark:text-gray-300">
                   Key Deliverable<br />
-                  <span className="text-[10px] text-muted-foreground font-normal">(Execution)</span>
+                  <span className="text-[10px] text-muted-foreground dark:text-gray-500 font-normal">(Execution)</span>
                 </Label>
                 <div className="col-span-3">
                   {(() => {
                     if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
                       return (
-                        <div className="p-3 rounded-md border border-dashed text-sm text-muted-foreground bg-muted/30">
+                        <div className="p-3 rounded-md border border-dashed dark:border-white/20 text-sm text-muted-foreground dark:text-gray-500 bg-muted/30 dark:bg-gray-900/50">
                           Please select a <strong>Strategic Alignment</strong> above to see linked Executions/Deliverables.
                         </div>
                       );
@@ -1486,7 +1488,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     const deliverables = parentParams?.deliverables || [];
 
                     if (deliverables.length === 0) {
-                      return <p className="text-sm text-muted-foreground pt-2 text-amber-600">No key deliverables found for the selected objective.</p>;
+                      return <p className="text-sm text-red-500 pt-2 font-medium">No key deliverables found for the selected objective.</p>;
                     }
 
                     return (
@@ -1498,8 +1500,8 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                       >
                         {deliverables.map((del, idx) => (
                           <div key={idx} className="flex items-center space-x-2">
-                            <RadioGroupItem value={del} id={`del-${idx}`} />
-                            <Label htmlFor={`del-${idx}`} className="font-normal cursor-pointer">
+                            <RadioGroupItem value={del} id={`del-${idx}`} className="dark:border-white/20" />
+                            <Label htmlFor={`del-${idx}`} className="font-normal cursor-pointer dark:text-gray-300">
                               {del}
                             </Label>
                           </div>
@@ -1507,7 +1509,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                       </RadioGroup>
                     );
                   })()}
-                  <p className="text-[10px] text-muted-foreground mt-2">
+                  <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-2">
                     Select the specific Execution/Deliverable this unit objective contributes to.
                   </p>
                 </div>
@@ -1515,24 +1517,24 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
               {/* Row 1: Title & Year */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="objective-name" className="text-right">Name</Label>
+                <Label htmlFor="objective-name" className="text-right dark:text-gray-300">Name</Label>
                 <Input
                   id="objective-name"
                   value={newObjectiveData.title || ''}
                   onChange={(e) => handleObjectiveFormChange('title', e.target.value)}
-                  className="col-span-3"
+                  className="col-span-3 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
                   disabled={isSavingObjective}
                   required
                 />
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="objective-year" className="text-right">Year</Label>
+                <Label htmlFor="objective-year" className="text-right dark:text-gray-300">Year</Label>
                 <Input
                   id="objective-year"
                   value={newObjectiveData.year || ''}
                   onChange={(e) => handleObjectiveFormChange('year', e.target.value)}
-                  className="col-span-3"
+                  className="col-span-3 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
                   placeholder="e.g. 2024"
                   disabled={isSavingObjective}
                 />
@@ -1540,7 +1542,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
               {/* Row 2: Owner Selection */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Owner</Label>
+                <Label className="text-right dark:text-gray-300">Owner</Label>
                 <div className="col-span-3">
                   <Popover open={isOwnerPopoverOpen} onOpenChange={setIsOwnerPopoverOpen}>
                     <PopoverTrigger asChild>
@@ -1548,23 +1550,24 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                         variant="outline"
                         role="combobox"
                         aria-expanded={isOwnerPopoverOpen}
-                        className="w-full justify-between"
+                        className="w-full justify-between dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 dark:hover:bg-gray-800"
                         disabled={isSavingObjective}
                       >
                         {newObjectiveData.owner || "Select Owner..."}
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[300px] p-0" container={isFullScreen ? containerRef.current : null}>
-                      <Command>
-                        <CommandInput placeholder="Search employee..." />
+                    <PopoverContent className="w-[300px] p-0 dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
+                      <Command className="dark:bg-gray-950">
+                        <CommandInput placeholder="Search employee..." className="dark:text-gray-100 dark:border-white/10" />
                         <CommandList>
-                          <CommandEmpty>No employee found.</CommandEmpty>
+                          <CommandEmpty className="dark:text-gray-400">No employee found.</CommandEmpty>
                           <CommandGroup>
                             {!isLoadingEmployees && employees && employees.map((employee: any) => (
                               <CommandItem
                                 key={employee.id}
                                 value={employee.displayName}
+                                className="dark:text-gray-100 dark:hover:bg-gray-800"
                                 onSelect={(currentValue) => {
                                   handleObjectiveFormChange('owner', currentValue);
                                   setIsOwnerPopoverOpen(false);
@@ -1589,62 +1592,64 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
               {/* Row 3: Division & Unit (Auto-filled) */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Division</Label>
+                <Label className="text-right dark:text-gray-300">Division</Label>
                 <Input
                   value={newObjectiveData.division || ''}
                   readOnly
-                  className="col-span-3 bg-muted"
+                  className="col-span-3 bg-muted dark:bg-gray-800 dark:text-gray-400 dark:border-white/10"
                   placeholder="Auto-filled based on Owner"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Unit</Label>
+                <Label className="text-right dark:text-gray-300">Unit</Label>
                 <Input
                   value={newObjectiveData.unit || ''}
                   readOnly
-                  className="col-span-3 bg-muted"
+                  className="col-span-3 bg-muted dark:bg-gray-800 dark:text-gray-400 dark:border-white/10"
                   placeholder="Auto-filled based on Owner"
                 />
               </div>
 
               {/* Row 4: Status & Progress */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Status</Label>
+                <Label className="text-right dark:text-gray-300">Status</Label>
                 <div className="col-span-3">
                   <Input
                     value={calculateObjectiveStatus(editingObjective || newObjectiveData, kras)}
                     readOnly
-                    className="bg-muted text-muted-foreground"
+                    className="bg-muted text-muted-foreground dark:bg-gray-800 dark:text-gray-500 dark:border-white/10"
                     title="Status is automatically calculated from linked KRAs and KPIs."
                   />
-                  <p className="text-[10px] text-muted-foreground mt-1">
+                  <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-1">
                     Status is automatically calculated from linked KRAs and KPIs progress.
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Goal Type</Label>
-                <Select
-                  value={newObjectiveData.goalType}
-                  onValueChange={(val) => handleObjectiveFormChange('goalType', val)}
-                  disabled={isSavingObjective}
-                >
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select Goal Type" />
-                  </SelectTrigger>
-                  <SelectContent container={isFullScreen ? containerRef.current : null}>
-                    <SelectItem value="Org">Org (Board/Strategic)</SelectItem>
-                    <SelectItem value="Division">Division</SelectItem>
-                    <SelectItem value="Unit">Unit</SelectItem>
-                    <SelectItem value="Individual">Individual</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label className="text-right dark:text-gray-300">Goal Type</Label>
+                <div className="col-span-3">
+                  <Select
+                    value={newObjectiveData.goalType}
+                    onValueChange={(val) => handleObjectiveFormChange('goalType', val)}
+                    disabled={isSavingObjective}
+                  >
+                    <SelectTrigger className="w-full dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
+                      <SelectValue placeholder="Select Goal Type" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
+                      <SelectItem value="Org">Org (Board/Strategic)</SelectItem>
+                      <SelectItem value="Division">Division</SelectItem>
+                      <SelectItem value="Unit">Unit</SelectItem>
+                      <SelectItem value="Individual">Individual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Dates */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Start Date</Label>
+                <Label className="text-right dark:text-gray-300">Start Date</Label>
                 <div className="col-span-3">
                   <DatePicker
                     date={newObjectiveData.startDate ? new Date(newObjectiveData.startDate) : undefined}
@@ -1653,7 +1658,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">End Date</Label>
+                <Label className="text-right dark:text-gray-300">End Date</Label>
                 <div className="col-span-3">
                   <DatePicker
                     date={newObjectiveData.endDate ? new Date(newObjectiveData.endDate) : undefined}
@@ -1664,23 +1669,23 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
 
               <div className="grid grid-cols-4 items-start gap-4">
-                <Label htmlFor="objective-description" className="text-right pt-2">
+                <Label htmlFor="objective-description" className="text-right pt-2 dark:text-gray-300">
                   Description
                 </Label>
                 <Textarea
                   id="objective-description"
                   value={newObjectiveData.description || ''}
                   onChange={(e) => handleObjectiveFormChange('description', e.target.value)}
-                  className="col-span-3"
+                  className="col-span-3 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus-visible:ring-blue-500"
                   rows={5}
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="dark:border-t dark:border-white/10 pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="outline" disabled={isSavingObjective}>Cancel</Button>
+                <Button type="button" variant="outline" className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" disabled={isSavingObjective}>Cancel</Button>
               </DialogClose>
-              <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1">
+              <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20">
                 {isSavingObjective ? <Loader2 size={16} className="animate-spin" /> : null}
                 <span>{isSavingObjective ? 'Saving...' : 'Save Objective'}</span>
               </Button>
@@ -1689,17 +1694,17 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
         </Dialog>
 
         <AlertDialog open={kraToDelete !== null} onOpenChange={(open) => !open && setKraToDelete(null)}>
-          <AlertDialogContent container={isFullScreen ? containerRef.current : null}>
+          <AlertDialogContent className="dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="dark:text-gray-100">Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription className="dark:text-gray-400">
                 This action cannot be undone. This will permanently delete the Key Result
                 Area <strong>"{kraToDelete?.title}"</strong> and all of its associated KPIs.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setKraToDelete(null)}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={confirmDeleteKra} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogFooter className="dark:border-t dark:border-white/10 pt-4 mt-2">
+              <AlertDialogCancel className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" onClick={() => setKraToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteKra} className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white shadow-lg shadow-red-500/20">
                 Continue
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1710,18 +1715,18 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
 
       {/* Delete/Archive Confirmation Dialog */}
       <AlertDialog open={!!deletingKpi} onOpenChange={(open) => !open && setDeletingKpi(null)}>
-        <AlertDialogContent container={isFullScreen ? containerRef.current : null}>
+        <AlertDialogContent className="dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="dark:text-gray-100">Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription className="dark:text-gray-400">
               This will permanently delete the KPI "{deletingKpi?.kpiName}".
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="dark:border-t dark:border-white/10 pt-4 mt-2">
+            <AlertDialogCancel className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900">Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white shadow-lg shadow-red-500/20"
               onClick={handleConfirmDeleteKpi}
             >
               Delete

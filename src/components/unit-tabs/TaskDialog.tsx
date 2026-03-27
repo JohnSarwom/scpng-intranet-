@@ -491,12 +491,12 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent container={container} className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
-        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-gray-700/50 flex-shrink-0">
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
           <div className="flex justify-between items-start">
             <div>
-              <DialogTitle className="text-2xl font-semibold">{initialData ? 'Edit Task' : 'Create New Task'}</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-2xl font-semibold dark:text-gray-100">{initialData ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 {initialData ? 'Update the details of the task.' : 'Fill in the details for the new task.'}
               </DialogDescription>
             </div>
@@ -516,35 +516,35 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
               style={isSubmitting ? { opacity: 0.6, pointerEvents: 'none' } : {}}
             >
               <div className="sm:col-span-2 space-y-1">
-                <Label htmlFor="title">Title*</Label>
+                <Label htmlFor="title" className="dark:text-gray-300">Title*</Label>
                 <Input
                   id="title"
                   placeholder="Enter task title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="py-3 px-4 rounded-lg"
+                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-blue-500/50 dark:text-gray-100"
                   required
                   autoFocus
                 />
               </div>
               <div className="sm:col-span-2 space-y-1">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description" className="dark:text-gray-300">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Add a detailed description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="py-3 px-4 rounded-lg"
+                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-blue-500/50 dark:text-gray-100"
                   rows={4}
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="group">Group/Column</Label>
+                <Label htmlFor="group" className="dark:text-gray-300">Group/Column</Label>
                 <Select value={groupId} onValueChange={setGroupId}>
-                  <SelectTrigger id="group" className="py-3 px-4 rounded-lg">
+                  <SelectTrigger id="group" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                     <SelectValue placeholder="Select group" />
                   </SelectTrigger>
-                  <SelectContent container={container}>
+                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
                     {effectiveBuckets.map((bucket) => (
                       <SelectItem key={bucket.id} value={bucket.id}>
                         {bucket.title}
@@ -554,12 +554,12 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="status">Status</Label>
+                <Label htmlFor="status" className="dark:text-gray-300">Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger id="status" className="py-3 px-4 rounded-lg">
+                  <SelectTrigger id="status" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent container={container}>
+                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
                     {statuses.map((statusOption) => (
                       <SelectItem key={statusOption.id} value={statusOption.id}>
                         {statusOption.name}
@@ -569,12 +569,12 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 </Select>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="priority">Priority</Label>
+                <Label htmlFor="priority" className="dark:text-gray-300">Priority</Label>
                 <Select value={priority} onValueChange={(value: 'low' | 'medium' | 'high' | 'urgent') => setPriority(value)}>
-                  <SelectTrigger id="priority" className="py-3 px-4 rounded-lg">
+                  <SelectTrigger id="priority" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
-                  <SelectContent container={container}>
+                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
@@ -595,12 +595,12 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="recurrence">Repeat</Label>
+                <Label htmlFor="recurrence" className="dark:text-gray-300">Repeat</Label>
                 <Select value={recurrence} onValueChange={setRecurrence}>
-                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg">
+                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/50">
                     <SelectValue placeholder="Select recurrence" />
                   </SelectTrigger>
-                  <SelectContent container={container}>
+                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
                     <SelectItem value="none">None</SelectItem>
                     <SelectItem value="daily">Daily</SelectItem>
                     <SelectItem value="weekly">Weekly</SelectItem>
@@ -716,8 +716,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
             </div>
           </form>
 
-          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700/50">
-            <h3 className="text-lg font-medium mb-3">Checklist</h3>
+          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-white/10">
+            <h3 className="text-lg font-medium mb-3 dark:text-gray-100">Checklist</h3>
             <div className="space-y-2 mb-4">
               {subtasks.map(subtask => (
                 <div key={subtask.id} className="flex items-center gap-2">
@@ -725,12 +725,12 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                     type="checkbox"
                     checked={subtask.completed}
                     onChange={() => handleToggleSubtask(subtask.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-white/20 dark:bg-gray-800 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className={cn("flex-grow", subtask.completed && "line-through text-muted-foreground")}>
+                  <span className={cn("flex-grow dark:text-gray-300 text-sm", subtask.completed && "line-through text-muted-foreground")}>
                     {subtask.text}
                   </span>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveSubtask(subtask.id)}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => handleRemoveSubtask(subtask.id)}>
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -742,16 +742,17 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 value={newSubtaskText}
                 onChange={(e) => setNewSubtaskText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
               />
-              <Button type="button" onClick={handleAddSubtask}>
+              <Button type="button" onClick={handleAddSubtask} variant="outline" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-300">
                 <PlusCircle className="h-4 w-4 mr-2" /> Add
               </Button>
             </div>
           </div>
 
-          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700/50">
-            <h3 className="text-lg font-medium mb-3">Comments</h3>
-            <ScrollArea ref={commentsScrollAreaRef} className="h-[200px] w-full mb-4 border rounded-lg p-3 bg-gray-50 dark:bg-gray-800/30">
+          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-white/10">
+            <h3 className="text-lg font-medium mb-3 dark:text-gray-100">Comments</h3>
+            <ScrollArea ref={commentsScrollAreaRef} className="h-[200px] w-full mb-4 border rounded-xl p-3 bg-gray-50 dark:bg-gray-800/20 dark:border-white/10 backdrop-blur-sm">
               {comments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full min-h-[100px]">
                   <p className="text-sm text-muted-foreground text-center py-4">No comments yet.</p>
@@ -772,7 +773,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                         <Avatar className="h-7 w-7 flex-shrink-0">
                           <AvatarFallback className={cn("text-xs", isMe ? "bg-primary text-primary-foreground" : "")}>{initials}</AvatarFallback>
                         </Avatar>
-                        <div className={cn("max-w-[75%] rounded-lg px-3 py-2", isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-bl-none")}>
+                        <div className={cn("max-w-[75%] rounded-lg px-3 py-2", isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-bl-none")}>
                           {!isMe && <p className="text-xs font-semibold mb-0.5">{comment.authorName}</p>}
                           <p className={cn("text-sm", isMe ? "text-primary-foreground/90" : "text-foreground")}>{comment.text}</p>
                           <p className={cn("text-[10px] mt-1", isMe ? "text-primary-foreground/60 text-right" : "text-muted-foreground")}>

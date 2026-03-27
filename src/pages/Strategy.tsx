@@ -545,7 +545,7 @@ const Strategy = () => {
 
                 {/* Tabs Section */}
                 <Tabs defaultValue="strategy" className="w-full space-y-6">
-                    <TabsList className={`bg-card shadow-sm p-1 h-auto grid gap-2 grid-cols-2 ${canSeeReports ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                    <TabsList className={`bg-card dark:bg-gray-800/50 border dark:border-white/10 shadow-sm p-1 h-auto grid gap-2 grid-cols-2 ${canSeeReports ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                         <TabsTrigger value="strategy" className="py-2.5 px-4 data-[state=active]:bg-intranet-primary data-[state=active]:text-white">
                             <DashboardIcon className="w-4 h-4 mr-2" /> Strategy
                         </TabsTrigger>
@@ -562,23 +562,25 @@ const Strategy = () => {
                         </TabsTrigger>
                     </TabsList>
 
+
                     <TabsContent value="strategy" className="space-y-10 mt-0 outline-none">
                         {/* 1. Mission & Vision (Provided Content) */}
                         <div className="grid grid-cols-1 gap-6">
-                            <Card className="relative overflow-hidden border-l-4 border-l-intranet-primary shadow-sm hover:shadow-md transition-shadow">
+                            <Card className="relative overflow-hidden border-l-4 border-l-intranet-primary shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-white/10">
                                 <div className="absolute inset-0 z-0">
                                     <img
                                         src="/images/Mission.jpg"
                                         alt="Mission Background"
                                         className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-950 dark:via-gray-950/90" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-800 dark:via-gray-800/90" />
                                 </div>
                                 <CardHeader className="relative z-10">
-                                    <CardTitle className="flex items-center gap-2 text-intranet-primary text-lg">
+                                    <CardTitle className="flex items-center gap-2 text-intranet-primary dark:text-intranet-primary-light text-lg">
                                         <Flag className="w-5 h-5" /> Mission
                                     </CardTitle>
                                 </CardHeader>
+
                                 <CardContent className="relative z-10 max-w-2xl">
                                     <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
                                         "{effectiveMission}"
@@ -601,20 +603,21 @@ const Strategy = () => {
                                 </CardContent>
                             </Card>
 
-                            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow">
+                            <Card className="relative overflow-hidden border-l-4 border-l-purple-500 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-white/10">
                                 <div className="absolute inset-0 z-0">
                                     <img
                                         src="/images/Vision.jpg"
                                         alt="Vision Background"
                                         className="w-full h-full object-cover object-right opacity-20 md:opacity-100"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-950 dark:via-gray-950/90" />
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 to-transparent dark:from-gray-800 dark:via-gray-800/90" />
                                 </div>
                                 <CardHeader className="relative z-10">
-                                    <CardTitle className="flex items-center gap-2 text-purple-600 text-lg">
+                                    <CardTitle className="flex items-center gap-2 text-purple-600 dark:text-purple-400 text-lg">
                                         <Target className="w-5 h-5" /> Vision
                                     </CardTitle>
                                 </CardHeader>
+
                                 <CardContent className="relative z-10 max-w-2xl">
                                     <p className="text-base font-medium leading-relaxed italic text-gray-700 dark:text-gray-300">
                                         "{effectiveVision}"
@@ -645,19 +648,20 @@ const Strategy = () => {
                                     const Icon = IconMap[value.icon || value.IconName] || Award;
                                     return (
                                         <motion.div key={index} variants={itemVariants} whileHover={{ scale: 1.02 }} className="cursor-default">
-                                            <Card className="h-full bg-card/80 backdrop-blur border-b-4 border-b-intranet-primary/20 hover:border-intranet-primary transition-all duration-300">
+                                            <Card className="h-full bg-card/80 backdrop-blur border-b-4 border-b-intranet-primary/20 hover:border-intranet-primary transition-all duration-300 dark:bg-gray-800/80 dark:border-white/10 dark:hover:border-intranet-primary">
                                                 <CardContent className="pt-6 pb-4 flex flex-col items-center gap-3 text-center">
-                                                    <div className="p-3 rounded-full bg-intranet-primary/10 text-intranet-primary">
+                                                    <div className="p-3 rounded-full bg-intranet-primary/10 text-intranet-primary dark:text-intranet-primary-light">
                                                         <Icon className="w-6 h-6" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-bold text-xs uppercase tracking-widest text-intranet-primary">{value.name || value.title}</h3>
+                                                        <h3 className="font-bold text-xs uppercase tracking-widest text-intranet-primary dark:text-intranet-primary-light">{value.name || value.title}</h3>
                                                         <p className="text-[11px] text-muted-foreground mt-2 leading-relaxed italic">"{value.description}"</p>
                                                     </div>
                                                 </CardContent>
                                             </Card>
                                         </motion.div>
                                     );
+
                                 })}
                             </div>
 
@@ -677,7 +681,7 @@ const Strategy = () => {
                                 {effectiveObjectives.filter((o: any) => !o.isFeatured).map((objective: any, index: number) => {
                                     const Icon = IconMap[objective.icon] || (typeof objective.icon === 'string' ? Target : objective.icon);
                                     return (
-                                        <Card key={objective.id} className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 border-t-4 border-t-intranet-primary hover:border-red-500">
+                                        <Card key={objective.id} className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 border-t-4 border-t-intranet-primary hover:border-red-500 dark:bg-gray-800 dark:border-white/10 dark:hover:border-red-500">
                                             {/* Edit Button - Admin Only */}
                                             {isAdmin && (
                                                 <div className="absolute top-2 right-2 z-10">
@@ -688,7 +692,7 @@ const Strategy = () => {
                                                             setSelectedObjective(objective);
                                                             setIsEditModalOpen(true);
                                                         }}
-                                                        className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all opacity-0 group-hover:opacity-100"
+                                                        className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all opacity-0 group-hover:opacity-100 dark:bg-gray-900 dark:border-white/10"
                                                         title="Edit objective"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
@@ -697,13 +701,14 @@ const Strategy = () => {
                                             )}
                                             <CardContent className="p-5">
                                                 <div className="flex justify-between items-start mb-4">
-                                                    <div className="p-2.5 rounded-xl bg-intranet-primary/10 text-intranet-primary">
+                                                    <div className="p-2.5 rounded-xl bg-intranet-primary/10 text-intranet-primary dark:text-intranet-primary-light">
                                                         <Icon className="h-6 w-6" />
                                                     </div>
-                                                    <Badge variant="outline" className="text-xs font-bold border-intranet-primary/20 text-intranet-primary bg-intranet-primary/10 px-2 py-0.5">
+                                                    <Badge variant="outline" className="text-xs font-bold border-intranet-primary/20 text-intranet-primary bg-intranet-primary/10 dark:text-intranet-primary-light dark:border-intranet-primary/30 px-2 py-0.5">
                                                         {objective.progress}%
                                                     </Badge>
                                                 </div>
+
 
                                                 <h3 className="font-bold text-sm md:text-base leading-tight mb-2">{objective.title}</h3>
                                                 <p className="text-xs text-muted-foreground leading-relaxed mb-4 line-clamp-2">{objective.description}</p>
@@ -738,17 +743,18 @@ const Strategy = () => {
                                 {effectiveObjectives.filter((o: any) => o.isFeatured).map((objective: any) => {
                                     const Icon = IconMap[objective.icon] || Rocket;
                                     return (
-                                        <Card key={`featured-${objective.id}`} className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 border-dashed border-intranet-primary/30 bg-intranet-primary/5 md:col-span-1 lg:col-span-1">
+                                        <Card key={`featured-${objective.id}`} className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 border-dashed border-intranet-primary/30 bg-intranet-primary/5 md:col-span-1 lg:col-span-1 dark:bg-intranet-primary/10 dark:border-intranet-primary/40">
                                             <CardContent className="p-5 h-full flex flex-col">
                                                 <div className="flex items-center gap-2 mb-4">
                                                     <div className="p-2.5 rounded-xl bg-intranet-primary text-white shadow-md">
                                                         <Icon className="h-6 w-6" />
                                                     </div>
                                                     <div>
-                                                        <h3 className="font-extrabold text-sm uppercase tracking-tight text-intranet-primary">{objective.title}</h3>
+                                                        <h3 className="font-extrabold text-sm uppercase tracking-tight text-intranet-primary dark:text-intranet-primary-light">{objective.title}</h3>
                                                         <p className="text-[10px] text-muted-foreground font-medium italic">Featured Project</p>
                                                     </div>
                                                 </div>
+
 
                                                 <div className="flex-1 space-y-4">
                                                     <div className="bg-white/80 dark:bg-gray-800/80 p-3 rounded-lg border border-intranet-primary/10">
@@ -860,8 +866,9 @@ const Strategy = () => {
                                             <AccordionItem
                                                 key={divisionName}
                                                 value={`div-${divIdx}`}
-                                                className="border rounded-2xl bg-white dark:bg-gray-900/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow px-0"
+                                                className="border rounded-2xl bg-white dark:bg-gray-800/50 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow px-0"
                                             >
+
                                                 <AccordionTrigger className="hover:no-underline px-6 py-5 group">
                                                     <div className="w-full flex items-center gap-4 text-left">
                                                         <div className="p-3 rounded-xl bg-intranet-primary/10 text-intranet-primary transition-colors">
@@ -903,8 +910,9 @@ const Strategy = () => {
                                                                     <AccordionItem
                                                                         key={unitName}
                                                                         value={`unit-${unitIdx}`}
-                                                                        className="border rounded-xl bg-gray-50/60 dark:bg-gray-800/30 overflow-hidden px-0"
+                                                                        className="border rounded-xl bg-gray-50/60 dark:bg-gray-800/30 dark:border-white/10 overflow-hidden px-0"
                                                                     >
+
                                                                         <AccordionTrigger className="hover:no-underline px-4 py-3 group">
                                                                             <div className="flex items-center gap-3 text-left w-full">
                                                                                 <div className="p-2 rounded-lg bg-intranet-primary/8 text-intranet-primary flex-shrink-0">
@@ -987,7 +995,7 @@ const Strategy = () => {
                                                                                                 <AccordionItem value={`strat-${stratId}`} className="border-none w-full">
                                                                                                     {/* Strategic Objective Header */}
                                                                                                     <AccordionTrigger className="hover:no-underline py-0 w-full group">
-                                                                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-intranet-primary/8 to-transparent border border-intranet-primary/15 w-full">
+                                                                                                        <div className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-intranet-primary/8 to-transparent border border-intranet-primary/15 dark:from-intranet-primary/20 dark:border-white/10 w-full">
                                                                                                             <div className="p-2 rounded-lg bg-intranet-primary/15 text-intranet-primary flex-shrink-0">
                                                                                                                 <StratIcon className="w-4 h-4" />
                                                                                                             </div>
@@ -1020,7 +1028,7 @@ const Strategy = () => {
                                                                                                                             <span className="text-[9px] font-black uppercase tracking-[0.18em] text-intranet-primary/60">Key Deliverable</span>
                                                                                                                         </div>
                                                                                                                         <AccordionTrigger className="hover:no-underline py-0 w-full group">
-                                                                                                                            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm w-full text-left">
+                                                                                                                            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm w-full text-left">
                                                                                                                                 <Target className="w-4 h-4 text-intranet-primary flex-shrink-0 mt-0.5" />
                                                                                                                                 <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 leading-snug flex-1">{deliverable}</p>
                                                                                                                             </div>
@@ -1037,7 +1045,8 @@ const Strategy = () => {
                                                                                                                                                 'bg-gray-100 text-gray-600 border-gray-200';
 
                                                                                                                                     return (
-                                                                                                                                        <div key={obj.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-white dark:bg-gray-800/70 border border-gray-100/80 dark:border-gray-700/50 shadow-sm">
+                                                                                                                                        <div key={obj.id} className="flex items-start gap-2.5 p-3 rounded-lg bg-white dark:bg-gray-800/70 border border-gray-100/80 dark:border-white/10 shadow-sm">
+
                                                                                                                                             <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-intranet-primary flex-shrink-0" />
                                                                                                                                             <div className="flex-1 min-w-0">
                                                                                                                                                 <div className="flex items-start justify-between gap-2">
@@ -1095,8 +1104,9 @@ const Strategy = () => {
                                             <AccordionItem
                                                 key={index}
                                                 value={`div-${index}`}
-                                                className="border rounded-2xl bg-white dark:bg-gray-900/50 overflow-hidden shadow-sm hover:shadow-md transition-shadow px-0"
+                                                className="border rounded-2xl bg-white dark:bg-gray-800/50 dark:border-white/10 overflow-hidden shadow-sm hover:shadow-md transition-shadow px-0"
                                             >
+
                                                 <AccordionTrigger className="hover:no-underline px-6 py-5 group">
                                                     <div className="flex items-center gap-4 text-left">
                                                         <div className="p-3 rounded-xl bg-intranet-primary/10 text-intranet-primary transition-colors">
@@ -1118,10 +1128,11 @@ const Strategy = () => {
                                                                 <div className="h-4 w-1 bg-intranet-primary rounded-full"></div>
                                                                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">Aligned Strategic Objective & Execution</span>
                                                             </div>
-                                                            <div className="text-base font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700 flex items-center gap-3">
-                                                                <Target className="w-5 h-5 text-intranet-primary flex-shrink-0" />
+                                                            <div className="text-base font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/10 flex items-center gap-3">
+                                                                <Target className="w-5 h-5 text-intranet-primary dark:text-intranet-primary-light flex-shrink-0" />
                                                                 {alignedTitle}
                                                             </div>
+
                                                         </div>
                                                         <div className="space-y-3">
                                                             <div className="flex items-center gap-3">
@@ -1130,7 +1141,8 @@ const Strategy = () => {
                                                             </div>
                                                             <div className="grid grid-cols-1 gap-3">
                                                                 {kraList.map((kra: string, kraIdx: number) => (
-                                                                    <div key={kraIdx} className="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                                                                    <div key={kraIdx} className="flex items-start gap-4 p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/10 shadow-sm">
+
                                                                         <div className="mt-1 flex-shrink-0 w-5 h-5 rounded-full bg-intranet-primary/5 text-intranet-primary flex items-center justify-center">
                                                                             <ChevronRight className="w-3 h-3" />
                                                                         </div>
@@ -1163,7 +1175,7 @@ const Strategy = () => {
                                 </p>
                             </div>
 
-                            <Card className="overflow-hidden border-none shadow-md bg-gradient-to-br from-intranet-primary/5 via-card to-muted/40">
+                            <Card className="overflow-hidden border dark:border-white/10 shadow-md bg-gradient-to-br from-intranet-primary/5 via-card to-muted/40 dark:bg-gray-800 dark:from-intranet-primary/10 dark:via-gray-800 dark:to-gray-900/40">
                                 <CardContent className="p-8 md:p-12">
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
@@ -1270,7 +1282,8 @@ const Strategy = () => {
                     <TabsContent value="reports" className="space-y-8 mt-0 outline-none">
                         {/* 1. Executive Summary & Actions */}
                         <div className="flex flex-col md:flex-row gap-6">
-                            <Card className="flex-1 border-none shadow-sm bg-gradient-to-br from-intranet-primary/5 to-transparent">
+                            <Card className="flex-1 border border-gray-100 dark:border-white/10 shadow-sm bg-gradient-to-br from-intranet-primary/5 to-transparent dark:bg-gray-900 dark:from-intranet-primary/10 dark:to-transparent transition-all duration-300">
+
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center gap-2 text-intranet-primary font-bold text-xs uppercase tracking-widest">
                                         <DashboardIcon className="w-4 h-4" />
@@ -1325,8 +1338,9 @@ const Strategy = () => {
                         </div>
 
                         {/* 2. Detailed Performance Table */}
-                        <Card className="border-none shadow-md overflow-hidden">
-                            <CardHeader className="bg-gray-50/50 dark:bg-gray-800/20 border-b border-gray-100 dark:border-gray-800">
+                        <Card className="border border-gray-100 dark:border-white/10 shadow-md overflow-hidden bg-white dark:bg-gray-900 transition-all duration-300">
+                            <CardHeader className="bg-gray-50/50 dark:bg-gray-950/40 border-b border-gray-100 dark:border-white/10">
+
                                 <div className="flex items-center gap-2">
                                     <Target className="h-5 w-5 text-intranet-primary" />
                                     <CardTitle className="text-lg">Detailed Pillar Alignment & KRA Report</CardTitle>
@@ -1401,13 +1415,14 @@ const Strategy = () => {
 
                         {/* 3. Divisional Accountability Report */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
-                            <Card className="border-none shadow-sm">
+                            <Card className="border border-gray-100 dark:border-white/10 shadow-sm bg-white dark:bg-gray-900 transition-all duration-300">
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
                                         <Users className="w-4 h-4" />
                                         Departmental Accountability
                                     </div>
                                     <CardTitle className="text-base text-gray-900 dark:text-gray-100">Divisional Priority Status</CardTitle>
+
                                 </CardHeader>
                                 <CardContent className="space-y-3">
                                     {(alignments && alignments.length > 0 ? alignments : [
@@ -1416,7 +1431,7 @@ const Strategy = () => {
                                         { name: "Research (RPD)", status: "Active", load: "Investor Roadshows" },
                                         { name: "Corporate (CSD)", status: "Ongoing", load: "Policy Finalization" },
                                     ]).map((div: any, i: number) => (
-                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-800/20 border border-transparent dark:hover:border-white/5 transition-all">
                                             <div>
                                                 <div className="text-xs font-bold">{div.name}</div>
                                                 <div className="text-[10px] text-muted-foreground">Alignment: {div.alignedObjectiveTitle || 'Strategic Support'}</div>
@@ -1427,7 +1442,8 @@ const Strategy = () => {
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-none shadow-sm bg-intranet-primary text-white">
+                            <Card className="border dark:border-white/10 shadow-sm bg-intranet-primary text-white">
+
                                 <CardHeader className="pb-2">
                                     <div className="flex items-center gap-2 text-white/70 font-bold text-xs uppercase tracking-widest">
                                         <Award className="w-4 h-4" />

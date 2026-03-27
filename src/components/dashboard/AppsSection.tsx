@@ -34,7 +34,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onView, isAdmin }) => {
   return (
     <div
       onClick={onView}
-      className="group relative flex items-start gap-4 p-4 rounded-xl border border-gray-200 hover:border-red-500 hover:shadow-md transition-all duration-200 bg-white cursor-pointer"
+      className="group relative flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-white/10 hover:border-red-500 dark:hover:border-red-500 hover:shadow-md transition-all duration-200 bg-white dark:bg-white/5 cursor-pointer"
     >
       {/* Top Right Icons Container */}
       <div className="absolute top-2 right-2 flex items-center gap-1 z-10">
@@ -44,7 +44,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onView, isAdmin }) => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1.5 rounded-md bg-white border border-gray-200 text-gray-400 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all"
+            className="p-1.5 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 text-gray-400 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all"
             title="Open application in new tab"
           >
             <ExternalLink className="h-3.5 w-3.5" />
@@ -58,7 +58,7 @@ const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onView, isAdmin }) => {
               e.stopPropagation();
               onEdit();
             }}
-            className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all opacity-0 group-hover:opacity-100"
+            className="p-1.5 rounded-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all opacity-0 group-hover:opacity-100"
             title="Edit application"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -86,11 +86,11 @@ const AppCard: React.FC<AppCardProps> = ({ app, onEdit, onView, isAdmin }) => {
         </div>
         <div className="flex-1 min-w-0 pr-12">
           <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-gray-900 group-hover:text-intranet-primary transition-colors">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-intranet-primary transition-colors">
               {app.name}
             </h3>
           </div>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
             {app.description}
           </p>
         </div>
@@ -196,10 +196,10 @@ const AppsSection: React.FC = () => {
         </Alert>
       )}
 
-      <Card className="bg-white rounded-xl shadow-sm">
+      <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-white/10">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-2xl font-bold">
+            <CardTitle className="flex items-center gap-2 text-2xl font-bold dark:text-gray-100">
               <Grid3x3 className="h-6 w-6 text-intranet-primary" />
               Apps
             </CardTitle>
@@ -285,7 +285,7 @@ const AppsSection: React.FC = () => {
                     return a.localeCompare(b);
                   }).map((category) => (
                     <div key={category} className="mb-6 last:mb-0">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
                         {category}
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -360,7 +360,7 @@ const AppsSection: React.FC = () => {
           href="https://www.office.com/apps"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-intranet-primary hover:text-intranet-primary/80 font-medium transition-colors"
+          className="inline-flex items-center gap-2 text-intranet-primary dark:text-intranet-accent-light hover:text-intranet-primary/80 dark:hover:text-white font-medium transition-colors"
         >
           View all Microsoft 365 apps
           <ExternalLink className="h-4 w-4" />

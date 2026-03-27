@@ -190,7 +190,8 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                             leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                             leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         >
-                            <Dialog.Panel className="relative transform overflow-hidden rounded-xl bg-gray-50 text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col md:flex-row min-h-[500px] h-full max-h-[90vh] p-0">
+                            <Dialog.Panel className="relative transform overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-900 text-left shadow-2xl transition-all w-full max-w-5xl flex flex-col md:flex-row min-h-[500px] h-full max-h-[90vh] p-0 border dark:border-white/10">
+
 
                                 {/* Left Sidebar */}
                                 <div className="w-full md:w-80 bg-[#400010] text-white p-8 flex flex-col relative overflow-y-auto overflow-x-hidden flex-shrink-0 custom-scrollbar">
@@ -302,7 +303,8 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                 </div>
 
                                 {/* Right Content Area */}
-                                <div className="flex-1 flex flex-col relative bg-white min-w-0 overflow-hidden h-full">
+                                <div className="flex-1 flex flex-col relative bg-white dark:bg-gray-900 min-w-0 overflow-hidden h-full">
+
                                     <div className="absolute top-4 right-4 z-10">
                                         <button
                                             onClick={() => {
@@ -316,7 +318,7 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                     </div>
 
                                     <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
-                                        <TabsList className="bg-transparent border-b border-gray-200 rounded-none h-auto p-0 px-4 pt-3 flex-wrap justify-start gap-0">
+                                        <TabsList className="bg-transparent border-b border-gray-200 dark:border-white/10 rounded-none h-auto p-0 px-4 pt-3 flex-wrap justify-start gap-0">
                                             {[
                                                 { value: 'overview', label: 'Overview', icon: Building2 },
                                                 { value: 'duty', label: 'Statutory Duty', icon: Scale },
@@ -326,7 +328,7 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                                     value={tab.value}
                                                     className={`
                                                         rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-sm text-gray-500
-                                                        hover:text-gray-700 data-[state=active]:border-[#800020] data-[state=active]:text-[#800020]
+                                                        hover:text-gray-700 dark:hover:text-gray-300 data-[state=active]:border-[#800020] data-[state=active]:text-[#800020] dark:data-[state=active]:text-intranet-primary-light
                                                         data-[state=active]:font-bold transition-all flex items-center gap-2
                                                     `}
                                                 >
@@ -346,25 +348,25 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
 
                                             <TabsContent value="overview" className="m-0 focus-visible:outline-none max-w-3xl">
                                                 <div className="mb-8">
-                                                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight pr-10">{currentData.unitName} Overview</h2>
-                                                    <p className="text-[#800020] font-bold text-sm uppercase tracking-wider mt-2">{currentData.parentDivision}</p>
+                                                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight pr-10">{currentData.unitName} Overview</h2>
+                                                    <p className="text-[#800020] dark:text-intranet-primary-light font-bold text-sm uppercase tracking-wider mt-2">{currentData.parentDivision}</p>
                                                 </div>
 
                                                 {/* Mission Statement */}
                                                 <div className="mb-10">
                                                     <div className="flex items-center gap-3 mb-4">
                                                         <div className="w-1 h-6 bg-[#800020] rounded-full"></div>
-                                                        <h4 className="text-lg font-bold text-gray-900">Mission Statement</h4>
+                                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Mission Statement</h4>
                                                     </div>
                                                     {isEditing ? (
                                                         <Textarea
                                                             value={currentData.missionStatement}
                                                             onChange={(e) => setFormData(prev => prev ? { ...prev, missionStatement: e.target.value } : prev)}
-                                                            className="min-h-[100px] text-gray-700 text-sm leading-relaxed"
+                                                            className="min-h-[100px] text-gray-700 dark:bg-gray-800/50 dark:border-white/10 dark:text-gray-100 text-sm leading-relaxed"
                                                             placeholder="Enter mission statement..."
                                                         />
                                                     ) : (
-                                                        <p className="text-gray-600 leading-relaxed text-sm">
+                                                        <p className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm">
                                                             {currentData.missionStatement}
                                                         </p>
                                                     )}
@@ -374,17 +376,17 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                                 <div className="mb-12">
                                                     <div className="flex items-center gap-3 mb-4">
                                                         <div className="w-1 h-6 bg-[#800020] rounded-full"></div>
-                                                        <h4 className="text-lg font-bold text-gray-900">Core Functions</h4>
+                                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Core Functions</h4>
                                                     </div>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         {currentData.coreFunctions.map((func, idx) => (
-                                                            <div key={idx} className="bg-gray-50 border border-gray-100 rounded-xl p-4 flex items-start gap-4 hover:border-gray-200 transition-colors hover:shadow-sm">
-                                                                <div className="bg-white p-2.5 rounded-lg shadow-sm border border-gray-100 shrink-0">
+                                                            <div key={idx} className="bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-white/10 rounded-xl p-4 flex items-start gap-4 hover:border-gray-200 dark:hover:border-white/20 transition-colors hover:shadow-sm">
+                                                                <div className="bg-white dark:bg-gray-700 p-2.5 rounded-lg shadow-sm border border-gray-100 dark:border-white/10 shrink-0">
                                                                     {getIcon(func.icon)}
                                                                 </div>
                                                                 <div>
-                                                                    <h5 className="font-semibold text-gray-900 text-sm mb-1">{func.name}</h5>
-                                                                    <p className="text-xs text-gray-500 leading-snug">{func.description}</p>
+                                                                    <h5 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">{func.name}</h5>
+                                                                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{func.description}</p>
                                                                 </div>
                                                             </div>
                                                         ))}
@@ -396,22 +398,22 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                                     <div>
                                                         <div className="flex items-center gap-3 mb-6">
                                                             <div className="w-1 h-6 bg-[#800020] rounded-full"></div>
-                                                            <h4 className="text-lg font-bold text-gray-900">Recent Achievements</h4>
+                                                            <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Recent Achievements</h4>
                                                         </div>
-                                                        <div className="relative border-l border-gray-200 ml-3 md:ml-6 space-y-8 pb-4">
+                                                        <div className="relative border-l border-gray-200 dark:border-white/10 ml-3 md:ml-6 space-y-8 pb-4">
                                                             {currentData.achievements.map((achievement, idx) => (
                                                                 <div key={idx} className="relative pl-8 md:pl-10">
-                                                                    <div className={`absolute -left-4 md:-left-5 top-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${achievement.icon === 'rocket' ? 'bg-[#800020]' : 'bg-gray-100'}`}>
+                                                                    <div className={`absolute -left-4 md:-left-5 top-0 w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-900 shadow-sm ${achievement.icon === 'rocket' ? 'bg-[#800020]' : 'bg-gray-100 dark:bg-gray-700'}`}>
                                                                         {getIcon(achievement.icon)}
                                                                     </div>
-                                                                    <div className="bg-white border border-gray-100 shadow-sm rounded-xl p-5 hover:shadow-md transition-shadow">
+                                                                    <div className="bg-white dark:bg-gray-800/50 border border-gray-100 dark:border-white/10 shadow-sm rounded-xl p-5 hover:shadow-md transition-shadow">
                                                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-2">
-                                                                            <h5 className="font-bold text-gray-900">{achievement.title}</h5>
-                                                                            <span className="text-xs font-bold text-[#800020] bg-red-50 px-2 py-1 rounded-md shrink-0">
+                                                                            <h5 className="font-bold text-gray-900 dark:text-gray-100">{achievement.title}</h5>
+                                                                            <span className="text-xs font-bold text-[#800020] bg-red-50 dark:bg-red-900/30 px-2 py-1 rounded-md shrink-0">
                                                                                 {achievement.date}
                                                                             </span>
                                                                         </div>
-                                                                        <p className="text-sm text-gray-600 leading-relaxed">
+                                                                        <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                                                                             {achievement.description}
                                                                         </p>
                                                                     </div>
@@ -424,36 +426,36 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
 
                                             <TabsContent value="duty" className="m-0 focus-visible:outline-none">
                                                 <div className="mb-8">
-                                                    <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight leading-tight pr-10">Statutory Duties</h2>
-                                                    <p className="text-[#800020] font-bold text-sm uppercase tracking-wider mt-2">{currentData.unitName}</p>
+                                                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight pr-10">Statutory Duties</h2>
+                                                    <p className="text-[#800020] dark:text-intranet-primary-light font-bold text-sm uppercase tracking-wider mt-2">{currentData.unitName}</p>
                                                 </div>
 
                                                 {isEditing ? (
                                                     <div className="space-y-3">
-                                                        <p className="text-xs text-gray-500">
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">
                                                             Supports markdown formatting: **bold**, *italic*, #### headings, bullet lists, numbered lists.
                                                         </p>
                                                         <Textarea
                                                             value={currentData.statutoryDuties || ''}
                                                             onChange={(e) => handleDutyChange(e.target.value)}
-                                                            className="w-full min-h-[400px] text-sm font-mono leading-relaxed resize-y"
+                                                            className="w-full min-h-[400px] text-sm font-mono leading-relaxed resize-y dark:bg-gray-800/50 dark:border-white/10 dark:text-gray-100"
                                                             placeholder="Paste or type statutory duties content here. Markdown formatting is supported..."
                                                         />
                                                     </div>
                                                 ) : (
                                                     currentData.statutoryDuties && currentData.statutoryDuties.trim().length > 0 ? (
-                                                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-                                                            <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900">
+                                                        <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/10 rounded-lg p-5">
+                                                            <div className="prose prose-sm prose-gray dark:prose-invert max-w-none prose-headings:text-[#800020] dark:prose-headings:text-intranet-primary-light prose-a:text-[#800020] dark:prose-a:text-intranet-primary-light prose-strong:text-gray-900 dark:prose-strong:text-gray-100">
                                                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                                     {currentData.statutoryDuties}
                                                                 </ReactMarkdown>
                                                             </div>
                                                         </div>
                                                     ) : (
-                                                        <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
-                                                            <Scale className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                                                            <h5 className="text-gray-900 font-medium mb-1">No duties specified</h5>
-                                                            <p className="text-gray-500 text-sm">Statutory duties for this unit have not been documented yet.</p>
+                                                        <div className="text-center py-12 bg-gray-50 dark:bg-gray-800/20 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+                                                            <Scale className="w-10 h-10 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
+                                                            <h5 className="text-gray-900 dark:text-gray-100 font-medium mb-1">No duties specified</h5>
+                                                            <p className="text-gray-500 dark:text-gray-400 text-sm">Statutory duties for this unit have not been documented yet.</p>
                                                         </div>
                                                     )
                                                 )}
@@ -461,7 +463,8 @@ const UnitModal: React.FC<UnitModalProps> = ({ isOpen, onClose, unit }) => {
                                         </div>
 
                                         {/* Sticky Footer */}
-                                        <div className="border-t border-gray-100 bg-gray-50/80 backdrop-blur-md p-4 px-6 flex items-center justify-between gap-4 mt-auto">
+                                        <div className="border-t border-gray-100 dark:border-white/10 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-md p-4 px-6 flex items-center justify-between gap-4 mt-auto">
+
                                             <p className="text-xs text-gray-500">
                                                 Last updated: Today at 09:12 AM
                                             </p>

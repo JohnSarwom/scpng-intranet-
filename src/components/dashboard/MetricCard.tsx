@@ -46,19 +46,19 @@ const MetricCard: React.FC<MetricCardProps> = ({
   literalCalculation
 }) => {
   const trendColor = trendType === 'increase'
-    ? 'text-intranet-success bg-green-50'
-    : 'text-intranet-danger bg-red-50';
+    ? 'text-intranet-success bg-green-50 dark:bg-intranet-success/10'
+    : 'text-intranet-danger bg-red-50 dark:bg-intranet-danger/10';
 
   const trendSign = trendType === 'increase' ? '+' : '-';
 
   const cardContent = (
-    <div className="bg-white p-4 rounded-xl shadow-sm h-full animate-fade-in border relative">
-      <h3 className="text-sm font-medium text-gray-500 uppercase mb-2">{title}</h3>
+    <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm h-full animate-fade-in border dark:border-white/10 relative">
+      <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase mb-2">{title}</h3>
 
       <div className="flex justify-between items-start">
         <div>
-          <span className="text-3xl font-bold block">{value}</span>
-          <span className="text-sm text-gray-500">{subtitle}</span>
+          <span className="text-3xl font-bold block dark:text-white">{value}</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</span>
         </div>
 
         <div className="w-24 h-12">
@@ -77,7 +77,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
       </div>
 
       <div className="mt-4 flex justify-between items-center">
-        <div className="text-xs text-[#B76E79]">
+        <div className="text-xs text-[#B76E79] dark:text-[#D4A5A9]">
           {literalCalculation && <span>{literalCalculation}</span>}
         </div>
         <div>
@@ -102,7 +102,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
           </div>
           {cardContent}
         </div>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
           <DialogHeader>
             <DialogTitle>{info.title}</DialogTitle>
             <DialogDescription>{info.description}</DialogDescription>

@@ -40,7 +40,8 @@ export const StrategyPageSkeleton = () => {
                         {/* Mission & Vision Cards Skeleton */}
                         <div className="grid grid-cols-1 gap-6">
                             {[1, 2].map((i) => (
-                                <Card key={i} className="relative overflow-hidden shadow-sm">
+                                <Card key={i} className="relative overflow-hidden shadow-sm dark:bg-gray-800 dark:border-white/10">
+
                                     <CardHeader className="relative z-10 pb-2">
                                         <Skeleton className="h-6 w-32" />
                                     </CardHeader>
@@ -65,7 +66,8 @@ export const StrategyPageSkeleton = () => {
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                 {[1, 2, 3, 4].map((i) => (
-                                    <Card key={i} className="h-full bg-card/80">
+                                    <Card key={i} className="h-full bg-card/80 dark:bg-gray-800/50 dark:border-white/10">
+
                                         <CardContent className="pt-6 pb-4 flex flex-col items-center gap-3 text-center">
                                             <Skeleton className="w-12 h-12 rounded-full" />
                                             <div className="w-full flex flex-col items-center space-y-2 mt-2">
@@ -84,7 +86,8 @@ export const StrategyPageSkeleton = () => {
                             <Skeleton className="h-6 w-64" />
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[1, 2, 3, 4, 5].map((i) => (
-                                    <Card key={i} className="overflow-hidden">
+                                    <Card key={i} className="overflow-hidden dark:bg-gray-800 dark:border-white/10">
+
                                         <CardContent className="p-5">
                                             <div className="flex justify-between items-start mb-4">
                                                 <Skeleton className="w-10 h-10 rounded-xl" />
@@ -109,7 +112,8 @@ export const StrategyPageSkeleton = () => {
                                     </Card>
                                 ))}
                                 {/* Featured Project Skeleton */}
-                                <Card className="overflow-hidden border-2 border-dashed bg-muted/20">
+                                <Card className="overflow-hidden border-2 border-dashed bg-muted/20 dark:bg-muted/5 dark:border-white/10">
+
                                     <CardContent className="p-5 h-full flex flex-col">
                                         <div className="flex items-center gap-2 mb-4">
                                             <Skeleton className="w-10 h-10 rounded-xl" />
@@ -158,7 +162,8 @@ export const StrategyPageSkeleton = () => {
 
                             <div className="w-full space-y-4">
                                 {[1, 2, 3, 4, 5].map((i) => (
-                                    <div key={i} className="border rounded-2xl bg-white shadow-sm px-6 py-5 flex items-center gap-4">
+                                    <div key={i} className="border rounded-2xl bg-white dark:bg-gray-800 dark:border-white/10 shadow-sm px-6 py-5 flex items-center gap-4">
+
                                         <Skeleton className="w-12 h-12 rounded-xl flex-shrink-0" />
                                         <div className="space-y-2 flex-1">
                                             <Skeleton className="h-5 w-48" />

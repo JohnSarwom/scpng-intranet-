@@ -36,7 +36,8 @@ const ProgressTrends: React.FC<ProgressTrendsProps> = ({ objectives, timePeriod 
     const hasExecutions = useMemo(() => data.some(d => d.executions > 0), [data]);
 
     return (
-        <Card className="animate-fade-in">
+        <Card className="animate-fade-in dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300">
+
             <CardHeader className="pb-2">
                 <div className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5 text-intranet-primary" />

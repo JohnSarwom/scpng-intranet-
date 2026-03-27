@@ -56,51 +56,51 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
                     <Button
                         variant="ghost"
                         onClick={() => navigate('/forms')}
-                        className="-ml-4 text-muted-foreground hover:text-foreground"
+                        className="-ml-4 text-muted-foreground hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Forms
                     </Button>
                     <div className="flex gap-2">
                         {onDebugSchema && (
-                            <Button variant="outline" size="sm" onClick={onDebugSchema}>
+                            <Button variant="outline" size="sm" onClick={onDebugSchema} className="dark:bg-white/5 dark:border-white/10 dark:text-gray-400 hover:dark:bg-gray-700">
                                 Debug Schema
                             </Button>
                         )}
-                        <TabsList>
-                            <TabsTrigger value="digital">Digital Form</TabsTrigger>
-                            <TabsTrigger value="paper">Paper Form</TabsTrigger>
-                            <TabsTrigger value="tracking">My Applications</TabsTrigger>
+                        <TabsList className="dark:bg-gray-800 dark:border-white/10 p-1">
+                            <TabsTrigger value="digital" className="dark:data-[state=active]:bg-gray-700">Digital Form</TabsTrigger>
+                            <TabsTrigger value="paper" className="dark:data-[state=active]:bg-gray-700">Paper Form</TabsTrigger>
+                            <TabsTrigger value="tracking" className="dark:data-[state=active]:bg-gray-700">My Applications</TabsTrigger>
                         </TabsList>
                     </div>
                 </div>
 
                 {template && (
-                    <Card className="mb-6">
+                    <Card className="mb-6 dark:bg-gray-800 dark:border-white/10">
                         <CardHeader>
                             <div className="flex items-start justify-between">
                                 <div className="space-y-2">
-                                    <CardTitle className="text-2xl">{template.title}</CardTitle>
-                                    <CardDescription>{template.description}</CardDescription>
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <CardTitle className="text-2xl dark:text-gray-100">{template.title}</CardTitle>
+                                    <CardDescription className="dark:text-gray-400">{template.description}</CardDescription>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-500">
                                         <Clock className="h-4 w-4" />
                                         <span>Estimated time: {template.estimatedTime}</span>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Badge variant="outline">
+                                    <Badge variant="outline" className="dark:border-white/10 dark:text-gray-400">
                                         Version {template.version}
                                     </Badge>
                                 </div>
                             </div>
-
+ 
                             {viewMode === 'digital' && (
                                 <div className="space-y-2 mt-4 text-sm">
                                     <div className="flex justify-between">
-                                        <span className="font-medium">Form completion</span>
-                                        <span>{progress}%</span>
+                                        <span className="font-medium dark:text-gray-300">Form completion</span>
+                                        <span className="dark:text-gray-400">{progress}%</span>
                                     </div>
-                                    <Progress value={progress} className="h-2" />
+                                    <Progress value={progress} className="h-2 dark:bg-gray-700" />
                                 </div>
                             )}
                         </CardHeader>

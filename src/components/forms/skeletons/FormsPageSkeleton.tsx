@@ -31,7 +31,7 @@ export const FormsPageSkeleton = () => {
                         {/* Form Cards Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {Array.from({ length: 3 }).map((_, cardIndex) => (
-                                <Card key={cardIndex} className="shadow-sm border border-gray-100 dark:border-gray-800">
+                                <Card key={cardIndex} className="shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-white/10">
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">

@@ -52,7 +52,8 @@ const StatusDistribution: React.FC<StatusDistributionProps> = ({ objectives, kra
     }).filter(s => s.value > 0);
 
     return (
-        <Card className="group relative">
+        <Card className="group relative dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300">
+
             <CardHeader className="pb-3">
                 <div>
                     <CardTitle>Strategic Status Distribution</CardTitle>
@@ -65,7 +66,7 @@ const StatusDistribution: React.FC<StatusDistributionProps> = ({ objectives, kra
                             key={key}
                             onClick={() => setActiveTab(key)}
                             className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === key
-                                    ? 'bg-white dark:bg-gray-800 text-intranet-primary shadow-sm'
+                                    ? 'bg-white dark:bg-gray-950 text-intranet-primary shadow-sm'
                                     : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >

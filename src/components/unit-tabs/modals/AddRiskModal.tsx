@@ -278,10 +278,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
         if (!isOpen) resetForm();
       }}
     >
-      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Add New Risk</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0 dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm transition-colors">
+          <DialogTitle className="text-xl font-semibold">Add New Risk</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">
             Enter the details to create a new risk entry.
           </DialogDescription>
         </DialogHeader>
@@ -292,26 +292,28 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
             {/* Title (spans 2 columns) */}
             <div className="md:col-span-2 grid gap-1.5">
-              <Label htmlFor="risk-title">Title <span className="text-red-500">*</span></Label>
+              <Label htmlFor="risk-title" className="dark:text-gray-300">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="risk-title"
                 name="title"
                 placeholder="Risk Title"
                 value={formState.title}
                 onChange={handleChange}
+                className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
               />
-              {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
+              {errors.title && <p className="text-red-500 text-sm font-medium mt-1">{errors.title}</p>}
             </div>
 
             {/* Description (spans 2 columns) */}
             <div className="md:col-span-2 grid gap-1.5">
-              <Label htmlFor="risk-description">Description</Label>
+              <Label htmlFor="risk-description" className="dark:text-gray-300">Description</Label>
               <Textarea
                 id="risk-description"
                 name="description"
                 placeholder="Detailed description of the risk"
                 value={formState.description}
                 onChange={handleChange}
+                className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all custom-scrollbar"
                 rows={3}
               />
             </div>
@@ -324,10 +326,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.owner}
                 onValueChange={(value) => handleSelectChange('owner', value)}
               >
-                <SelectTrigger id="risk-owner" className={loading ? "opacity-50" : ""}>
+                <SelectTrigger id="risk-owner" className={cn("dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20", loading && "opacity-50")}>
                   <SelectValue placeholder="Select owner" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   {loading ? (
                     <SelectItem value="_loading" disabled>Loading staff...</SelectItem>
                   ) : staffMembers && staffMembers.length > 0 ? (
@@ -352,10 +354,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.category}
                 onValueChange={(value) => handleSelectChange('category', value)}
               >
-                <SelectTrigger id="risk-category">
+                <SelectTrigger id="risk-category" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20">
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   <SelectItem value="financial">Financial</SelectItem>
                   <SelectItem value="operational">Operational</SelectItem>
                   <SelectItem value="strategic">Strategic</SelectItem>
@@ -375,10 +377,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.status}
                 onValueChange={(value) => handleSelectChange('status', value as Risk['status'])}
               >
-                <SelectTrigger id="risk-status">
+                <SelectTrigger id="risk-status" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   <SelectItem value="identified">Identified</SelectItem>
                   <SelectItem value="analyzing">Analyzing</SelectItem>
                   <SelectItem value="mitigating">Mitigating</SelectItem>
@@ -397,7 +399,7 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20",
                       !formState.identificationDate && "text-muted-foreground"
                     )}
                   >
@@ -424,10 +426,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.impact}
                 onValueChange={(value) => handleSelectChange('impact', value as Risk['impact'])}
               >
-                <SelectTrigger id="risk-impact">
+                <SelectTrigger id="risk-impact" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20">
                   <SelectValue placeholder="Select impact level" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
@@ -444,10 +446,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.likelihood}
                 onValueChange={(value) => handleSelectChange('likelihood', value as Risk['likelihood'])}
               >
-                <SelectTrigger id="risk-likelihood">
+                <SelectTrigger id="risk-likelihood" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20">
                   <SelectValue placeholder="Select likelihood" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   <SelectItem value="low">Low</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="high">High</SelectItem>
@@ -466,6 +468,7 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 placeholder="Steps to mitigate the risk"
                 value={formState.mitigationPlan}
                 onChange={handleChange}
+                className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
                 rows={3}
               />
             </div>
@@ -478,10 +481,10 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.project_name || ''}
                 onValueChange={(value) => handleSelectChange('project_name', value)}
               >
-                <SelectTrigger id="risk-project">
+                <SelectTrigger id="risk-project" className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20">
                   <SelectValue placeholder="Select related project" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                   <SelectItem value="">None</SelectItem>
                   {projects && projects.length > 0 ? (
                     projects.map((project) => (
@@ -506,9 +509,9 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
           </div>
         </div> {/* End scrollable content area */}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleAdd}>Add Risk</Button>
+        <DialogFooter className="p-6 bg-gray-50/50 dark:bg-gray-800/50 border-t dark:border-white/10">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="dark:text-gray-400 dark:hover:text-white">Cancel</Button>
+          <Button onClick={handleAdd} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">Add Risk</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

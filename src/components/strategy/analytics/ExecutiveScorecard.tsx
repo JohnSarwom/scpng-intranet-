@@ -123,7 +123,7 @@ const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ objectives }) =
     return (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {stats.map((stat, i) => (
-                <Card key={i} className="animate-fade-in">
+                <Card key={i} className="animate-fade-in dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300">
                     <div className="p-5 flex items-center gap-4">
                         <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
                             <stat.icon className="w-6 h-6" />
@@ -136,6 +136,7 @@ const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ objectives }) =
                     </div>
                 </Card>
             ))}
+
         </div>
     );
 };

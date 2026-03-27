@@ -26,7 +26,8 @@ const OPS_CONFIG = {
         TASK_GROUPS: 'Operations_TaskGroups',
         COMPONENT_VISIBILITY: 'System_Component_Visibility',
         WORKPLANS: 'Division_WorkPlans',
-        NOTIFICATIONS: 'System_Notifications'
+        NOTIFICATIONS: 'System_Notifications',
+        REPORT_SCHEDULES: 'Report_Schedules'
     }
 };
 
@@ -97,6 +98,11 @@ export class SharePointOpsService {
                 // Auto-ensure OwnerEmail column on TaskGroups list (fire-and-forget)
                 this.ensureOwnerEmailColumn().catch(err =>
                     console.warn('⚠️ [SP Ops] Auto-ensure OwnerEmail column failed (non-blocking):', err.message)
+                );
+
+                // Auto-ensure custom date range columns on Report_Schedules (fire-and-forget)
+                this.ensureCustomDateColumns().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure custom date columns failed (non-blocking):', err.message)
                 );
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
@@ -198,6 +204,34 @@ export class SharePointOpsService {
             }
         } catch (err: any) {
             console.warn('⚠️ [SP Ops] Failed to check/create OwnerEmail on TaskGroups:', err.message);
+        }
+    }
+
+    private async ensureCustomDateColumns(): Promise<void> {
+        const listId = this.listIds['REPORT_SCHEDULES'];
+        if (!listId) return;
+
+        const columnsToEnsure: { name: string; def: Record<string, any> }[] = [
+            { name: 'CustomStartDate', def: { dateTime: {} } },
+            { name: 'CustomEndDate', def: { dateTime: {} } },
+            { name: 'RollingWindowDays', def: { text: {} } },
+            { name: 'CustomIntervalDays', def: { text: {} } },
+            { name: 'IsOneTime', def: { text: {} } },
+        ];
+
+        for (const col of columnsToEnsure) {
+            try {
+                const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter(`name eq '${col.name}'`).select('id,name').get();
+                if (!res.value || res.value.length === 0) {
+                    console.log(`[SP Ops] Creating ${col.name} column on Report_Schedules...`);
+                    await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({
+                        name: col.name,
+                        ...col.def,
+                    });
+                }
+            } catch (err: any) {
+                console.warn(`[SP Ops] Failed to ensure ${col.name} on Report_Schedules:`, err.message);
+            }
         }
     }
 
@@ -443,6 +477,7 @@ export class SharePointOpsService {
 
         // No server-side role-based filtering — all tasks are fetched, then filtered
         // client-side in useSharePointTasks by creator/assignee for all roles (including admin).
+        const isAdmin = context?.role === 'admin' || context?.role === 'super_admin';
         console.log(`🌐 [Global Fetch] User: ${context?.email} | Role: ${context?.role} | No server-side filter (client-side filtering applied)`)
 
         // Paginate through all results — Graph API caps at 200 items per page by default.
@@ -1650,6 +1685,284 @@ export class SharePointOpsService {
                 }
             }
         }
+    }
+
+    // --- Report Schedules ---
+
+    async createReportSchedulesList(): Promise<void> {
+        const listKey = 'REPORT_SCHEDULES';
+        const listName = OPS_CONFIG.LISTS[listKey];
+
+        console.log(`[SP Ops] Ensuring list '${listName}' exists...`);
+
+        if (!this.siteId) await this.initialize();
+
+        let listId = this.listIds[listKey];
+        if (!listId) {
+            try {
+                const existing = await this.client.api(`/sites/${this.siteId}/lists/${listName}`).get();
+                this.listIds[listKey] = existing.id;
+                listId = existing.id;
+                console.log(`[SP Ops] List '${listName}' already exists.`);
+            } catch (e: any) {
+                if (e.statusCode === 404) {
+                    console.log(`[SP Ops] Creating list '${listName}'...`);
+                    const newList = await this.client.api(`/sites/${this.siteId}/lists`).post({
+                        displayName: listName,
+                        columns: [
+                            { name: 'UserEmail', text: {} },
+                            { name: 'Division', text: {} },
+                            { name: 'Unit', text: {} },
+                            { name: 'TimePeriod', text: {} },              // daily, weekly, monthly, quarterly, half-yearly, yearly, custom
+                            { name: 'Categories', text: { allowMultipleLines: true } }, // JSON array e.g. ["tasks","kras"]
+                            { name: 'IsActive', text: {} },                // "true" or "false"
+                            { name: 'PreferredTime', text: {} },           // 24hr format e.g. "07:00"
+                            { name: 'PreferredDay', text: {} },            // For weekly: "Monday", etc.
+                            { name: 'PreferredDayOfMonth', text: {} },     // For monthly+: "1", "15", etc.
+                            { name: 'LastSentAt', dateTime: {} },
+                            { name: 'NextSendAt', dateTime: {} },
+                            { name: 'ManagerEmail', text: {} },
+                            { name: 'CustomStartDate', dateTime: {} },     // For custom: fixed start date
+                            { name: 'CustomEndDate', dateTime: {} },       // For custom: fixed end date
+                            { name: 'RollingWindowDays', text: {} },       // For custom rolling: window size e.g. "45"
+                            { name: 'CustomIntervalDays', text: {} },      // For custom rolling: recurrence interval e.g. "14"
+                            { name: 'IsOneTime', text: {} },               // For custom: "true" or "false"
+                        ],
+                        list: { template: 'genericList' }
+                    });
+                    this.listIds[listKey] = newList.id;
+                    listId = newList.id;
+                    console.log(`[SP Ops] List '${listName}' created.`);
+                } else {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    async getAllReportSchedules(): Promise<any[]> {
+        if (!this.listIds['REPORT_SCHEDULES']) {
+            try { await this.createReportSchedulesList(); } catch { return []; }
+        }
+        const listId = this.listIds['REPORT_SCHEDULES'];
+        if (!listId) return [];
+
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                .expand('fields')
+                .top(100)
+                .get();
+
+            if (response.value) {
+                return response.value.map((item: any) => ({ id: item.id, ...item.fields }));
+            }
+            return [];
+        } catch (e) {
+            console.error('[SP Ops] Failed to get all report schedules:', e);
+            return [];
+        }
+    }
+
+    async deleteReportSchedule(itemId: string): Promise<void> {
+        if (!this.listIds['REPORT_SCHEDULES']) {
+            await this.createReportSchedulesList();
+        }
+        const listId = this.listIds['REPORT_SCHEDULES'];
+
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+            .delete();
+    }
+
+    async getReportSchedule(userEmail: string): Promise<any | null> {
+        if (!this.listIds['REPORT_SCHEDULES']) {
+            try { await this.createReportSchedulesList(); } catch { return null; }
+        }
+        const listId = this.listIds['REPORT_SCHEDULES'];
+        if (!listId) return null;
+
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                .filter(`fields/UserEmail eq '${userEmail}'`)
+                .expand('fields')
+                .top(1)
+                .get();
+
+            if (response.value && response.value.length > 0) {
+                const item = response.value[0];
+                return { id: item.id, ...item.fields };
+            }
+            return null;
+        } catch (e) {
+            console.error('[SP Ops] Failed to get report schedule:', e);
+            return null;
+        }
+    }
+
+    async saveReportSchedule(schedule: {
+        userEmail: string;
+        userName: string;
+        division: string;
+        unit: string;
+        timePeriod: string;
+        categories: string[];
+        isActive: boolean;
+        preferredTime: string;
+        preferredDay: string;
+        preferredDayOfMonth: string;
+        managerEmail?: string;
+        customStartDate?: string;
+        customEndDate?: string;
+        rollingWindowDays?: string;
+        customIntervalDays?: string;
+        isOneTime?: boolean;
+    }): Promise<any> {
+        if (!this.listIds['REPORT_SCHEDULES']) {
+            await this.createReportSchedulesList();
+        }
+        const listId = this.listIds['REPORT_SCHEDULES'];
+
+        // Calculate NextSendAt
+        const nextSend = this.calculateNextSendAt(
+            schedule.timePeriod,
+            schedule.preferredTime,
+            schedule.preferredDay,
+            schedule.preferredDayOfMonth,
+            schedule.timePeriod === 'custom' ? {
+                isOneTime: schedule.isOneTime,
+                customIntervalDays: schedule.customIntervalDays,
+            } : undefined
+        );
+
+        const fields: Record<string, any> = {
+            Title: schedule.userName,
+            UserEmail: schedule.userEmail,
+            Division: schedule.division,
+            Unit: schedule.unit,
+            TimePeriod: schedule.timePeriod,
+            Categories: JSON.stringify(schedule.categories),
+            IsActive: schedule.isActive ? 'true' : 'false',
+            PreferredTime: schedule.preferredTime,
+            PreferredDay: schedule.preferredDay,
+            PreferredDayOfMonth: schedule.preferredDayOfMonth,
+            NextSendAt: nextSend.toISOString(),
+            ManagerEmail: schedule.managerEmail || '',
+        };
+
+        // Custom date range fields
+        if (schedule.timePeriod === 'custom') {
+            fields.IsOneTime = schedule.isOneTime ? 'true' : 'false';
+            if (schedule.customStartDate) fields.CustomStartDate = schedule.customStartDate;
+            if (schedule.customEndDate) fields.CustomEndDate = schedule.customEndDate;
+            if (schedule.rollingWindowDays) fields.RollingWindowDays = schedule.rollingWindowDays;
+            if (schedule.customIntervalDays) fields.CustomIntervalDays = schedule.customIntervalDays;
+        }
+
+        // Check if schedule already exists for this user
+        const existing = await this.getReportSchedule(schedule.userEmail);
+
+        if (existing) {
+            // Update
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items/${existing.id}/fields`)
+                .patch(fields);
+            return { id: existing.id, ...fields };
+        } else {
+            // Create
+            const result = await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                .post({ fields });
+            return { id: result.id, ...fields };
+        }
+    }
+
+    private calculateNextSendAt(
+        period: string,
+        preferredTime: string,
+        preferredDay: string,
+        preferredDayOfMonth: string,
+        extraParams?: { isOneTime?: boolean; customIntervalDays?: string }
+    ): Date {
+        const [hours, minutes] = (preferredTime || '07:00').split(':').map(Number);
+        const now = new Date();
+        const next = new Date();
+        next.setHours(hours, minutes, 0, 0);
+
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        switch (period) {
+            case 'daily':
+                // If today's time has passed, schedule for tomorrow
+                if (next <= now) next.setDate(next.getDate() + 1);
+                break;
+
+            case 'weekly': {
+                const targetDay = dayNames.indexOf(preferredDay || 'Monday');
+                const currentDay = now.getDay();
+                let daysUntil = targetDay - currentDay;
+                if (daysUntil < 0) daysUntil += 7;
+                if (daysUntil === 0 && next <= now) daysUntil = 7;
+                next.setDate(now.getDate() + daysUntil);
+                break;
+            }
+
+            case 'monthly': {
+                const dayOfMonth = parseInt(preferredDayOfMonth || '1', 10);
+                next.setDate(dayOfMonth);
+                if (next <= now) next.setMonth(next.getMonth() + 1);
+                break;
+            }
+
+            case 'quarterly': {
+                const dayOfMonth = parseInt(preferredDayOfMonth || '1', 10);
+                const quarterStarts = [0, 3, 6, 9]; // Jan, Apr, Jul, Oct
+                const currentMonth = now.getMonth();
+                const nextQuarter = quarterStarts.find(m => m > currentMonth) ?? quarterStarts[0] + 12;
+                next.setMonth(nextQuarter >= 12 ? nextQuarter - 12 : nextQuarter);
+                if (nextQuarter >= 12) next.setFullYear(next.getFullYear() + 1);
+                next.setDate(dayOfMonth);
+                if (next <= now) next.setMonth(next.getMonth() + 3);
+                break;
+            }
+
+            case 'half-yearly': {
+                const dayOfMonth = parseInt(preferredDayOfMonth || '1', 10);
+                const currentMonth = now.getMonth();
+                const nextHalf = currentMonth < 6 ? 6 : 0;
+                next.setMonth(nextHalf);
+                if (nextHalf === 0) next.setFullYear(next.getFullYear() + 1);
+                next.setDate(dayOfMonth);
+                if (next <= now) next.setMonth(next.getMonth() + 6);
+                break;
+            }
+
+            case 'yearly': {
+                const dayOfMonth = parseInt(preferredDayOfMonth || '1', 10);
+                next.setMonth(0); // January
+                next.setDate(dayOfMonth);
+                if (next <= now) next.setFullYear(next.getFullYear() + 1);
+                break;
+            }
+
+            case 'custom': {
+                if (extraParams?.isOneTime) {
+                    // One-time: send once at preferred time, tomorrow if time already passed
+                    if (next <= now) next.setDate(next.getDate() + 1);
+                } else {
+                    // Rolling: next send = now + customIntervalDays
+                    const intervalDays = parseInt(extraParams?.customIntervalDays || '14', 10);
+                    next.setDate(next.getDate() + intervalDays);
+                }
+                break;
+            }
+
+            default:
+                next.setDate(next.getDate() + 1);
+        }
+
+        return next;
     }
 
     async saveReport(report: Omit<Report, 'id'>): Promise<Report> {

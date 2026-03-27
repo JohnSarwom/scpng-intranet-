@@ -99,22 +99,23 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle>Add New Task</DialogTitle>
+      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh] dark:bg-gray-900 dark:border-white/10 shadow-2xl overflow-hidden p-0">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
+          <DialogTitle className="text-xl font-semibold">Add New Task</DialogTitle>
           <DialogDescription>
-            Create a new task with the form below
+            Enter the details for the new task below.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto pr-4">
-          <div className="grid gap-4 py-4">
+        <div className="flex-grow overflow-y-auto pr-2 custom-scrollbar">
+          <div className="grid gap-4 py-4 px-6">
             <div className="grid gap-2">
-              <Label htmlFor="task-title">Title</Label>
+              <Label htmlFor="task-title">Title <span className="text-red-500">*</span></Label>
               <Input
                 id="task-title"
                 placeholder="Task Title"
                 value={newTask.title}
                 onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
               />
             </div>
             <div className="grid gap-2">
@@ -124,6 +125,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 placeholder="Task Description"
                 value={newTask.description}
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -137,7 +139,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     setNewTask({ ...newTask, assignee: value });
                   }}
                 >
-                  <SelectTrigger id="task-assignee" className={loading ? "opacity-50" : ""}>
+                  <SelectTrigger id="task-assignee" className={cn("dark:bg-gray-800 dark:border-white/10", loading && "opacity-50")}>
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
@@ -163,7 +165,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     setNewTask({ ...newTask, status: value })
                   }
                 >
-                  <SelectTrigger id="task-status">
+                  <SelectTrigger id="task-status" className="dark:bg-gray-800 dark:border-white/10">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -185,7 +187,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     setNewTask({ ...newTask, priority: value })
                   }
                 >
-                  <SelectTrigger id="task-priority">
+                  <SelectTrigger id="task-priority" className="dark:bg-gray-800 dark:border-white/10">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,6 +207,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                     min="0"
                     max="100"
                     value={newTask.completionPercentage || 0}
+                    className="dark:bg-gray-800 dark:border-white/10"
                     onChange={(e) => {
                       let value = parseInt(e.target.value, 10);
                       if (isNaN(value) || value < 0) {
@@ -227,6 +230,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   type="date"
                   value={newTask.startDate instanceof Date ? newTask.startDate.toISOString().split('T')[0] : ''}
                   onChange={(e) => setNewTask({ ...newTask, startDate: new Date(e.target.value) })}
+                  className="dark:bg-gray-800 dark:border-white/10"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -236,6 +240,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                   type="date"
                   value={typeof newTask.dueDate === 'string' ? newTask.dueDate : ''}
                   onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                  className="dark:bg-gray-800 dark:border-white/10"
                 />
               </div>
             </div>
@@ -249,9 +254,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleAddTask}>Add Task</Button>
+        <DialogFooter className="p-6 bg-gray-50/50 dark:bg-gray-800/50 border-t dark:border-white/10">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="dark:text-gray-400 dark:hover:text-white">Cancel</Button>
+          <Button onClick={handleAddTask} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">Add Task</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -63,9 +63,9 @@ const OrganizationalOverview = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-br from-card to-muted/80 shadow-sm animate-fade-in rounded-xl flex-1 h-full">
+    <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-950 shadow-sm animate-fade-in rounded-xl flex-1 h-full border dark:border-white/10">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-xl font-bold">
+        <CardTitle className="flex items-center gap-2 text-xl font-bold dark:text-gray-100">
           <Compass className="h-5 w-5 text-intranet-primary" />
           Organizational Overview
         </CardTitle>
@@ -119,7 +119,7 @@ const OrganizationalOverview = () => {
                   <TaskCompletionDonut
                     segments={[
                       { value: averageProgress, color: '#5C001E', label: 'Completed' },
-                      { value: 100 - averageProgress, color: '#cbd5e1', label: 'Remaining' }
+                      { value: 100 - averageProgress, color: document.documentElement.classList.contains('dark') ? '#374151' : '#cbd5e1', label: 'Remaining' }
                     ]}
                     centerLabel={`${averageProgress}%`}
                     centerSubtext="Overall Status"

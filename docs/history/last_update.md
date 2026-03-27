@@ -3624,3 +3624,99 @@ The documentation is saved in your artifacts directory and includes everything y
 - Implemented a specialized loading state that waits for both MS Graph contacts and SharePoint role permissions to be ready.
 - Cleaned up duplicate helper logic for division ID normalization.
 **Impact:** A more personalized and secure experience for all users, with fully restored administrative tools.
+
+2026-03-25 06:00 AM
+# Comprehensive Dark Mode Refinements & Standardization
+
+## 1. Design System Upgrade
+**Problem:** Dashboard cards, the Apps page, and core modals had inconsistent dark mode backgrounds (mix of black, semi-transparent, and generic dark colors). 
+**Fix:**
+- Standardized all card-level components to dark:bg-gray-800.
+- Standardized modal-level components to dark:bg-gray-900.
+- Applied consistent dark:border-white/10 to all premium containers.
+- Enhanced text contrast using dark:text-gray-100 for titles and dark:text-gray-400 for subtitles.
+
+## 2. Component Enhancements
+- **TradingView Ticker**: Implemented dynamic theme-aware initialization and transparency to blend with the gray-800 dashboard.
+- **Apps Page**: Synchronized AppsSection, AppCard, and AppGridSkeleton with the new design system.
+- **Feedback Widget**: Complete logic and UI overhaul for dark mode, including themed category buttons and high-contrast ratings.
+- **Form Modals**: Updated AddEventModal and MetricDetailModal with theme-aware inputs, toggles, and list items.
+
+**Impact:** A significantly more professional, cohesive, and premium-feeling dark mode experience across the entire intranet.
+**Detailed Documentation:** Refer to [DARK_MODE_REFINEMENTS_2026_03_25.md](file:///c:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/docs/history/DARK_MODE_REFINEMENTS_2026_03_25.md) for full technical breakdown.
+
+---
+
+## 2026-03-27 ~12:00–16:00 PGT — 7-Template Email Architecture for Report Scheduler
+
+**File:** `src/services/powerAutomateService.ts`
+
+Expanded the Power Automate report scheduler from a dual-template system (daily + standard) to a full **7-template architecture**. Each report period now receives a unique, progressively richer HTML email with period-specific Gemini AI prompts.
+
+### Templates Added
+
+| Period | Template Method | AI Prompt Method | Insights | Key Visual Features |
+|---|---|---|---|---|
+| Weekly | `buildWeeklyEmailTemplate()` | `buildWeeklyAIPromptExpression()` | 5 | Date range header, vitals strip (completion %), "W" avatar, 2x2 color-coded badges |
+| Monthly | `buildMonthlyEmailTemplate()` | `buildMonthlyAIPromptExpression()` | 6 | Month/year header, "M" avatar, strategic analysis section |
+| Quarterly | `buildQuarterlyEmailTemplate()` | `buildQuarterlyAIPromptExpression()` | 7 | Dynamic Q# pill badge, uppercase header, elevated styling (shadows), "Q" maroon avatar |
+| Half-Yearly | `buildHalfYearlyEmailTemplate()` | `buildHalfYearlyAIPromptExpression()` | 7 | Dynamic H1/H2 badge, "H#" text avatar, "KPI Trajectory" labels, trajectory analysis |
+| Yearly | `buildYearlyEmailTemplate()` | `buildYearlyAIPromptExpression()` | 8 | Dynamic year badge, "FY" avatar, gold accent (#d4af37) AI section, "Annual KPI Achievement" labels, legacy statement |
+
+### Flow Actions Added
+
+- `Build_Weekly_AI_Prompt`, `Build_Monthly_AI_Prompt`, `Build_Quarterly_AI_Prompt`, `Build_HalfYearly_AI_Prompt`, `Build_Yearly_AI_Prompt` — period-specific Gemini prompts
+- `Build_Weekly_Email`, `Build_Monthly_Email`, `Build_Quarterly_Email`, `Build_HalfYearly_Email`, `Build_Yearly_Email` — period-specific email templates
+- Both selector actions (`Build_AI_Prompt`, `Build_Email_Body`) updated to 7-way nested `@if()` branching: `daily → weekly → monthly → quarterly → half-yearly → yearly → standard`
+
+### Design Highlights
+
+- Templates progressively elevate: daily (standard) → weekly (card-style) → monthly (strategic) → quarterly/half-yearly (executive with shadows, uppercase, pill badges) → yearly (gold accent, largest CTA)
+- Dynamic Q#/H#/year labels computed at runtime via `formatDateTime(utcNow(), 'M')` + `lessOrEquals(int(...))` branching
+- Color-coded badge palette: green (good), amber (warn), red (bad), blue (neutral/review), gold (annual)
+- AI insight depth scales: 3-5 → 5 → 6 → 7 → 8 insights; reflection length scales from 1-2 to 5-6 sentences
+- Yearly template uniquely includes a "legacy statement" (single sentence defining the year's ultimate contribution)
+- Yearly AI section uses gold-tinted styling (#fdfaf0 background, #d4af37 left border) to distinguish from half-yearly's neutral styling
+- All 14 actions (7 prompts + 7 emails) built in parallel; selectors pick the right one
+
+**Impact:** Users now receive visually distinct, contextually appropriate emails for every report period — from lightweight daily summaries to comprehensive annual executive dossiers with gold-accented strategic impact analysis and legacy statements.
+**Detailed Documentation:** Refer to [report-scheduler-powerautomate.md](file:///c:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/docs/features/report-scheduler-powerautomate.md) for full technical breakdown.
+
+## 2026-03-27 ~17:00–18:30 PGT — Custom Date Range Scheduled Reports (8th Template)
+
+**Files:** `src/services/powerAutomateService.ts`, `src/services/sharePointOpsService.ts`, `src/types/division.types.ts`, `src/components/unit-tabs/ReportsTab.tsx`
+
+Added the 8th report template: **Custom Date Range**, expanding the architecture from 7-template to **8-template**. Users can now schedule reports for specific date windows with two modes:
+
+### Custom Date Range Modes
+
+| Mode | Behavior |
+|---|---|
+| **One-Time** | Fixed start/end dates. Report sends once, then auto-deactivates (`IsActive = 'false'`). |
+| **Rolling Window** | Last N days, recurring every M days. Window recomputes at each send (`addDays(utcNow(), -RollingWindowDays)`). |
+
+### SharePoint Columns Added (Report_Schedules)
+
+`CustomStartDate` (dateTime), `CustomEndDate` (dateTime), `RollingWindowDays` (text), `CustomIntervalDays` (text), `IsOneTime` (text)
+
+### Flow Actions Added (19 new)
+
+- `Compute_Custom_Start`, `Compute_Custom_End` — compute date window at send time
+- `Filter_Tasks_InDateRange`, `Filter_KRAs_InDateRange`, `Filter_KPIs_InDateRange` — filter fetched data by `Modified` date
+- 9 custom status filters: `Filter_Custom_{Completed,InProgress,Todo,Review}_Tasks`, `Filter_Custom_{Active,Completed}_KRAs`, `Filter_Custom_{OnTrack,AtRisk,Behind}_KPIs`
+- 3 custom metrics: `Compute_Custom_{Task,KRA,KPI}_Metrics`
+- `Build_Custom_AI_Prompt`, `Build_Custom_Email` — template + prompt with 5 window-focused insights
+
+### UI Changes (ReportsTab.tsx)
+
+- "Custom Date Range" option in frequency selector
+- Toggle between One-Time and Rolling Window modes
+- One-time: start/end date pickers + auto-deactivation info banner
+- Rolling: window days + interval days number inputs with live preview text
+
+### Key Design Decisions
+
+- **Zero impact on existing templates** — custom filters operate on separate `Filter_Custom_*` actions; original `Filter_*` actions untouched
+- **Deactivation via sentinel** — `Calculate_Next_Send` returns `'DEACTIVATE'` for one-time custom; `Update_Schedule` patches `IsActive = 'false'`
+- **Blue accent (#0052cc)** AI section with "DR" avatar distinguishes custom reports from all other period templates
+

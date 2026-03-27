@@ -62,17 +62,23 @@ const themeColors = {
   accent: '#ff6b6b',
   neutral: '#64748b',
   background: '#ffffff',
-  foreground: '#0f172a'
+  foreground: '#0f172a',
+  dark: {
+    background: '#0a0a0a',
+    foreground: '#f8fafc',
+    neutral: '#94a3b8',
+    border: 'rgba(255, 255, 255, 0.1)'
+  }
 };
 
 const statusColors: Record<string, string> = {
-  'Completed': themeColors.primary,
+  'Completed': '#83002A',
   'On Track': '#10b981',
   'In Progress': '#3b82f6',
-  'Pending': themeColors.neutral,
-  'Not Started': themeColors.neutral,
+  'Pending': '#64748b',
+  'Not Started': '#64748b',
   'On Hold': '#f59e0b',
-  'At Risk': themeColors.accent,
+  'At Risk': '#ff6b6b',
   'Behind': '#ef4444',
 };
 
@@ -223,16 +229,16 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
   const CustomTooltip = ({ active, payload, label, unit }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="rounded-lg border bg-background p-2 shadow-sm text-sm">
-          <p className="font-medium mb-1 border-b pb-1">{label}</p>
+        <div className="rounded-lg border bg-background dark:bg-gray-950 dark:border-white/10 p-2 shadow-sm text-sm">
+          <p className="font-medium mb-1 border-b dark:border-white/10 pb-1">{label}</p>
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-muted-foreground flex items-center gap-2">
               <span
                 className="w-2 h-2 rounded-full inline-block"
                 style={{ backgroundColor: entry.color || entry.fill }}
               />
-              <span>{entry.name}:</span>
-              <span className="font-bold ml-auto">{entry.value}{unit || ''}</span>
+              <span className="dark:text-gray-300">{entry.name}:</span>
+              <span className="font-bold ml-auto dark:text-gray-100">{entry.value}{unit || ''}</span>
             </p>
           ))}
         </div>
@@ -246,16 +252,16 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Dialog>
-          <Card className="group relative">
+          <Card className="group relative dark:bg-gray-900 dark:border-white/10">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>My KRA Status Overview</CardTitle>
-                  <CardDescription>Status distribution of My KRAs</CardDescription>
+                  <CardTitle className="dark:text-gray-100">My KRA Status Overview</CardTitle>
+                  <CardDescription className="dark:text-gray-400">Status distribution of My KRAs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
-                    <Info className="h-4 w-4 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 dark:hover:bg-gray-800">
+                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
               </div>
@@ -283,10 +289,10 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                         ))}
                       </Pie>
                       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle">
-                        <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold" fill={themeColors.foreground}>
+                        <tspan x="50%" dy="-0.5em" fontSize="24" fontWeight="bold" fill={theme === 'dark' ? themeColors.dark.foreground : themeColors.foreground}>
                           {kraCompletionRate}%
                         </tspan>
-                        <tspan x="50%" dy="1.5em" fontSize="12" fill={themeColors.neutral}>
+                        <tspan x="50%" dy="1.5em" fontSize="12" fill={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral}>
                           Completed
                         </tspan>
                       </text>
@@ -294,26 +300,26 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                         verticalAlign="bottom"
                         height={36}
                         iconType="circle"
-                        formatter={(value, entry) => <span style={{ color: themeColors.foreground }}>{value}</span>}
+                        formatter={(value, entry) => <span style={{ color: theme === 'dark' ? themeColors.dark.foreground : themeColors.foreground }}>{value}</span>}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                    <p className="text-muted-foreground">No KRAs assigned to you.</p>
+                    <p className="text-muted-foreground dark:text-gray-500">No KRAs assigned to you.</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
             <DialogHeader>
-              <DialogTitle>About KRA Status</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-gray-100">About KRA Status</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 Overview of Key Result Areas status
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm dark:text-gray-300">
               <p>This chart provides a high-level view of how KRAs are progressing:</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -341,25 +347,25 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                 <li><strong>Analysis:</strong> Helps identify which areas need support and which are performing well.</li>
                 <li><strong>Trend:</strong> A high percentage of 'On Track' or 'Completed' indicates successful execution, while 'At Risk' suggests potential blockers.</li>
               </ul>
-              <div className="mt-4 pt-4 border-t">
-                <p className="font-medium">Center Metric</p>
-                <p className="text-muted-foreground">The percentage in the center represents the overall completion rate of KRAs.</p>
+              <div className="mt-4 pt-4 border-t dark:border-white/10">
+                <p className="font-medium dark:text-gray-200">Center Metric</p>
+                <p className="text-muted-foreground dark:text-gray-400">The percentage in the center represents the overall completion rate of KRAs.</p>
               </div>
             </div>
           </DialogContent>
         </Dialog>
 
         <Dialog>
-          <Card className="group relative">
+          <Card className="group relative dark:bg-gray-900 dark:border-white/10">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>My KPI Status</CardTitle>
-                  <CardDescription>Status distribution of My KPIs</CardDescription>
+                  <CardTitle className="dark:text-gray-100">My KPI Status</CardTitle>
+                  <CardDescription className="dark:text-gray-400">Status distribution of My KPIs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
-                    <Info className="h-4 w-4 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 dark:hover:bg-gray-800">
+                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
               </div>
@@ -375,34 +381,34 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                       barGap={4}
                       barSize={12}
                     >
-                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={themeColors.neutral} strokeOpacity={0.3} />
-                      <XAxis type="number" allowDecimals={false} stroke={themeColors.neutral} fontSize={12} />
-                      <YAxis type="category" dataKey="name" width={80} stroke={themeColors.neutral} fontSize={12} axisLine={false} tickLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} strokeOpacity={0.2} />
+                      <XAxis type="number" allowDecimals={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} fontSize={12} />
+                      <YAxis type="category" dataKey="name" width={80} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} fontSize={12} axisLine={false} tickLine={false} />
                       <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                       <Bar dataKey="value" name="KPIs" radius={[0, 8, 8, 0]}>
                         {kpiStatusData.map((entry) => (
                           <Cell key={`cell-kpi-${entry.name}`} fill={statusColors[entry.name] || themeColors.neutral} />
                         ))}
-                        <LabelList dataKey="value" position="right" fontSize={11} fill={themeColors.foreground} />
+                        <LabelList dataKey="value" position="right" fontSize={11} fill={theme === 'dark' ? themeColors.dark.foreground : themeColors.foreground} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-3 text-center p-4">
-                    <p className="text-muted-foreground">No KPIs assigned to you.</p>
+                    <p className="text-muted-foreground dark:text-gray-500">No KPIs assigned to you.</p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
             <DialogHeader>
-              <DialogTitle>About KPI Status</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-gray-100">About KPI Status</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 Current status of Key Performance Indicators
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm dark:text-gray-300">
               <p>This chart breaks down KPIs by their current tracking status:</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -439,16 +445,16 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Completion Trend Chart - UPDATED */}
         <Dialog>
-          <Card className="group relative">
+          <Card className="group relative dark:bg-gray-900 dark:border-white/10">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>My Completion Rate (6 Months)</CardTitle>
-                  <CardDescription>My average KPI completion rate over the last 6 months</CardDescription>
+                  <CardTitle className="dark:text-gray-100">My Completion Rate (6 Months)</CardTitle>
+                  <CardDescription className="dark:text-gray-400">My average KPI completion rate over the last 6 months</CardDescription>
                 </div>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
-                    <Info className="h-4 w-4 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 dark:hover:bg-gray-800">
+                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
               </div>
@@ -467,9 +473,9 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                           <stop offset="95%" stopColor={themeColors.accent} stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} strokeOpacity={0.2} />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} />
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} />
                       <Tooltip content={<CustomTooltip unit="%" />} />
                       <Legend />
                       <Area
@@ -485,19 +491,19 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">No trend data available.</div>
+                  <div className="flex items-center justify-center h-full text-muted-foreground dark:text-gray-500">No trend data available.</div>
                 )}
               </div>
             </CardContent>
           </Card>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
             <DialogHeader>
-              <DialogTitle>About Completion Rate</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-gray-100">About Completion Rate</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 Historical performance trends
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm dark:text-gray-300">
               <p>
                 This area chart tracks the <strong>average KPI completion rate</strong> over the past 6 months.
               </p>
@@ -509,7 +515,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                 <li><strong>Analysis:</strong> Helps ensure consistency in performance delivery.</li>
                 <li><strong>Trend:</strong> An upward trend indicates improving efficiency, while a downward trend may suggest bottlenecks or increasing workload.</li>
               </ul>
-              <p className="text-muted-foreground pt-2 border-t">
+              <p className="text-muted-foreground dark:text-gray-400 pt-2 border-t dark:border-white/10">
                 Based on target dates of KPIs falling within each month.
               </p>
             </div>
@@ -518,16 +524,16 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
 
         {/* KPI Distribution by Objective - UPDATED with Info Modal */}
         <Dialog>
-          <Card className="group relative">
+          <Card className="group relative dark:bg-gray-900 dark:border-white/10">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle>My KPI Distribution by Objective</CardTitle>
-                  <CardDescription>Top objectives by number of My KPIs</CardDescription>
+                  <CardTitle className="dark:text-gray-100">My KPI Distribution by Objective</CardTitle>
+                  <CardDescription className="dark:text-gray-400">Top objectives by number of My KPIs</CardDescription>
                 </div>
                 <DialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4">
-                    <Info className="h-4 w-4 text-muted-foreground" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-4 right-4 dark:hover:bg-gray-800">
+                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                   </Button>
                 </DialogTrigger>
               </div>
@@ -540,13 +546,14 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                       data={kpisByObjective}
                       margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} strokeOpacity={0.2} />
                       <XAxis
                         dataKey="name"
                         interval={0}
                         fontSize={11}
                         tickLine={false}
                         height={40}
+                        stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral}
                         tick={({ x, y, payload }) => (
                           <g transform={`translate(${x},${y})`}>
                             <title>{payload.value}</title>
@@ -555,7 +562,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                               y={0}
                               dy={16}
                               textAnchor="middle"
-                              fill={themeColors.neutral}
+                              fill={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral}
                               fontSize={11}
                             >
                               {payload.value.length > 12 ? `${payload.value.substring(0, 12)}...` : payload.value}
@@ -563,31 +570,31 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                           </g>
                         )}
                       />
-                      <YAxis tickLine={false} axisLine={false} />
+                      <YAxis tickLine={false} axisLine={false} stroke={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} />
                       <Tooltip content={<CustomTooltip />} />
                       <Legend />
-                      <Bar dataKey="total" name="Total KPIs" fill={themeColors.neutral} radius={[8, 8, 8, 8]}>
-                        <LabelList dataKey="total" position="top" fontSize={11} fill={themeColors.foreground} />
+                      <Bar dataKey="total" name="Total KPIs" fill={theme === 'dark' ? themeColors.dark.neutral : themeColors.neutral} radius={[8, 8, 8, 8]}>
+                        <LabelList dataKey="total" position="top" fontSize={11} fill={theme === 'dark' ? themeColors.dark.foreground : themeColors.foreground} />
                       </Bar>
                       <Bar dataKey="completed" name="Completed" fill={themeColors.primary} radius={[8, 8, 8, 8]}>
-                        <LabelList dataKey="completed" position="top" fontSize={11} fill={themeColors.foreground} />
+                        <LabelList dataKey="completed" position="top" fontSize={11} fill={theme === 'dark' ? themeColors.dark.foreground : themeColors.foreground} />
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">No objective data available.</div>
+                  <div className="flex items-center justify-center h-full text-muted-foreground dark:text-gray-500">No objective data available.</div>
                 )}
               </div>
             </CardContent>
           </Card>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
             <DialogHeader>
-              <DialogTitle>About this Chart</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="dark:text-gray-100">About this Chart</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
                 Understanding the KPI Distribution by Objective
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 text-sm">
+            <div className="space-y-4 text-sm dark:text-gray-300">
               <p>
                 This chart visualizes the workload distribution across your strategic objectives.
               </p>
@@ -605,7 +612,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
                 <li><strong>Analysis:</strong> Identifies which objectives are driving the most activity.</li>
                 <li><strong>Trend:</strong> Large gaps between Total and Completed bars may indicate resource constraints or ambitious targeting.</li>
               </ul>
-              <p className="text-muted-foreground pt-2 border-t">
+              <p className="text-muted-foreground dark:text-gray-400 pt-2 border-t dark:border-white/10">
                 Use this chart to identify which objectives have the most activity and track their completion progress relative to the total workload.
               </p>
             </div>
@@ -614,40 +621,40 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
       </div>
 
       {/* Priority KPIs Section */}
-      <Card>
+      <Card className="dark:bg-gray-900 dark:border-white/10">
         <CardHeader className="pb-2">
-          <CardTitle>My Priority KPIs Needing Attention</CardTitle>
-          <CardDescription>My KPIs that are at risk or behind</CardDescription>
+          <CardTitle className="dark:text-gray-100">My Priority KPIs Needing Attention</CardTitle>
+          <CardDescription className="dark:text-gray-400">My KPIs that are at risk or behind</CardDescription>
         </CardHeader>
         <CardContent>
           {priorityKpis.length > 0 ? (
             <div className="space-y-4">
               {priorityKpis.map((kpi) => (
-                <div key={kpi.id} className="border rounded-md p-4 bg-muted/20">
+                <div key={kpi.id} className="border dark:border-white/10 rounded-md p-4 bg-muted/20 dark:bg-gray-950/40">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium mb-1">{kpi.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">
+                      <h3 className="font-medium mb-1 dark:text-gray-100">{kpi.name}</h3>
+                      <p className="text-sm text-muted-foreground dark:text-gray-400 mb-2">
                         {kpi.kraTitle} • {kpi.objective}
                       </p>
                     </div>
-                    <Badge variant={kpi.status === 'at-risk' ? 'destructive' : 'default'}>
+                    <Badge variant={kpi.status === 'at-risk' ? 'destructive' : 'default'} className={kpi.status === 'at-risk' ? '' : 'dark:bg-gray-800 dark:text-gray-300 dark:border-white/10'}>
                       {kpi.status === 'at-risk' ? 'At Risk' : 'Behind'}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-2 text-sm">
                     <div>
-                      <p className="text-muted-foreground">Target</p>
-                      <p className="font-medium">{kpi.target}</p>
+                      <p className="text-muted-foreground dark:text-gray-500">Target</p>
+                      <p className="font-medium dark:text-gray-200">{kpi.target}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground">Actual</p>
-                      <p className="font-medium">{kpi.actual || 0}</p>
+                      <p className="text-muted-foreground dark:text-gray-500">Actual</p>
+                      <p className="font-medium dark:text-gray-200">{kpi.actual || 0}</p>
                     </div>
                     {(kpi.target_date || kpi.targetDate) && (
                       <div>
-                        <p className="text-muted-foreground">Target Date</p>
-                        <p className="font-medium">
+                        <p className="text-muted-foreground dark:text-gray-500">Target Date</p>
+                        <p className="font-medium dark:text-gray-200">
                           {new Date(kpi.target_date || kpi.targetDate || '').toLocaleDateString()}
                         </p>
                       </div>
@@ -657,7 +664,7 @@ export const KRAInsightsTab: React.FC<KRAInsightsTabProps> = ({ kras }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground dark:text-gray-500">
               No priority KPIs to show. Great job!
             </div>
           )}

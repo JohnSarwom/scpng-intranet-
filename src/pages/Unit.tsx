@@ -86,6 +86,7 @@ import { TasksTab, Bucket } from '@/components/unit-tabs/TasksTab';
 import { ProjectsTab } from '@/components/unit-tabs/ProjectsTab';
 import { OverviewTab } from '@/components/unit-tabs/OverviewTab';
 import { StaffMetricsTab } from '@/components/unit-tabs/StaffMetricsTab';
+import { ReportsTab } from '@/components/unit-tabs/ReportsTab';
 
 // Import skeleton
 import { KRADataGridSkeleton } from '@/components/skeletons/KRADataGridSkeleton';
@@ -765,15 +766,17 @@ const Unit = () => {
       {!hasDataLoadingError && (
         <Tabs defaultValue="tasks" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-            <TabsList>
-              <TabsTrigger value="tasks">Tasks & Daily Operations</TabsTrigger>
-              <TabsTrigger value="kras-objectives">KRAs & Objectives</TabsTrigger>
-              <TabsTrigger value="projects">Projects</TabsTrigger>
-              <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsList className="dark:bg-gray-800/50 dark:border-white/10 border p-1">
+              <TabsTrigger value="tasks" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Tasks & Daily Operations</TabsTrigger>
+              <TabsTrigger value="kras-objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">KRAs & Objectives</TabsTrigger>
+              <TabsTrigger value="projects" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Projects</TabsTrigger>
+              <TabsTrigger value="overview" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Overview</TabsTrigger>
               {canViewStaffMetrics && (
-                <TabsTrigger value="staff-metrics">Staff Metrics</TabsTrigger>
+                <TabsTrigger value="staff-metrics" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Staff Metrics</TabsTrigger>
               )}
+              <TabsTrigger value="reports" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Reports</TabsTrigger>
             </TabsList>
+
 
             <div className="flex items-center gap-4">
               {activeTab === 'tasks' && (
@@ -785,11 +788,11 @@ const Unit = () => {
                     className="max-w-[200px]"
                   />
                   <div className="flex items-center gap-2">
-                    <Button variant={viewMode === 'board' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('board')} title="Board View"><Kanban className="h-4 w-4" /></Button>
-                    <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => setViewMode('list')} title="List View"><List className="h-4 w-4" /></Button>
+                    <Button variant={viewMode === 'board' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 dark:bg-gray-800 dark:border-white/10" onClick={() => setViewMode('board')} title="Board View"><Kanban className="h-4 w-4" /></Button>
+                    <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 dark:bg-gray-800 dark:border-white/10" onClick={() => setViewMode('list')} title="List View"><List className="h-4 w-4" /></Button>
                   </div>
 
-                  <Button size="sm" onClick={() => handleCreateTask()} disabled={isDataLoading}>
+                  <Button size="sm" onClick={() => handleCreateTask()} disabled={isDataLoading} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">
                     {isDataLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-2 h-3.5 w-3.5" />}
                     Task
                   </Button>
@@ -800,7 +803,7 @@ const Unit = () => {
           </div>
 
           {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-8">
+          <TabsContent value="overview" className="space-y-8 dark:bg-gray-800/40 dark:border-white/5 border rounded-xl p-6 backdrop-blur-sm shadow-xl">
             {isDataLoading ? (
               <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /> Loading Overview...</div>
             ) : (
@@ -833,7 +836,7 @@ const Unit = () => {
           )}
 
           {/* Tasks/Daily Operations Tab */}
-          <TabsContent value="tasks" className="h-[calc(100vh-200px)]">
+          <TabsContent value="tasks" className="h-[calc(100vh-200px)] dark:bg-gray-800/20 dark:border-white/5 border rounded-xl p-4 backdrop-blur-sm">
             <div className="flex flex-col gap-4 h-full">
 
               {visibleBuckets.length === 0 && preferencesLoading ? (
@@ -883,7 +886,7 @@ const Unit = () => {
           </TabsContent>
 
           {/* Projects Tab */}
-          <TabsContent value="projects" className="space-y-6">
+          <TabsContent value="projects" className="space-y-6 dark:bg-gray-800/40 dark:border-white/5 border rounded-xl p-6 backdrop-blur-sm shadow-xl">
             <ProjectsTab
               projects={projectState.data}
               tasks={taskState.data}
@@ -923,6 +926,16 @@ const Unit = () => {
                 onEditTask={taskState.update}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-6">
+            <ReportsTab
+              tasks={taskState.data || []}
+              kras={kraState.data || []}
+              kpis={kpiState.data || []}
+              objectives={objectivesData || []}
+              userContext={userContext}
+            />
           </TabsContent>
         </Tabs >
       )}

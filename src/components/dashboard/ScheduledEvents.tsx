@@ -32,13 +32,13 @@ const StatRow: React.FC<{ icon: React.ElementType, count: number, label: string,
   color,
   bg
 }) => (
-  <div className="flex items-center p-3 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md">
+  <div className="flex items-center p-3 bg-white dark:bg-gray-800 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm transition-all hover:shadow-md">
     <div className={`p-2.5 rounded-lg ${bg} mr-3`}>
       <Icon className={`h-5 w-5 ${color}`} />
     </div>
     <div>
-      <div className="text-lg font-bold text-slate-800 leading-none mb-1">{count}</div>
-      <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{label}</div>
+      <div className="text-lg font-bold text-slate-800 dark:text-white leading-none mb-1">{count}</div>
+      <div className="text-[10px] text-slate-500 dark:text-gray-400 font-bold uppercase tracking-wider">{label}</div>
     </div>
   </div>
 );
@@ -189,10 +189,10 @@ const ScheduledEvents: React.FC<ScheduledEventsProps> = ({
   };
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border dark:border-white/10">
       <CardHeader>
         <div className="flex justify-between items-center gap-3">
-          <CardTitle className="text-lg font-semibold">MY SCHEDULED EVENTS</CardTitle>
+          <CardTitle className="text-lg font-semibold dark:text-gray-100">MY SCHEDULED EVENTS</CardTitle>
           <div className="flex items-center gap-2">
             <Button
               onClick={() => {
@@ -201,7 +201,7 @@ const ScheduledEvents: React.FC<ScheduledEventsProps> = ({
               }}
               size="sm"
               variant="outline"
-              className="h-8 border-dashed text-slate-600 hover:text-primary hover:border-primary"
+              className="h-8 border-dashed text-slate-600 dark:text-gray-400 hover:text-primary dark:hover:text-intranet-accent-light hover:border-primary"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Event
@@ -237,7 +237,7 @@ const ScheduledEvents: React.FC<ScheduledEventsProps> = ({
           <>
             <div className="flex flex-col lg:flex-row gap-6">
               {/* Stats Section - Summary Dashboard */}
-              <div className="flex flex-col lg:w-1/3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+              <div className="flex flex-col lg:w-1/3 bg-slate-50 dark:bg-gray-900/50 p-5 rounded-2xl border border-slate-100 dark:border-white/5">
                 <div className="mb-6 flex justify-center">
                   <StatCircle
                     percentage={calculatedPercentage}
@@ -263,11 +263,11 @@ const ScheduledEvents: React.FC<ScheduledEventsProps> = ({
               {/* Events List - Timeline */}
               <div className="lg:w-2/3 relative">
                 {/* Vertical Timeline Line */}
-                <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100 hidden sm:block"></div>
+                <div className="absolute left-[19px] top-4 bottom-4 w-0.5 bg-slate-100 dark:bg-gray-700 hidden sm:block"></div>
 
                 <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
                   {events.length === 0 ? (
-                    <div className="text-center py-12 text-gray-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    <div className="text-center py-12 text-gray-400 dark:text-gray-500 bg-slate-50 dark:bg-gray-900/50 rounded-xl border border-dashed border-slate-200 dark:border-white/10">
                       <CalendarIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
                       <p className="font-medium">No upcoming events</p>
                       <p className="text-sm mt-1">Enjoy your free time!</p>
@@ -287,36 +287,36 @@ const ScheduledEvents: React.FC<ScheduledEventsProps> = ({
                           {/* Timeline Dot */}
                           <div className={`absolute left-[14px] top-4 h-3 w-3 rounded-full border-2 border-white shadow-sm z-10 hidden sm:block ${isTraining ? 'bg-emerald-500' : 'bg-intranet-primary'}`}></div>
 
-                          <div className={`p-4 bg-white border border-slate-100 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 ${borderClass}`}>
+                          <div className={`p-4 bg-white dark:bg-gray-800 border border-slate-100 dark:border-white/5 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border-l-4 ${borderClass}`}>
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                                  <span className="text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider">
                                     {formatEventTime(event.start.dateTime, event.end.dateTime)}
                                   </span>
                                   {event.isAllDay && (
-                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">ALL DAY</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-gray-700 text-slate-600 dark:text-gray-300">ALL DAY</span>
                                   )}
                                 </div>
 
-                                <h4 className="font-bold text-slate-800 text-base mb-2 group-hover:text-primary transition-colors">{event.subject}</h4>
+                                <h4 className="font-bold text-slate-800 dark:text-gray-100 text-base mb-2 group-hover:text-primary transition-colors">{event.subject}</h4>
 
                                 <div className="flex flex-wrap gap-3">
-                                  <div className="flex items-center text-xs text-slate-500 font-medium">
-                                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                  <div className="flex items-center text-xs text-slate-500 dark:text-gray-400 font-medium">
+                                    <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-slate-400 dark:text-gray-500" />
                                     <span>{formatEventDate(event.start.dateTime)}</span>
                                   </div>
 
                                   {event.location?.displayName && (
-                                    <div className="flex items-center text-xs text-slate-500 font-medium">
-                                      <MapPin className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                    <div className="flex items-center text-xs text-slate-500 dark:text-gray-400 font-medium">
+                                      <MapPin className="h-3.5 w-3.5 mr-1.5 text-slate-400 dark:text-gray-500" />
                                       <span className="truncate max-w-[150px]">{event.location.displayName}</span>
                                     </div>
                                   )}
 
                                   {event.attendees && event.attendees.length > 0 && (
-                                    <div className="flex items-center text-xs text-slate-500 font-medium">
-                                      <Users className="h-3.5 w-3.5 mr-1.5 text-slate-400" />
+                                    <div className="flex items-center text-xs text-slate-500 dark:text-gray-400 font-medium">
+                                      <Users className="h-3.5 w-3.5 mr-1.5 text-slate-400 dark:text-gray-500" />
                                       <span>{event.attendees.length}</span>
                                     </div>
                                   )}

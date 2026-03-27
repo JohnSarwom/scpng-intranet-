@@ -101,18 +101,18 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border-none shadow-2xl">
-                <DialogHeader className="p-6 bg-intranet-primary text-white space-y-4">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0 border dark:border-white/10 shadow-2xl dark:bg-gray-900">
+            <DialogHeader className="p-6 bg-intranet-primary dark:bg-gray-800/80 text-white space-y-4 border-b dark:border-white/10 backdrop-blur-md">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Avatar className="h-16 w-16 border-2 border-white/20 shadow-lg">
-                                <AvatarFallback className="bg-white/10 text-white font-bold text-xl uppercase">
+                                <AvatarFallback className="bg-white/10 text-white font-bold text-xl uppercase dark:bg-gray-800">
                                     {staff.initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex flex-col">
-                                <DialogTitle className="text-2xl font-bold">{staff.name}</DialogTitle>
-                                <DialogDescription className="text-white/80 font-medium flex items-center gap-2">
+                                <DialogTitle className="text-2xl font-bold dark:text-gray-100">{staff.name}</DialogTitle>
+                                <DialogDescription className="text-white/80 font-medium flex items-center gap-2 dark:text-gray-400">
                                     <Briefcase className="h-3.5 w-3.5" /> {staff.jobTitle}
                                 </DialogDescription>
                             </div>
@@ -121,45 +121,45 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                             <Badge className={cn("px-3 py-1 text-[10px] uppercase font-bold border-none", staff.statusColor.replace('text-', 'bg-').replace('border-', ''))}>
                                 {staff.statusLabel}
                             </Badge>
-                            <Button size="sm" variant="secondary" className="h-8 text-xs font-semibold gap-2" onClick={() => onExport(staff.email)}>
+                            <Button size="sm" variant="secondary" className="h-8 text-xs font-semibold gap-2 dark:bg-gray-800 dark:text-gray-100 dark:hover:bg-gray-700 dark:border-white/10" onClick={() => onExport(staff.email)}>
                                 <Download className="h-3.5 w-3.5" /> Export Report
                             </Button>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1">Performance</span>
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10 dark:bg-gray-800/40">
+                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1 dark:text-gray-400">Performance</span>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-xl font-bold">{staff.performanceScore}%</span>
+                                <span className="text-xl font-bold dark:text-gray-100">{staff.performanceScore}%</span>
                                 <TrendingUp className="h-3 w-3 text-emerald-400" />
                             </div>
                         </div>
-                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1">Task Completion</span>
-                            <span className="text-xl font-bold">{staff.taskRate}%</span>
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10 dark:bg-gray-800/40">
+                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1 dark:text-gray-400">Task Completion</span>
+                            <span className="text-xl font-bold dark:text-gray-100">{staff.taskRate}%</span>
                         </div>
-                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1">Active KPIs</span>
-                            <span className="text-xl font-bold">{staffKpis.length}</span>
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10 dark:bg-gray-800/40">
+                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1 dark:text-gray-400">Active KPIs</span>
+                            <span className="text-xl font-bold dark:text-gray-100">{staffKpis.length}</span>
                         </div>
-                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10">
-                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1">Key Result Areas</span>
-                            <span className="text-xl font-bold">{unitKras.length}</span>
+                        <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm border border-white/10 dark:bg-gray-800/40">
+                            <span className="text-[10px] text-white/60 uppercase font-bold block mb-1 dark:text-gray-400">Key Result Areas</span>
+                            <span className="text-xl font-bold dark:text-gray-100">{unitKras.length}</span>
                         </div>
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-hidden p-6 bg-slate-50 flex flex-col min-h-0">
+                <div className="flex-1 overflow-hidden p-6 bg-slate-50 dark:bg-gray-950 flex flex-col min-h-0">
                     <Tabs defaultValue="tasks" className="flex-1 flex flex-col min-h-0">
-                        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 p-1 rounded-xl mb-4 shrink-0">
-                            <TabsTrigger value="tasks" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 dark:bg-gray-900/50 p-1 rounded-xl mb-4 shrink-0 border dark:border-white/10 backdrop-blur-sm">
+                            <TabsTrigger value="tasks" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
                                 <CheckCircle className="h-4 w-4 mr-2" /> Tasks
                             </TabsTrigger>
-                            <TabsTrigger value="kpis" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <TabsTrigger value="kpis" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
                                 <Target className="h-4 w-4 mr-2" /> KPIs
                             </TabsTrigger>
-                            <TabsTrigger value="objectives" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            <TabsTrigger value="objectives" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
                                 <Activity className="h-4 w-4 mr-2" /> KRAs
                             </TabsTrigger>
                         </TabsList>
@@ -182,56 +182,56 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                         <div className="space-y-3 mb-4">
                                             {/* Status row */}
                                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                <div className="bg-slate-100 rounded-xl p-3 flex flex-col gap-1">
-                                                    <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Layers className="h-3 w-3" /> Total</span>
-                                                    <span className="text-2xl font-bold text-slate-800">{total}</span>
-                                                    <span className="text-[10px] text-slate-400">tasks assigned</span>
+                                                <div className="bg-slate-100 dark:bg-gray-800/40 rounded-xl p-3 flex flex-col gap-1 border dark:border-white/10">
+                                                    <span className="text-[10px] text-slate-500 dark:text-gray-400 uppercase font-bold flex items-center gap-1"><Layers className="h-3 w-3" /> Total</span>
+                                                    <span className="text-2xl font-bold text-slate-800 dark:text-white">{total}</span>
+                                                    <span className="text-[10px] text-slate-400 dark:text-gray-500">tasks assigned</span>
                                                 </div>
-                                                <div className="bg-amber-50 rounded-xl p-3 flex flex-col gap-1">
-                                                    <span className="text-[10px] text-amber-600 uppercase font-bold flex items-center gap-1"><ListTodo className="h-3 w-3" /> Todo</span>
-                                                    <span className="text-2xl font-bold text-amber-700">{todoCount}</span>
-                                                    <span className="text-[10px] text-amber-400">not started</span>
+                                                <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-amber-900/20">
+                                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-bold flex items-center gap-1"><ListTodo className="h-3 w-3" /> Todo</span>
+                                                    <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">{todoCount}</span>
+                                                    <span className="text-[10px] text-amber-400/60 dark:text-amber-500">not started</span>
                                                 </div>
-                                                <div className="bg-blue-50 rounded-xl p-3 flex flex-col gap-1">
-                                                    <span className="text-[10px] text-blue-600 uppercase font-bold flex items-center gap-1"><Clock className="h-3 w-3" /> In Progress</span>
-                                                    <span className="text-2xl font-bold text-blue-700">{inProgressCount}</span>
-                                                    <span className="text-[10px] text-blue-400">active</span>
+                                                <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-blue-900/20">
+                                                    <span className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold flex items-center gap-1"><Clock className="h-3 w-3" /> In Progress</span>
+                                                    <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inProgressCount}</span>
+                                                    <span className="text-[10px] text-blue-400/60 dark:text-blue-500">active</span>
                                                 </div>
-                                                <div className="bg-emerald-50 rounded-xl p-3 flex flex-col gap-1">
-                                                    <span className="text-[10px] text-emerald-600 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</span>
-                                                    <span className="text-2xl font-bold text-emerald-700">{completedCount}</span>
-                                                    <span className="text-[10px] text-emerald-400">done</span>
+                                                <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-emerald-900/20">
+                                                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</span>
+                                                    <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{completedCount}</span>
+                                                    <span className="text-[10px] text-emerald-400/60 dark:text-emerald-500">done</span>
                                                 </div>
                                             </div>
                                             {/* Priority row */}
                                             <div className="grid grid-cols-3 gap-3">
-                                                <div className="bg-rose-50 rounded-xl p-3 flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-                                                        <Flag className="h-4 w-4 text-rose-600" />
+                                                <div className="bg-rose-50 dark:bg-rose-950/20 rounded-xl p-3 flex items-center gap-3 border dark:border-rose-900/20">
+                                                    <div className="h-8 w-8 rounded-full bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center shrink-0">
+                                                        <Flag className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] text-rose-500 uppercase font-bold block">High / Urgent</span>
-                                                        <span className="text-xl font-bold text-rose-700">{urgentHighCount}</span>
+                                                        <span className="text-[10px] text-rose-500 dark:text-rose-400 uppercase font-bold block">High / Urgent</span>
+                                                        <span className="text-xl font-bold text-rose-700 dark:text-rose-300">{urgentHighCount}</span>
                                                     </div>
                                                 </div>
-                                                <div className="bg-amber-50 rounded-xl p-3 flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-                                                        <Flag className="h-4 w-4 text-amber-600" />
+                                                <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 flex items-center gap-3 border dark:border-amber-900/20">
+                                                    <div className="h-8 w-8 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
+                                                        <Flag className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                                                     </div>
                                                     <div>
-                                                        <span className="text-[10px] text-amber-500 uppercase font-bold block">Medium</span>
-                                                        <span className="text-xl font-bold text-amber-700">{mediumCount}</span>
+                                                        <span className="text-[10px] text-amber-500 dark:text-amber-400 uppercase font-bold block">Medium</span>
+                                                        <span className="text-xl font-bold text-amber-700 dark:text-amber-300">{mediumCount}</span>
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                                        <Flag className="h-4 w-4 text-slate-500" />
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-[10px] text-slate-500 uppercase font-bold block">Low</span>
-                                                        <span className="text-xl font-bold text-slate-600">{lowCount}</span>
-                                                    </div>
-                                                </div>
+                                                  <div className="bg-slate-50 dark:bg-gray-800/40 rounded-xl p-3 flex items-center gap-3 border dark:border-white/10">
+                                                      <div className="h-8 w-8 rounded-full bg-slate-100 dark:bg-gray-700/50 flex items-center justify-center shrink-0">
+                                                          <Flag className="h-4 w-4 text-slate-500 dark:text-gray-400" />
+                                                      </div>
+                                                      <div>
+                                                          <span className="text-[10px] text-slate-500 dark:text-gray-400 uppercase font-bold block">Low</span>
+                                                          <span className="text-xl font-bold text-slate-600 dark:text-white">{lowCount}</span>
+                                                      </div>
+                                                  </div>
                                             </div>
                                         </div>
                                     );
@@ -241,23 +241,23 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                 {staffTasks.length > 0 ? staffTasks.map((task) => {
                                     const isDone = ['done', 'completed'].includes(task.status?.toLowerCase() || '');
                                     const priorityColor = task.priority === 'urgent' || task.priority === 'high'
-                                        ? 'bg-rose-50 text-rose-600 border-rose-200'
+                                        ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/30'
                                         : task.priority === 'medium'
-                                            ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                            : 'bg-slate-50 text-slate-500 border-slate-200';
+                                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/30'
+                                            : 'bg-slate-50 dark:bg-gray-900 text-slate-500 dark:text-gray-400 border-slate-200 dark:border-white/10';
                                     return (
-                                        <Card key={task.id} className="border-none shadow-sm hover:shadow-md transition-shadow">
+                                        <Card key={task.id} className="border dark:border-white/10 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-900/60 backdrop-blur-sm">
                                             <CardContent className="p-4 flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-4 min-w-0">
                                                     <div className={cn(
                                                         "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
-                                                        isDone ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+                                                        isDone ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400" : "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
                                                     )}>
                                                         <Clock className="h-5 w-5" />
                                                     </div>
                                                     <div className="flex flex-col min-w-0">
-                                                        <span className="text-sm font-semibold text-slate-900 truncate">{task.title}</span>
-                                                        <span className="text-xs text-slate-500 flex items-center gap-1">
+                                                        <span className="text-sm font-semibold text-slate-900 dark:text-gray-100 truncate">{task.title}</span>
+                                                        <span className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1">
                                                             <Calendar className="h-3 w-3 shrink-0" /> Due: {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'N/A'}
                                                         </span>
                                                     </div>
@@ -270,7 +270,7 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                                     )}
                                                     <Badge variant="outline" className={cn(
                                                         "text-[10px] rounded-full",
-                                                        isDone ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-amber-50 text-amber-600 border-amber-200"
+                                                        isDone ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30" : "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/30"
                                                     )}>
                                                         {task.status?.toUpperCase()}
                                                     </Badge>
@@ -279,7 +279,7 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                         </Card>
                                     );
                                 }) : (
-                                    <div className="text-center py-10 text-slate-400">No active tasks assigned.</div>
+                                    <div className="text-center py-10 text-slate-400 dark:text-gray-500">No active tasks assigned.</div>
                                 )}
                             </TabsContent>
 
@@ -295,25 +295,25 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
 
                                     return (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                                            <div className="bg-slate-100 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Target className="h-3 w-3" /> Total KPIs</span>
-                                                <span className="text-2xl font-bold text-slate-800">{total}</span>
-                                                <span className="text-[10px] text-slate-400">indicators tracked</span>
+                                            <div className="bg-slate-100 dark:bg-gray-800/40 rounded-xl p-3 flex flex-col gap-1 border dark:border-white/10">
+                                                <span className="text-[10px] text-slate-500 dark:text-gray-400 uppercase font-bold flex items-center gap-1"><Target className="h-3 w-3" /> Total KPIs</span>
+                                                <span className="text-2xl font-bold text-slate-800 dark:text-white">{total}</span>
+                                                <span className="text-[10px] text-slate-400 dark:text-gray-500">indicators tracked</span>
                                             </div>
-                                            <div className="bg-emerald-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-emerald-600 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> On Track</span>
-                                                <span className="text-2xl font-bold text-emerald-700">{onTrackCount}</span>
-                                                <span className="text-[10px] text-emerald-400">meeting target</span>
+                                            <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-emerald-900/20">
+                                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> On Track</span>
+                                                <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{onTrackCount}</span>
+                                                <span className="text-[10px] text-emerald-400/60 dark:text-emerald-500">meeting target</span>
                                             </div>
-                                            <div className="bg-amber-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-amber-600 uppercase font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> At Risk</span>
-                                                <span className="text-2xl font-bold text-amber-700">{atRiskCount}</span>
-                                                <span className="text-[10px] text-amber-400">needs attention</span>
+                                            <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-amber-900/20">
+                                                <span className="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> At Risk</span>
+                                                <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">{atRiskCount}</span>
+                                                <span className="text-[10px] text-amber-400/60 dark:text-amber-500">needs attention</span>
                                             </div>
-                                            <div className="bg-rose-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-rose-600 uppercase font-bold flex items-center gap-1"><TrendingUp className="h-3 w-3 rotate-180" /> Behind</span>
-                                                <span className="text-2xl font-bold text-rose-700">{behindCount}</span>
-                                                <span className="text-[10px] text-rose-400">below target</span>
+                                            <div className="bg-rose-50 dark:bg-rose-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-rose-900/20">
+                                                <span className="text-[10px] text-rose-600 dark:text-rose-400 uppercase font-bold flex items-center gap-1"><TrendingUp className="h-3 w-3 rotate-180" /> Behind</span>
+                                                <span className="text-2xl font-bold text-rose-700 dark:text-rose-300">{behindCount}</span>
+                                                <span className="text-[10px] text-rose-400/60 dark:text-rose-500">below target</span>
                                             </div>
                                         </div>
                                     );
@@ -325,12 +325,12 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                     const kpiTarget = Number(kpi.target ?? kpi.targetValue ?? 0);
                                     const kpiActual = Number(kpi.actual ?? kpi.actualValue ?? 0);
                                     return (
-                                        <Card key={`${kpiName}-${idx}`} className="border-none shadow-sm">
+                                        <Card key={`${kpiName}-${idx}`} className="border dark:border-white/10 shadow-sm dark:bg-gray-900/60 backdrop-blur-sm">
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start mb-4">
                                                     <div className="flex flex-col min-w-0 pr-4">
-                                                        <span className="text-base font-bold text-slate-900">{kpiName}</span>
-                                                        <span className="text-xs text-muted-foreground">{kpi.description}</span>
+                                                        <span className="text-base font-bold text-slate-900 dark:text-gray-100">{kpiName}</span>
+                                                        <span className="text-xs text-muted-foreground dark:text-gray-400">{kpi.description}</span>
                                                     </div>
                                                     <Badge className={cn("text-[10px] uppercase font-bold shrink-0",
                                                         kpi.status === 'on-track' ? 'bg-emerald-500' :
@@ -340,17 +340,17 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                                     </Badge>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <div className="flex justify-between text-xs font-semibold">
+                                                    <div className="flex justify-between text-xs font-semibold dark:text-gray-300">
                                                         <span>Target: {kpiTarget}</span>
                                                         <span>Actual: {kpiActual}</span>
                                                     </div>
-                                                    <Progress value={Math.min(100, (kpiActual / (kpiTarget || 1)) * 100)} className="h-2" />
+                                                    <Progress value={Math.min(100, (kpiActual / (kpiTarget || 1)) * 100)} className="h-2 dark:bg-gray-800" />
                                                 </div>
                                             </CardContent>
                                         </Card>
                                     );
                                 }) : (
-                                    <div className="text-center py-10 text-slate-400">No KPIs tracked for this staff member.</div>
+                                    <div className="text-center py-10 text-slate-400 dark:text-gray-500">No KPIs tracked for this staff member.</div>
                                 )}
                             </TabsContent>
 
@@ -366,25 +366,25 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
 
                                     return (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-                                            <div className="bg-slate-100 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-slate-500 uppercase font-bold flex items-center gap-1"><Briefcase className="h-3 w-3" /> Total</span>
-                                                <span className="text-2xl font-bold text-slate-800">{total}</span>
-                                                <span className="text-[10px] text-slate-400">key result areas</span>
+                                            <div className="bg-slate-100 dark:bg-gray-800/40 rounded-xl p-3 flex flex-col gap-1 border dark:border-white/10">
+                                                <span className="text-[10px] text-slate-500 dark:text-gray-400 uppercase font-bold flex items-center gap-1"><Briefcase className="h-3 w-3" /> Total</span>
+                                                <span className="text-2xl font-bold text-slate-800 dark:text-white">{total}</span>
+                                                <span className="text-[10px] text-slate-400 dark:text-gray-500">key result areas</span>
                                             </div>
-                                            <div className="bg-blue-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-blue-600 uppercase font-bold flex items-center gap-1"><Activity className="h-3 w-3" /> In Progress</span>
-                                                <span className="text-2xl font-bold text-blue-700">{inProgressCount}</span>
-                                                <span className="text-[10px] text-blue-400">active</span>
+                                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-blue-900/20">
+                                                <span className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold flex items-center gap-1"><Activity className="h-3 w-3" /> In Progress</span>
+                                                <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inProgressCount}</span>
+                                                <span className="text-[10px] text-blue-400/60 dark:text-blue-500">active</span>
                                             </div>
-                                            <div className="bg-emerald-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-emerald-600 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</span>
-                                                <span className="text-2xl font-bold text-emerald-700">{completedCount}</span>
-                                                <span className="text-[10px] text-emerald-400">closed out</span>
+                                            <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-emerald-900/20">
+                                                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Completed</span>
+                                                <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{completedCount}</span>
+                                                <span className="text-[10px] text-emerald-400/60 dark:text-emerald-500">closed out</span>
                                             </div>
-                                            <div className="bg-amber-50 rounded-xl p-3 flex flex-col gap-1">
-                                                <span className="text-[10px] text-amber-600 uppercase font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> At Risk</span>
-                                                <span className="text-2xl font-bold text-amber-700">{atRiskCount}</span>
-                                                <span className="text-[10px] text-amber-400">needs review</span>
+                                            <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 flex flex-col gap-1 border dark:border-amber-900/20">
+                                                <span className="text-[10px] text-amber-600 dark:text-amber-400 uppercase font-bold flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> At Risk</span>
+                                                <span className="text-2xl font-bold text-amber-700 dark:text-amber-300">{atRiskCount}</span>
+                                                <span className="text-[10px] text-amber-400/60 dark:text-amber-500">needs review</span>
                                             </div>
                                         </div>
                                     );
@@ -394,40 +394,40 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                 {unitKras.length > 0 ? unitKras.map((kra) => {
                                     const kraStatusColor =
                                         (kra.status as string) === 'completed' || (kra.status as string) === 'closed'
-                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900/30'
                                             : (kra.status as string) === 'in-progress' || (kra.status as string) === 'on-track'
-                                                ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-900/30'
                                                 : (kra.status as string) === 'at-risk' || (kra.status as string) === 'behind'
-                                                    ? 'bg-amber-50 text-amber-600 border-amber-200'
-                                                    : 'bg-slate-50 text-slate-500 border-slate-200';
+                                                    ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/30'
+                                                    : 'bg-slate-50 dark:bg-gray-800/40 text-slate-500 dark:text-gray-400 border-slate-200 dark:border-white/10';
                                     const kraKpis = (kra.unitKpis || kra.kpis || []) as KPI[];
                                     return (
-                                        <Card key={kra.id} className="border-none shadow-sm">
+                                        <Card key={kra.id} className="border dark:border-white/10 shadow-sm dark:bg-gray-900/60 backdrop-blur-sm">
                                             <CardContent className="p-4">
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div className="flex items-center gap-2 min-w-0 pr-4">
-                                                        <Activity className="h-4 w-4 text-intranet-primary shrink-0" />
-                                                        <span className="text-sm font-bold text-slate-900">{kra.title}</span>
+                                                        <Activity className="h-4 w-4 text-intranet-primary dark:text-blue-400 shrink-0" />
+                                                        <span className="text-sm font-bold text-slate-900 dark:text-gray-100">{kra.title}</span>
                                                     </div>
                                                     <Badge variant="outline" className={cn("text-[10px] rounded-full shrink-0 uppercase", kraStatusColor)}>
                                                         {kra.status}
                                                     </Badge>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{kra.description}</p>
+                                                <p className="text-xs text-muted-foreground dark:text-gray-400 mb-3 line-clamp-2">{kra.description}</p>
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex flex-wrap gap-1.5">
-                                                        <Badge variant="secondary" className="text-[9px] bg-slate-100 text-slate-600">UNIT ORIENTED</Badge>
-                                                        <Badge variant="secondary" className="text-[9px] bg-slate-100 text-slate-600">Q1-Q4 2026</Badge>
+                                                        <Badge variant="secondary" className="text-[9px] bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300">UNIT ORIENTED</Badge>
+                                                        <Badge variant="secondary" className="text-[9px] bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-300">Q1-Q4 2026</Badge>
                                                         {kraKpis.length > 0 && (
-                                                            <Badge variant="secondary" className="text-[9px] bg-intranet-primary/10 text-intranet-primary">
+                                                            <Badge variant="secondary" className="text-[9px] bg-intranet-primary/10 dark:bg-blue-900/30 text-intranet-primary dark:text-blue-400">
                                                                 {kraKpis.length} KPI{kraKpis.length !== 1 ? 's' : ''}
                                                             </Badge>
                                                         )}
                                                     </div>
                                                     {kra.progress !== undefined && (
-                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                                                            <Progress value={kra.progress} className="h-1.5 w-20" />
-                                                            <span className="font-semibold text-slate-700">{kra.progress}%</span>
+                                                        <div className="flex items-center gap-2 text-xs text-muted-foreground dark:text-gray-400 shrink-0">
+                                                            <Progress value={kra.progress} className="h-1.5 w-20 dark:bg-gray-800" />
+                                                            <span className="font-semibold text-slate-700 dark:text-gray-200">{kra.progress}%</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -435,7 +435,7 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
                                         </Card>
                                     );
                                 }) : (
-                                    <div className="text-center py-10 text-slate-400">No Key Result Areas linked.</div>
+                                    <div className="text-center py-10 text-slate-400 dark:text-gray-500">No Key Result Areas linked.</div>
                                 )}
                             </TabsContent>
                         </div>

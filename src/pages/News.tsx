@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
+import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -79,24 +80,24 @@ const aiDrivenCategories = [] as string[];
 // Define ArticleCardComponent locally within News.tsx
 const ArticleCardComponent: React.FC<{ article: PageNewsArticle; handleReadMoreClick: (article: PageNewsArticle) => void }> = ({ article, handleReadMoreClick }) => {
   return (
-    <Card key={article.id} className={`overflow-hidden flex flex-col justify-between`}>
+    <Card key={article.id} className="overflow-hidden flex flex-col justify-between dark:bg-gray-800 dark:border-white/10 shadow-md hover:shadow-lg transition-all duration-300">
       {article.urlToImage && (
         <img
           src={article.urlToImage}
           alt={`Image for ${article.title}`}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
           onError={(e) => (e.currentTarget.style.display = 'none')}
         />
       )}
       <div>
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start mb-1">
-            <span className="inline-block text-xs font-medium bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded px-2 py-1">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-300 rounded px-2 py-1">
               {article.category}
             </span>
             <span className="text-xs text-gray-500 dark:text-gray-400">{article.date}</span>
           </div>
-          <CardTitle className="text-lg leading-tight hover:text-intranet-primary transition-colors dark:text-white dark:hover:text-intranet-accent-light">
+          <CardTitle className="text-lg leading-tight hover:text-intranet-primary transition-colors dark:text-gray-100 dark:hover:text-intranet-accent-light line-clamp-2">
             {article.sourceUrl && !article.sourceUrl.startsWith('#article-') && article.sourceUrl !== '#' ? (
               <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
                 {article.title}
@@ -110,13 +111,13 @@ const ArticleCardComponent: React.FC<{ article: PageNewsArticle; handleReadMoreC
           )}
         </CardHeader>
         <CardContent className="pt-0 pb-3">
-          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-4 hover:line-clamp-none transition-all duration-300 ease-in-out">{article.summary}</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-4 hover:line-clamp-none transition-all duration-300 ease-in-out">{article.summary}</p>
         </CardContent>
       </div>
-      <div className="px-6 pb-4 pt-2">
+      <div className="px-6 pb-4 pt-2 border-t border-transparent dark:border-white/5">
         <Button
           variant="link"
-          className="p-0 text-intranet-accent hover:text-intranet-accent-dark dark:hover:text-intranet-accent-light"
+          className="p-0 h-auto text-intranet-accent hover:text-intranet-accent-dark dark:text-intranet-accent-light dark:hover:text-white transition-colors"
           onClick={() => handleReadMoreClick(article)}
         >
           Read more →
@@ -333,18 +334,30 @@ const News = () => {
           {/* Year Filter Buttons for SCPNG News */}
           <div className="flex flex-wrap gap-2 mb-4">
             <Button
-              variant={selectedScpngYear === 'All' ? 'default' : 'outline'}
+              variant="ghost"
               onClick={() => setSelectedScpngYear('All')}
               size="sm"
+              className={cn(
+                "px-4 py-1.5 text-xs font-semibold rounded-md transition-all border",
+                selectedScpngYear === 'All'
+                  ? "bg-intranet-primary hover:bg-intranet-primary/90 text-white border-transparent"
+                  : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+              )}
             >
               All Years
             </Button>
             {availableScpngYears.map(year => (
               <Button
                 key={year}
-                variant={selectedScpngYear === year ? 'default' : 'outline'}
+                variant="ghost"
                 onClick={() => setSelectedScpngYear(year)}
                 size="sm"
+                className={cn(
+                  "px-4 py-1.5 text-xs font-semibold rounded-md transition-all border",
+                  selectedScpngYear === year
+                    ? "bg-intranet-primary hover:bg-intranet-primary/90 text-white border-transparent"
+                    : "bg-white dark:bg-gray-800/50 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                )}
               >
                 {year}
               </Button>
@@ -402,16 +415,20 @@ const News = () => {
       </div>
 
       <Tabs defaultValue="News Dashboard" className="w-full">
-        <TabsList>
+        <TabsList className="bg-gray-100/50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/10 p-1 h-auto flex-wrap">
           {newsCategories.map(category => (
-            <TabsTrigger key={category} value={category}>
+            <TabsTrigger 
+              key={category} 
+              value={category}
+              className="px-4 py-2 text-sm font-medium transition-all data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 data-[state=active]:text-intranet-primary dark:data-[state=active]:text-white data-[state=active]:shadow-sm rounded-md"
+            >
               {category}
             </TabsTrigger>
           ))}
         </TabsList>
 
         {newsCategories.map(category => (
-          <TabsContent key={category} value={category} className="mt-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <TabsContent key={category} value={category} className="mt-6 border border-gray-200 dark:border-white/10 rounded-lg p-6 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
             {renderNewsCards(category)}
           </TabsContent>
         ))}

@@ -158,7 +158,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden bg-white border border-gray-200 shadow-2xl flex flex-col md:flex-row h-auto !min-h-0 max-h-[90vh]">
+            <DialogContent className="sm:max-w-[900px] p-0 overflow-hidden bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 shadow-2xl flex flex-col md:flex-row h-auto !min-h-0 max-h-[90vh]">
                 <DialogTitle className="sr-only">Contact Details for {contact.displayName}</DialogTitle>
                 {/* Left Panel: Identity (Red Gradient) - Reduced width to 30% */}
                 <div
@@ -230,7 +230,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                 </div>
 
                 {/* Right Panel: Details (White) - Increased width to 70% - Flex Col for Sticky Footer */}
-                <div className="w-full md:w-[70%] bg-white relative flex flex-col overflow-hidden">
+                <div className="w-full md:w-[70%] bg-white dark:bg-gray-900 relative flex flex-col overflow-hidden">
 
                     {/* Scrollable Content Area */}
                     <div className="flex-1 overflow-y-auto p-6 md:p-8">
@@ -239,7 +239,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                             <div className="space-y-6">
                                 {/* Status Indicator - Badge Style */}
                                 <div className="flex items-center gap-2">
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-500/20">
                                         <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></span>
                                         <span className="text-[10px] font-bold tracking-wider uppercase">Active</span>
                                     </span>
@@ -247,13 +247,13 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
 
                                 {/* Designation */}
                                 <div>
-                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Designation</p>
-                                    <h3 className="text-2xl font-bold text-gray-900 leading-tight">{contact.jobTitle || 'Staff Member'}</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1">Designation</p>
+                                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 leading-tight">{contact.jobTitle || 'Staff Member'}</h3>
                                 </div>
                             </div>
 
                             {/* Avatar/Initials Box - Moves to Right */}
-                            <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-50 rounded-2xl flex items-center justify-center border border-gray-100 shadow-sm shrink-0 ml-4 overflow-hidden relative group">
+                            <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-50 dark:bg-white/5 rounded-2xl flex items-center justify-center border border-gray-100 dark:border-white/10 shadow-sm shrink-0 ml-4 overflow-hidden relative group">
                                 {currentPhotoUrl ? (
                                     <img
                                         src={currentPhotoUrl}
@@ -261,7 +261,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <span className="text-3xl md:text-4xl font-bold tracking-wider text-[#8B0000]">{getInitials(contact.displayName)}</span>
+                                    <span className="text-3xl md:text-4xl font-bold tracking-wider text-[#8B0000] dark:text-red-500">{getInitials(contact.displayName)}</span>
                                 )}
 
                                 {/* Hover Overlay */}
@@ -287,16 +287,16 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                         </div>
 
                         {/* Division & Unit Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-100">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 pb-8 border-b border-gray-100 dark:border-white/10">
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Division</p>
-                                <p className="text-sm font-medium text-gray-700 leading-snug">
+                                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Division</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-snug">
                                     {contact.officeLocation || 'Unassigned'}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Unit</p>
-                                <p className="text-sm font-medium text-gray-700 leading-snug">
+                                <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">Unit</p>
+                                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-snug">
                                     {contact.department || 'Unassigned'}
                                 </p>
                             </div>
@@ -307,15 +307,15 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                             <TooltipProvider delayDuration={300}>
                                 {/* Email */}
                                 <div className="flex items-center group">
-                                    <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 mr-4 group-hover:bg-red-50 group-hover:text-red-700 transition-colors duration-300">
+                                    <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 dark:text-gray-500 mr-4 group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors duration-300">
                                         <span className="text-lg font-serif italic">@</span>
                                     </div>
                                     <div className="grow min-w-0">
-                                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Email Address</p>
+                                        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">Email Address</p>
                                         <div className="flex items-center gap-2">
                                             <a
                                                 href={`mailto:${contact.emailAddresses?.[0]?.address}`}
-                                                className="text-sm font-semibold text-gray-900 hover:text-red-700 transition-colors truncate"
+                                                className="text-sm font-semibold text-gray-900 dark:text-gray-100 hover:text-red-700 dark:hover:text-red-400 transition-colors truncate"
                                             >
                                                 {contact.emailAddresses?.[0]?.address || 'No email'}
                                             </a>
@@ -339,13 +339,13 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                                 {/* Business Phone */}
                                 {contact.businessPhones?.[0] && (
                                     <div className="flex items-center group">
-                                        <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 mr-4 group-hover:bg-red-50 group-hover:text-red-700 transition-colors duration-300">
+                                        <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 dark:text-gray-500 mr-4 group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors duration-300">
                                             <BuildingIcon size={18} />
                                         </div>
                                         <div className="grow">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Business Line</p>
+                                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">Business Line</p>
                                             <div className="flex items-center gap-2">
-                                                <p className="text-sm font-bold text-gray-900">{contact.businessPhones[0]}</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{contact.businessPhones[0]}</p>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <button
@@ -365,13 +365,13 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                                 {/* Mobile Phone */}
                                 {contact.mobilePhone && (
                                     <div className="flex items-center group">
-                                        <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 mr-4 group-hover:bg-red-50 group-hover:text-red-700 transition-colors duration-300">
+                                        <div className="w-10 h-10 shrink-0 rounded-lg bg-gray-50 dark:bg-white/5 flex items-center justify-center text-gray-400 dark:text-gray-500 mr-4 group-hover:bg-red-50 dark:group-hover:bg-red-900/20 group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors duration-300">
                                             <Phone size={18} />
                                         </div>
                                         <div className="grow">
-                                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Mobile</p>
+                                            <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-0.5">Mobile</p>
                                             <div className="flex items-center gap-2">
-                                                <p className="text-sm font-bold text-gray-900">{contact.mobilePhone}</p>
+                                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{contact.mobilePhone}</p>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <button
@@ -393,7 +393,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                     </div>
 
                     {/* sticky Actions Footer */}
-                    <div className="shrink-0 p-6 md:p-8 pt-4 border-t border-gray-100 bg-white z-20">
+                    <div className="shrink-0 p-6 md:p-8 pt-4 border-t border-gray-100 dark:border-white/10 bg-white dark:bg-gray-900 z-20">
                         <div className="flex gap-4">
                             <Button
                                 className="flex-1 bg-[#8B0000] hover:bg-[#6d0000] text-white rounded-lg h-11 font-medium tracking-wide shadow-md hover:shadow-lg transition-all"
@@ -403,7 +403,7 @@ const ContactDetailsModal: React.FC<ContactDetailsModalProps> = (props) => {
                             </Button>
                             <Button
                                 variant="secondary"
-                                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-200 rounded-lg h-11 font-medium tracking-wide transition-all"
+                                className="flex-1 bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-900 dark:text-gray-300 border border-gray-200 dark:border-white/10 rounded-lg h-11 font-medium tracking-wide transition-all"
                                 onClick={() => {
                                     const phone = contact.mobilePhone || contact.businessPhones?.[0];
                                     if (phone) window.open(`tel:${phone}`);

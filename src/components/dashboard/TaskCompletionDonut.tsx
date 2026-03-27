@@ -77,11 +77,14 @@ export const TaskCompletionDonut: React.FC<TaskCompletionDonutProps> = ({
             // Use calculated label if segments exist, otherwise fallback or 0%
             const textToDraw = `${percentage}%`;
 
+            // Detect Dark Mode
+            const isDark = document.documentElement.classList.contains('dark');
+
             // Draw Center Label
             // Font size relative to height (approx 2.5em/ size 200)
             ctx.font = `bold ${2.5}em sans-serif`;
             ctx.textBaseline = "middle";
-            ctx.fillStyle = "#334155"; // slate-700
+            ctx.fillStyle = isDark ? "#F3F4F6" : "#334155"; // gray-100 or slate-700
 
             const text = textToDraw;
             const textX = Math.round((width - ctx.measureText(text).width) / 2);
@@ -92,7 +95,7 @@ export const TaskCompletionDonut: React.FC<TaskCompletionDonutProps> = ({
             // Draw Subtext
             if (centerSubtext) {
                 ctx.font = `bold ${0.875}em sans-serif`;
-                ctx.fillStyle = "#94a3b8"; // slate-400
+                ctx.fillStyle = isDark ? "#9CA3AF" : "#94a3b8"; // gray-400 or slate-400
                 const subtext = centerSubtext;
                 const subtextX = Math.round((width - ctx.measureText(subtext).width) / 2);
                 const subtextY = height / 2 + 20;

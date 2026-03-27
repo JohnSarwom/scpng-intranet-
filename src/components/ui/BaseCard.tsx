@@ -134,11 +134,11 @@ export const BaseCard: React.FC<BaseCardProps> = ({
       <Card
         className={cn(
           // Base styles from TicketManager - no margins
-          "cursor-grab hover:shadow-md transition-shadow duration-200 border dark:border-gray-700",
+          "cursor-grab hover:shadow-lg transition-all duration-300 border dark:border-white/10 dark:bg-gray-900",
           // Dragging states with styling from TicketManager
-          isActuallyDragging && "shadow-lg ring-2 ring-primary",
-          isActuallyOver && !isDragOverlay && "ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-800",
-          isDragOverlay && "shadow-xl rotate-3 cursor-grabbing",
+          isActuallyDragging && "shadow-2xl ring-2 ring-primary dark:ring-blue-500/50",
+          isActuallyOver && !isDragOverlay && "ring-2 ring-primary ring-offset-2 dark:ring-offset-gray-900 dark:ring-blue-500/50",
+          isDragOverlay && "shadow-2xl rotate-3 cursor-grabbing scale-105",
           // Passed-in custom class names
           cardClassName
         )}

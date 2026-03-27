@@ -180,10 +180,12 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] md:h-[650px] w-[95vw] overflow-hidden flex flex-col p-0 border-none shadow-2xl ring-1 ring-black/5">
+            <DialogContent className="max-w-4xl max-h-[90vh] md:h-[650px] w-[95vw] overflow-hidden flex flex-col p-0 border-none shadow-2xl ring-1 ring-black/5 dark:bg-gray-900">
+
                 <div className="flex h-full">
                     {/* Left Sidebar - Steps */}
-                    <div className="w-52 bg-gray-50 dark:bg-gray-900/50 border-r border-gray-100 dark:border-gray-800 p-5 hidden md:flex flex-col">
+                    <div className="w-52 bg-gray-50 dark:bg-gray-800 border-r border-gray-100 dark:border-white/10 p-5 hidden md:flex flex-col">
+
                         <div className="flex items-center gap-3 mb-6">
                             <div className="p-1.5 bg-intranet-primary rounded-lg text-white">
                                 <Rocket className="w-4 h-4" />
@@ -455,7 +457,8 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                         const newAlignment = {
                                                             name: "New Division",
                                                             director: "Director Title",
-                                                            alignedPillar: pillars[0]?.title || "Strategic Pillar",
+                                                            alignedPillar: objectives[0]?.title || "Strategic Pillar",
+
                                                             icon: "LayoutDashboard",
                                                             kras: ["Key Result Area 1"]
                                                         };

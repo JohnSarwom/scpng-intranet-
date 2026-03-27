@@ -67,6 +67,7 @@ This document indexes the 100+ historical documentation files moved to `docs/his
 - [OPTIMISTIC_UI_PATTERN.md](history/OPTIMISTIC_UI_PATTERN.md)
 - [SKELETON_LOADERS_IMPLEMENTATION.md](history/SKELETON_LOADERS_IMPLEMENTATION.md)
 - [GIT_RESET_AND_PUSH_GUIDE.md](history/GIT_RESET_AND_PUSH_GUIDE.md)
+- [DARK_MODE_REFINEMENTS_2026_03_25.md](history/DARK_MODE_REFINEMENTS_2026_03_25.md) ⭐ New (2026-03-25) — Standardized dashboard/apps/modals on gray-800/900 palette.
 
 ---
 

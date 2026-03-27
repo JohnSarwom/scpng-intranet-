@@ -62,4 +62,32 @@ To scroll only a specific Radix UI `ScrollArea` component WITHOUT affecting pare
 - **Improved Focus**: Ensures the user stays centered on the modal while seeing fresh content.
 
 ---
-*Last Updated: 2026-03-17*
+*Last Updated: 2026-03-25*
+
+## Premium Dark Mode Standards
+
+### Background Palette
+To ensure a premium, logical depth in dark mode, the following background colors should be used consistently:
+
+1. **Card/Module Backgrounds**: Use `dark:bg-gray-800`. This provides a professional contrast from the global page background.
+2. **Modal/Layered Backgrounds**: Use `dark:bg-gray-900`. This creates a sense of elevation and focus for top-level interactive elements.
+3. **Inner Containers (Inputs, Toggles)**: Use `dark:bg-white/5` or `dark:bg-white/10`. This creates a subtle "inset" look for form fields and control groups.
+
+### Border & Contrast Rules
+- **Borders**: Always use `dark:border-white/10` for a subtle, high-end hairline border rather than high-contrast whites or grays.
+- **Primary Text**: Use `dark:text-gray-100` for headings and titles to ensure maximum legibility.
+- **Secondary/Description Text**: Use `dark:text-gray-400` to maintain hierarchy.
+- **Interactive Elements**: Star ratings, active toggle states, and highlighted buttons should use translucent themed backgrounds (e.g., `dark:bg-red-900/30`) to soften the UI while maintaining color intent.
+
+### Navigation & Filter Groups
+To maintain a cohesive look when using tabs or button-based filters (like year selectors or category tabs):
+- **Container/List**: Use `dark:bg-gray-800/50` with a `dark:border-white/10` border.
+- **Inactive Items**: Use subtle contrast (`dark:text-gray-400`) and standard card-elevation backgrounds if needed.
+- **Active Items**: Maintain brand identity (e.g., `bg-intranet-primary`) or use elevated grays (`dark:bg-gray-700`) to indicate selection while staying within the dark theme.
+
+### Implementation Checklist
+- [x] Background: `bg-gray-800` (Cards) or `bg-gray-900` (Modals)
+- [x] Borders: `border-white/10`
+- [x] Text: `text-gray-100` (Primary) / `text-gray-400` (Secondary)
+- [x] Tabs/Filters: `bg-gray-800/50` (List) / `bg-gray-700` (Active Trigger)
+- [x] Placeholders: `dark:placeholder:text-gray-500`

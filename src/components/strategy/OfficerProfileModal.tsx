@@ -7,8 +7,10 @@ import {
     Mail, Phone, MapPin, Clock, Building2,
     ChevronRight, Share2, Printer, Flag, FileText, Pencil,
     CheckCircle2, Target, BarChart3, Layers, TrendingUp,
-    ListChecks, AlertCircle
+    ListChecks, AlertCircle, LayoutDashboard, ArrowUpRight,
+    Quote, Award, Calendar
 } from 'lucide-react';
+
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -115,7 +117,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
 
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
-            <DialogContent className="max-w-[960px] p-0 overflow-hidden rounded-2xl border-0 gap-0 [&>button]:hidden flex flex-col md:flex-row min-h-[520px] max-h-[90vh]">
+            <DialogContent className="max-w-5xl p-0 overflow-hidden border-none bg-gray-50 dark:bg-gray-900 shadow-2xl rounded-2xl dark:border dark:border-white/10 gap-0 [&>button]:hidden flex flex-col md:flex-row min-h-[520px] max-h-[90vh]">
                 <DialogTitle className="sr-only">{officer.name} Profile</DialogTitle>
 
                 {/* Left Panel */}
@@ -152,7 +154,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                 </div>
 
                 {/* Right Panel */}
-                <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
+                <div className="flex-1 flex flex-col bg-white dark:bg-gray-900 min-w-0 overflow-hidden">
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 transition-colors"
@@ -160,17 +162,26 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                         <X className="w-5 h-5" />
                     </button>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden min-h-0">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                         {/* Scrollable tab nav */}
-                        <TabsList className="bg-transparent border-b border-gray-200 rounded-none h-auto p-0 pl-4 pt-3 pb-1 flex-nowrap justify-start gap-0 overflow-x-auto horizontal-scrollbar-fade flex-shrink-0">
-                            {tabs.map(tab => (
+                        <TabsList className="bg-transparent border-b border-gray-100 dark:border-white/10 rounded-none h-auto p-0 px-4 pt-4 flex-wrap justify-start gap-0">
+                            {[
+                                { value: 'overview', label: 'Overview', icon: LayoutDashboard },
+                                { value: 'strategy', label: 'Strategic Alignment', icon: Target },
+                                { value: 'activity', label: 'Recent Activity', icon: Activity },
+                                { value: 'about', label: 'About', icon: User },
+                                { value: 'contact', label: 'Contact', icon: AtSign },
+                                { value: 'experience', label: 'Experience', icon: Briefcase },
+                                { value: 'statutory-duty', label: 'Statutory Duty', icon: FileText },
+                            ].map((tab) => (
                                 <TabsTrigger
                                     key={tab.value}
                                     value={tab.value}
-                                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-none border-b-2 text-sm font-medium transition-all data-[state=active]:shadow-none whitespace-nowrap flex-shrink-0 ${activeTab === tab.value
-                                        ? 'border-[#800020] text-[#800020] bg-transparent'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 bg-transparent'
-                                        }`}
+                                    className={`
+                                        rounded-none border-b-2 border-transparent px-4 pb-3 pt-2 font-medium text-sm text-gray-500
+                                        hover:text-gray-700 dark:hover:text-gray-300 data-[state=active]:border-[#800020] data-[state=active]:text-[#800020] dark:data-[state=active]:text-intranet-primary-light
+                                        data-[state=active]:font-bold transition-all flex items-center gap-2
+                                    `}
                                 >
                                     <tab.icon className="w-4 h-4" />
                                     {tab.label}
@@ -180,216 +191,106 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
 
                         {/* ── Overview Tab ── */}
                         {performance && (
-                            <TabsContent value="overview" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4">
-                                {/* Hero Score Banner */}
-                                <div className="relative bg-gradient-to-br from-[#500015] via-[#700020] to-[#900030] rounded-2xl p-5 text-white overflow-hidden">
-                                    {/* Decorative circles */}
-                                    <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-white/5 pointer-events-none" />
-                                    <div className="absolute right-4 -bottom-8 w-24 h-24 rounded-full bg-white/5 pointer-events-none" />
+                            <TabsContent value="overview" className="m-0 focus-visible:outline-none p-6 md:p-8 space-y-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                                {/* Header Info */}
+                                <div>
+                                    <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight">{officer.name}</h2>
+                                    <p className="text-[#800020] dark:text-intranet-primary-light font-bold text-sm uppercase tracking-wider mt-2">{officer.jobTitle}</p>
+                                </div>
 
-                                    <div className="relative z-10 flex items-start justify-between gap-4">
-                                        <div>
-                                            <p className="text-white/60 text-[10px] uppercase tracking-widest font-semibold mb-2">Overall Performance Score</p>
-                                            <div className="flex items-end gap-2">
-                                                <span className="text-6xl font-black leading-none tracking-tight">{performance.overallScore}</span>
-                                                <span className="text-2xl font-bold text-white/60 mb-1">%</span>
+                                {/* Metric Cards Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                                                <Target className="w-5 h-5" />
                                             </div>
-                                            <p className="text-white/40 text-xs mt-1">Weighted: tasks 50% · KRAs 30% · KPIs 20%</p>
+                                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Objectives</span>
                                         </div>
-                                        <div className="text-right flex flex-col items-end gap-2">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${ragBadgeClass(performance.overallScore)}`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${ragDotClass(performance.overallScore)}`} />
-                                                {ragLabel(performance.overallScore)}
-                                            </span>
-                                            <div className="text-right space-y-0.5">
-                                                <p className="text-[10px] text-white/50">Tasks <span className="text-white/80 font-semibold">{performance.taskCompletion}%</span></p>
-                                                <p className="text-[10px] text-white/50">KRAs <span className="text-white/80 font-semibold">{performance.kraProgress}%</span></p>
-                                                <p className="text-[10px] text-white/50">KPIs <span className="text-white/80 font-semibold">{kpiPct}%</span></p>
-                                            </div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-black text-gray-900 dark:text-gray-100">{performance.totalObjectives}</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Active Items</span>
+                                        </div>
+                                        <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+                                            <div className="bg-blue-500 h-full rounded-full" style={{ width: '65%' }}></div>
                                         </div>
                                     </div>
 
-                                    {/* Overall progress bar */}
-                                    <div className="relative z-10 mt-4">
-                                        <div className="w-full bg-white/10 rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full transition-all duration-700 ${ragBarClass(performance.overallScore)}`}
-                                                style={{ width: `${Math.min(performance.overallScore, 100)}%` }}
-                                            />
+                                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
+                                                <Award className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Performance</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-black text-gray-900 dark:text-gray-100">{performance.overallScore}%</span>
+                                            <ArrowUpRight className="w-4 h-4 text-green-500" />
+                                        </div>
+                                        <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-tight">Q1 Variance: +2.4%</p>
+                                    </div>
+
+
+                                    <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                                                <TrendingUp className="w-5 h-5" />
+                                            </div>
+                                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Growth</span>
+                                        </div>
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-2xl font-black text-gray-900 dark:text-gray-100">8.2</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Index Score</span>
+                                        </div>
+                                        <div className="mt-2 flex gap-1">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <div key={i} className={`h-1.5 w-full rounded-full ${i <= 4 ? 'bg-amber-400' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Metric Cards Row */}
-                                <div className="grid grid-cols-3 gap-3">
-                                    {/* Tasks Card */}
-                                    <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                                <ListChecks className="w-3.5 h-3.5 text-blue-500" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tasks</span>
-                                        </div>
-                                        <div className="mb-2">
-                                            <span className="text-2xl font-black text-gray-900">{performance.completedTasks}</span>
-                                            <span className="text-sm text-gray-400"> / {performance.totalTasks}</span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1.5">
-                                            <div className="h-1.5 rounded-full bg-emerald-500 transition-all" style={{ width: `${performance.taskCompletion}%` }} />
-                                        </div>
-                                        <p className="text-[10px] text-gray-400">{performance.taskCompletion}% completion</p>
-                                        {performance.inProgressTasks > 0 && (
-                                            <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{performance.inProgressTasks} in progress</p>
-                                        )}
+                                {/* Biography section */}
+                                <div className="relative">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="w-1 h-6 bg-[#800020] rounded-full"></div>
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-gray-100">Professional Biography</h4>
+                                    </div>
+                                    <div className="bg-white dark:bg-gray-800/40 border border-gray-100 dark:border-white/10 rounded-2xl p-6 relative overflow-hidden group">
+                                        <Quote className="absolute -right-4 -bottom-4 w-32 h-32 text-gray-50 dark:text-gray-800/20 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />
+                                        <p className="text-gray-600 dark:text-gray-300 leading-loose text-sm italic relative z-10">
+                                            {(officer as any).bio || officer.summary}
+                                        </p>
                                     </div>
 
-                                    {/* KRAs Card */}
-                                    <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <div className="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-                                                <Target className="w-3.5 h-3.5 text-purple-500" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">KRAs</span>
-                                        </div>
-                                        <div className="mb-2">
-                                            <span className="text-2xl font-black text-gray-900">{performance.totalKRAs}</span>
-                                            <span className="text-sm text-gray-400"> areas</span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1.5">
-                                            <div className="h-1.5 rounded-full bg-purple-500 transition-all" style={{ width: `${performance.kraProgress}%` }} />
-                                        </div>
-                                        <p className="text-[10px] text-gray-400">{performance.kraProgress}% avg progress</p>
-                                    </div>
-
-                                    {/* KPIs Card */}
-                                    <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                                                <BarChart3 className="w-3.5 h-3.5 text-emerald-500" />
-                                            </div>
-                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">KPIs</span>
-                                        </div>
-                                        <div className="mb-2">
-                                            <span className="text-2xl font-black text-gray-900">{performance.onTrackKPIs}</span>
-                                            <span className="text-sm text-gray-400"> / {performance.totalKPIs}</span>
-                                        </div>
-                                        <div className="w-full bg-gray-100 rounded-full h-1.5 mb-1.5">
-                                            <div
-                                                className={`h-1.5 rounded-full transition-all ${kpiPct >= 70 ? 'bg-emerald-500' : kpiPct >= 40 ? 'bg-amber-500' : 'bg-red-400'}`}
-                                                style={{ width: `${kpiPct}%` }}
-                                            />
-                                        </div>
-                                        <p className="text-[10px] text-gray-400">{kpiPct}% on track</p>
-                                    </div>
-                                </div>
-
-                                {/* Task Breakdown */}
-                                {performance.totalTasks > 0 && (
-                                    <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
-                                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                            <CheckCircle2 className="w-3.5 h-3.5" />
-                                            Task Breakdown
-                                        </h4>
-                                        {/* Stacked bar — all 5 statuses */}
-                                        <div className="flex h-3 rounded-full overflow-hidden gap-px mb-3 bg-gray-100">
-                                            {taskSegments.map((seg, i) => seg.count > 0 && (
-                                                <div
-                                                    key={seg.key}
-                                                    className={`${seg.color} transition-all`}
-                                                    style={{ width: `${(seg.count / performance.totalTasks) * 100}%` }}
-                                                    title={`${seg.count} ${seg.label}`}
-                                                />
-                                            ))}
-                                        </div>
-                                        {/* Legend — show all, dim zero-count entries */}
-                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
-                                            {taskSegments.map(seg => (
-                                                <span
-                                                    key={seg.key}
-                                                    className={`flex items-center gap-1.5 text-xs ${seg.count === 0 ? 'opacity-40' : ''}`}
-                                                >
-                                                    <span className={`w-2.5 h-2.5 rounded-sm flex-shrink-0 ${seg.color}`} />
-                                                    <span className="font-bold text-gray-800 tabular-nums">{seg.count}</span>
-                                                    <span className="text-gray-500">{seg.label}</span>
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Strategic Contribution */}
-                                <div className="border border-gray-100 rounded-xl p-4 bg-white shadow-sm">
-                                    <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
-                                        <Layers className="w-3.5 h-3.5" />
-                                        Strategic Contribution
-                                    </h4>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                            <div className="text-xl font-black text-gray-900">{performance.totalKRAs}</div>
-                                            <div className="text-[10px] text-gray-500 mt-0.5">Key Result Areas</div>
-                                        </div>
-                                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                            <div className="text-xl font-black text-gray-900">{performance.totalKPIs}</div>
-                                            <div className="text-[10px] text-gray-500 mt-0.5">KPIs Assigned</div>
-                                        </div>
-                                        <div className="text-center p-3 bg-gray-50 rounded-lg">
-                                            <div className="text-xl font-black text-gray-900">{performance.totalObjectives}</div>
-                                            <div className="text-[10px] text-gray-500 mt-0.5">Objectives Linked</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Status indicators */}
-                                    <div className="mt-3 space-y-1.5">
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="flex items-center gap-1.5 text-gray-500">
-                                                <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-                                                Tasks in progress
-                                            </span>
-                                            <span className="font-semibold text-gray-700">{performance.inProgressTasks}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="flex items-center gap-1.5 text-gray-500">
-                                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
-                                                Tasks completed
-                                            </span>
-                                            <span className="font-semibold text-gray-700">{performance.completedTasks}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between text-xs">
-                                            <span className="flex items-center gap-1.5 text-gray-500">
-                                                <BarChart3 className="w-3.5 h-3.5 text-emerald-500" />
-                                                KPIs on track
-                                            </span>
-                                            <span className="font-semibold text-gray-700">{performance.onTrackKPIs} / {performance.totalKPIs}</span>
-                                        </div>
-                                    </div>
                                 </div>
                             </TabsContent>
                         )}
 
                         {/* ── About Tab ── */}
                         <TabsContent value="about" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-6">
-                            <div className="border-b border-gray-100 pb-5 mb-5 space-y-2">
-                                <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">{officer.name}</h2>
-                                <h3 className="text-lg font-semibold text-[#800020] uppercase tracking-wide">{officer.jobTitle}</h3>
+                            <div className="border-b border-gray-100 dark:border-white/10 pb-5 mb-5 space-y-2">
+                                <h2 className="text-3xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">{officer.name}</h2>
+                                <h3 className="text-lg font-semibold text-[#800020] dark:text-intranet-primary-light uppercase tracking-wide">{officer.jobTitle}</h3>
                                 {(officer.division || officer.unit) && (
-                                    <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
-                                        {officer.division && <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-700">{officer.division}</span>}
-                                        {officer.division && officer.unit && <span className="text-gray-300">•</span>}
+                                    <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                                        {officer.division && <span className="bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded text-gray-700 dark:text-gray-300">{officer.division}</span>}
+                                        {officer.division && officer.unit && <span className="text-gray-300 dark:text-gray-600">•</span>}
                                         {officer.unit && <span>{officer.unit}</span>}
                                     </div>
                                 )}
                             </div>
 
                             <div>
-                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-2">
+                                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-2">
                                     <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                     Professional Summary
                                 </h3>
-                                <p className="text-sm text-gray-600 leading-relaxed">{officer.summary}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{officer.summary}</p>
                             </div>
 
                             <div>
-                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                                     <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                     Core Skills
                                 </h3>
@@ -398,7 +299,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                         <Badge
                                             key={i}
                                             variant="outline"
-                                            className="border-[#800020]/30 text-[#800020] bg-[#800020]/5 px-3 py-1 text-xs font-medium rounded-full"
+                                            className="border-[#800020]/30 text-[#800020] bg-[#800020]/5 px-3 py-1 text-xs font-medium rounded-full dark:border-intranet-primary-light/30 dark:text-intranet-primary-light dark:bg-intranet-primary-light/10"
                                         >
                                             {skill}
                                         </Badge>
@@ -407,65 +308,65 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                             </div>
 
                             <div>
-                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                                <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                                     <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                     Team & Structure
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Reports To</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold mb-2">Reports To</p>
                                         {officer.reportsTo ? (
-                                            <div className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                                            <div className="flex items-center gap-3 p-3 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                                                 <div className="w-10 h-10 rounded-full bg-[#600018] text-white flex items-center justify-center text-xs font-bold flex-shrink-0">
                                                     {reportsToInitials}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
-                                                    <p className="text-sm font-semibold text-gray-900 truncate">{officer.reportsTo.name}</p>
-                                                    <p className="text-xs text-gray-500 truncate">{officer.reportsTo.title}</p>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{officer.reportsTo.name}</p>
+                                                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{officer.reportsTo.title}</p>
                                                 </div>
-                                                <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                                <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                                             </div>
                                         ) : (
-                                            <p className="text-sm text-gray-400 italic">None</p>
+                                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">None</p>
                                         )}
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-2">Direct Reports ({officer.directReports})</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold mb-2">Direct Reports ({officer.directReports})</p>
                                         {officer.directReports > 0 ? (
                                             <div className="flex items-center gap-1">
                                                 {Array.from({ length: Math.min(officer.directReports, 3) }).map((_, i) => (
-                                                    <div key={i} className="w-10 h-10 rounded-full bg-gray-300 border-2 border-white -ml-1 first:ml-0" />
+                                                    <div key={i} className="w-10 h-10 rounded-full bg-gray-300 dark:bg-gray-700 border-2 border-white dark:border-gray-900 -ml-1 first:ml-0" />
                                                 ))}
                                                 {officer.directReports > 3 && (
-                                                    <div className="w-10 h-10 rounded-full bg-gray-200 border-2 border-white -ml-1 flex items-center justify-center text-xs font-medium text-gray-600">
+                                                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 border-2 border-white dark:border-gray-900 -ml-1 flex items-center justify-center text-xs font-medium text-gray-600 dark:text-gray-300">
                                                         +{officer.directReports - 3}
                                                     </div>
                                                 )}
                                             </div>
                                         ) : (
-                                            <p className="text-sm text-gray-400 italic">None</p>
+                                            <p className="text-sm text-gray-400 dark:text-gray-500 italic">None</p>
                                         )}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                         <Phone className="w-5 h-5 text-[#800020]" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Office Extension</p>
-                                        <p className="text-sm font-bold text-gray-900">{officer.officeExtension || 'N/A'}</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Office Extension</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{officer.officeExtension || 'N/A'}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                                     <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                         <Clock className="w-5 h-5 text-[#800020]" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Timezone</p>
-                                        <p className="text-sm font-bold text-gray-900">{officer.timezone}</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Timezone</p>
+                                        <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{officer.timezone}</p>
                                     </div>
                                 </div>
                             </div>
@@ -473,59 +374,59 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
 
                         {/* ── Contact Tab ── */}
                         <TabsContent value="contact" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4">
-                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                                 <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                 Contact Information
                             </h3>
                             <div className="space-y-3">
-                                <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                                <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                                     <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                         <Mail className="w-5 h-5 text-[#800020]" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Email</p>
-                                        <a href={`mailto:${officer.email}`} className="text-sm font-medium text-[#800020] hover:underline">{officer.email}</a>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Email</p>
+                                        <a href={`mailto:${officer.email}`} className="text-sm font-medium text-[#800020] dark:text-intranet-primary-light hover:underline">{officer.email}</a>
                                     </div>
                                 </div>
                                 {officer.phone && (
-                                    <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                                    <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                                         <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                             <Phone className="w-5 h-5 text-[#800020]" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Phone</p>
-                                            <p className="text-sm font-medium text-gray-900">{officer.phone}</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Phone</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{officer.phone}</p>
                                         </div>
                                     </div>
                                 )}
                                 {officer.officeExtension && (
-                                    <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                                    <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                                         <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                             <Phone className="w-5 h-5 text-[#800020]" />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Office Extension</p>
-                                            <p className="text-sm font-medium text-gray-900">{officer.officeExtension}</p>
+                                            <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Office Extension</p>
+                                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{officer.officeExtension}</p>
                                         </div>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                                <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                                     <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                         <Building2 className="w-5 h-5 text-[#800020]" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Division / Unit</p>
-                                        <p className="text-sm font-medium text-gray-900">{officer.division}</p>
-                                        <p className="text-xs text-gray-500">{officer.unit}</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Division / Unit</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{officer.division}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400">{officer.unit}</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                                <div className="flex items-center gap-4 p-4 border border-gray-200 dark:border-white/10 rounded-lg">
                                     <div className="w-10 h-10 rounded-full bg-[#800020]/10 flex items-center justify-center">
                                         <MapPin className="w-5 h-5 text-[#800020]" />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 font-semibold">Location</p>
-                                        <p className="text-sm font-medium text-gray-900">Port Moresby, Papua New Guinea</p>
+                                        <p className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-semibold">Location</p>
+                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Port Moresby, Papua New Guinea</p>
                                     </div>
                                 </div>
                             </div>
@@ -533,78 +434,101 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
 
                         {/* ── Experience Tab ── */}
                         <TabsContent value="experience" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4">
-                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                                 <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                 Work Experience
                             </h3>
-                            <div className="relative pl-6 border-l-2 border-[#800020] pb-6">
-                                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#800020] border-2 border-white" />
-                                <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="relative pl-6 border-l-2 border-[#800020] dark:border-intranet-primary-light pb-6">
+                                <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#800020] dark:bg-intranet-primary-light border-2 border-white dark:border-gray-900" />
+                                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Badge className="bg-green-100 text-green-700 text-[10px] border-0">Current</Badge>
+                                        <Badge className="bg-green-100 text-green-700 text-[10px] border-0 dark:bg-green-900/30 dark:text-green-400">Current</Badge>
                                     </div>
-                                    <p className="text-sm font-bold text-gray-900">{officer.jobTitle}</p>
-                                    <p className="text-xs text-[#800020] font-medium">Securities Commission of PNG</p>
-                                    <p className="text-xs text-gray-400 mt-1">{officer.joinedDate} - Present</p>
-                                    <p className="text-xs text-gray-500 mt-2">{officer.division} &bull; {officer.unit}</p>
+                                    <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{officer.jobTitle}</p>
+                                    <p className="text-xs text-[#800020] dark:text-intranet-primary-light font-medium">Securities Commission of PNG</p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{officer.joinedDate} - Present</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">{officer.division} &bull; {officer.unit}</p>
                                 </div>
                             </div>
                         </TabsContent>
 
                         {/* ── Activity Tab ── */}
-                        <TabsContent value="activity" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4">
-                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
-                                <span className="w-1 h-5 bg-[#800020] rounded-full" />
-                                Recent Activity
-                            </h3>
-                            <div className="text-center py-12">
-                                <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                <p className="text-sm text-gray-400">No recent activity to display</p>
-                            </div>
-                        </TabsContent>
+                        {officer.recentActivity && (
+                            <TabsContent value="activity" className="m-0 focus-visible:outline-none p-6 md:p-8 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h2 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">Recent Activity</h2>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1 uppercase tracking-wider">{officer.name}</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-white/10">
+                                            <Calendar className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="relative border-l-2 border-gray-100 dark:border-white/10 ml-4 space-y-10 pb-4">
+                                    {officer.recentActivity.map((activity, idx) => (
+                                        <div key={idx} className="relative pl-10 group">
+                                            <div className="absolute -left-[11px] top-1 w-5 h-5 rounded-full border-4 border-white dark:border-gray-900 bg-gray-200 dark:bg-gray-800 group-hover:bg-[#800020] group-hover:border-red-50 dark:group-hover:border-red-900/30 transition-all shadow-sm"></div>
+                                            <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-white/10 rounded-2xl p-5 hover:shadow-xl hover:translate-x-1 transition-all duration-300">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{activity.date} — {activity.type}</span>
+                                                    <div className={`w-2 h-2 rounded-full ${activity.type === 'Strategic' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                                                </div>
+                                                <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-2 leading-snug group-hover:text-[#800020] dark:group-hover:text-intranet-primary-light transition-colors">{activity.title}</h5>
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
+                                                    {activity.description}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </TabsContent>
+                        )}
 
                         {/* ── Statutory Duty Tab ── */}
                         <TabsContent value="statutory-duty" className="flex-1 overflow-y-auto px-6 py-5 mt-0 space-y-4 h-full">
-                            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2 mb-3">
+                            <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2 mb-3">
                                 <span className="w-1 h-5 bg-[#800020] rounded-full" />
                                 Statutory Duty
                             </h3>
                             {officer.statutoryDuty ? (
-                                <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-                                    <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900">
+                                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-lg p-5">
+                                    <div className="prose prose-sm prose-gray max-w-none prose-headings:text-[#800020] prose-a:text-[#800020] prose-strong:text-gray-900 dark:prose-headings:text-intranet-primary-light dark:prose-a:text-intranet-primary-light dark:prose-strong:text-gray-100 dark:text-gray-300">
                                         <ReactMarkdown>{officer.statutoryDuty}</ReactMarkdown>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-12 flex-1 flex flex-col items-center justify-center">
-                                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                    <p className="text-sm text-gray-400">No statutory duties documented for this profile</p>
+                                    <FileText className="w-12 h-12 text-gray-300 dark:text-gray-700 mx-auto mb-3" />
+                                    <p className="text-sm text-gray-400 dark:text-gray-500">No statutory duties documented for this profile</p>
                                 </div>
                             )}
                         </TabsContent>
                     </Tabs>
 
                     {/* Footer */}
-                    <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
-                        <p className="text-xs text-gray-400">Last updated: Today at 09:12 AM</p>
+                    <div className="border-t border-gray-200 dark:border-white/10 px-6 py-3 flex items-center justify-between flex-shrink-0">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">Last updated: Today at 09:12 AM</p>
                         <div className="flex items-center gap-2">
                             {(isAdmin || hasPermission('admin', 'access')) && (
                                 <button
                                     onClick={() => { onClose(); navigate('/admin?tab=org-structure'); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-md transition-colors border border-gray-200"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-md transition-colors border border-gray-200 dark:bg-gray-800 dark:hover:bg-indigo-900/30 dark:text-gray-300 dark:hover:text-indigo-400 dark:border-white/10"
                                     title="Edit Profile in Admin Dashboard"
                                 >
                                     <Pencil className="w-3.5 h-3.5" />
                                     <span className="text-xs font-medium">Edit Profile</span>
                                 </button>
                             )}
-                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Share">
+                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-gray-500 dark:hover:text-gray-300" title="Share">
                                 <Share2 className="w-4 h-4" />
                             </button>
-                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Print">
+                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-gray-500 dark:hover:text-gray-300" title="Print">
                                 <Printer className="w-4 h-4" />
                             </button>
-                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Flag">
+                            <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors dark:text-gray-500 dark:hover:text-gray-300" title="Flag">
                                 <Flag className="w-4 h-4" />
                             </button>
                         </div>

@@ -9,13 +9,13 @@ import { useInternalNews, NewsItem } from '@/hooks/useInternalNews';
 
 // Category color mapping
 const CATEGORY_COLORS = {
-  HR: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  IT: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  Events: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-  General: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-  Urgent: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
-  'SCPNG News': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200',
-  Internal: 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200',
+  HR: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200',
+  IT: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200',
+  Events: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200',
+  General: 'bg-gray-100 text-gray-800 dark:bg-white/10 dark:text-gray-300',
+  Urgent: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200',
+  'SCPNG News': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-200',
+  Internal: 'bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-200',
 };
 
 interface NewsSlideProps {
@@ -158,9 +158,9 @@ const InternalNewsSlideshow: React.FC = () => {
   // Loading State
   if (isLoading) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="bg-white dark:bg-gray-800 shadow-sm animate-fade-in rounded-xl border dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-lg font-semibold">Internal News & Updates</CardTitle>
+          <CardTitle className="text-lg font-semibold dark:text-gray-100">Internal News & Updates</CardTitle>
           <Badge variant="outline" className="bg-intranet-primary/10 text-intranet-primary font-medium">
             Latest
           </Badge>
@@ -178,16 +178,16 @@ const InternalNewsSlideshow: React.FC = () => {
   // Error State
   if (error) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="bg-white dark:bg-gray-800 shadow-sm animate-fade-in rounded-xl border dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-lg font-semibold">Internal News & Updates</CardTitle>
+          <CardTitle className="text-lg font-semibold dark:text-gray-100">Internal News & Updates</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-[420px] space-y-4">
             <AlertCircle className="h-12 w-12 text-red-500" />
             <p className="text-red-600 dark:text-red-400">Unable to load news</p>
             <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
-            <Button onClick={refetch} variant="outline" size="sm">
+            <Button onClick={() => refetch()} variant="outline" size="sm" className="dark:border-white/10 dark:hover:bg-white/5">
               Try Again
             </Button>
           </div>
@@ -199,9 +199,9 @@ const InternalNewsSlideshow: React.FC = () => {
   // No News State
   if (!news || news.length === 0) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="bg-white dark:bg-gray-800 shadow-sm animate-fade-in rounded-xl border dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-          <CardTitle className="text-lg font-semibold">Internal News & Updates</CardTitle>
+          <CardTitle className="text-lg font-semibold dark:text-gray-100">Internal News & Updates</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-[420px] space-y-4">
@@ -214,10 +214,10 @@ const InternalNewsSlideshow: React.FC = () => {
 
   // Main Slideshow
   return (
-    <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border border-gray-200 dark:border-white/10">
       {/* Header with Navigation */}
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <CardTitle className="text-lg font-semibold">Internal News & Updates</CardTitle>
+        <CardTitle className="text-lg font-semibold dark:text-gray-100">Internal News & Updates</CardTitle>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="bg-intranet-primary/10 text-intranet-primary font-medium">
             Latest

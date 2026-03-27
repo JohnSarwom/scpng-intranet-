@@ -81,9 +81,10 @@ export interface WorkPlanGoalExtended extends WorkPlanGoal {
 
 // ===== Report Types =====
 
-export type ReportTimePeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly';
+export type ReportTimePeriod = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'half-yearly' | 'yearly' | 'custom';
 export type ReportScope = 'individual' | 'unit' | 'division';
 export type ReportType = 'operations' | 'performance' | 'strategic' | 'custom';
+export type ReportDataCategory = 'tasks' | 'kras' | 'kpis' | 'objectives';
 
 export interface ReportConfig {
   timePeriod: ReportTimePeriod;
@@ -101,6 +102,7 @@ export interface ReportConfig {
   };
   includeCharts: boolean;
   includeAISummary: boolean;
+  categories?: ReportDataCategory[];
 }
 
 export interface GeneratedReport {

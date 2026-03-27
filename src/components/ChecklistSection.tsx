@@ -67,7 +67,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange, di
         <span className="text-sm text-muted-foreground">{calculateProgress()}% complete</span>
       </div>
 
-      <Progress value={calculateProgress()} className="h-2" />
+      <Progress value={calculateProgress()} className="h-2 dark:bg-gray-800" />
 
       <div className="space-y-2 max-h-[200px] overflow-y-auto">
         {items.map(item => (
@@ -108,7 +108,7 @@ const ChecklistSection: React.FC<ChecklistSectionProps> = ({ items, onChange, di
           value={newItemText}
           onChange={(e) => setNewItemText(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow"
+          className="flex-grow dark:bg-gray-800 dark:border-white/10"
           disabled={disabled}
         />
         <Button size="sm" onClick={handleAddItem} disabled={disabled || !newItemText.trim()}>

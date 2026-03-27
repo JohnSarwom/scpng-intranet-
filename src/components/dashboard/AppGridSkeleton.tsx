@@ -7,7 +7,7 @@ export const AppGridSkeleton = ({ count = 8 }: { count?: number }) => {
             {Array.from({ length: count }).map((_, i) => (
                 <div
                     key={i}
-                    className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 bg-white"
+                    className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5"
                 >
                     {/* Icon Skeleton */}
                     <div className="flex-shrink-0">

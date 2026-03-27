@@ -63,7 +63,7 @@ const GallerySlideshow = () => {
 
     if (loading) {
         return (
-            <div className="h-full w-full flex items-center justify-center bg-black/10 rounded-lg animate-pulse">
+            <div className="h-full w-full flex items-center justify-center bg-black/10 dark:bg-white/5 rounded-lg animate-pulse">
                 <Loader2 className="h-6 w-6 animate-spin text-white/50" />
             </div>
         );
@@ -71,7 +71,7 @@ const GallerySlideshow = () => {
 
     if (images.length === 0) {
         return (
-            <div className="h-full w-full flex flex-col items-center justify-center bg-white/10 rounded-lg border-2 border-dashed border-white/20 p-4 text-center">
+            <div className="h-full w-full flex flex-col items-center justify-center bg-white/10 dark:bg-gray-800/50 rounded-lg border-2 border-dashed border-white/20 p-4 text-center">
                 <ImageIcon className="h-8 w-8 text-white/40 mb-2" />
                 <p className="text-white/60 text-xs font-medium">Add photos to the gallery to see them here</p>
             </div>
@@ -88,7 +88,7 @@ const GallerySlideshow = () => {
 
     return (
         <div
-            className="relative w-full h-full overflow-hidden rounded-lg shadow-lg bg-gradient-to-br from-gray-800 to-gray-900 group cursor-pointer"
+            className="relative w-full h-full overflow-hidden rounded-lg shadow-lg bg-gradient-to-br from-gray-800 to-gray-950 group cursor-pointer"
             onClick={handleImageClick}
         >
             <AnimatePresence mode="wait">

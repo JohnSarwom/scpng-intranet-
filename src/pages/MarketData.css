@@ -9,9 +9,14 @@
 
 /* Market Data Page Container */
 .market-data-page {
-    background: hsl(var(--background));
-    color: hsl(var(--foreground));
-    min-height: 100vh;
+    background-color: hsl(var(--background));
+    min-height: calc(100vh - 4rem);
+    position: relative;
+    overflow-x: hidden;
+}
+
+.dark .market-data-page {
+    background-color: #0f172a; /* Deep slate/blue background for market data */
 }
 
 /* Fullscreen mode styles */
@@ -51,16 +56,17 @@
 }
 
 /* Status dot pulse animation */
-@keyframes pulse {
+@keyframes live-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.5); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+}
 
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.4;
-    }
+/* Glassmorphism utility for dark mode */
+.dark .glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .status-dot {
@@ -92,6 +98,10 @@
     background: linear-gradient(to top, hsl(var(--card)) 0%, transparent 100%);
     pointer-events: none;
     z-index: 2;
+}
+
+.dark .chart-gradient-overlay {
+    background: linear-gradient(to top, #0f172a 0%, transparent 100%);
 }
 
 /* Company logo in chart */

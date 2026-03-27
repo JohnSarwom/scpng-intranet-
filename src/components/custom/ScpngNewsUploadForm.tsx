@@ -167,11 +167,11 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
           {/* Column 1: Title and Summary */}
           <div className="space-y-4 md:col-span-1">
             <div>
-              <label htmlFor="title-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-              <Input id="title-field-modal" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter article title" />
+              <label htmlFor="title-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Title</label>
+              <Input id="title-field-modal" value={title} onChange={(e) => setTitle(e.target.value)} required placeholder="Enter article title" className="dark:bg-white/5 dark:border-white/10 focus:ring-intranet-primary" />
             </div>
             <div>
-              <label htmlFor="summary-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label htmlFor="summary-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Description</label>
               <Textarea
                 id="summary-field-modal"
                 value={summary}
@@ -179,17 +179,18 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
                 required
                 rows={10}
                 placeholder="Enter a concise description of the article"
-                className="min-h-[200px]"
+                className="min-h-[200px] dark:bg-white/5 dark:border-white/10 focus:ring-intranet-primary"
               />
             </div>
             <div>
-              <label htmlFor="aiSummary-field-modal" className="block text-sm font-medium text-gray-700 mb-1">AI Summary (Optional)</label>
+              <label htmlFor="aiSummary-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">AI Summary (Optional)</label>
               <Textarea
                 id="aiSummary-field-modal"
                 value={aiSummary}
                 onChange={(e) => setAiSummary(e.target.value)}
                 rows={5}
                 placeholder="Enter AI generated summary if available"
+                className="dark:bg-white/5 dark:border-white/10 focus:ring-intranet-primary"
               />
             </div>
           </div>
@@ -198,12 +199,12 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
           <div className="space-y-4 md:col-span-1">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label htmlFor="category-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <label htmlFor="category-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Category</label>
                 <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger id="category-field-modal">
+                  <SelectTrigger id="category-field-modal" className="dark:bg-white/5 dark:border-white/10">
                     <SelectValue placeholder="Select Category" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="SCPNG News">SCPNG News</SelectItem>
                     <SelectItem value="National News">National News</SelectItem>
                     <SelectItem value="Global Insights">Global Insights</SelectItem>
@@ -211,31 +212,31 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
                 </Select>
               </div>
               <div>
-                <label htmlFor="country-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                <Input id="country-field-modal" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. PAPUA NEW GUINEA" />
+                <label htmlFor="country-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Country</label>
+                <Input id="country-field-modal" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. PAPUA NEW GUINEA" className="dark:bg-white/5 dark:border-white/10" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="date-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <Input id="date-field-modal" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <label htmlFor="date-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Date</label>
+              <Input id="date-field-modal" type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="dark:bg-white/5 dark:border-white/10" />
             </div>
             <div>
-              <label htmlFor="sourceName-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Source Name (Optional)</label>
-              <Input id="sourceName-field-modal" value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder="e.g., Internal Memo, HR Department" />
+              <label htmlFor="sourceName-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Source Name (Optional)</label>
+              <Input id="sourceName-field-modal" value={sourceName} onChange={(e) => setSourceName(e.target.value)} placeholder="e.g., Internal Memo, HR Department" className="dark:bg-white/5 dark:border-white/10" />
             </div>
             <div>
-              <label htmlFor="sourceUrl-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Source URL (Optional)</label>
-              <Input id="sourceUrl-field-modal" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://example.com/news-story" />
+              <label htmlFor="sourceUrl-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Source URL (Optional)</label>
+              <Input id="sourceUrl-field-modal" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://example.com/news-story" className="dark:bg-white/5 dark:border-white/10" />
             </div>
             <div>
-              <label htmlFor="imageUrl-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Image URL (Optional)</label>
-              <Input id="imageUrl-field-modal" type="url" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); }} placeholder="https://example.com/image.png" />
+              <label htmlFor="imageUrl-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Image URL (Optional)</label>
+              <Input id="imageUrl-field-modal" type="url" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); }} placeholder="https://example.com/image.png" className="dark:bg-white/5 dark:border-white/10" />
             </div>
             <div>
-              <label htmlFor="imageFile-field-modal" className="block text-sm font-medium text-gray-700 mb-1">Or Upload Image (Optional)</label>
-              <Input id="imageFile-field-modal" type="file" accept="image/*" onChange={handleImageFileChange} />
-              {imageFile && <p className="text-xs text-gray-500 mt-1">Selected: {imageFile.name}</p>}
+              <label htmlFor="imageFile-field-modal" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Or Upload Image (Optional)</label>
+              <Input id="imageFile-field-modal" type="file" accept="image/*" onChange={handleImageFileChange} className="dark:bg-white/5 dark:border-white/10" />
+              {imageFile && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Selected: {imageFile.name}</p>}
             </div>
           </div>
 
@@ -254,16 +255,16 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
     return (
       <div className="space-y-4 py-2">
         <div>
-          <label htmlFor="title-field-inline">Title</label>
-          <Input id="title-field-inline" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <label htmlFor="title-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Title</label>
+          <Input id="title-field-inline" value={title} onChange={(e) => setTitle(e.target.value)} required className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="category-field-inline" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+          <label htmlFor="category-field-inline" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Category</label>
           <Select value={category} onValueChange={setCategory}>
-            <SelectTrigger id="category-field-inline">
+            <SelectTrigger id="category-field-inline" className="dark:bg-white/5 dark:border-white/10">
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="dark:bg-gray-800 dark:border-white/10">
               <SelectItem value="SCPNG News">SCPNG News</SelectItem>
               <SelectItem value="National News">National News</SelectItem>
               <SelectItem value="Global Insights">Global Insights</SelectItem>
@@ -271,29 +272,29 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
           </Select>
         </div>
         <div>
-          <label htmlFor="summary-field-inline">Description</label>
-          <Textarea id="summary-field-inline" value={summary} onChange={(e) => setSummary(e.target.value)} required rows={3} />
+          <label htmlFor="summary-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Description</label>
+          <Textarea id="summary-field-inline" value={summary} onChange={(e) => setSummary(e.target.value)} required rows={3} className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="date-field-inline">Date</label>
-          <Input id="date-field-inline" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+          <label htmlFor="date-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Date</label>
+          <Input id="date-field-inline" type="date" value={date} onChange={(e) => setDate(e.target.value)} required className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="sourceName-field-inline">Source Name (Optional)</label>
-          <Input id="sourceName-field-inline" value={sourceName} onChange={(e) => setSourceName(e.target.value)} />
+          <label htmlFor="sourceName-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Source Name (Optional)</label>
+          <Input id="sourceName-field-inline" value={sourceName} onChange={(e) => setSourceName(e.target.value)} className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="sourceUrl-field-inline">Source URL (Optional)</label>
-          <Input id="sourceUrl-field-inline" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://example.com/news-story" />
+          <label htmlFor="sourceUrl-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Source URL (Optional)</label>
+          <Input id="sourceUrl-field-inline" type="url" value={sourceUrl} onChange={(e) => setSourceUrl(e.target.value)} placeholder="https://example.com/news-story" className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="imageUrl-field-inline">Image URL (Optional)</label>
-          <Input id="imageUrl-field-inline" type="url" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); }} placeholder="https://example.com/image.png" />
+          <label htmlFor="imageUrl-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Image URL (Optional)</label>
+          <Input id="imageUrl-field-inline" type="url" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setImageFile(null); }} placeholder="https://example.com/image.png" className="dark:bg-white/5 dark:border-white/10" />
         </div>
         <div>
-          <label htmlFor="imageFile-field-inline">Or Upload Image (Optional)</label>
-          <Input id="imageFile-field-inline" type="file" accept="image/*" onChange={handleImageFileChange} />
-          {imageFile && !isEnlargedFormOpen && <p className="text-xs text-gray-500 mt-1">Selected: {imageFile.name}</p>}
+          <label htmlFor="imageFile-field-inline" className="block text-sm font-semibold dark:text-gray-300 mb-1">Or Upload Image (Optional)</label>
+          <Input id="imageFile-field-inline" type="file" accept="image/*" onChange={handleImageFileChange} className="dark:bg-white/5 dark:border-white/10" />
+          {imageFile && !isEnlargedFormOpen && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Selected: {imageFile.name}</p>}
         </div>
         {error && <p className="text-red-500 text-sm py-2">Error: {error}</p>}
         {successMessage && <p className="text-green-500 text-sm py-2">{successMessage}</p>}
@@ -303,27 +304,27 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
 
   return (
     <>
-      <Card className="p-4">
+      <Card className="p-4 dark:bg-gray-800 dark:border-white/10 shadow-md">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-md font-semibold">Quick Upload News</h3>
+          <h3 className="text-md font-bold dark:text-gray-100 uppercase tracking-tight">Quick Upload News</h3>
           <Dialog open={isEnlargedFormOpen} onOpenChange={setIsEnlargedFormOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="icon" title="Enlarge & Add Details">
+              <Button variant="outline" size="icon" title="Enlarge & Add Details" className="dark:border-white/10 dark:hover:bg-white/5">
                 <Expand className="h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="w-[90vw] max-w-[1000px] h-[auto] max-h-[90vh] flex flex-col p-0"> {/* Adjusted width, max-height and padding */}
-              <DialogHeader className="px-6 py-4 border-b">
-                <DialogTitle>Upload News Article (Detailed)</DialogTitle>
+            <DialogContent className="w-[90vw] max-w-[1000px] h-[auto] max-h-[90vh] flex flex-col p-0 dark:bg-gray-900 dark:border-white/10"> {/* Adjusted width, max-height and padding */}
+              <DialogHeader className="px-6 py-4 border-b dark:border-white/10">
+                <DialogTitle className="dark:text-gray-100">Upload News Article (Detailed)</DialogTitle>
               </DialogHeader>
               <div className="flex-grow overflow-y-auto p-6"> {/* Added padding to content area */}
                 {renderFormFields(true)} {/* Pass true for two-column layout */}
               </div>
-              <DialogFooter className="mt-auto px-6 py-4 border-t bg-gray-50 rounded-b-md"> {/* Styling footer */}
+              <DialogFooter className="mt-auto px-6 py-4 border-t dark:border-white/10 bg-gray-50 dark:bg-gray-800/50 rounded-b-md"> {/* Styling footer */}
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">Cancel</Button>
+                  <Button type="button" variant="outline" className="dark:border-white/10 dark:hover:bg-white/5">Cancel</Button>
                 </DialogClose>
-                <Button type="button" onClick={() => handleSubmit()} disabled={isLoading} className="bg-intranet-primary hover:bg-intranet-primary-dark">
+                <Button type="button" onClick={() => handleSubmit()} disabled={isLoading} className="bg-intranet-primary hover:bg-intranet-primary-dark text-white border-none">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Upload Article'}
                 </Button>
               </DialogFooter>
@@ -332,7 +333,7 @@ const ScpngNewsUploadForm: React.FC<ScpngNewsUploadFormProps> = ({ onUploadSucce
         </div>
         <form onSubmit={handleSubmit}>
           {renderFormFields(false)} {/* Pass false for original single-column layout */}
-          <Button type="submit" disabled={isLoading} className="w-full mt-4 bg-intranet-primary hover:bg-intranet-primary-dark">
+          <Button type="submit" disabled={isLoading} className="w-full mt-4 bg-intranet-primary hover:bg-intranet-primary-dark text-white border-none shadow-sm">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Upload Article'}
           </Button>
           {/* Error and success messages for the inline form are handled within renderFormFields */}

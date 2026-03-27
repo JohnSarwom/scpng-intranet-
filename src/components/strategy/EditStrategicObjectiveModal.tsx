@@ -182,13 +182,15 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
         <Dialog open={isOpen} onOpenChange={(open) => {
             if (!open && !isSubmitting) onClose();
         }}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-900 dark:border-white/10">
+
                 <DialogHeader>
-                    <DialogTitle>Edit Strategic Objective</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="dark:text-gray-100">Edit Strategic Objective</DialogTitle>
+                    <DialogDescription className="dark:text-gray-400">
                         Update the milestones and progress for this strategic initiative.
                     </DialogDescription>
                 </DialogHeader>
+
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -201,17 +203,19 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                                 onChange={(e) => setTitle(e.target.value)}
                                 disabled={isSubmitting}
                                 required
+                                className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-100"
                             />
+
                         </div>
 
                         {/* Icon Selection */}
                         <div className="space-y-2">
-                            <Label htmlFor="icon">Icon</Label>
+                            <Label htmlFor="icon" className="dark:text-gray-300">Icon</Label>
                             <Select value={icon} onValueChange={setIcon} disabled={isSubmitting}>
-                                <SelectTrigger>
+                                <SelectTrigger className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-100">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent className="max-h-[200px]">
+                                <SelectContent className="max-h-[200px] dark:bg-gray-800 dark:border-white/10">
                                     {ICON_OPTIONS.map((opt) => (
                                         <SelectItem key={opt.value} value={opt.value}>
                                             <div className="flex items-center gap-2">
@@ -224,14 +228,15 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                             </Select>
                         </div>
 
+
                         {/* Status */}
                         <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
+                            <Label htmlFor="status" className="dark:text-gray-300">Status</Label>
                             <Select value={status} onValueChange={setStatus} disabled={isSubmitting}>
-                                <SelectTrigger>
+                                <SelectTrigger className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-100">
                                     <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                                     <SelectItem value="on-track">On Track</SelectItem>
                                     <SelectItem value="at-risk">At Risk</SelectItem>
                                     <SelectItem value="behind">Behind</SelectItem>
@@ -240,41 +245,26 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                             </Select>
                         </div>
 
-                        {/* Progress - Read-only (Auto-calculated from KRAs) */}
-                        <div className="space-y-2 col-span-2">
-                            <div className="flex justify-between items-center">
-                                <Label>Progress</Label>
-                                <span className="text-sm text-muted-foreground font-medium">{progress}%</span>
-                            </div>
-                            <Slider
-                                value={[progress]}
-                                onValueChange={(val) => setProgress(val[0])}
-                                max={100}
-                                step={5}
-                                disabled={true}
-                                className="py-2 opacity-60 cursor-not-allowed"
-                            />
-                            <p className="text-xs text-muted-foreground italic">
-                                Progress is automatically calculated from linked KRAs and KPIs. To update this value, modify the progress of the associated KRAs/KPIs.
-                            </p>
-                        </div>
 
                         {/* Description */}
                         <div className="space-y-2 col-span-2">
-                            <Label htmlFor="description">Description</Label>
+                            <Label htmlFor="description" className="dark:text-gray-300">Description</Label>
                             <Textarea
                                 id="description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
                                 rows={3}
                                 disabled={isSubmitting}
+                                className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-100 placeholder:dark:text-gray-500"
                             />
                         </div>
+
                     </div>
 
                     {/* Key Deliverables / Goals */}
-                    <div className="space-y-3 pt-2 border-t">
-                        <Label>Key Deliverables & Milestones</Label>
+                    <div className="space-y-3 pt-2 border-t dark:border-white/10">
+                        <Label className="dark:text-gray-300">Key Deliverables & Milestones</Label>
+
 
                         <div className="space-y-2">
                             {goals.map((goal, index) => (
@@ -316,9 +306,10 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="flex-1 p-2 rounded-md bg-muted/50 text-sm">
+                                            <div className="flex-1 p-2 rounded-md bg-muted/50 dark:bg-gray-800/50 text-sm dark:text-gray-300 border dark:border-white/5">
                                                 {goal}
                                             </div>
+
                                             <Button
                                                 type="button"
                                                 variant="ghost"
@@ -333,12 +324,13 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                                                 type="button"
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-9 w-9 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="h-9 w-9 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-red-950/30"
                                                 onClick={() => handleRemoveGoal(index)}
                                                 disabled={isSubmitting}
                                             >
                                                 <X className="w-4 h-4" />
                                             </Button>
+
                                         </>
                                     )}
                                 </div>
@@ -369,16 +361,17 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                         </div>
                     </div>
 
-                    <DialogFooter className="gap-2">
+                    <DialogFooter className="gap-2 dark:border-t dark:border-white/10 pt-4">
                         <Button
                             type="button"
                             variant="outline"
                             onClick={onClose}
                             disabled={isSubmitting}
+                            className="dark:border-white/10 dark:hover:bg-gray-800 dark:text-gray-300"
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={isSubmitting}>
+                        <Button type="submit" disabled={isSubmitting} className="bg-[#800020] hover:bg-[#600018] text-white">
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -389,6 +382,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                             )}
                         </Button>
                     </DialogFooter>
+
                 </form>
             </DialogContent>
         </Dialog>

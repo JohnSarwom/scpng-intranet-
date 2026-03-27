@@ -124,11 +124,11 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
 
     return (
         <div className={`flex flex-col h-full ${className}`}>
-            <div className="p-4 border-b border-border space-y-3 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
+            <div className="p-4 border-b border-border dark:border-white/10 space-y-3 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm sticky top-0 z-10">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-intranet-primary" />
-                        <h2 className="text-lg font-bold tracking-tight">Question Library</h2>
+                        <h2 className="text-lg font-bold tracking-tight dark:text-gray-100">Question Library</h2>
                     </div>
                 </div>
 
@@ -187,7 +187,7 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
                             <AccordionItem
                                 key={category.id}
                                 value={category.id}
-                                className="border rounded-lg overflow-hidden border-border bg-card shadow-sm hover:border-intranet-primary/20 transition-all"
+                                className="border rounded-lg overflow-hidden border-border dark:border-white/10 bg-card dark:bg-gray-800/50 shadow-sm hover:border-intranet-primary/20 transition-all"
                             >
                                 <AccordionTrigger className="px-3 py-3 hover:no-underline text-left">
                                     <div className="flex-1 min-w-0 pr-2">
@@ -211,7 +211,7 @@ const QuestionLibrarySidebar: React.FC<QuestionLibrarySidebarProps> = ({ onSelec
                                                 className="w-full h-auto text-left py-3 px-3 hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-start gap-3 group/item border-l-2 border-transparent hover:border-intranet-primary"
                                             >
                                                 <Zap className="w-3.5 h-3.5 mt-0.5 text-muted-foreground group-hover/item:text-intranet-primary transition-colors flex-shrink-0" />
-                                                <span className="text-xs leading-relaxed text-muted-foreground group-hover/item:text-foreground transition-colors">
+                                                <span className="text-xs leading-relaxed text-muted-foreground dark:text-gray-400 group-hover/item:text-foreground dark:group-hover/item:text-gray-100 transition-colors">
                                                     {q.text}
                                                 </span>
                                                 <ChevronRight size={12} className="mt-1 ml-auto text-muted-foreground/30 group-hover/item:text-intranet-primary group-hover/item:translate-x-0.5 transition-all flex-shrink-0" />

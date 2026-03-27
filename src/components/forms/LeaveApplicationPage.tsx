@@ -173,21 +173,21 @@ const LeaveApplicationPage: React.FC = () => {
 
             {/* Leave Balances Summary */}
             {leaveBalances.length > 0 && (
-              <Card className="mb-6 bg-blue-50 border-blue-100">
+              <Card className="mb-6 bg-blue-50 border-blue-100 dark:bg-gray-800 dark:border-white/10">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 mb-4">
-                    <Clock className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-semibold text-blue-900">Your Leave Balances</h3>
+                    <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <h3 className="font-semibold text-blue-900 dark:text-gray-100">Your Leave Balances</h3>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {leaveBalances.map((balance) => (
-                      <div key={balance.id} className="bg-white p-3 rounded-lg shadow-sm border border-blue-100">
-                        <p className="text-xs text-muted-foreground font-medium uppercase">{balance.leaveType}</p>
+                      <div key={balance.id} className="bg-white p-3 rounded-lg shadow-sm border border-blue-100 dark:bg-white/5 dark:border-white/10">
+                        <p className="text-xs text-muted-foreground font-medium uppercase dark:text-gray-400">{balance.leaveType}</p>
                         <div className="flex items-end gap-1 mt-1">
-                          <span className={`text-xl font-bold ${balance.available < 5 ? 'text-red-600' : 'text-green-600'}`}>
+                          <span className={`text-xl font-bold ${balance.available < 5 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             {balance.available}
                           </span>
-                          <span className="text-xs text-muted-foreground mb-1">days</span>
+                          <span className="text-xs text-muted-foreground mb-1 dark:text-gray-500">days</span>
                         </div>
                       </div>
                     ))}
@@ -235,13 +235,13 @@ const LeaveApplicationPage: React.FC = () => {
                   return (
                     <Card
                       key={app.id}
-                      className={`overflow-hidden transition-all duration-300 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
+                      className={`overflow-hidden transition-all duration-300 dark:bg-gray-800 dark:border-white/10 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
                         }`}
                     >
-                      <div className="bg-gray-50 px-6 py-4 border-b flex justify-between items-center">
+                      <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 border-b dark:border-white/10 flex justify-between items-center">
                         <div>
-                          <h3 className="font-semibold text-lg">{app.leaveType} Leave</h3>
-                          <p className="text-sm text-muted-foreground">
+                          <h3 className="font-semibold text-lg dark:text-gray-100">{app.leaveType} Leave</h3>
+                          <p className="text-sm text-muted-foreground dark:text-gray-400">
                             Submitted on {app.createdDate ? format(new Date(app.createdDate), 'PPP') : 'Unknown'}
                           </p>
                         </div>
@@ -250,43 +250,43 @@ const LeaveApplicationPage: React.FC = () => {
                             variant="outline"
                             size="sm"
                             onClick={() => handlePrintApplication(app)}
-                            className="flex items-center gap-2"
+                            className="flex items-center gap-2 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                           >
                             <Printer className="h-4 w-4" />
                             Print Form
                           </Button>
                           <div className="text-right">
-                            <div className="font-medium">Request ID</div>
-                            <div className="text-sm text-muted-foreground">#{app.id}</div>
+                            <div className="font-medium dark:text-gray-300">Request ID</div>
+                            <div className="text-sm text-muted-foreground dark:text-gray-500">#{app.id}</div>
                           </div>
                         </div>
                       </div>
                       <CardContent className="pt-6">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                           <div>
-                            <span className="text-sm font-medium text-muted-foreground">Duration</span>
-                            <p className="mt-1">
+                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Duration</span>
+                            <p className="mt-1 dark:text-gray-200">
                               {format(new Date(app.startDate), 'MMM d, yyyy')} - {format(new Date(app.endDate), 'MMM d, yyyy')}
                             </p>
-                            <p className="text-sm text-muted-foreground">({app.daysRequested} days)</p>
+                            <p className="text-sm text-muted-foreground dark:text-gray-500">({app.daysRequested} days)</p>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-muted-foreground">Reason</span>
-                            <p className="mt-1">{app.reason || 'No reason provided'}</p>
+                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Reason</span>
+                            <p className="mt-1 dark:text-gray-200">{app.reason || 'No reason provided'}</p>
                           </div>
                           <div>
-                            <span className="text-sm font-medium text-muted-foreground">Status</span>
+                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Status</span>
                             <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${app.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                                app.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                                  'bg-yellow-100 text-yellow-800'}`}>
+                          ${app.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                                app.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
                               {app.status}
                             </div>
                           </div>
                         </div>
 
-                        <div className="border-t pt-6">
-                          <h4 className="text-sm font-medium text-muted-foreground mb-4">Application Progress</h4>
+                        <div className="border-t dark:border-white/10 pt-6">
+                          <h4 className="text-sm font-medium text-muted-foreground dark:text-gray-500 mb-4">Application Progress</h4>
                           <LeaveApplicationTracker
                             currentStage={app.stage || 'Submitted'}
                             status={app.status}

@@ -499,11 +499,12 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
 
     const renderChatInterface = (isFullScreenInstance = false) => (
         <Card className={cn(
-            "flex flex-col h-full",
+            "flex flex-col h-full dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300",
             isFullScreenInstance
-                ? "w-full rounded-none border-none shadow-none"
+                ? "w-full rounded-none border-none shadow-none bg-white dark:bg-gray-950"
                 : "animate-fade-in overflow-hidden"
         )}>
+
             <CardHeader className={cn(
                 isFullScreenInstance ? "border-b py-3 px-4" : "border-b border-border pb-4",
                 !isFullScreenInstance && !expanded && "cursor-pointer"
@@ -601,7 +602,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                 <CardContent className={cn("p-0 overflow-hidden", isFullScreenInstance && "flex-1")}>
                     <div className={cn("flex", isFullScreenInstance ? "h-full" : "h-[640px]")}>
                         {/* LEFT — AIChatPanel with header slot */}
-                        <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-r border-border">
+                        <div className="flex-1 flex flex-col min-w-0 overflow-hidden border-r border-gray-200 dark:border-white/10">
                             <AIChatPanel
                                 ref={messagesContainerRef}
                                 messages={chatMessages}
@@ -621,7 +622,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                         </div>
 
                         {/* RIGHT — Question Library */}
-                        <div className="w-80 shrink-0 overflow-hidden border-l border-border">
+                        <div className="w-80 shrink-0 overflow-hidden border-l border-gray-200 dark:border-white/10">
                             <StaticQuestionLibrarySidebar
                                 categories={STRATEGY_QUESTION_LIBRARY}
                                 onSelectQuestion={handleFollowUpClick}
@@ -642,7 +643,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
 
             {/* Fullscreen overlay — portaled to document.body to cover sidebar nav */}
             {isChatFullScreen && ReactDOM.createPortal(
-                <div className="fixed inset-0 z-[9999] flex flex-col p-0 m-0 bg-background dark:bg-intranet-dark">
+                <div className="fixed inset-0 z-[9999] flex flex-col p-0 m-0 bg-background dark:bg-gray-950">
                     {renderChatInterface(true)}
                 </div>,
                 document.body

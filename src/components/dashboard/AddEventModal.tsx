@@ -257,7 +257,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle>{eventToEdit ? 'Edit Event' : 'Create New Event'}</DialogTitle>
           <DialogDescription>
@@ -272,6 +272,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             <Input
               id="subject"
               placeholder="Event title"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               required
@@ -284,6 +285,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             <Textarea
               id="description"
               placeholder="Event details..."
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -291,9 +293,9 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           </div>
 
           {/* All Day Toggle */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center justify-between p-3 border dark:border-white/10 dark:bg-white/5 rounded-lg">
             <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-gray-500" />
+              <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Label htmlFor="allDay" className="cursor-pointer mb-0">All Day Event</Label>
             </div>
             <Switch
@@ -310,6 +312,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               <Input
                 id="startDate"
                 type="date"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 required
@@ -322,6 +325,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 <Input
                   id="startTime"
                   type="time"
+                  className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
                   required={!isAllDay}
@@ -336,6 +340,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               <Input
                 id="endDate"
                 type="date"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 min={startDate}
@@ -348,6 +353,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 <Input
                   id="endTime"
                   type="time"
+                  className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                 />
@@ -363,17 +369,17 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               <Input
                 id="location"
                 placeholder="Meeting room or address"
+                className="pl-10 dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="pl-10"
               />
             </div>
           </div>
 
           {/* Online Meeting Toggle */}
-          <div className="flex items-center justify-between p-3 border rounded-lg">
+          <div className="flex items-center justify-between p-3 border dark:border-white/10 dark:bg-white/5 rounded-lg">
             <div className="flex items-center gap-2">
-              <Video className="h-4 w-4 text-gray-500" />
+              <Video className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               <Label htmlFor="onlineMeeting" className="cursor-pointer mb-0">Teams Meeting</Label>
             </div>
             <Switch
@@ -393,13 +399,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                   placeholder="Email address"
                   value={attendeeInput}
                   onChange={(e) => setAttendeeInput(e.target.value)}
+                  className="pl-10 dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
                       addAttendee();
                     }
                   }}
-                  className="pl-10"
                 />
               </div>
               <Button type="button" onClick={addAttendee} variant="outline">
@@ -412,7 +418,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 {attendees.map((attendee, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-2 bg-gray-50 rounded-md"
+                    className="flex items-center justify-between p-2 bg-gray-50 dark:bg-white/5 dark:text-gray-100 rounded-md"
                   >
                     <span className="text-sm">{attendee.email}</span>
                     <div className="flex items-center gap-2">

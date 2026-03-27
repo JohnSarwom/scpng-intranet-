@@ -1836,10 +1836,10 @@ const AIHub = () => {
 
     return (
       <Card id="ai-assistant-card" className={cn(
-        "flex flex-col h-full",
+        "flex flex-col h-full dark:bg-gray-800 dark:border-white/10",
         isFullScreenInstance
-          ? "w-full rounded-none border-none shadow-none"
-          : "mb-6"
+          ? "w-full rounded-none border-none shadow-none bg-white dark:bg-gray-900"
+          : "mb-6 shadow-sm"
       )}>
         <CardHeader className={cn(isFullScreenInstance && "border-b", "py-3 px-4")}>
           <div className="flex justify-between items-center">
@@ -1898,19 +1898,20 @@ const AIHub = () => {
           <div
             ref={messagesContainerRef}
             className={cn(
-              "flex-1 overflow-y-auto mb-4",
-              isFullScreenInstance ? "bg-transparent" : "bg-gray-50 rounded-lg", // Keep rounded-lg for normal view if it has bg-gray-50
-              !isFullScreenInstance && "p-4" // Apply padding for normal view only if not using placeholder
+              "flex-1 overflow-y-auto mb-4 custom-scrollbar",
+              isFullScreenInstance ? "bg-transparent" : "bg-gray-50 dark:bg-gray-900/50 rounded-lg border dark:border-white/5",
+              !isFullScreenInstance && "p-4"
             )}
           >
             {shouldShowPlaceholder ? (
               <div className="flex flex-col items-center justify-center h-full">
                 <img src="/images/SCPNG Original Logo.png" alt="SCPNG Logo" className="w-24 h-24 mb-4" />
-                <h2 className={cn("font-semibold text-gray-600 mb-2", isFullScreenInstance ? "text-xl" : "text-lg")}>
+                <h2 className={cn("font-semibold text-gray-600 dark:text-gray-300 mb-2", isFullScreenInstance ? "text-xl" : "text-lg")}>
                   What can I help with?
                 </h2>
                 <div className={cn(
                   "max-w-md text-center px-4 py-3 rounded-lg border border-amber-200 bg-amber-50/50 text-amber-800 text-xs shadow-sm backdrop-blur-sm animate-in fade-in duration-700",
+                  "dark:bg-amber-900/20 dark:border-amber-800/50 dark:text-amber-400",
                   isFullScreenInstance ? "mt-4" : "mt-2"
                 )}>
                   <p className="leading-relaxed">
@@ -1930,10 +1931,14 @@ const AIHub = () => {
                     )}
                   >
                     <div
-                      className={`inline-block rounded-lg p-3 max-w-[80%] break-words relative group ${message.sender === 'user'
-                        ? 'bg-intranet-primary text-white'
-                        : isFullScreenInstance ? 'bg-gray-100 dark:bg-gray-700' : 'bg-white border border-gray-200'
-                        }`}
+                      className={cn(
+                        "inline-block rounded-lg p-3 max-w-[80%] break-words relative group shadow-sm",
+                        message.sender === 'user'
+                          ? 'bg-intranet-primary text-white'
+                          : isFullScreenInstance 
+                            ? 'bg-gray-100 dark:bg-gray-800 dark:text-gray-200' 
+                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 dark:text-gray-200'
+                      )}
                     >
                       {message.sender === 'ai' ? (
                         <div className="prose prose-sm max-w-none">
@@ -2055,9 +2060,9 @@ const AIHub = () => {
           </div>
           {showScrollToBottom && !shouldShowPlaceholder && (
             <div className="flex justify-center -mt-2 mb-2">
-              <button
+                <button
                 onClick={handleScrollToBottomClick}
-                className="flex items-center gap-1 px-3 py-1 text-xs text-gray-600 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-50 hover:shadow transition-all duration-200 animate-in fade-in slide-in-from-top-1"
+                className="flex items-center gap-1 px-3 py-1 text-xs text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-white/10 rounded-full shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow transition-all duration-200 animate-in fade-in slide-in-from-top-1"
               >
                 <ArrowDown size={12} />
                 Scroll to latest
@@ -2151,14 +2156,14 @@ const AIHub = () => {
                           href={act.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
+                          className="flex items-center p-3 bg-card dark:bg-gray-800 hover:bg-accent dark:hover:bg-white/5 rounded-lg shadow-sm transition-colors border border-border dark:border-white/10 group"
                         >
-                          <div className="bg-intranet-light dark:bg-intranet-dark p-2 rounded-lg mr-3">
+                          <div className="bg-intranet-light dark:bg-white/5 p-2 rounded-lg mr-3">
                             <FileText className="h-5 w-5 text-intranet-primary flex-shrink-0" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{act.title}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm font-medium text-foreground dark:text-gray-100 truncate group-hover:text-intranet-primary">{act.title}</p>
+                            <p className="text-xs text-muted-foreground dark:text-gray-400">
                               {act.desc}
                             </p>
                           </div>
@@ -2196,15 +2201,15 @@ const AIHub = () => {
                             href={file.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center p-3 bg-card hover:bg-accent rounded-lg shadow-sm transition-colors border border-border group"
+                            className="flex items-center p-3 bg-card dark:bg-gray-800 hover:bg-accent dark:hover:bg-white/5 rounded-lg shadow-sm transition-colors border border-border dark:border-white/10 group"
                           >
                             {file.type === 'link' ?
                               <LinkIcon className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" /> :
                               <FileText className="h-5 w-5 mr-3 text-intranet-primary flex-shrink-0" />
                             }
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate group-hover:text-intranet-primary">{file.name}</p>
-                              <p className="text-xs text-muted-foreground">
+                              <p className="text-sm font-medium text-foreground dark:text-gray-100 truncate group-hover:text-intranet-primary">{file.name}</p>
+                              <p className="text-xs text-muted-foreground dark:text-gray-400">
                                 Uploaded: {new Date(file.created_at).toLocaleDateString()}
                               </p>
                             </div>
@@ -2334,7 +2339,7 @@ const AIHub = () => {
                     </TabsContent>
                   </Tabs>
                 ) : (
-                  <div className="h-full border border-border rounded-xl bg-card overflow-hidden shadow-sm">
+                  <div className="h-full border border-border dark:border-white/10 rounded-xl bg-card dark:bg-gray-800 overflow-hidden shadow-sm">
                     <QuestionLibrarySidebar onSelectQuestion={handleLibraryQuestionSelect} />
                   </div>
                 )}
@@ -2384,8 +2389,8 @@ const AIHub = () => {
 
       {/* AI System Information Dialog */}
       <Dialog open={isInfoDialogOpen} onOpenChange={setIsInfoDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-r from-intranet-primary/5 to-transparent">
+        <DialogContent className="max-w-4xl max-h-[90vh] p-0 gap-0 dark:bg-gray-900 dark:border-white/10">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b dark:border-white/10 bg-gradient-to-r from-intranet-primary/5 to-transparent">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Brain className="h-6 w-6 text-intranet-primary" />
               How the AI Legal Expert Works
@@ -2398,19 +2403,19 @@ const AIHub = () => {
             <div className="space-y-6 pb-6">
 
               {/* Current Mode Info */}
-              <div className="rounded-lg border bg-amber-50/50 border-amber-200 p-4">
+              <div className="rounded-lg border bg-amber-50/50 border-amber-200 dark:bg-amber-900/10 dark:border-amber-800/50 p-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <Settings className="h-4 w-4 text-amber-600" />
-                  <span className="font-semibold text-sm text-amber-800">Current Configuration</span>
+                  <Settings className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="font-semibold text-sm text-amber-800 dark:text-amber-300">Current Configuration</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <Badge variant="outline" className="bg-white border-amber-300 text-amber-700">
+                  <Badge variant="outline" className="bg-white dark:bg-gray-800 border-amber-300 dark:border-amber-800/50 text-amber-700 dark:text-amber-400">
                     Mode: {aiModes.find(m => m.id === currentAiModeId)?.title || 'Unknown'}
                   </Badge>
-                  <Badge variant="outline" className={cn("bg-white", useKnowledgeBase ? "border-green-300 text-green-700" : "border-red-300 text-red-700")}>
+                  <Badge variant="outline" className={cn("bg-white dark:bg-gray-800", useKnowledgeBase ? "border-green-300 dark:border-green-800/50 text-green-700 dark:text-green-400" : "border-red-300 dark:border-red-800/50 text-red-700 dark:text-red-400")}>
                     Knowledge Base: {useKnowledgeBase ? 'Enabled' : 'Disabled'}
                   </Badge>
-                  <Badge variant="outline" className="bg-white border-blue-300 text-blue-700">
+                  <Badge variant="outline" className="bg-white dark:bg-gray-800 border-blue-300 dark:border-blue-800/50 text-blue-700 dark:text-blue-400">
                     Model: Google Gemini ({modelName})
                   </Badge>
                 </div>
@@ -2426,21 +2431,21 @@ const AIHub = () => {
                   Each response is generated using a <strong>multi-layered prompt system</strong> that combines three components injected as a single system instruction to the AI model:
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="rounded-lg border p-3 bg-blue-50/50">
-                    <div className="font-semibold text-sm text-blue-800 mb-1">Layer 1: Mode Identity</div>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="rounded-lg border dark:border-white/10 p-3 bg-blue-50/50 dark:bg-blue-900/10">
+                    <div className="font-semibold text-sm text-blue-800 dark:text-blue-300 mb-1">Layer 1: Mode Identity</div>
+                    <p className="text-xs text-muted-foreground dark:text-gray-400">
                       Defines the AI's expert persona and <strong>5 mandatory search rules</strong>: thorough keyword search of the entire Act, section heading matching, prohibition on unrelated sections, redirect rules for wrong-Act queries, and primary-Act-first quoting order.
                     </p>
                   </div>
-                  <div className="rounded-lg border p-3 bg-green-50/50">
-                    <div className="font-semibold text-sm text-green-800 mb-1">Layer 2: Full Act Text</div>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="rounded-lg border dark:border-white/10 p-3 bg-green-50/50 dark:bg-green-900/10">
+                    <div className="font-semibold text-sm text-green-800 dark:text-green-300 mb-1">Layer 2: Full Act Text</div>
+                    <p className="text-xs text-muted-foreground dark:text-gray-400">
                       The <strong>complete, word-for-word legislative text</strong> of the selected Act is embedded directly into the prompt. This is not a summary — it is the full statute (thousands of lines), enabling direct quoting and cross-referencing.
                     </p>
                   </div>
-                  <div className="rounded-lg border p-3 bg-purple-50/50">
-                    <div className="font-semibold text-sm text-purple-800 mb-1">Layer 3: Analysis Framework</div>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="rounded-lg border dark:border-white/10 p-3 bg-purple-50/50 dark:bg-purple-900/10">
+                    <div className="font-semibold text-sm text-purple-800 dark:text-purple-300 mb-1">Layer 3: Analysis Framework</div>
+                    <p className="text-xs text-muted-foreground dark:text-gray-400">
                       A shared analytical framework (~200 lines) that transforms the AI from a reference tool into an <strong>advanced legal analyst</strong>. Detailed in the sections below.
                     </p>
                   </div>
@@ -2465,16 +2470,16 @@ const AIHub = () => {
                     { name: 'Securities Act 1997', file: 'SA1997.txt', mode: 'SA 1997 Expert', topics: 'Pre-2015 securities framework, prospectus, expert liability' },
                     { name: 'Securities Commission Act 2015', file: 'SCA2015.txt', mode: 'SCA 2015 Expert', topics: 'Commission structure, Chairman, powers, appointments, governance' },
                   ].map((act) => (
-                    <div key={act.file} className="rounded-lg border p-3 text-sm">
-                      <div className="font-semibold">{act.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1"><strong>Mode:</strong> {act.mode}</div>
-                      <div className="text-xs text-muted-foreground"><strong>Covers:</strong> {act.topics}</div>
+                    <div key={act.file} className="rounded-lg border dark:border-white/10 p-3 text-sm bg-card dark:bg-gray-800/50">
+                      <div className="font-semibold dark:text-gray-100">{act.name}</div>
+                      <div className="text-xs text-muted-foreground dark:text-gray-400 mt-1"><strong>Mode:</strong> {act.mode}</div>
+                      <div className="text-xs text-muted-foreground dark:text-gray-500"><strong>Covers:</strong> {act.topics}</div>
                     </div>
                   ))}
                 </div>
-                <div className="rounded-lg border p-3 bg-slate-50 text-sm">
-                  <div className="font-semibold">All Acts Expert Mode</div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="rounded-lg border dark:border-white/10 p-3 bg-slate-50 dark:bg-gray-800 text-sm">
+                  <div className="font-semibold dark:text-gray-100">All Acts Expert Mode</div>
+                  <p className="text-xs text-muted-foreground dark:text-gray-400 mt-1">
                     Loads <strong>all four Acts simultaneously</strong> and applies a 4-step methodology: (1) Identify primary Act by subject matter, (2) Thorough keyword search across all Acts, (3) Quote from correct Act first, (4) Verify before citing.
                   </p>
                 </div>

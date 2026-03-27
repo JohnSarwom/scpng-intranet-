@@ -23,6 +23,7 @@ import { galleryService, type GalleryEventWithPhotos, type GalleryData, type Gal
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { cn } from "@/lib/utils";
 
 type GalleryImage = {
   id: string;
@@ -106,8 +107,10 @@ const VirtualizedEventGrid = ({
               return (
                 <Card
                   key={image.id}
-                  className={`overflow-hidden transition-all group ${isSelectMode ? 'cursor-pointer' : 'cursor-pointer transition-transform hover:scale-[1.02]'
-                    }`}
+                  className={cn(
+                    "overflow-hidden transition-all group dark:bg-gray-800 dark:border-white/10 shadow-sm",
+                    isSelectMode ? 'cursor-pointer' : 'cursor-pointer transition-transform hover:scale-[1.02]'
+                  )}
                   onClick={() =>
                     isSelectMode
                       ? handleSelectPhoto(image.id)
@@ -130,7 +133,7 @@ const VirtualizedEventGrid = ({
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => handleSelectPhoto(image.id)}
-                            className="bg-background/50 border-white"
+                            className="bg-background/50 border-white dark:bg-gray-900/50 dark:border-white/20"
                           />
                         </div>
                       )}
@@ -546,7 +549,7 @@ const Gallery = () => {
   return (
     <PageLayout>
       {isSelectMode && isAdmin && (
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm p-4 border-b mb-6 rounded-lg shadow-sm">
+        <div className="sticky top-0 z-10 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 border-b dark:border-white/10 mb-6 rounded-lg shadow-sm">
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium">
               {selectedPhotos.size} photo(s) selected
@@ -571,8 +574,8 @@ const Gallery = () => {
 
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-2">Media Gallery</h1>
-          <p className="text-muted-foreground">Browse photos from SCPNG events and activities</p>
+          <h1 className="text-2xl font-bold mb-2 dark:text-gray-100">Media Gallery</h1>
+          <p className="text-muted-foreground dark:text-gray-400">Browse photos from SCPNG events and activities</p>
         </div>
 
         <div className="flex gap-2">
@@ -605,9 +608,13 @@ const Gallery = () => {
         className="w-full"
         onValueChange={setActiveTab}
       >
-        <TabsList className="mb-6">
+        <TabsList className="mb-6 dark:bg-gray-800/50 dark:border dark:border-white/10 p-1 h-auto">
           {years.map(year => (
-            <TabsTrigger key={year} value={year}>
+            <TabsTrigger
+              key={year}
+              value={year}
+              className="px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400"
+            >
               {year}
             </TabsTrigger>
           ))}
@@ -618,13 +625,13 @@ const Gallery = () => {
             key={year}
             value={year}
             ref={el => tabsContentRef.current.set(year, el)}
-            className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6"
+            className="space-y-8 border border-gray-200 dark:border-white/10 rounded-lg p-6 bg-white/50 dark:bg-gray-900/50"
           >
             {galleryData[year].map((event) => (
               <div key={event.id} className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xl font-semibold">{event.title}</h2>
+                    <h2 className="text-xl font-semibold dark:text-gray-100">{event.title}</h2>
                     <div className="flex flex-wrap gap-2 items-center text-sm text-muted-foreground">
                       <span>{new Date(event.date).toLocaleDateString()}</span>
                       {event.description && (
@@ -672,7 +679,7 @@ const Gallery = () => {
 
       {/* Fullscreen Image Dialog */}
       <Dialog open={selectedImage !== null} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-5xl p-0 bg-background/95 backdrop-blur-sm">
+        <DialogContent className="max-w-5xl p-0 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm dark:border-white/10">
           <div className="relative h-full flex flex-col">
             <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/50 to-transparent">
               <DialogTitle className="text-white">{currentEvent?.title}</DialogTitle>
@@ -687,7 +694,7 @@ const Gallery = () => {
               />
             </div>
 
-            <div className="p-4 flex justify-between items-center border-t">
+            <div className="p-4 flex justify-between items-center border-t dark:border-white/10">
               <div className="text-sm text-muted-foreground">
                 {currentEvent && currentEvent.images.length > 0
                   ? `${imageIndex + 1} of ${currentEvent.images.length}`
@@ -749,7 +756,7 @@ const Gallery = () => {
 
       {/* Confirmation Dialog for Deleting Photo */}
       <Dialog open={isConfirmDeleteDialogOpen} onOpenChange={setIsConfirmDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-900 dark:border-white/10">
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
@@ -784,7 +791,7 @@ const Gallery = () => {
 
       {/* Confirmation Dialog for Deleting Event */}
       <Dialog open={isConfirmEventDeleteDialogOpen} onOpenChange={setIsConfirmEventDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="dark:bg-gray-900 dark:border-white/10">
           <DialogHeader>
             <DialogTitle>Delete Event: {eventToDelete?.title}?</DialogTitle>
             <DialogDescription>

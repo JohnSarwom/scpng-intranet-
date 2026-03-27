@@ -112,7 +112,8 @@ const MilestonesTimeline: React.FC<MilestonesTimelineProps> = ({ milestones }) =
     }
 
     return (
-        <Card className="animate-fade-in overflow-hidden">
+        <Card className="animate-fade-in overflow-hidden dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300">
+
             <CardHeader className="border-b border-gray-50 dark:border-gray-800 pb-4">
                 <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-intranet-primary" />
@@ -134,7 +135,7 @@ const MilestonesTimeline: React.FC<MilestonesTimelineProps> = ({ milestones }) =
                                         className={`w-3 h-3 rounded-full ${dotColour} ring-4 ring-gray-50 dark:ring-gray-800`}
                                     />
                                     {idx !== milestones.length - 1 && (
-                                        <div className="w-0.5 h-full bg-gray-100 dark:bg-gray-800 my-1" />
+                                    <div className="w-0.5 h-full bg-gray-100 dark:bg-gray-800/60 my-1" />
                                     )}
                                 </div>
                                 <div className="pb-4 flex-1">

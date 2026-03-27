@@ -173,14 +173,14 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
 
   const getKpiStatusColorClass = (status: Kpi['status']): string => {
     switch (status) {
-      case 'completed': return "bg-blue-500 text-white";
-      case 'on-track': return "bg-green-500 text-white";
-      case 'in-progress': return "bg-green-200 text-emerald-950 border border-green-300"; // Improved Contrast (Light Green -> Dark Text, added border)
-      case 'at-risk': return "bg-amber-300 text-amber-950 border border-amber-400"; // Improved Contrast (Yellow/Amber -> Dark Text, added border)
-      case 'on-hold': return "bg-gray-400 text-white";
-      case 'not-started': return "bg-gray-200 text-gray-700 border border-gray-300";
-      case 'behind': return "bg-red-500 text-white";
-      default: return "bg-gray-300 text-gray-800";
+      case 'completed': return "bg-blue-600 dark:bg-blue-600 text-white";
+      case 'on-track': return "bg-green-600 dark:bg-green-600 text-white";
+      case 'in-progress': return "bg-green-200 dark:bg-emerald-500/30 text-emerald-950 dark:text-emerald-300 border border-green-300 dark:border-emerald-500/40";
+      case 'at-risk': return "bg-amber-300 dark:bg-amber-500/30 text-amber-950 dark:text-amber-300 border border-amber-400 dark:border-amber-500/40";
+      case 'on-hold': return "bg-gray-400 dark:bg-gray-600 text-white";
+      case 'not-started': return "bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 border border-gray-300 dark:border-white/10";
+      case 'behind': return "bg-red-600 dark:bg-red-600 text-white";
+      default: return "bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-300";
     }
   };
 
@@ -189,7 +189,7 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
       case 'in-progress':
       case 'at-risk':
       case 'not-started':
-        return 'text-gray-900 font-semibold';
+        return 'text-gray-900 dark:text-inherit font-semibold';
       default:
         return 'text-white font-medium';
     }
@@ -200,21 +200,21 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col dark:bg-gray-900 dark:border-white/10">
       <CardContent className="flex-1 min-h-0 overflow-hidden p-0 max-h-[800px]"> {/* Added max-height for sticky to work if parent doesn't constrain */}
-        <div className="overflow-auto h-[700px] border rounded-md" ref={scrollContainerRef}>
+        <div className="overflow-auto h-[700px] border dark:border-white/10 rounded-md kanban-scrollbar" ref={scrollContainerRef}>
           <div className="timeline-view min-w-[1200px] relative">
-            <div className="flex border-b border-gray-200 pb-2 sticky top-0 bg-background z-40 shadow-sm">
-              <div className="w-48 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-0 bg-background z-50 border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</div>
-              <div className="w-64 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-[12rem] bg-background z-50 border-r border-gray-100 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA Details</div>
+            <div className="flex border-b border-gray-200 dark:border-white/10 pb-2 sticky top-0 bg-background dark:bg-gray-950 z-40 shadow-sm">
+              <div className="w-48 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-0 bg-background dark:bg-gray-950 z-50 border-r border-gray-100 dark:border-white/10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-none">Objective</div>
+              <div className="w-64 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-[12rem] bg-background dark:bg-gray-950 z-50 border-r border-gray-100 dark:border-white/10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-none">KRA Details</div>
               <div className="flex-1 flex">
                 {currentViewMode === 'quarters' && quarters.map(quarter => (
-                  <div key={quarter} className="flex-1 text-center text-sm font-medium text-gray-700">
+                  <div key={quarter} className="flex-1 text-center text-sm font-medium text-gray-700 dark:text-gray-400">
                     {quarter}
                   </div>
                 ))}
                 {currentViewMode === 'months' && months.map(month => (
-                  <div key={month} className="flex-1 text-center text-xs font-medium text-gray-700">
+                  <div key={month} className="flex-1 text-center text-xs font-medium text-gray-700 dark:text-gray-400">
                     {month}
                   </div>
                 ))}
@@ -223,7 +223,7 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                     {weeks.map((week, i) => (
                       <div
                         key={week}
-                        className="text-center text-xs font-medium text-gray-600"
+                        className="text-center text-xs font-medium text-gray-600 dark:text-gray-500"
                         style={{ width: '1.92%' }}
                       >
                         {i % 4 === 0 ? week : ''}
@@ -240,19 +240,19 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                 {currentViewMode === 'quarters' && quarters.map((_, i) => (
                   <div
                     key={i}
-                    className={`flex-1 border-r border-dashed border-gray-200 ${i < 3 ? 'border-r' : 'border-r-0'}`}
+                    className={`flex-1 border-r border-dashed border-gray-200 dark:border-white/5 ${i < 3 ? 'border-r' : 'border-r-0'}`}
                   />
                 ))}
                 {currentViewMode === 'months' && months.map((_, i) => (
                   <div
                     key={i}
-                    className={`flex-1 border-r border-dashed border-gray-300 ${i < 11 ? 'border-r' : 'border-r-0'}`}
+                    className={`flex-1 border-r border-dashed border-gray-300 dark:border-white/5 ${i < 11 ? 'border-r' : 'border-r-0'}`}
                   />
                 ))}
                 {currentViewMode === 'weeks' && weeks.map((_, i) => (
                   <div
                     key={i}
-                    className={`border-r border-dashed border-gray-200 ${i < 51 ? 'border-r' : 'border-r-0'}`}
+                    className={`border-r border-dashed border-gray-200 dark:border-white/5 ${i < 51 ? 'border-r' : 'border-r-0'}`}
                     style={{
                       width: '1.92%'
                     }}
@@ -277,11 +277,11 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                   // --- End Grouping Checks ---
 
                   return (
-                    <div key={kra.id} className="flex items-stretch hover:bg-gray-50/50 relative group">
+                    <div key={kra.id} className="flex items-stretch hover:bg-gray-50/50 dark:hover:bg-gray-800/30 relative group">
                       {/* Objective Column - Sticky */}
-                      <div className={`w-48 px-4 py-3 shrink-0 flex flex-col border-r border-gray-200 sticky left-0 bg-background z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isFirstForObjective ? 'border-t border-gray-200' : ''} ${isLastForObjective ? 'border-b border-gray-200' : ''}`}>
+                      <div className={`w-48 px-4 py-3 shrink-0 flex flex-col border-r border-gray-200 dark:border-white/10 sticky left-0 bg-background dark:bg-gray-950 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-none ${isFirstForObjective ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForObjective ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
                         {isFirstForObjective && (
-                          <span className="font-medium text-gray-900 block truncate text-sm mb-1" title={objectives.find(o => String(o.id) === String(kra.objective_id))?.title}>
+                          <span className="font-medium text-gray-900 dark:text-gray-100 block truncate text-sm mb-1" title={objectives.find(o => String(o.id) === String(kra.objective_id))?.title}>
                             {(() => {
                               // Find objective in the objectives array
                               const objective = objectives.find(o => String(o.id) === String(kra.objective_id));
@@ -295,14 +295,14 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                       </div>
 
                       {/* KRA Details Column - Sticky */}
-                      <div className={`w-64 px-4 py-3 shrink-0 border-r border-gray-200 flex flex-col sticky left-[12rem] bg-background z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] ${isFirstForKraTitle ? 'border-t border-gray-200' : ''} ${isLastForKraTitle ? 'border-b border-gray-200' : ''}`}>
+                      <div className={`w-64 px-4 py-3 shrink-0 border-r border-gray-200 dark:border-white/10 flex flex-col sticky left-[12rem] bg-background dark:bg-gray-950 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-none ${isFirstForKraTitle ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForKraTitle ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
                         {isFirstForKraTitle && (
                           <>
-                            <div className="text-sm font-medium text-gray-900 block truncate" title={kra.title}>{kra.title}</div>
-                            <div className="text-xs text-muted-foreground block truncate mt-0.5">{kra.unit || 'N/A'}</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-gray-100 block truncate" title={kra.title}>{kra.title}</div>
+                            <div className="text-xs text-muted-foreground dark:text-gray-400 block truncate mt-0.5">{kra.unit || 'N/A'}</div>
                             {/* Display calculated date range */}
                             {kraDateRange && (
-                              <div className="text-xs text-muted-foreground/80 block truncate mt-1">
+                              <div className="text-xs text-muted-foreground/80 dark:text-gray-500 block truncate mt-1">
                                 {kraDateRange}
                               </div>
                             )}
@@ -314,7 +314,7 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
 
                       {/* Timeline Bars Column */}
                       <div
-                        className={`flex-1 relative border-b border-gray-200 ${isFirstForObjective || isFirstForKraTitle ? 'border-t border-gray-200' : ''}`}
+                        className={`flex-1 relative border-b border-gray-200 dark:border-white/10 ${isFirstForObjective || isFirstForKraTitle ? 'border-t border-gray-200 dark:border-white/10' : ''}`}
                         style={{ minHeight: kpisExist ? `${(kra.unitKpis.length * 2.5) + 1.5}rem` : '4rem' }}
                       >
                         {/* Container for KPI Bars */}
@@ -381,18 +381,18 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                                 </TooltipTrigger>
                                 {/* Wrap TooltipContent in a Portal */}
                                 <TooltipPrimitive.Portal>
-                                  <TooltipContent side="top" align="center" className="z-[100]">
+                                  <TooltipContent side="top" align="center" className="z-[100] dark:bg-gray-950 dark:border-white/10 dark:text-gray-100">
                                     <p className="font-semibold">{kpi.name}</p>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground dark:text-gray-400">
                                       {kpi.start_date || kpi.startDate ? new Date(kpi.start_date || kpi.startDate).toLocaleDateString() : '?'} - {kpi.target_date || kpi.targetDate ? new Date(kpi.target_date || kpi.targetDate).toLocaleDateString() : '?'}
                                     </p>
                                     <div className="flex items-center gap-2 mt-1">
-                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${kpi.status === 'completed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                        kpi.status === 'on-track' ? 'bg-green-50 text-green-700 border-green-200' :
-                                          kpi.status === 'in-progress' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                                            kpi.status === 'at-risk' ? 'bg-amber-50 text-amber-700 border-amber-200' :
-                                              kpi.status === 'behind' ? 'bg-red-50 text-red-700 border-red-200' :
-                                                'bg-gray-50 text-gray-700 border-gray-200'
+                                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${kpi.status === 'completed' ? 'bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-500/30' :
+                                        kpi.status === 'on-track' ? 'bg-green-50 dark:bg-green-500/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30' :
+                                          kpi.status === 'in-progress' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-500/30' :
+                                            kpi.status === 'at-risk' ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-500/30' :
+                                              kpi.status === 'behind' ? 'bg-red-50 dark:bg-red-500/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30' :
+                                                'bg-gray-50 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-500/30'
                                         }`}>
                                         {kpi.status}
                                       </span>
@@ -424,23 +424,23 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
           </div>
         </div>
 
-        <div className="flex justify-between items-center text-sm text-gray-500 pt-4 px-4 bg-background border-t border-gray-100 z-50">
+        <div className="flex justify-between items-center text-sm text-gray-500 dark:text-gray-400 pt-4 px-4 bg-background dark:bg-gray-900 border-t border-gray-100 dark:border-white/10 z-50">
           <div>{new Date().getFullYear()} Fiscal Year</div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-500" />
+              <div className="w-3 h-3 rounded-full bg-green-600 dark:bg-green-600" />
               <span>On Track</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-green-200 border border-green-300" />
+              <div className="w-3 h-3 rounded-full bg-green-200 dark:bg-emerald-500/30 border border-green-300 dark:border-emerald-500/40" />
               <span>In Progress</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-amber-300 border border-amber-400" />
+              <div className="w-3 h-3 rounded-full bg-amber-300 dark:bg-amber-500/30 border border-amber-400 dark:border-amber-500/40" />
               <span>At Risk</span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded-full bg-red-500" />
+              <div className="w-3 h-3 rounded-full bg-red-600 dark:bg-red-600" />
               <span>Behind</span>
             </div>
           </div>

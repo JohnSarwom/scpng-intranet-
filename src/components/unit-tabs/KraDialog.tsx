@@ -59,38 +59,44 @@ const KraDialog: React.FC<KraDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{initialData ? 'Edit KRA' : 'Create New KRA'}</DialogTitle>
-          <DialogDescription>
-            {initialData ? 'Update the details of the KRA.' : 'Fill in the details for the new KRA.'}
+      <DialogContent className="sm:max-w-lg p-0 overflow-hidden dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
+          <DialogTitle className="text-xl font-bold dark:text-gray-100">{initialData ? 'Edit KRA' : 'Create New KRA'}</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">
+            {initialData ? 'Update the details of the KRA below.' : 'Fill in the details for the new KRA.'}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} id="kra-form" className="space-y-4 py-4">
-          <div className="space-y-1">
-            <Label htmlFor="title">Title</Label>
+        <div className="px-6 py-6 overflow-y-auto">
+          <form onSubmit={handleSubmit} id="kra-dialog-form" className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-semibold dark:text-gray-300">Title</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter KRA title..."
+              className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/20"
               required
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="description">Description</Label>
+          <div className="space-y-2">
+            <Label htmlFor="description" className="text-sm font-semibold dark:text-gray-300">Description</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add details or context for this KRA..."
+              className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/20"
+              rows={4}
             />
           </div>
-          <div className="space-y-1">
-            <Label htmlFor="owner">Owner</Label>
+          <div className="space-y-2">
+            <Label htmlFor="owner" className="text-sm font-semibold dark:text-gray-300">Owner</Label>
             <Select value={ownerId} onValueChange={setOwnerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select owner" />
+              <SelectTrigger className="dark:bg-gray-800 dark:border-white/10">
+                <SelectValue placeholder="Select an owner" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                 {staffMembers.map((member) => (
                   <SelectItem key={member.id} value={member.id.toString()}>
                     {member.name}
@@ -99,12 +105,13 @@ const KraDialog: React.FC<KraDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
-        </form>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onClose}>
+          </form>
+        </div>
+        <DialogFooter className="bg-gray-50/50 dark:bg-gray-800/80 p-6 mt-0 border-t dark:border-white/10 backdrop-blur-md">
+          <Button type="button" variant="outline" onClick={onClose} className="dark:border-white/10 dark:hover:bg-gray-700">
             Cancel
           </Button>
-          <Button type="submit" form="kra-form">
+          <Button type="submit" form="kra-dialog-form" className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]">
             {initialData ? 'Save Changes' : 'Create KRA'}
           </Button>
         </DialogFooter>

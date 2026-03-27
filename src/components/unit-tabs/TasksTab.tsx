@@ -24,6 +24,8 @@ import {
   Circle,
   Check,
   X,
+  Database,
+  Copy,
 } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import TaskCard from '@/components/unit-tabs/TaskCard';
@@ -188,17 +190,17 @@ const BoardLane = ({
 
   return (
     <div className={cn(
-      "w-72 flex-shrink-0 flex flex-col rounded-lg transition-colors border-2",
+      "w-72 flex-shrink-0 flex flex-col rounded-xl transition-all duration-300 border-2",
       isAtm
-        ? "bg-stone-100 dark:bg-muted/50 shadow-sm"
-        : "bg-muted/30 dark:bg-muted/20",
-      isActuallyOver ? "bg-accent/50 border-primary border-dashed ring-2 ring-primary/10 shadow-lg" : "border-transparent"
+        ? "bg-stone-100 dark:bg-gray-950/40 dark:border-white/10 shadow-sm"
+        : "bg-muted/30 dark:bg-gray-900/30 dark:border-white/5",
+      isActuallyOver ? "bg-accent/50 border-primary dark:border-blue-500/50 border-dashed ring-4 ring-primary/5 dark:ring-blue-500/5 shadow-2xl" : "border-transparent"
     )}>
       <div className={cn(
-        "p-3 font-medium flex items-center justify-between rounded-t-lg",
+        "p-3 font-medium flex items-center justify-between rounded-t-xl",
         isAtm
-          ? "bg-stone-200/80 dark:bg-muted/60"
-          : "bg-muted/50 dark:bg-muted/30"
+          ? "bg-stone-200/80 dark:bg-gray-900/80 border-b dark:border-white/5"
+          : "bg-muted/50 dark:bg-gray-900/50 border-b dark:border-white/5"
       )}>
         {isEditing ? (
           <input
@@ -395,11 +397,11 @@ const TaskGridView: React.FC<{
 };
 
 const statusColorsMap: Record<string, string> = {
-  todo: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-700',
-  'in-progress': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-400 dark:border-purple-700',
-  'on-hold': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700',
-  'in-review': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
-  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
+  todo: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800/50',
+  'in-progress': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800/50',
+  'on-hold': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800/50',
+  'in-review': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800/50',
+  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800/50',
 };
 
 const statusLabelsMap: Record<string, string> = {
@@ -411,10 +413,10 @@ const statusLabelsMap: Record<string, string> = {
 };
 
 const priorityColorsMap: Record<string, string> = {
-  low: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-700',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-700',
-  high: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-400 dark:border-orange-700',
-  urgent: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-700',
+  low: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800/50',
+  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800/50',
+  high: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800/50',
+  urgent: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800/50',
 };
 
 const TaskListView: React.FC<{
@@ -451,11 +453,11 @@ const TaskListView: React.FC<{
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden h-full flex flex-col">
+    <div className="bg-white dark:bg-gray-900/40 dark:border-white/10 backdrop-blur-sm rounded-xl border border-gray-200 overflow-hidden h-full flex flex-col shadow-xl">
       <div className="flex-1 overflow-auto kanban-scrollbar relative">
         <table className="w-full min-w-[1000px]">
-          <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
-            <tr className="border-b border-gray-200 dark:border-gray-700">
+          <thead className="sticky top-0 bg-white dark:bg-gray-950 z-10 shadow-sm">
+            <tr className="border-b border-gray-200 dark:border-white/10">
               <th className="text-xs font-medium text-left p-3 text-muted-foreground w-10"></th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Tasks/Operations</th>
               <th className="text-xs font-medium text-left p-3 text-muted-foreground">Group</th>
@@ -709,7 +711,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
   onDataRefresh
 }) => {
   const getService = useOpsService();
-  const { user: authUser } = useRoleBasedAuth();
+  const { user: authUser, isAdmin } = useRoleBasedAuth();
   const [boardData, setBoardData] = useState<BoardData>({});
   // Use props if provided, otherwise local state (though mostly we expect props from Unit.tsx now)
   const [localBuckets, setLocalBuckets] = useState<Bucket[]>([]);
@@ -744,6 +746,70 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [isFetchingSchemas, setIsFetchingSchemas] = useState(false);
+
+  const fetchAndCopyListSchemas = async () => {
+    setIsFetchingSchemas(true);
+    try {
+      const service = await getService();
+      const listsToFetch = [
+        'Operations_Tasks',
+        'Operations_Projects',
+        'Operations_TaskGroups',
+        'Operations_Risks',
+        'Performance_KRAs',
+        'Performance_KPIs',
+        'Unit_Objectives',
+        'Report_Schedules',
+        'Performance_Reports',
+      ];
+
+      const schemas: Record<string, any[]> = {};
+      for (const listName of listsToFetch) {
+        try {
+          const res = await service.client
+            .api(`/sites/${(service as any).siteId}/lists`)
+            .filter(`displayName eq '${listName}'`)
+            .select('id,displayName')
+            .get();
+
+          if (res.value?.length > 0) {
+            const listId = res.value[0].id;
+            const cols = await service.client
+              .api(`/sites/${(service as any).siteId}/lists/${listId}/columns`)
+              .get();
+
+            schemas[listName] = cols.value
+              .filter((c: any) => !c.hidden && !c.name?.startsWith('_') && !c.readOnly)
+              .map((c: any) => ({
+                name: c.name,
+                displayName: c.displayName,
+                type: c.text ? 'text' : c.number ? 'number' : c.dateTime ? 'dateTime' : c.boolean ? 'boolean' : c.choice ? 'choice' : c.lookup ? 'lookup' : c.personOrGroup ? 'personOrGroup' : c.calculated ? 'calculated' : 'other',
+                required: c.required || false,
+                ...(c.choice ? { choices: c.choice.choices } : {}),
+                ...(c.lookup ? { lookupList: c.lookup.listId, lookupColumn: c.lookup.columnName } : {}),
+                ...(c.text?.maxLength ? { maxLength: c.text.maxLength } : {}),
+                ...(c.defaultValue ? { defaultValue: c.defaultValue.value } : {}),
+              }));
+          } else {
+            schemas[listName] = [{ error: 'List not found' }];
+          }
+        } catch (e: any) {
+          schemas[listName] = [{ error: e.message }];
+        }
+      }
+
+      const output = JSON.stringify(schemas, null, 2);
+      await navigator.clipboard.writeText(output);
+      console.log('[TasksTab] List schemas:', schemas);
+      toast({ title: 'Schemas copied to clipboard', description: `${Object.keys(schemas).length} list schemas copied.` });
+    } catch (e: any) {
+      console.error('[TasksTab] Failed to fetch schemas:', e);
+      toast({ title: 'Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setIsFetchingSchemas(false);
+    }
+  };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -1691,6 +1757,17 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                 </>
               )}
 
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={fetchAndCopyListSchemas}
+                  disabled={isFetchingSchemas}
+                  title="Copy list schemas to clipboard"
+                >
+                  {isFetchingSchemas ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                </Button>
+              )}
               <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
                 {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>

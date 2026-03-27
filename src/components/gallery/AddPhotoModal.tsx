@@ -241,13 +241,13 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-900 dark:border-white/10">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
+                    <DialogTitle className="flex items-center gap-2 dark:text-gray-100">
                         <Image className="h-5 w-5" />
                         Add Photos to Gallery
                     </DialogTitle>
-                    <DialogDescription>
+                    <DialogDescription className="dark:text-gray-400">
                         Upload photos to your media gallery. You can select multiple photos and add them to an existing event or create a new one.
                     </DialogDescription>
                 </DialogHeader>
@@ -256,7 +256,7 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
                     {/* Event Selection */}
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                            <Label className="text-base font-medium">Event</Label>
+                            <Label className="text-base font-medium dark:text-gray-100">Event</Label>
                             <Button
                                 type="button"
                                 variant="outline"
@@ -270,51 +270,54 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
                         </div>
 
                         {isCreatingNewEvent ? (
-                            <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                            <div className="space-y-4 p-4 border rounded-lg bg-muted/50 dark:bg-gray-800/50 dark:border-white/10">
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <Label htmlFor="event-title">Event Title *</Label>
+                                        <Label htmlFor="event-title" className="dark:text-gray-200">Event Title *</Label>
                                         <Input
                                             id="event-title"
                                             value={newEventTitle}
                                             onChange={(e) => setNewEventTitle(e.target.value)}
                                             placeholder="e.g., Annual Meeting 2024"
+                                            className="dark:bg-white/5 dark:border-white/10"
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="event-date">Event Date *</Label>
+                                        <Label htmlFor="event-date" className="dark:text-gray-200">Event Date *</Label>
                                         <Input
                                             id="event-date"
                                             type="date"
                                             value={newEventDate}
                                             onChange={(e) => setNewEventDate(e.target.value)}
+                                            className="dark:bg-white/5 dark:border-white/10"
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <Label htmlFor="event-description">Description</Label>
+                                    <Label htmlFor="event-description" className="dark:text-gray-200">Description</Label>
                                     <Textarea
                                         id="event-description"
                                         value={newEventDescription}
                                         onChange={(e) => setNewEventDescription(e.target.value)}
                                         placeholder="Brief description of the event..."
                                         rows={3}
+                                        className="dark:bg-white/5 dark:border-white/10"
                                     />
                                 </div>
                             </div>
                         ) : (
                             <Select value={selectedEventId} onValueChange={setSelectedEventId}>
-                                <SelectTrigger>
+                                <SelectTrigger className="dark:bg-white/5 dark:border-white/10">
                                     <SelectValue placeholder={isLoadingEvents ? "Loading events..." : "Select an event"} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                                     {availableEvents.map((event) => (
                                         <SelectItem key={event.id} value={event.id}>
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-4 w-4" />
                                                 <div>
-                                                    <div className="font-medium">{event.title}</div>
-                                                    <div className="text-sm text-muted-foreground">
+                                                    <div className="font-medium dark:text-gray-100">{event.title}</div>
+                                                    <div className="text-sm text-muted-foreground dark:text-gray-400">
                                                         {new Date(event.date).toLocaleDateString()}
                                                     </div>
                                                 </div>
@@ -328,7 +331,7 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
 
                     {/* File Upload */}
                     <div className="space-y-4">
-                        <Label className="text-base font-medium">Photos</Label>
+                        <Label className="text-base font-medium dark:text-gray-100">Photos</Label>
 
                         {selectedFiles.length === 0 ? (
                             <div
@@ -348,7 +351,7 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
                             <div>
                                 <div className="grid grid-cols-2 gap-4 mb-4">
                                     {selectedFiles.map((file, index) => (
-                                        <div key={index} className="relative border rounded-lg overflow-hidden">
+                                        <div key={index} className="relative border rounded-lg overflow-hidden dark:bg-gray-800 dark:border-white/10">
                                             <div className="aspect-video relative">
                                                 {previews[index] && (
                                                     <img
@@ -368,15 +371,15 @@ const AddPhotoModal: React.FC<AddPhotoModalProps> = ({ isOpen, onClose, onPhotoA
                                                 </Button>
                                             </div>
                                             <div className="p-3">
-                                                <p className="text-sm font-medium truncate">{file.name}</p>
-                                                <p className="text-xs text-muted-foreground mb-2">
+                                                <p className="text-sm font-medium truncate dark:text-gray-100">{file.name}</p>
+                                                <p className="text-xs text-muted-foreground dark:text-gray-400 mb-2">
                                                     {(file.size / 1024 / 1024).toFixed(2)} MB
                                                 </p>
                                                 <Input
                                                     placeholder="Add a caption..."
                                                     value={captions[index] || ''}
                                                     onChange={(e) => handleCaptionChange(index, e.target.value)}
-                                                    className="text-sm"
+                                                    className="text-sm dark:bg-white/5 dark:border-white/10"
                                                 />
                                             </div>
                                         </div>

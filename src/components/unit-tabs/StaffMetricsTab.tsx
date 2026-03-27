@@ -144,7 +144,7 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                 );
             }
 
-            rosterEntries = matched.map(s => ({ email: s.email, name: s.name, jobTitle: s.job_title || (s as any).jobTitle || '' }));
+            rosterEntries = matched.map(s => ({ email: s.email, name: s.name, jobTitle: (s as any).job_title || (s as any).jobTitle || '' }));
             } // end DivisionStaffMap fallback
         }
 
@@ -217,9 +217,6 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                 const completedKpis = allStaffKpis.filter(kpi => kpi.status === 'completed').length;
                 const onTrackKpis = allStaffKpis.filter(kpi => kpi.status === 'on-track').length;
                 const kpiRate = totalKpis > 0 ? ((completedKpis + onTrackKpis) / totalKpis) * 100 : 0;
-
-                // Keep staff-specific KPIs for modal consistency
-                // const staffKpis = allStaffKpis; // not explicitly used here but noted
 
                 // Weighted performance score
                 let weightedScore = 0;
@@ -326,16 +323,15 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
         const avgProductivity = Math.round(staffPerformance.reduce((acc, s) => acc + s.performanceScore, 0) / staffPerformance.length);
         const avgTaskRate = Math.round(staffPerformance.reduce((acc, s) => acc + s.taskRate, 0) / staffPerformance.length);
 
-        // For simplicity, reusing productivity as a base for KPI/KRA for these summary cards
         return {
             productivity: avgProductivity,
             taskRate: avgTaskRate,
-            kpiScore: (avgProductivity / 20).toFixed(1), // Scale to 5
-            kraProgress: Math.min(100, Math.round(avgProductivity * 0.9)) // Slight variation
+            kpiScore: (avgProductivity / 20).toFixed(1),
+            kraProgress: Math.min(100, Math.round(avgProductivity * 0.9))
         };
     }, [staffPerformance]);
 
-    // Department Task Load (Calculated by job title groups for this view)
+    // Department Task Load
     const deptTaskLoad = useMemo(() => {
         const groups: Record<string, { total: number, done: number }> = {};
         staffPerformance.forEach(s => {
@@ -358,34 +354,34 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div className="flex flex-col space-y-1">
-                    <h2 className="text-2xl font-bold tracking-tight">Staff Performance Metrics</h2>
+                    <h2 className="text-2xl font-bold tracking-tight dark:text-gray-100">Staff Performance Metrics</h2>
                     <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[10px] py-0 px-1.5 h-4">LIVE VIEW</Badge>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[10px] py-0 px-1.5 h-4 dark:bg-blue-500/20 dark:border-blue-500/30">LIVE VIEW</Badge>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative w-full md:w-64">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground dark:text-gray-400" />
                         <Input
                             type="search"
                             placeholder="Search staff or metric..."
-                            className="pl-9 h-9"
+                            className="pl-9 h-9 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
                     <Select value={filterTimePeriod} onValueChange={setFilterTimePeriod}>
-                        <SelectTrigger className="h-9 w-32">
+                        <SelectTrigger className="h-9 w-32 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="dark:bg-gray-950 dark:border-white/10">
                             <SelectItem value="Weekly">Weekly</SelectItem>
                             <SelectItem value="Monthly">Monthly</SelectItem>
                             <SelectItem value="Quarterly">Quarterly</SelectItem>
                             <SelectItem value="Yearly">Yearly</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Button variant="outline" size="sm" className="h-9" onClick={handleExportAll}>
+                    <Button variant="outline" size="sm" className="h-9 dark:border-white/10 dark:text-gray-300 dark:hover:bg-gray-800" onClick={handleExportAll}>
                         <Download className="mr-2 h-4 w-4" /> Export
                     </Button>
                 </div>
@@ -394,111 +390,111 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Dialog>
-                    <Card className="bg-card group relative">
+                    <Card className="bg-card group relative dark:bg-gray-900 dark:border-white/10">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-muted-foreground">Overall Productivity %</span>
-                                <Activity className="h-4 w-4 text-intranet-primary" />
+                                <span className="text-xs font-medium text-muted-foreground dark:text-gray-400">Overall Productivity %</span>
+                                <Activity className="h-4 w-4 text-intranet-primary dark:text-blue-400" />
                             </div>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
-                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 dark:hover:bg-gray-800">
+                                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                                 </Button>
                             </DialogTrigger>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{summaryMetrics.productivity}%</span>
-                                <span className="text-[10px] text-emerald-500 flex items-center">
+                                <span className="text-2xl font-bold dark:text-gray-100">{summaryMetrics.productivity}%</span>
+                                <span className="text-[10px] text-emerald-500 flex items-center dark:text-emerald-400">
                                     <TrendingUp className="h-2 w-2 mr-0.5" /> 2.4%
                                 </span>
                             </div>
-                            <Progress className="h-1 mt-3 bg-intranet-primary/10" value={summaryMetrics.productivity} />
+                            <Progress className="h-1 mt-3 bg-intranet-primary/10 dark:bg-blue-500/10" value={summaryMetrics.productivity} />
                         </CardContent>
                     </Card>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
                         <DialogHeader>
-                            <DialogTitle>About Overall Productivity</DialogTitle>
-                            <DialogDescription>Weighted staff performance score</DialogDescription>
+                            <DialogTitle className="dark:text-gray-100">About Overall Productivity</DialogTitle>
+                            <DialogDescription className="dark:text-gray-400">Weighted staff performance score</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 text-sm">
+                        <div className="space-y-4 text-sm dark:text-gray-300">
                             <p>This card shows the average weighted performance score across all staff members in the unit.</p>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
-                                    <span><strong>Progress Bar:</strong> Visualizes the unit's overall productivity relative to 100%.</span>
+                                    <div className="w-3 h-3 rounded-sm bg-primary/20 dark:bg-blue-500/30"></div>
+                                    <span><strong className="dark:text-gray-100">Progress Bar:</strong> Visualizes the unit's overall productivity relative to 100%.</span>
                                 </div>
                             </div>
                             <ul className="list-disc pl-5 space-y-1 mt-2">
-                                <li><strong>Calculation:</strong> A weighted average combining task completion (40%), KPI performance (40%), and KRA progress (20%) per staff member.</li>
-                                <li><strong>Analysis:</strong> A low score may indicate resourcing issues, unclear assignments, or untracked work.</li>
-                                <li><strong>Trend:</strong> Consistent improvement signals a healthy and engaged team.</li>
+                                <li><strong className="dark:text-gray-100">Calculation:</strong> A weighted average combining task completion (40%), KPI performance (40%), and KRA progress (20%) per staff member.</li>
+                                <li><strong className="dark:text-gray-100">Analysis:</strong> A low score may indicate resourcing issues, unclear assignments, or untracked work.</li>
+                                <li><strong className="dark:text-gray-100">Trend:</strong> Consistent improvement signals a healthy and engaged team.</li>
                             </ul>
                         </div>
                     </DialogContent>
                 </Dialog>
 
                 <Dialog>
-                    <Card className="bg-card group relative">
+                    <Card className="bg-card group relative dark:bg-gray-900 dark:border-white/10">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-muted-foreground">Task Completion Rate</span>
-                                <CheckCircle className="h-4 w-4 text-intranet-primary" />
+                                <span className="text-xs font-medium text-muted-foreground dark:text-gray-400">Task Completion Rate</span>
+                                <CheckCircle className="h-4 w-4 text-intranet-primary dark:text-blue-400" />
                             </div>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
-                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 dark:hover:bg-gray-800">
+                                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                                 </Button>
                             </DialogTrigger>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{summaryMetrics.taskRate}%</span>
-                                <span className="text-[10px] text-rose-500 flex items-center">
+                                <span className="text-2xl font-bold dark:text-gray-100">{summaryMetrics.taskRate}%</span>
+                                <span className="text-[10px] text-rose-500 flex items-center dark:text-rose-400">
                                     <TrendingDown className="h-2 w-2 mr-0.5" /> 1.2%
                                 </span>
                             </div>
-                            <Progress className="h-1 mt-3 bg-emerald-500/10" value={summaryMetrics.taskRate} />
+                            <Progress className="h-1 mt-3 bg-emerald-500/10 dark:bg-emerald-500/20" value={summaryMetrics.taskRate} />
                         </CardContent>
                     </Card>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
                         <DialogHeader>
-                            <DialogTitle>About Task Completion Rate</DialogTitle>
-                            <DialogDescription>Unit-wide daily task throughput</DialogDescription>
+                            <DialogTitle className="dark:text-gray-100">About Task Completion Rate</DialogTitle>
+                            <DialogDescription className="dark:text-gray-400">Unit-wide daily task throughput</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 text-sm">
+                        <div className="space-y-4 text-sm dark:text-gray-300">
                             <p>This card reflects the average percentage of tasks that have been marked as completed across all staff members.</p>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-sm bg-emerald-500/20"></div>
-                                    <span><strong>Progress Bar:</strong> Represents the unit's average task completion rate.</span>
+                                    <div className="w-3 h-3 rounded-sm bg-emerald-500/20 dark:bg-emerald-500/30"></div>
+                                    <span><strong className="dark:text-gray-100">Progress Bar:</strong> Represents the unit's average task completion rate.</span>
                                 </div>
                             </div>
                             <ul className="list-disc pl-5 space-y-1 mt-2">
-                                <li><strong>Analysis:</strong> A declining rate may indicate task overload, unclear priorities, or blockers preventing staff from closing work.</li>
-                                <li><strong>Trend:</strong> A steady or rising rate indicates the team is effectively managing and closing daily operational work.</li>
+                                <li><strong className="dark:text-gray-100">Analysis:</strong> A declining rate may indicate task overload, unclear priorities, or blockers preventing staff from closing work.</li>
+                                <li><strong className="dark:text-gray-100">Trend:</strong> A steady or rising rate indicates the team is effectively managing and closing daily operational work.</li>
                             </ul>
                         </div>
                     </DialogContent>
                 </Dialog>
 
                 <Dialog>
-                    <Card className="bg-card group relative">
+                    <Card className="bg-card group relative dark:bg-gray-900 dark:border-white/10">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-muted-foreground">Average KPI Score</span>
-                                <Target className="h-4 w-4 text-intranet-primary" />
+                                <span className="text-xs font-medium text-muted-foreground dark:text-gray-400">Average KPI Score</span>
+                                <Target className="h-4 w-4 text-intranet-primary dark:text-blue-400" />
                             </div>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
-                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 dark:hover:bg-gray-800">
+                                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                                 </Button>
                             </DialogTrigger>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{summaryMetrics.kpiScore}/5</span>
-                                <span className="text-[10px] text-emerald-500 flex items-center">
+                                <span className="text-2xl font-bold dark:text-gray-100">{summaryMetrics.kpiScore}/5</span>
+                                <span className="text-[10px] text-emerald-500 flex items-center dark:text-emerald-400">
                                     <TrendingUp className="h-2 w-2 mr-0.5" /> 0.5%
                                 </span>
                             </div>
@@ -508,78 +504,78 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                                         key={i}
                                         className={cn(
                                             "h-1.5 w-1.5 rounded-full",
-                                            i <= Math.round(Number(summaryMetrics.kpiScore)) ? "bg-intranet-primary" : "bg-muted"
+                                            i <= Math.round(Number(summaryMetrics.kpiScore)) ? "bg-intranet-primary dark:bg-blue-400" : "bg-muted dark:bg-gray-800"
                                         )}
                                     />
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
                         <DialogHeader>
-                            <DialogTitle>About Average KPI Score</DialogTitle>
-                            <DialogDescription>Key Performance Indicator rating out of 5</DialogDescription>
+                            <DialogTitle className="dark:text-gray-100">About Average KPI Score</DialogTitle>
+                            <DialogDescription className="dark:text-gray-400">Key Performance Indicator rating out of 5</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 text-sm">
+                        <div className="space-y-4 text-sm dark:text-gray-300">
                             <p>This card shows the unit's average KPI performance score on a 5-point scale, derived from each staff member's overall productivity score.</p>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-intranet-primary"></div>
-                                    <span><strong>Filled Dots:</strong> Represent the achieved score level out of 5.</span>
+                                    <div className="w-3 h-3 rounded-full bg-intranet-primary dark:bg-blue-400"></div>
+                                    <span><strong className="dark:text-gray-100">Filled Dots:</strong> Represent the achieved score level out of 5.</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-muted"></div>
-                                    <span><strong>Empty Dots:</strong> Remaining potential to achieve.</span>
+                                    <div className="w-3 h-3 rounded-full bg-muted dark:bg-gray-800"></div>
+                                    <span><strong className="dark:text-gray-100">Empty Dots:</strong> Remaining potential to achieve.</span>
                                 </div>
                             </div>
                             <ul className="list-disc pl-5 space-y-1 mt-2">
-                                <li><strong>Scale:</strong> 1–2 Needs Attention · 3 Fair · 4 Good · 5 Excellent.</li>
-                                <li><strong>Analysis:</strong> A low score signals that KPI targets are not being met across the team and may require strategic intervention.</li>
-                                <li><strong>Trend:</strong> Progress here reflects direct improvement in how well the unit is tracking against its strategic goals.</li>
+                                <li><strong className="dark:text-gray-100">Scale:</strong> 1–2 Needs Attention · 3 Fair · 4 Good · 5 Excellent.</li>
+                                <li><strong className="dark:text-gray-100">Analysis:</strong> A low score signals that KPI targets are not being met across the team and may require strategic intervention.</li>
+                                <li><strong className="dark:text-gray-100">Trend:</strong> Progress here reflects direct improvement in how well the unit is tracking against its strategic goals.</li>
                             </ul>
                         </div>
                     </DialogContent>
                 </Dialog>
 
                 <Dialog>
-                    <Card className="bg-card group relative">
+                    <Card className="bg-card group relative dark:bg-gray-900 dark:border-white/10">
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-medium text-muted-foreground">KRA Progress</span>
-                                <Briefcase className="h-4 w-4 text-intranet-primary" />
+                                <span className="text-xs font-medium text-muted-foreground dark:text-gray-400">KRA Progress</span>
+                                <Briefcase className="h-4 w-4 text-intranet-primary dark:text-blue-400" />
                             </div>
                             <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
-                                    <Info className="h-4 w-4 text-muted-foreground" />
+                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 dark:hover:bg-gray-800">
+                                    <Info className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
                                 </Button>
                             </DialogTrigger>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-bold">{summaryMetrics.kraProgress}%</span>
-                                <span className="text-[10px] text-emerald-500 flex items-center">
+                                <span className="text-2xl font-bold dark:text-gray-100">{summaryMetrics.kraProgress}%</span>
+                                <span className="text-[10px] text-emerald-500 flex items-center dark:text-emerald-400">
                                     <TrendingUp className="h-2 w-2 mr-0.5" /> 3.0%
                                 </span>
                             </div>
-                            <Progress className="h-1 mt-3 bg-intranet-primary/10" value={summaryMetrics.kraProgress} />
+                            <Progress className="h-1 mt-3 bg-intranet-primary/10 dark:bg-blue-500/10" value={summaryMetrics.kraProgress} />
                         </CardContent>
                     </Card>
-                    <DialogContent className="max-w-md">
+                    <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
                         <DialogHeader>
-                            <DialogTitle>About KRA Progress</DialogTitle>
-                            <DialogDescription>Key Result Area completion across the unit</DialogDescription>
+                            <DialogTitle className="dark:text-gray-100">About KRA Progress</DialogTitle>
+                            <DialogDescription className="dark:text-gray-400">Key Result Area completion across the unit</DialogDescription>
                         </DialogHeader>
-                        <div className="space-y-4 text-sm">
+                        <div className="space-y-4 text-sm dark:text-gray-300">
                             <p>This card displays the estimated overall progress of Key Result Areas (KRAs) across the unit's staff members.</p>
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-sm bg-primary/20"></div>
-                                    <span><strong>Progress Bar:</strong> Visualizes the unit-wide KRA completion percentage.</span>
+                                    <div className="w-3 h-3 rounded-sm bg-primary/20 dark:bg-blue-500/30"></div>
+                                    <span><strong className="dark:text-gray-100">Progress Bar:</strong> Visualizes the unit-wide KRA completion percentage.</span>
                                 </div>
                             </div>
                             <ul className="list-disc pl-5 space-y-1 mt-2">
-                                <li><strong>Analysis:</strong> Low KRA progress while tasks are active may indicate effort is not aligned with strategic objectives.</li>
-                                <li><strong>Trend:</strong> This metric should grow in tandem with KPI scores. Divergence between the two warrants investigation.</li>
+                                <li><strong className="dark:text-gray-100">Analysis:</strong> Low KRA progress while tasks are active may indicate effort is not aligned with strategic objectives.</li>
+                                <li><strong className="dark:text-gray-100">Trend:</strong> This metric should grow in tandem with KPI scores. Divergence between the two warrants investigation.</li>
                             </ul>
                         </div>
                     </DialogContent>
@@ -587,38 +583,38 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
             </div>
 
             {/* Main Matrix Table */}
-            <Card>
+            <Card className="dark:bg-gray-900 dark:border-white/10">
                 <CardHeader className="pb-4">
-                    <CardTitle className="text-base font-semibold">Staff Performance Matrix</CardTitle>
-                    <CardDescription className="text-xs">Detailed breakdown of key performance indicators by team member</CardDescription>
+                    <CardTitle className="text-base font-semibold dark:text-gray-100">Staff Performance Matrix</CardTitle>
+                    <CardDescription className="text-xs dark:text-gray-400">Detailed breakdown of key performance indicators by team member</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
-                        <TableHeader className="bg-muted/50">
-                            <TableRow className="hover:bg-transparent border-y bg-muted/50">
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10">Staff Member</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10">Status</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10">KPI Trend</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10">Task Progress</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10">Current Score</TableHead>
-                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 text-right">Action</TableHead>
+                        <TableHeader className="bg-muted/50 dark:bg-gray-800/50">
+                            <TableRow className="hover:bg-transparent border-y dark:border-white/10 bg-muted/50 dark:bg-gray-800/50">
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 dark:text-gray-300">Staff Member</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 dark:text-gray-300">Status</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 dark:text-gray-300">KPI Trend</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 dark:text-gray-300">Task Progress</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 dark:text-gray-300">Current Score</TableHead>
+                                <TableHead className="text-[10px] font-bold uppercase tracking-wider h-10 text-right dark:text-gray-300">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredStaff.map((staff, idx) => (
+                            {filteredStaff.map((staff) => (
                                 <TableRow
                                     key={staff.email}
-                                    className="border-b last:border-0 h-16 cursor-pointer hover:bg-slate-50 transition-colors"
+                                    className="border-b last:border-0 h-16 cursor-pointer hover:bg-slate-50 dark:hover:bg-gray-800/50 dark:border-white/10 transition-colors"
                                     onClick={() => handleViewDetails(staff)}
                                 >
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9 border">
-                                                <AvatarFallback className="text-xs font-semibold">{staff.initials}</AvatarFallback>
+                                            <Avatar className="h-9 w-9 border dark:border-white/10">
+                                                <AvatarFallback className="text-xs font-semibold dark:bg-gray-800 dark:text-gray-200">{staff.initials}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-semibold">{staff.name}</span>
-                                                <span className="text-[10px] text-muted-foreground leading-tight">{staff.jobTitle}</span>
+                                                <span className="text-sm font-semibold dark:text-gray-200">{staff.name}</span>
+                                                <span className="text-[10px] text-muted-foreground dark:text-gray-400 leading-tight">{staff.jobTitle}</span>
                                             </div>
                                         </div>
                                     </TableCell>
@@ -634,7 +630,7 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                                                     key={i}
                                                     className={cn(
                                                         "w-1.5 rounded-t-[1px]",
-                                                        i === 6 ? (staff.performanceScore >= 60 ? "bg-intranet-primary" : "bg-amber-500") : "bg-intranet-primary/20"
+                                                        i === 6 ? (staff.performanceScore >= 60 ? "bg-intranet-primary dark:bg-blue-500" : "bg-amber-500") : "bg-intranet-primary/20 dark:bg-blue-500/20"
                                                     )}
                                                     style={{ height: `${Math.max(10, h * 0.25)}px` }}
                                                 />
@@ -644,27 +640,27 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                                     <TableCell>
                                         <div className="flex flex-col gap-1 w-40">
                                             <div className="flex justify-between text-[10px]">
-                                                <span className="text-muted-foreground">{staff.doneTasks}/{staff.totalTasks} Tasks</span>
-                                                <span className="font-semibold">{staff.taskRate}%</span>
+                                                <span className="text-muted-foreground dark:text-gray-400">{staff.doneTasks}/{staff.totalTasks} Tasks</span>
+                                                <span className="font-semibold dark:text-gray-200">{staff.taskRate}%</span>
                                             </div>
                                             <Progress
-                                                className="h-1"
+                                                className="h-1 dark:bg-gray-800"
                                                 value={staff.taskRate}
-                                                style={{ '--indicator-color': staff.performanceScore >= 80 ? '#10b981' : staff.performanceScore >= 60 ? '#83002A' : '#f59e0b' } as any}
+                                                style={{ '--indicator-color': staff.performanceScore >= 80 ? '#10b981' : staff.performanceScore >= 60 ? '#3b82f6' : '#f59e0b' } as any}
                                             />
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-baseline gap-1">
-                                            <span className="text-sm font-bold">{(staff.performanceScore / 20).toFixed(1)}</span>
-                                            <span className="text-[10px] text-muted-foreground">/ 5.0</span>
+                                            <span className="text-sm font-bold dark:text-gray-100">{(staff.performanceScore / 20).toFixed(1)}</span>
+                                            <span className="text-[10px] text-muted-foreground dark:text-gray-400">/ 5.0</span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-8 w-8 hover:bg-intranet-primary/10 hover:text-intranet-primary"
+                                            className="h-8 w-8 hover:bg-intranet-primary/10 hover:text-intranet-primary dark:hover:bg-blue-500/10 dark:hover:text-blue-400 dark:text-gray-400"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleViewDetails(staff);
@@ -677,11 +673,11 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                             ))}
                         </TableBody>
                     </Table>
-                    <div className="p-4 border-t flex items-center justify-between text-[10px] text-muted-foreground bg-muted/20">
+                    <div className="p-4 border-t dark:border-white/10 flex items-center justify-between text-[10px] text-muted-foreground dark:text-gray-400 bg-muted/20 dark:bg-gray-800/20">
                         <span>Showing {filteredStaff.length} of {staffPerformance.length} staff members</span>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" className="h-6 w-6" disabled><Minus className="h-3 w-3 rotate-90" /></Button>
-                            <Button variant="outline" size="icon" className="h-6 w-6"><Minus className="h-3 w-3 -rotate-90" /></Button>
+                            <Button variant="outline" size="icon" className="h-6 w-6 dark:border-white/10" disabled><Minus className="h-3 w-3 rotate-90" /></Button>
+                            <Button variant="outline" size="icon" className="h-6 w-6 dark:border-white/10 dark:hover:bg-gray-800"><Minus className="h-3 w-3 -rotate-90" /></Button>
                         </div>
                     </div>
                 </CardContent>
@@ -689,31 +685,31 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 dark:bg-gray-900 dark:border-white/10">
                     <CardHeader className="pb-4 flex flex-row items-center justify-between">
-                        <CardTitle className="text-sm font-semibold">Unit Task Load</CardTitle>
-                        <span className="text-[10px] text-muted-foreground">By Role / Group</span>
+                        <CardTitle className="text-sm font-semibold dark:text-gray-100">Unit Task Load</CardTitle>
+                        <span className="text-[10px] text-muted-foreground dark:text-gray-400">By Role / Group</span>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {deptTaskLoad.map((dept) => (
                             <div key={dept.name} className="space-y-1.5">
                                 <div className="flex justify-between text-xs">
-                                    <span className="font-medium">{dept.name}</span>
-                                    <span className="font-bold">{dept.progress}%</span>
+                                    <span className="font-medium dark:text-gray-200">{dept.name}</span>
+                                    <span className="font-bold dark:text-gray-100">{dept.progress}%</span>
                                 </div>
                                 <Progress
-                                    className="h-1.5 bg-muted"
+                                    className="h-1.5 bg-muted dark:bg-gray-800"
                                     value={dept.progress}
-                                    style={{ '--indicator-color': dept.progress >= 80 ? '#83002A' : '#f59e0b' } as any}
+                                    style={{ '--indicator-color': dept.progress >= 80 ? '#3b82f6' : '#f59e0b' } as any}
                                 />
                             </div>
                         ))}
                     </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="dark:bg-gray-900 dark:border-white/10">
                     <CardHeader>
-                        <CardTitle className="text-sm font-semibold">Top Performers</CardTitle>
+                        <CardTitle className="text-sm font-semibold dark:text-gray-100">Top Performers</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-5">
@@ -721,16 +717,16 @@ export const StaffMetricsTab: React.FC<StaffMetricsTabProps> = ({
                                 <div key={staff.email} className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-8 w-8">
-                                            <AvatarFallback className="text-[10px] font-bold bg-intranet-primary/10 text-intranet-primary">{staff.initials}</AvatarFallback>
+                                            <AvatarFallback className="text-[10px] font-bold bg-intranet-primary/10 text-intranet-primary dark:bg-blue-500/20 dark:text-blue-400">{staff.initials}</AvatarFallback>
                                         </Avatar>
-                                        <span className="text-xs font-semibold">{staff.name}</span>
+                                        <span className="text-xs font-semibold dark:text-gray-200">{staff.name}</span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-emerald-500">{(staff.performanceScore / 20).toFixed(1)} score</span>
+                                    <span className="text-[10px] font-bold text-emerald-500 dark:text-emerald-400">{(staff.performanceScore / 20).toFixed(1)} score</span>
                                 </div>
                             ))}
                         </div>
                         <div className="mt-8 text-center">
-                            <Button variant="link" className="text-intranet-primary text-[10px] h-auto p-0 hover:no-underline font-bold">VIEW FULL RANKING</Button>
+                            <Button variant="link" className="text-intranet-primary dark:text-blue-400 text-[10px] h-auto p-0 hover:no-underline font-bold">VIEW FULL RANKING</Button>
                         </div>
                     </CardContent>
                 </Card>

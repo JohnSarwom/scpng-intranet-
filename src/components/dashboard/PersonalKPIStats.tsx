@@ -205,9 +205,9 @@ const PersonalKPIStats: React.FC = () => {
   }
 
   return (
-    <Card className="shadow-sm mb-6 animate-fade-in rounded-xl group">
+    <Card className="bg-white dark:bg-gray-800 shadow-sm mb-6 animate-fade-in rounded-xl group border dark:border-white/10">
       <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold dark:text-gray-100">
           <Activity className="h-5 w-5 text-intranet-primary" />
           Personal KPI Statistics
         </CardTitle>
@@ -253,9 +253,9 @@ const PersonalKPIStats: React.FC = () => {
       </CardHeader>
       <CardContent className="h-80">
         <Tabs defaultValue="performance" className="w-full h-full flex flex-col">
-          <TabsList className="grid grid-cols-2 mb-4 flex-shrink-0">
-            <TabsTrigger value="performance">Performance Trends</TabsTrigger>
-            <TabsTrigger value="goals">Quarterly Goals</TabsTrigger>
+          <TabsList className="grid grid-cols-2 mb-4 flex-shrink-0 dark:bg-gray-900/50 dark:border-gray-700">
+            <TabsTrigger value="performance" className="dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">Performance Trends</TabsTrigger>
+            <TabsTrigger value="goals" className="dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">Quarterly Goals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="performance" className="space-y-4 flex-1 overflow-hidden">
@@ -265,12 +265,19 @@ const PersonalKPIStats: React.FC = () => {
                   data={quarterlyData}
                   margin={{ top: 10, right: 10, left: 0, bottom: 20 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" className="dark:opacity-50" />
+                  <XAxis dataKey="name" tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
+                  <YAxis domain={[0, 100]} tick={{ fill: '#9CA3AF' }} axisLine={{ stroke: '#4B5563' }} />
                   <Tooltip
                     formatter={(value: number, name: string) => [`${value}%`, name]}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={{ 
+                      backgroundColor: '#1F2937', 
+                      border: '1px solid #374151', 
+                      borderRadius: '8px', 
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.3)',
+                      color: '#F3F4F6'
+                    }}
+                    itemStyle={{ color: '#F3F4F6' }}
                   />
                   <Legend />
                   <Bar dataKey="productivity" name="Productivity" fill="#83002A" radius={[8, 8, 8, 8]} />
@@ -291,12 +298,12 @@ const PersonalKPIStats: React.FC = () => {
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-intranet-primary">{goal.quarter}</span>
-                        <span className="text-sm text-gray-700 line-clamp-1" title={goal.goal}>{goal.goal}</span>
+                        <span className="text-sm font-semibold text-intranet-primary dark:text-intranet-accent-light">{goal.quarter}</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300 line-clamp-1" title={goal.goal}>{goal.goal}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-600 flex-shrink-0">{goal.progress}%</span>
+                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400 flex-shrink-0">{goal.progress}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div
                         className={`h-2.5 rounded-full transition-all ${goal.status === 'completed' ? 'bg-green-600' : 'bg-intranet-primary'}`}
                         style={{ width: `${goal.progress}%` }}

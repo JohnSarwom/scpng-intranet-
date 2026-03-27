@@ -46,7 +46,8 @@ const StatCircle: React.FC<StatCircleProps> = ({
           cy={size / 2}
           r={radius}
           fill="transparent"
-          stroke="#f1f1f1"
+          stroke="currentColor"
+          className="text-slate-100 dark:text-gray-700"
           strokeWidth={thickness}
         />
         
@@ -66,8 +67,8 @@ const StatCircle: React.FC<StatCircleProps> = ({
       </svg>
       
       <div className="absolute flex flex-col items-center">
-        <span className={`font-bold ${textSize}`}>{percentage}%</span>
-        <span className={`uppercase text-gray-500 ${labelSize}`}>{label}</span>
+        <span className={`font-bold ${textSize} dark:text-gray-100`}>{percentage}%</span>
+        <span className={`uppercase text-gray-500 dark:text-gray-400 ${labelSize}`}>{label}</span>
       </div>
     </div>
   );

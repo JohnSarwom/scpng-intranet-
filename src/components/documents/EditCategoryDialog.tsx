@@ -61,16 +61,17 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[480px] dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 dark:text-gray-100">
             <Pencil className="h-5 w-5 text-primary" />
             Edit Category
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dark:text-gray-400">
             Update the category details or remove it entirely.
           </DialogDescription>
         </DialogHeader>
+
 
         {!showDeleteConfirm ? (
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">

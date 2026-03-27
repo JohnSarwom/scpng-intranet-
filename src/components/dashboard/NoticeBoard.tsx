@@ -122,9 +122,9 @@ const NoticeBoard = () => {
 
   return (
     <>
-      <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
+      <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border dark:border-white/10">
         <CardHeader className="pb-2 space-y-0">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold dark:text-gray-100">
             <Bell className="h-5 w-5 text-intranet-primary" />
             SCPNG Notice Board
           </CardTitle>
@@ -143,8 +143,8 @@ const NoticeBoard = () => {
               <div
                 key={notice.id}
                 onClick={() => setSelectedNotice(notice)}
-                className={`p-2.5 rounded-lg border border-border hover:border-intranet-primary/50 transition-colors duration-300 cursor-pointer
-                  ${notice.isPinned ? 'border-intranet-primary/50 bg-intranet-primary/5' : ''}`}
+                className={`p-2.5 rounded-lg border border-border dark:border-white/10 hover:border-intranet-primary/50 dark:hover:bg-white/5 transition-colors duration-300 cursor-pointer
+                  ${notice.isPinned ? 'border-intranet-primary/50 bg-intranet-primary/5 dark:bg-intranet-primary/10' : ''}`}
               >
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium text-sm flex items-center gap-1">
@@ -186,8 +186,8 @@ const NoticeBoard = () => {
                 </Badge>
               )}
             </div>
-            <DialogTitle className="text-xl">{selectedNotice?.title}</DialogTitle>
-            <DialogDescription className="text-sm text-gray-500">
+            <DialogTitle className="text-xl dark:text-gray-100">{selectedNotice?.title}</DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
               Posted on {selectedNotice && formatDate(selectedNotice.createdDate)}
               {selectedNotice?.author && ` by ${selectedNotice.author}`}
             </DialogDescription>

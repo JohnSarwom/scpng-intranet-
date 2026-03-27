@@ -6,7 +6,8 @@ export const DocumentsPageSkeleton = () => {
     return (
         <div className="w-full animate-in fade-in duration-500">
             {/* Container echoing the TabsContent wrapping */}
-            <div className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6 w-full">
+            <div className="space-y-8 border border-gray-200 dark:border-white/10 rounded-lg p-6 w-full">
+
 
                 {/* Category View Header Area Skeleton */}
                 <div>
@@ -21,10 +22,11 @@ export const DocumentsPageSkeleton = () => {
                         </div>
                     </div>
 
-                    {/* Grid Layout Skeleton (Folders / Documents) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                            <Card key={i} className="group relative overflow-hidden bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60 shadow-sm">
+            {/* Grid Layout Skeleton (Folders / Documents) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <Card key={i} className="group relative overflow-hidden bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 shadow-sm">
+
                                 <CardContent className="p-6">
                                     {/* Card Header (Icon and Title) */}
                                     <div className="flex items-start justify-between mb-4">

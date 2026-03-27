@@ -59,12 +59,12 @@ const KnowledgeUploadModal: React.FC<KnowledgeUploadModalProps> = ({ isOpen, onC
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="dark:text-gray-100">
             Upload Knowledge for: {knowledgeAreaTitle || 'General Knowledge'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dark:text-gray-400">
             Provide a title and description, then upload files (PDF, TXT, DOCX) or add links for the AI to learn from.
           </DialogDescription>
         </DialogHeader>
@@ -108,14 +108,15 @@ const KnowledgeUploadModal: React.FC<KnowledgeUploadModalProps> = ({ isOpen, onC
                 type="file" 
                 multiple 
                 onChange={handleFileChange} 
+                className="dark:bg-white/5 dark:border-white/10"
                 accept=".pdf,.txt,.doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
               />
-              <p className="text-xs text-gray-500 mt-1">You can select multiple files. Max 25MB per file.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">You can select multiple files. Max 25MB per file.</p>
             </div>
             {selectedFiles && (
               <div className="mt-4">
-                <p className="text-sm font-medium mb-1">Selected files:</p>
-                <ul className="list-disc list-inside text-sm text-gray-600">
+                <p className="text-sm font-medium mb-1 dark:text-gray-200">Selected files:</p>
+                <ul className="list-disc list-inside text-sm text-gray-600 dark:text-gray-400">
                   {Array.from(selectedFiles).map((file, index) => (
                     <li key={index}>{file.name}</li>
                   ))}

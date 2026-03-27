@@ -269,11 +269,11 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
       )}
 
       {/* Current Section */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-white/10">
         <CardHeader>
-          <CardTitle>{currentSectionData.title}</CardTitle>
+          <CardTitle className="dark:text-gray-100">{currentSectionData.title}</CardTitle>
           {currentSectionData.description && (
-            <CardDescription>{currentSectionData.description}</CardDescription>
+            <CardDescription className="dark:text-gray-400">{currentSectionData.description}</CardDescription>
           )}
         </CardHeader>
         <CardContent className="space-y-6">
@@ -300,7 +300,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
       </Card>
 
       {/* Navigation and Actions */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-white/10">
         <CardContent className="flex items-center justify-between pt-6">
           <div className="flex items-center gap-2">
             <Button
@@ -308,6 +308,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
               variant="outline"
               onClick={prevSection}
               disabled={isFirstSection || !canProceed}
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-gray-700"
             >
               Previous
             </Button>
@@ -351,6 +352,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
                 variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-gray-700"
               >
                 Cancel
               </Button>

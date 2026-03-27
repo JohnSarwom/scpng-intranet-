@@ -61,7 +61,7 @@ const CATEGORIES: CategoryDef[] = [
     label: 'Bug Report',
     icon: <Bug size={20} />,
     color: 'text-red-500',
-    selectedColor: 'bg-red-50 border-red-400 text-red-700 dark:bg-red-950/40 dark:border-red-500',
+    selectedColor: 'bg-red-50 border-red-400 text-red-700 dark:bg-red-900/30 dark:border-red-500/50 dark:text-red-300',
   },
   {
     value: 'UI/UX Issue',
@@ -69,7 +69,7 @@ const CATEGORIES: CategoryDef[] = [
     icon: <Paintbrush size={20} />,
     color: 'text-purple-500',
     selectedColor:
-      'bg-purple-50 border-purple-400 text-purple-700 dark:bg-purple-950/40 dark:border-purple-500',
+      'bg-purple-50 border-purple-400 text-purple-700 dark:bg-purple-900/30 dark:border-purple-500/50 dark:text-purple-300',
   },
   {
     value: 'Feature Request',
@@ -77,7 +77,7 @@ const CATEGORIES: CategoryDef[] = [
     icon: <Lightbulb size={20} />,
     color: 'text-amber-500',
     selectedColor:
-      'bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-950/40 dark:border-amber-500',
+      'bg-amber-50 border-amber-400 text-amber-700 dark:bg-amber-900/30 dark:border-amber-500/50 dark:text-amber-300',
   },
   {
     value: 'General Comment',
@@ -85,7 +85,7 @@ const CATEGORIES: CategoryDef[] = [
     icon: <MessageCircle size={20} />,
     color: 'text-sky-500',
     selectedColor:
-      'bg-sky-50 border-sky-400 text-sky-700 dark:bg-sky-950/40 dark:border-sky-500',
+      'bg-sky-50 border-sky-400 text-sky-700 dark:bg-sky-900/30 dark:border-sky-500/50 dark:text-sky-300',
   },
   {
     value: 'Performance Issue',
@@ -93,7 +93,7 @@ const CATEGORIES: CategoryDef[] = [
     icon: <Gauge size={20} />,
     color: 'text-orange-500',
     selectedColor:
-      'bg-orange-50 border-orange-400 text-orange-700 dark:bg-orange-950/40 dark:border-orange-500',
+      'bg-orange-50 border-orange-400 text-orange-700 dark:bg-orange-900/30 dark:border-orange-500/50 dark:text-orange-300',
   },
 ];
 
@@ -198,7 +198,7 @@ const FeedbackWidget: React.FC = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="w-[390px] rounded-2xl shadow-2xl border border-border bg-card text-card-foreground flex flex-col overflow-hidden"
+            className="w-[390px] rounded-2xl shadow-2xl border border-border dark:border-white/10 bg-card dark:bg-gray-900 text-card-foreground dark:text-gray-100 flex flex-col overflow-hidden"
             style={{ maxHeight: 'calc(100vh - 110px)' }}
           >
             {/* Header */}
@@ -252,7 +252,7 @@ const FeedbackWidget: React.FC = () => {
                             'flex flex-col items-center gap-1.5 rounded-xl border-2 px-2 py-3 text-xs font-medium transition-all focus:outline-none hover:shadow-sm',
                             category === cat.value
                               ? cat.selectedColor
-                              : 'border-border text-muted-foreground hover:border-muted-foreground/40'
+                              : 'border-border dark:border-white/10 text-muted-foreground dark:text-gray-400 hover:border-muted-foreground/40 dark:hover:bg-white/5'
                           )}
                         >
                           <span className={cn('transition-colors', category === cat.value ? '' : cat.color)}>
@@ -274,7 +274,7 @@ const FeedbackWidget: React.FC = () => {
                       value={comment}
                       onChange={e => setComment(e.target.value)}
                       placeholder="What did you notice? What could be improved?"
-                      className="resize-none text-sm min-h-[80px]"
+                      className="resize-none text-sm min-h-[80px] dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                       maxLength={2000}
                     />
                     <p className="text-right text-xs text-muted-foreground mt-1">
@@ -296,8 +296,8 @@ const FeedbackWidget: React.FC = () => {
                       onChange={handleFileChange}
                     />
                     {selectedFile ? (
-                      <div className="flex items-center gap-2 bg-muted/50 border rounded-lg px-3 py-2">
-                        <Paperclip size={14} className="text-muted-foreground shrink-0" />
+                      <div className="flex items-center gap-2 bg-muted/50 dark:bg-white/5 border dark:border-white/10 rounded-lg px-3 py-2">
+                        <Paperclip size={14} className="text-muted-foreground dark:text-gray-400 shrink-0" />
                         <span className="text-xs text-muted-foreground flex-1 truncate">
                           {selectedFile.name}
                         </span>
@@ -313,7 +313,7 @@ const FeedbackWidget: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex items-center gap-2 border-2 border-dashed border-border rounded-lg px-3 py-3 text-sm text-muted-foreground hover:border-intranet-primary/50 hover:text-intranet-primary transition-colors"
+                        className="w-full flex items-center gap-2 border-2 border-dashed border-border dark:border-white/10 rounded-lg px-3 py-3 text-sm text-muted-foreground dark:text-gray-400 hover:border-intranet-primary/50 hover:text-intranet-primary dark:hover:bg-white/5 transition-colors"
                       >
                         <Paperclip size={16} />
                         Click to attach a file or screenshot
@@ -343,7 +343,7 @@ const FeedbackWidget: React.FC = () => {
                               'transition-colors',
                               star <= (hoveredRating || rating)
                                 ? 'fill-amber-400 text-amber-400'
-                                : 'text-muted-foreground/25'
+                                : 'text-muted-foreground/25 dark:text-gray-700'
                             )}
                           />
                         </button>

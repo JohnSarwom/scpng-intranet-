@@ -87,10 +87,10 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">KRA Information</h3>
+      <h3 className="text-lg font-medium dark:text-gray-200">KRA Information</h3>
       {/* KRA Title Combobox */}
       <div className="grid gap-1.5">
-        <Label htmlFor="kra-title">KRA Title *</Label>
+        <Label htmlFor="kra-title" className="dark:text-gray-300">KRA Title *</Label>
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -98,8 +98,8 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
               role="combobox"
               aria-label="Select or type a KRA title"
               className={cn(
-                "w-full justify-between",
-                !formData.title && "text-muted-foreground"
+                "w-full justify-between dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 dark:hover:bg-gray-800",
+                !formData.title && "text-muted-foreground dark:text-gray-500"
               )}
               disabled={disabled}
             >
@@ -107,14 +107,8 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" container={container}>
-            <Command
-              // Filter based on typed value, but allow typing new values
-              filter={(value, search) => {
-                if (value.toLowerCase().includes(search.toLowerCase())) return 1
-                return 0
-              }}
-            >
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 dark:bg-gray-950 dark:border-white/10" container={container}>
+            <Command className="dark:bg-gray-950">
               <CommandInput
                 placeholder="Search or type new title..."
                 value={inputValue}
@@ -122,6 +116,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                   setInputValue(search);
                   onChange('title', search);
                 }}
+                className="dark:text-gray-100"
               />
               <CommandList>
                 <CommandEmpty>No existing KRAs found. Type to create new.</CommandEmpty>
@@ -131,6 +126,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                       <CommandItem
                         key={kra.id}
                         value={kra.title}
+                        className="dark:text-gray-300 dark:aria-selected:bg-gray-800 dark:aria-selected:text-gray-100"
                         onSelect={() => {
                           // Use the original KRA title (preserving casing) instead of cmdk's lowercased currentValue
                           const originalTitle = kra.title.trim();
@@ -165,6 +161,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                       <CommandItem
                         key={title}
                         value={title}
+                        className="dark:text-gray-300 dark:aria-selected:bg-gray-800 dark:aria-selected:text-gray-100"
                         onSelect={() => {
                           // Fallback: use original title string (not cmdk's lowercased value)
                           const trimmedValue = title.trim();
@@ -192,23 +189,23 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
       {/* Objective & Unit (Side by side on larger screens) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="grid gap-1.5">
-          <Label htmlFor="kra-objective">Objective *</Label>
+          <Label htmlFor="kra-objective" className="dark:text-gray-300">Objective *</Label>
           <Select
             value={formData.objective_id?.toString() || ''}
             onValueChange={(value) => onChange('objective_id' as any, value)}
             disabled={disabled}
             required
           >
-            <SelectTrigger id="kra-objective">
+            <SelectTrigger id="kra-objective" className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
               <SelectValue placeholder="Select an objective" />
             </SelectTrigger>
-            <SelectContent container={container}>
+            <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
               {objectives.length > 0 ? (
                 objectives.map((obj) => (
                   <SelectItem key={obj.id} value={obj.id.toString()}>{obj.title}</SelectItem>
                 ))
               ) : (
-                <div className="px-2 py-1.5 text-sm text-muted-foreground">No objectives defined.</div>
+                <div className="px-2 py-1.5 text-sm text-muted-foreground dark:text-gray-500">No objectives defined.</div>
               )}
             </SelectContent>
           </Select>
@@ -216,7 +213,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
         {/* Owner Field - Single Select with Auto-fill */}
         <div className="grid gap-1.5">
-          <Label>Owner (Lead)</Label>
+          <Label className="dark:text-gray-300">Owner (Lead)</Label>
           <GlobalAssigneeSelector
             selected={formData.owner ? [{
               id: formData.owner.id.toString(),
@@ -253,7 +250,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
         {/* Unit Dropdown */}
         <div className="grid gap-1.5">
-          <Label htmlFor="kra-unit">Unit *</Label>
+          <Label htmlFor="kra-unit" className="dark:text-gray-300">Unit *</Label>
           <Select
             // Use unit field (department name string) for value
             value={formData.unit || ''}
@@ -261,10 +258,10 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             disabled={disabled || (isAddingNew && !!currentUserDepartment)} // Disable if adding new and we have current department
             required
           >
-            <SelectTrigger id="kra-unit">
+            <SelectTrigger id="kra-unit" className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
               <SelectValue placeholder="Select a unit" />
             </SelectTrigger>
-            <SelectContent container={container}>
+            <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
               {(() => {
                 // Combine existing units with the current value if it's unique
                 const currentUnit = formData.unit;
@@ -277,10 +274,10 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
                 return displayUnits.length > 0 ? (
                   displayUnits.map((unit) => (
-                    <SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>
+                    <SelectItem key={unit.id} value={unit.name} className="dark:text-gray-300 dark:focus:bg-gray-800 dark:focus:text-gray-100">{unit.name}</SelectItem>
                   ))
                 ) : (
-                  <div className="px-2 py-1.5 text-sm text-muted-foreground">No units defined.</div>
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground dark:text-gray-500">No units defined.</div>
                 );
               })()}
             </SelectContent>
@@ -289,15 +286,15 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
         {/* Status (Auto-calculated) */}
         <div className="grid gap-1.5">
-          <Label htmlFor="kra-status">Status</Label>
+          <Label htmlFor="kra-status" className="dark:text-gray-300">Status</Label>
           <Input
             id="kra-status"
             value={(formData.status || 'open').charAt(0).toUpperCase() + (formData.status || 'open').slice(1).replace('-', ' ')}
             readOnly
-            className="bg-muted text-muted-foreground"
+            className="bg-muted dark:bg-gray-800 dark:border-white/10 dark:text-gray-400 focus:ring-0"
             title="Status is automatically calculated from linked KPIs."
           />
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-[10px] text-muted-foreground dark:text-gray-500">
             Automatically derived from KPIs.
           </p>
         </div>
@@ -305,7 +302,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
       {/* Assignees Multi-select */}
       <div className="grid gap-1.5">
-        <Label>Additional Assignees</Label>
+        <Label className="dark:text-gray-300">Additional Assignees</Label>
         <GlobalAssigneeSelector
           selected={formData.assignees?.map(u => ({
             id: u.id.toString(),
@@ -331,7 +328,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
       {/* KRA Comments */}
       <div className="grid gap-1.5">
-        <Label htmlFor="kra-comments">Comments (Optional)</Label>
+        <Label htmlFor="kra-comments" className="dark:text-gray-300">Comments (Optional)</Label>
         <Textarea
           id="kra-comments"
           value={formData.description || ''}
@@ -339,6 +336,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           placeholder="Add any overall notes for this KRA..."
           rows={3}
           disabled={disabled}
+          className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
         />
       </div>
 

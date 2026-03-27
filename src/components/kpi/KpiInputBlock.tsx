@@ -119,14 +119,14 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
   }, [formData.targetDate]);
 
   return (
-    <Card className="bg-muted/30 border shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b">
-        <CardTitle className="text-base font-medium">KPI #{kpiIndex + 1}</CardTitle>
+    <Card className="bg-muted/30 dark:bg-gray-900/30 border dark:border-white/10 shadow-sm">
+      <CardHeader className="flex flex-row items-center justify-between py-3 px-4 border-b dark:border-white/10">
+        <CardTitle className="text-base font-medium dark:text-gray-200">KPI #{kpiIndex + 1}</CardTitle>
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+          className="h-7 w-7 text-muted-foreground dark:text-gray-400 hover:text-destructive dark:hover:text-red-400 dark:hover:bg-red-900/20"
           onClick={() => onRemove(kpiIndex)}
           disabled={disabled || isOnlyBlock} // Disable remove if it's the only block
           aria-label="Remove KPI"
@@ -137,32 +137,41 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
       <CardContent className="p-4 space-y-4">
         {/* KPI Name */}
         <div className="grid gap-1.5">
-          <Label htmlFor={`kpi-name-${kpiIndex}`}>KPI Name *</Label>
+          <Label htmlFor={`kpi-name-${kpiIndex}`} className="dark:text-gray-300">KPI Name *</Label>
           <Input
             id={`kpi-name-${kpiIndex}`}
             value={formData.name || ''}
             onChange={(e) => onChange('name', e.target.value)}
             placeholder="e.g., Average Resolution Time"
             disabled={disabled}
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
             required
           />
         </div>
 
         {/* Calculation Method Toggle */}
         <div className="flex flex-col space-y-2">
-          <Label>Measurement Method</Label>
+          <Label className="dark:text-gray-300">Measurement Method</Label>
           <ToggleGroup
             type="single"
             value={formData.calculationType || 'manual'}
             onValueChange={handleTypeChange}
-            className="justify-start"
+            className="justify-start dark:bg-gray-950 dark:p-1 dark:rounded-lg dark:border dark:border-white/5"
             disabled={disabled}
           >
-            <ToggleGroupItem value="manual" aria-label="Manual Calculation" className="gap-2">
+            <ToggleGroupItem 
+              value="manual" 
+              aria-label="Manual Calculation" 
+              className="gap-2 dark:data-[state=on]:bg-blue-600 dark:data-[state=on]:text-white dark:text-gray-400"
+            >
               <Calculator className="h-4 w-4" />
               Manual Input
             </ToggleGroupItem>
-            <ToggleGroupItem value="checklist" aria-label="Checklist Calculation" className="gap-2">
+            <ToggleGroupItem 
+              value="checklist" 
+              aria-label="Checklist Calculation" 
+              className="gap-2 dark:data-[state=on]:bg-blue-600 dark:data-[state=on]:text-white dark:text-gray-400"
+            >
               <ListChecks className="h-4 w-4" />
               Checklist
             </ToggleGroupItem>
@@ -171,20 +180,20 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
 
         {/* Target & Actual (Side by side) - Conditional Logic */}
         {formData.calculationType === 'checklist' ? (
-          <div className="space-y-4 border rounded-md p-4 bg-background">
+          <div className="space-y-4 border dark:border-white/10 rounded-md p-4 bg-background dark:bg-gray-950/50">
             <ChecklistSection
               items={formData.checklist || []}
               onChange={handleChecklistChange}
               disabled={disabled}
             />
-            <div className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground dark:text-gray-500">
               * Actual value is automatically calculated based on checklist completion. Target is set to 100%.
             </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor={`kpi-target-${kpiIndex}`}>Target *</Label>
+              <Label htmlFor={`kpi-target-${kpiIndex}`} className="dark:text-gray-300">Target *</Label>
               <Input
                 id={`kpi-target-${kpiIndex}`}
                 type="number"
@@ -192,11 +201,12 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 onChange={(e) => onChange('target', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 95"
                 disabled={disabled}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
                 required
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor={`kpi-actual-${kpiIndex}`}>Actual</Label>
+              <Label htmlFor={`kpi-actual-${kpiIndex}`} className="dark:text-gray-300">Actual</Label>
               <Input
                 id={`kpi-actual-${kpiIndex}`}
                 type="number"
@@ -204,6 +214,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 onChange={(e) => onChange('actual', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 92"
                 disabled={disabled}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
               />
             </div>
           </div>
@@ -211,7 +222,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
 
         {/* Cost Associated */}
         <div className="grid gap-1.5">
-          <Label htmlFor={`kpi-cost-${kpiIndex}`}>Cost Associated (Kina)</Label>
+          <Label htmlFor={`kpi-cost-${kpiIndex}`} className="dark:text-gray-300">Cost Associated (Kina)</Label>
           <Input
             id={`kpi-cost-${kpiIndex}`}
             type="number"
@@ -220,23 +231,25 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="e.g., 1500.00"
             step="0.01" // Allow decimal input for currency
             disabled={disabled}
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
           />
         </div>
 
         {/* KPI Start Date & Target Date (Side by side) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="grid gap-1.5">
-            <Label htmlFor={`kpi-start-date-${kpiIndex}`}>Start Date</Label>
+            <Label htmlFor={`kpi-start-date-${kpiIndex}`} className="dark:text-gray-300">Start Date</Label>
             <Input
               id={`kpi-start-date-${kpiIndex}`}
               type="date"
               value={formData.startDate?.substring(0, 10) || ''}
               onChange={(e) => onChange('startDate', e.target.value)}
               disabled={disabled}
+              className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor={`kpi-target-date-${kpiIndex}`}>Target Date</Label>
+            <Label htmlFor={`kpi-target-date-${kpiIndex}`} className="dark:text-gray-300">Target Date</Label>
             <div className="flex items-center gap-2">
               <Input
                 id={`kpi-target-date-${kpiIndex}`}
@@ -244,11 +257,11 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 value={formData.targetDate?.substring(0, 10) || ''}
                 onChange={(e) => onChange('targetDate', e.target.value)}
                 min={formData.startDate?.substring(0, 10) || ''} // Prevent target date before start date
-                className="flex-1"
+                className="flex-1 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
                 disabled={disabled}
               />
               {/* Display Calculated Quarter */}
-              <Badge variant="outline" className="h-9 px-3 whitespace-nowrap">
+              <Badge variant="outline" className="h-9 px-3 whitespace-nowrap dark:border-white/10 dark:bg-gray-800 dark:text-gray-300">
                 {calculatedQuarter}
               </Badge>
             </div>
@@ -257,19 +270,19 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
 
         {/* Status (Auto-calculated) */}
         <div className="grid gap-1.5">
-          <Label htmlFor={`kpi-status-${kpiIndex}`}>Status</Label>
+          <Label htmlFor={`kpi-status-${kpiIndex}`} className="dark:text-gray-300">Status</Label>
           <Input
             id={`kpi-status-${kpiIndex}`}
             value={derivedStatus.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             readOnly
-            className="bg-muted text-muted-foreground"
+            className="bg-muted dark:bg-gray-800 dark:border-white/10 dark:text-gray-400"
             title="Status is automatically calculated from Target and Actual values."
           />
         </div>
 
         {/* Add Assignee Selector */}
         <div className="grid gap-1.5">
-          <Label htmlFor={`kpi-assignees-${kpiIndex}`}>Assignees</Label>
+          <Label htmlFor={`kpi-assignees-${kpiIndex}`} className="dark:text-gray-300">Assignees</Label>
           <GlobalAssigneeSelector
             selected={formData.assignees?.map(u => ({
               id: u.id.toString(),
@@ -302,6 +315,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="Describe this KPI..."
             rows={2}
             disabled={disabled}
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
           />
         </div>
 
@@ -315,6 +329,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="Enter comments..."
             rows={2}
             disabled={disabled}
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
           />
         </div>
       </CardContent>

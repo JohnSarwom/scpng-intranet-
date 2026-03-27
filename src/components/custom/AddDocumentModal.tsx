@@ -122,13 +122,14 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent className="sm:max-w-[525px] dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle>Share New Document</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="dark:text-gray-100">Share New Document</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">
             Fill in the details, select a file, and choose a category (and sub-category if applicable).
           </DialogDescription>
         </DialogHeader>
+
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
             <Label className="text-right">Mode</Label>
@@ -137,18 +138,20 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                 type="button"
                 variant={mode === 'file' ? 'default' : 'outline'}
                 onClick={() => setMode('file')}
-                className="flex-1"
+                className={`flex-1 ${mode !== 'file' ? 'dark:border-white/10 dark:hover:bg-gray-800 dark:text-gray-300' : ''}`}
               >
                 File Upload
               </Button>
+
               <Button
                 type="button"
                 variant={mode === 'link' ? 'default' : 'outline'}
                 onClick={() => setMode('link')}
-                className="flex-1"
+                className={`flex-1 ${mode !== 'link' ? 'dark:border-white/10 dark:hover:bg-gray-800 dark:text-gray-300' : ''}`}
               >
                 External Link
               </Button>
+
             </div>
           </div>
 
@@ -160,16 +163,18 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               setSelectedCategory(value);
               setSelectedSubCategory(null);
             }}>
-              <SelectTrigger className="col-span-3">
+              <SelectTrigger className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:text-gray-100">
                 <SelectValue placeholder="Select a category" />
               </SelectTrigger>
-              <SelectContent>
+
+              <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                 {availableCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
+                  <SelectItem key={cat} value={cat} className="dark:text-gray-100 dark:focus:bg-gray-800">
                     {cat}
                   </SelectItem>
                 ))}
               </SelectContent>
+
             </Select>
           </div>
 
@@ -179,17 +184,19 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                 Sub-Category
               </Label>
               <Select value={selectedSubCategory || ''} onValueChange={(value) => setSelectedSubCategory(value === '' ? null : value)}>
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:text-gray-100">
                   <SelectValue placeholder="Select a sub-category (optional)" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">-- None --</SelectItem>
+
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
+                  <SelectItem value="" className="dark:text-gray-100 dark:focus:bg-gray-800">-- None --</SelectItem>
                   {currentSubCategories.map((subCat) => (
-                    <SelectItem key={subCat} value={subCat}>
+                    <SelectItem key={subCat} value={subCat} className="dark:text-gray-100 dark:focus:bg-gray-800">
                       {subCat}
                     </SelectItem>
                   ))}
                 </SelectContent>
+
               </Select>
             </div>
           )}
@@ -202,10 +209,11 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="col-span-3"
+              className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:placeholder:text-gray-500 dark:text-gray-100"
               placeholder="Document Title"
               required
             />
+
           </div>
 
           {mode === 'link' ? (
@@ -217,10 +225,11 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                 id="url"
                 value={externalUrl}
                 onChange={(e) => setExternalUrl(e.target.value)}
-                className="col-span-3"
+                className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:placeholder:text-gray-500 dark:text-gray-100"
                 placeholder="https://example.com/document"
                 required
               />
+
             </div>
           ) : (
             <>
@@ -232,8 +241,9 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
                   id="file"
                   type="file"
                   onChange={handleFileChange}
-                  className="col-span-3"
+                  className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:text-gray-100 file:dark:bg-gray-800 file:dark:text-gray-300 file:dark:border-white/10"
                 />
+
               </div>
               {fileError && (
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -253,9 +263,10 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="col-span-3"
+              className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:placeholder:text-gray-500 dark:text-gray-100"
               placeholder="Brief description of the document (optional)"
             />
+
           </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="tags" className="text-right">
@@ -265,17 +276,19 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
               id="tags"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              className="col-span-3"
+              className="col-span-3 dark:bg-white/5 dark:border-white/10 dark:placeholder:text-gray-500 dark:text-gray-100"
               placeholder="e.g., report, Q3, finance (comma-separated)"
             />
+
           </div>
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="dark:border-white/10 dark:hover:bg-gray-800 dark:text-gray-300">
               Cancel
             </Button>
           </DialogClose>
+
           <Button
             type="button"
             onClick={handleShareClick}

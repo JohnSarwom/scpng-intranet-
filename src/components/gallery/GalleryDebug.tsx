@@ -73,7 +73,7 @@ const GalleryDebug: React.FC = () => {
     };
 
     return (
-        <Card className="w-full max-w-4xl mx-auto">
+        <Card className="w-full max-w-4xl mx-auto dark:bg-gray-800 dark:border-white/10">
             <CardHeader>
                 <CardTitle>Gallery Debug Tool</CardTitle>
                 <CardDescription>
@@ -94,22 +94,22 @@ const GalleryDebug: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <h3 className="font-semibold mb-2">Events ({events.length})</h3>
-                        <div className="bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                        <h3 className="font-semibold mb-2 dark:text-gray-200">Events ({events.length})</h3>
+                        <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs max-h-40 overflow-y-auto dark:text-gray-300">
                             <pre>{JSON.stringify(events, null, 2)}</pre>
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="font-semibold mb-2">Photos ({photos.length})</h3>
-                        <div className="bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                        <h3 className="font-semibold mb-2 dark:text-gray-200">Photos ({photos.length})</h3>
+                        <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs max-h-40 overflow-y-auto dark:text-gray-300">
                             <pre>{JSON.stringify(photos, null, 2)}</pre>
                         </div>
                     </div>
 
                     <div>
-                        <h3 className="font-semibold mb-2">Gallery Data</h3>
-                        <div className="bg-gray-100 p-3 rounded text-xs max-h-40 overflow-y-auto">
+                        <h3 className="font-semibold mb-2 dark:text-gray-200">Gallery Data</h3>
+                        <div className="bg-gray-100 dark:bg-gray-900 p-3 rounded text-xs max-h-40 overflow-y-auto dark:text-gray-300">
                             <pre>{JSON.stringify(galleryData, null, 2)}</pre>
                         </div>
                     </div>

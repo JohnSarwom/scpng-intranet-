@@ -10,6 +10,7 @@ import { useMsal } from '@azure/msal-react';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { SharePointListSetupService } from '@/services/sharePointListSetupService';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
+import { PowerAutomateService } from '@/services/powerAutomateService';
 import { RegulatorySharePointSetupService } from '@/services/regulatorySharePointSetupService';
 import { AnnouncementsSharePointService } from '@/services/announcementsSharePointService';
 import { getGraphClient } from '@/services/graphService';
@@ -40,6 +41,9 @@ import {
     Search,
     MessageSquarePlus,
     Bell,
+    Zap,
+    PlugZap,
+    ListTree,
 } from "lucide-react";
 import {
     Table,
@@ -1260,6 +1264,193 @@ const TestGround = () => {
     // REPORTS & ANALYTICS SETUP
     // ==========================================
     const [isSettingUpReports, setIsSettingUpReports] = useState(false);
+    const [isSettingUpReportSchedules, setIsSettingUpReportSchedules] = useState(false);
+
+    const handleSetupReportSchedulesList = async () => {
+        setIsSettingUpReportSchedules(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "Creating Report Schedules List",
+                description: "Setting up Report_Schedules list...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const opsService = new SharePointOpsService(graphClient);
+            await opsService.initialize();
+            await opsService.createReportSchedulesList();
+
+            toast({
+                title: "Success!",
+                description: "Report_Schedules list created/verified successfully",
+            });
+            setSetupResult({ success: true, message: "Report Schedules list ready." });
+
+        } catch (error: any) {
+            console.error('[TestGround] Report Schedules setup failed:', error);
+            setSetupResult({
+                success: false,
+                message: error.message || "Failed to create Report Schedules list",
+                error
+            });
+            toast({
+                title: "Setup Failed",
+                description: error.message || "Failed to create Report Schedules list",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpReportSchedules(false);
+        }
+    };
+
+    const [isDeployingFlow, setIsDeployingFlow] = useState(false);
+    const [flowDeployResult, setFlowDeployResult] = useState<{ success: boolean; message: string } | null>(null);
+
+    const handleDeployReportFlow = async () => {
+        setIsDeployingFlow(true);
+        setFlowDeployResult(null);
+
+        try {
+            toast({
+                title: "Deploying Power Automate Flow",
+                description: "Creating the Report Scheduler flow in Power Automate...",
+            });
+
+            const paService = new PowerAutomateService(msalInstance);
+            const result = await paService.deployReportSchedulerFlow();
+
+            setFlowDeployResult({ success: result.success, message: result.message });
+
+            if (result.success) {
+                toast({
+                    title: "Success!",
+                    description: result.message,
+                });
+            } else {
+                toast({
+                    title: "Deployment Failed",
+                    description: result.message,
+                    variant: "destructive"
+                });
+            }
+        } catch (error: any) {
+            console.error('[TestGround] Flow deployment failed:', error);
+            setFlowDeployResult({ success: false, message: error.message });
+            toast({
+                title: "Deployment Failed",
+                description: error.message || "Failed to deploy flow",
+                variant: "destructive"
+            });
+        } finally {
+            setIsDeployingFlow(false);
+        }
+    };
+
+    const handleListFlows = async () => {
+        try {
+            const paService = new PowerAutomateService(msalInstance);
+            const flows = await paService.listFlows();
+            console.log('[TestGround] Flows:', flows);
+            toast({
+                title: `Found ${flows.length} flow(s)`,
+                description: flows.map(f => `${f.displayName} (${f.state})`).join(', ') || 'No flows found',
+            });
+        } catch (error: any) {
+            toast({
+                title: "Failed to list flows",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleInspectFlow = async () => {
+        try {
+            const paService = new PowerAutomateService(msalInstance);
+            const flows = await paService.listFlows();
+            if (flows.length === 0) {
+                toast({ title: "No flows found", variant: "destructive" });
+                return;
+            }
+            // Get the first flow's full definition
+            const flowDef = await paService.getFlowDefinition(flows[0].name);
+            console.log('[TestGround] Flow definition for:', flows[0].displayName);
+            console.log('[TestGround] connectionReferences:', JSON.stringify(flowDef?.properties?.connectionReferences, null, 2));
+            console.log('[TestGround] First action:', JSON.stringify(Object.entries(flowDef?.properties?.definition?.actions || {})[0], null, 2));
+            console.log('[TestGround] Full definition:', JSON.stringify(flowDef, null, 2));
+            toast({
+                title: `Inspected: ${flows[0].displayName}`,
+                description: "Full definition logged to console. Check connectionReferences format.",
+            });
+        } catch (error: any) {
+            toast({
+                title: "Failed to inspect flow",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleListConnections = async () => {
+        try {
+            const paService = new PowerAutomateService(msalInstance);
+            const connections = await paService.listConnections();
+            console.log('[TestGround] Connections:', connections);
+            const connected = connections.filter(c => c.status === 'Connected');
+            toast({
+                title: `Found ${connected.length} active connection(s)`,
+                description: connected.map(c => c.displayName).join(', ') || 'No connections found',
+            });
+        } catch (error: any) {
+            toast({
+                title: "Failed to list connections",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
+    };
+
+    const [isDeletingFlow, setIsDeletingFlow] = useState(false);
+
+    const handleDeleteReportFlow = async () => {
+        setIsDeletingFlow(true);
+        setFlowDeployResult(null);
+
+        try {
+            const paService = new PowerAutomateService(msalInstance);
+            const existing = await paService.findExistingReportFlow();
+
+            if (!existing) {
+                setFlowDeployResult({ success: false, message: 'No existing Report Scheduler flow found to delete.' });
+                toast({
+                    title: "No Flow Found",
+                    description: "No existing Report Scheduler flow found.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            await paService.deleteFlow(existing.name);
+            setFlowDeployResult({ success: true, message: `Flow "${existing.displayName}" deleted successfully. You can now redeploy.` });
+            toast({
+                title: "Flow Deleted",
+                description: `"${existing.displayName}" has been removed. You can now redeploy the updated version.`,
+            });
+        } catch (error: any) {
+            console.error('[TestGround] Flow deletion failed:', error);
+            setFlowDeployResult({ success: false, message: error.message });
+            toast({
+                title: "Deletion Failed",
+                description: error.message || "Failed to delete flow",
+                variant: "destructive"
+            });
+        } finally {
+            setIsDeletingFlow(false);
+        }
+    };
 
     const handleSetupReportsList = async () => {
         setIsSettingUpReports(true);
@@ -3223,6 +3414,153 @@ const TestGround = () => {
                                 <>
                                     <Play className="mr-2 h-4 w-4" />
                                     Initialize Reports List
+                                </>
+                            )}
+                        </Button>
+
+                        <Separator />
+
+                        <div className="space-y-2">
+                            <h4 className="font-semibold flex items-center gap-2">
+                                <ListChecks className="h-4 w-4" />
+                                Report Schedules List:
+                            </h4>
+                            <ul className="space-y-2 ml-6 text-sm">
+                                <li>
+                                    <div className="font-medium flex items-center gap-2">
+                                        <Database className="h-3 w-3 text-pink-500" />
+                                        Report_Schedules
+                                    </div>
+                                    <div className="text-muted-foreground ml-5">
+                                        Per-user report schedule config — period, categories, preferred time/day, active toggle. Power Automate reads this list to send recurring reports.
+                                    </div>
+                                    <div className="text-muted-foreground ml-5 text-xs mt-1">
+                                        Columns: UserEmail, Division, Unit, TimePeriod, Categories (JSON), IsActive, PreferredTime, PreferredDay, PreferredDayOfMonth, LastSentAt, NextSendAt, ManagerEmail
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <Button
+                            onClick={handleSetupReportSchedulesList}
+                            disabled={isSettingUpReportSchedules || isSettingUpLists}
+                            className="w-full bg-pink-700 hover:bg-pink-800 text-white"
+                            size="lg"
+                        >
+                            {isSettingUpReportSchedules ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Initializing Report Schedules...
+                                </>
+                            ) : (
+                                <>
+                                    <Play className="mr-2 h-4 w-4" />
+                                    Initialize Report Schedules List
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Power Automate Flow Deployment */}
+                <Card className="border-2 border-violet-500/20">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Zap className="h-5 w-5 text-violet-600" />
+                            Power Automate — Report Scheduler Flow
+                        </CardTitle>
+                        <CardDescription>
+                            Deploy the master recurring report flow to automation@scpng.gov.pg's Power Automate.
+                            This single flow checks the Report_Schedules list daily and sends reports to users whose schedules are due.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2 text-sm">
+                            <div className="font-medium flex items-center gap-2">
+                                <ListTree className="h-4 w-4 text-violet-500" />
+                                Flow Actions:
+                            </div>
+                            <ul className="ml-6 space-y-1 text-muted-foreground text-xs">
+                                <li>1. Recurrence trigger — daily at 7:00 AM PGT</li>
+                                <li>2. Get active schedules + fetch Gemini API key (parallel)</li>
+                                <li>3. Filter for schedules where NextSendAt &lt;= now</li>
+                                <li>4. For each due user: query Tasks, KRAs, KPIs, Objectives</li>
+                                <li>5. Compute metrics, call Gemini AI for strategic insights</li>
+                                <li>6. Build HTML email with metrics + AI analysis</li>
+                                <li>7. Send email from automation@scpng.gov.pg</li>
+                                <li>8. Update LastSentAt and NextSendAt</li>
+                            </ul>
+                        </div>
+
+                        {flowDeployResult && (
+                            <div className={`p-3 rounded-lg border text-sm ${flowDeployResult.success
+                                ? 'bg-green-50 border-green-200 text-green-700'
+                                : 'bg-red-50 border-red-200 text-red-700'
+                            }`}>
+                                {flowDeployResult.success ? <CheckCircle className="inline h-4 w-4 mr-1" /> : <AlertCircle className="inline h-4 w-4 mr-1" />}
+                                {flowDeployResult.message}
+                            </div>
+                        )}
+
+                        <div className="flex gap-2 flex-wrap">
+                            <Button
+                                onClick={handleListConnections}
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                            >
+                                <PlugZap className="h-3.5 w-3.5" />
+                                Check Connections
+                            </Button>
+                            <Button
+                                onClick={handleListFlows}
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                            >
+                                <ListTree className="h-3.5 w-3.5" />
+                                List Flows
+                            </Button>
+                            <Button
+                                onClick={handleInspectFlow}
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5"
+                            >
+                                <Search className="h-3.5 w-3.5" />
+                                Inspect Flow
+                            </Button>
+                            <Button
+                                onClick={handleDeleteReportFlow}
+                                disabled={isDeletingFlow}
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+                            >
+                                {isDeletingFlow ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                                Delete Flow
+                            </Button>
+                        </div>
+
+                        <Button
+                            onClick={handleDeployReportFlow}
+                            disabled={isDeployingFlow}
+                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                            size="lg"
+                        >
+                            {isDeployingFlow ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Deploying Flow...
+                                </>
+                            ) : (
+                                <>
+                                    <Zap className="mr-2 h-4 w-4" />
+                                    Deploy Report Scheduler Flow
                                 </>
                             )}
                         </Button>

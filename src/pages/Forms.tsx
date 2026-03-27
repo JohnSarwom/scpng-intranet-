@@ -206,12 +206,12 @@ const Forms: React.FC = () => {
     const template = formTemplates.find(t => t.id === form.id);
 
     return (
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => template && handleFormAccess(template)}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer dark:bg-gray-800 dark:border-white/10" onClick={() => template && handleFormAccess(template)}>
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-lg mb-1">{form.title}</CardTitle>
-              <CardDescription className="text-sm">{form.description}</CardDescription>
+              <CardTitle className="text-lg mb-1 dark:text-gray-100">{form.title}</CardTitle>
+              <CardDescription className="text-sm dark:text-gray-400">{form.description}</CardDescription>
             </div>
             <Badge variant={getStatusBadgeVariant(form.status)} className="ml-2">
               {form.status}
@@ -226,10 +226,10 @@ const Forms: React.FC = () => {
 
           {form.requiredApprovals && form.requiredApprovals.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs text-muted-foreground mb-1">Required Approvals:</p>
+              <p className="text-xs text-muted-foreground dark:text-gray-500 mb-1">Required Approvals:</p>
               <div className="flex flex-wrap gap-1">
                 {form.requiredApprovals.map((approval, index) => (
-                  <Badge key={index} variant="outline" className="text-xs">
+                  <Badge key={index} variant="outline" className="text-xs dark:border-white/10 dark:text-gray-400">
                     {approval}
                   </Badge>
                 ))}
@@ -257,8 +257,8 @@ const Forms: React.FC = () => {
         {/* Header and Controls Row */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Forms</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold mb-2 dark:text-gray-100">Forms</h1>
+            <p className="text-muted-foreground dark:text-gray-400">
               Access official forms for various organizational processes and workflows.
             </p>
           </div>
@@ -270,7 +270,7 @@ const Forms: React.FC = () => {
                 placeholder="Search forms..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
+                className="pl-10 w-full dark:bg-white/5 dark:border-white/10"
               />
             </div>
 
@@ -279,7 +279,7 @@ const Forms: React.FC = () => {
                 value={selectedDivision}
                 onValueChange={setSelectedDivision}
               >
-                <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectTrigger className="w-full sm:w-[200px] dark:bg-white/5 dark:border-white/10">
                   <SelectValue placeholder="All Divisions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,10 +319,10 @@ const Forms: React.FC = () => {
           <FormsPageSkeleton />
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="all">All Forms ({allForms.length})</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-6 dark:bg-gray-800 dark:border-white/10 p-1">
+              <TabsTrigger value="all" className="dark:data-[state=active]:bg-gray-700">All Forms ({allForms.length})</TabsTrigger>
               {activeCategories.map(category => (
-                <TabsTrigger key={category.id} value={category.id}>
+                <TabsTrigger key={category.id} value={category.id} className="dark:data-[state=active]:bg-gray-700">
                   {category.name}
                 </TabsTrigger>
               ))}
@@ -334,8 +334,8 @@ const Forms: React.FC = () => {
                 <div key={category.id}>
                   <div className="flex items-center gap-3 mb-4">
                     <category.icon className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-semibold">{category.name}</h2>
-                    <Badge variant="secondary">{category.forms.length}</Badge>
+                    <h2 className="text-xl font-semibold dark:text-gray-100">{category.name}</h2>
+                    <Badge variant="secondary" className="dark:bg-gray-800 dark:text-gray-400 border-none">{category.forms.length}</Badge>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -366,8 +366,8 @@ const Forms: React.FC = () => {
                 <div className="flex items-center gap-3 mb-6">
                   <category.icon className="h-6 w-6 text-primary" />
                   <div>
-                    <h2 className="text-2xl font-semibold">{category.name}</h2>
-                    <p className="text-muted-foreground">{category.description}</p>
+                    <h2 className="text-2xl font-semibold dark:text-gray-100">{category.name}</h2>
+                    <p className="text-muted-foreground dark:text-gray-400">{category.description}</p>
                   </div>
                 </div>
 

@@ -169,13 +169,13 @@ const AddContactDialog: React.FC<AddContactDialogProps> = ({ open, onOpenChange,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+          <DialogTitle className="flex items-center gap-2 dark:text-gray-100">
             <UserPlus className="h-5 w-5" />
             Add New Contact
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dark:text-gray-400">
             Add a new member to the SCPNG organization directory.
           </DialogDescription>
         </DialogHeader>
@@ -184,22 +184,24 @@ const AddContactDialog: React.FC<AddContactDialogProps> = ({ open, onOpenChange,
           {/* Name Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="givenName">First Name *</Label>
+              <Label htmlFor="givenName" className="dark:text-gray-300">First Name *</Label>
               <Input
                 id="givenName"
                 value={formData.givenName}
                 onChange={(e) => updateField('givenName', e.target.value)}
                 placeholder="e.g., John"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="surname">Last Name *</Label>
+              <Label htmlFor="surname" className="dark:text-gray-300">Last Name *</Label>
               <Input
                 id="surname"
                 value={formData.surname}
                 onChange={(e) => updateField('surname', e.target.value)}
                 placeholder="e.g., Doe"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
                 required
               />
             </div>
@@ -207,78 +209,82 @@ const AddContactDialog: React.FC<AddContactDialogProps> = ({ open, onOpenChange,
 
           {/* Display Name (auto-generated but editable) */}
           <div className="space-y-2">
-            <Label htmlFor="displayName">Display Name</Label>
+            <Label htmlFor="displayName" className="dark:text-gray-300">Display Name</Label>
             <Input
               id="displayName"
               value={formData.displayName}
               onChange={(e) => updateField('displayName', e.target.value)}
               placeholder="Auto-generated from first and last name"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="mail">Email Address *</Label>
+            <Label htmlFor="mail" className="dark:text-gray-300">Email Address *</Label>
             <Input
               id="mail"
               type="email"
               value={formData.mail}
               onChange={(e) => updateField('mail', e.target.value)}
               placeholder="e.g., jdoe@scpng.gov.pg"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               required
             />
           </div>
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Temporary Password *</Label>
+            <Label htmlFor="password" className="dark:text-gray-300">Temporary Password *</Label>
             <Input
               id="password"
               type="password"
               value={formData.password}
               onChange={(e) => updateField('password', e.target.value)}
               placeholder="Minimum 8 characters"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               required
               minLength={8}
             />
-            <p className="text-xs text-muted-foreground">User will be prompted to change this on first sign-in.</p>
+            <p className="text-xs text-muted-foreground dark:text-gray-500">User will be prompted to change this on first sign-in.</p>
           </div>
 
           {/* Job Title */}
           <div className="space-y-2">
-            <Label htmlFor="jobTitle">Job Title</Label>
+            <Label htmlFor="jobTitle" className="dark:text-gray-300">Job Title</Label>
             <Input
               id="jobTitle"
               value={formData.jobTitle}
               onChange={(e) => updateField('jobTitle', e.target.value)}
               placeholder="e.g., Finance Officer"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
             />
           </div>
 
           {/* Division & Department */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Division</Label>
+              <Label className="dark:text-gray-300">Division</Label>
               <Select value={formData.officeLocation} onValueChange={(val) => updateField('officeLocation', val)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100">
                   <SelectValue placeholder="Select division" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                   {DIVISIONS.map((div) => (
-                    <SelectItem key={div} value={div}>{div}</SelectItem>
+                    <SelectItem key={div} value={div} className="dark:text-gray-200 dark:focus:bg-white/5">{div}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Unit / Department</Label>
+              <Label className="dark:text-gray-300">Unit / Department</Label>
               <Select value={formData.department} onValueChange={(val) => updateField('department', val)}>
-                <SelectTrigger>
+                <SelectTrigger className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100">
                   <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                   {DEPARTMENTS.map((dept) => (
-                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                    <SelectItem key={dept} value={dept} className="dark:text-gray-200 dark:focus:bg-white/5">{dept}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -288,41 +294,44 @@ const AddContactDialog: React.FC<AddContactDialogProps> = ({ open, onOpenChange,
           {/* Phone Numbers */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="businessPhone">Business Phone</Label>
+              <Label htmlFor="businessPhone" className="dark:text-gray-300">Business Phone</Label>
               <Input
                 id="businessPhone"
                 value={formData.businessPhone}
                 onChange={(e) => updateField('businessPhone', e.target.value)}
                 placeholder="e.g., +675 321 2223"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mobilePhone">Mobile Phone</Label>
+              <Label htmlFor="mobilePhone" className="dark:text-gray-300">Mobile Phone</Label>
               <Input
                 id="mobilePhone"
                 value={formData.mobilePhone}
                 onChange={(e) => updateField('mobilePhone', e.target.value)}
                 placeholder="e.g., +675 7000 0000"
+                className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
             </div>
           </div>
 
           {/* Company Name */}
           <div className="space-y-2">
-            <Label htmlFor="companyName">Company</Label>
+            <Label htmlFor="companyName" className="dark:text-gray-300">Company</Label>
             <Input
               id="companyName"
               value={formData.companyName}
               onChange={(e) => updateField('companyName', e.target.value)}
               placeholder="e.g., SCPNG"
+              className="dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder:text-gray-500"
             />
           </div>
 
           <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300">
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="dark:bg-red-700 dark:hover:bg-red-600 dark:text-white">
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />

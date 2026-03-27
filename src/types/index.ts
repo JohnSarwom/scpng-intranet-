@@ -28,6 +28,8 @@ export interface Risk {
   checklist?: ChecklistItem[];
   unit_id?: string;
   division_id?: string;
+  project_id?: string;
+  project_name?: string;
 }
 
 export interface KPI {
@@ -180,6 +182,7 @@ export interface UserAsset {
   invoice_url?: string;
   expiry_date?: string;
   life_expectancy_years?: number;
+  status?: 'active' | 'maintenance' | 'retired';
   condition?: string;
   ytd_usage?: string;
   specifications?: Record<string, any>;

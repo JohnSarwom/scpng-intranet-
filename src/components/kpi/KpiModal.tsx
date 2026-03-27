@@ -210,10 +210,10 @@ const KpiModal: React.FC<KpiModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col" container={container}>
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col dark:bg-gray-950 dark:border-white/10" container={container}>
         <DialogHeader>
-          <DialogTitle>{editingKpi ? (isReadOnly ? 'View KPI' : 'Edit KPI') : (kraData ? 'Edit KRA' : 'Add New KRA')}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="dark:text-gray-100">{editingKpi ? (isReadOnly ? 'View KPI' : 'Edit KPI') : (kraData ? 'Edit KRA' : 'Add New KRA')}</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">
             {editingKpi
               ? (isReadOnly ? 'View the details for this KPI.' : 'Update the details for this KPI.')
               : (kraData ? 'Update the details for this Key Result Area and its KPIs.' : 'Create a new Key Result Area with its associated KPIs.')}
@@ -254,7 +254,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
 
             {/* Section 2: Repeatable KPI Blocks */}
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">{editingKpi ? 'KPI Details' : 'KPIs'}</h3>
+              <h3 className="text-lg font-medium dark:text-gray-200">{editingKpi ? 'KPI Details' : 'KPIs'}</h3>
               {kpiBlocks.map((kpi, index) => (
 
                 <KpiInputBlock
@@ -281,14 +281,14 @@ const KpiModal: React.FC<KpiModalProps> = ({
         </div>
 
         {/* Footer remains fixed at the bottom */}
-        <DialogFooter className="mt-auto pt-4 border-t">
+        <DialogFooter className="mt-auto pt-4 border-t dark:border-white/10">
           <DialogClose asChild>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="dark:border-white/10 dark:hover:bg-gray-900">
               {isReadOnly ? 'Close' : 'Cancel'}
             </Button>
           </DialogClose>
           {!isReadOnly && (
-            <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting}>
+            <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isAddingNew ? (isSubmitting ? 'Adding...' : 'Add KRA') : (isSubmitting ? 'Saving...' : 'Save Changes')}
             </Button>

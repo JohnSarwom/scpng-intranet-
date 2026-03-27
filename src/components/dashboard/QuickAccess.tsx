@@ -15,14 +15,14 @@ interface QuickLinkProps {
 const QuickLink: React.FC<QuickLinkProps> = ({ icon, title, description, badge, url }) => (
   <a 
     href={url} 
-    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/30 transition-colors"
+    className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/30 dark:hover:bg-white/5 transition-colors"
   >
     <div className="text-intranet-primary mt-0.5">
       {icon}
     </div>
     <div className="flex-1">
       <div className="flex items-center justify-between">
-        <h3 className="font-medium">{title}</h3>
+        <h3 className="font-medium dark:text-gray-200">{title}</h3>
         {badge && (
           <Badge variant="outline" className="bg-intranet-primary/10 text-intranet-primary text-xs">
             {badge}
@@ -67,9 +67,9 @@ const QuickAccess: React.FC = () => {
   ];
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm animate-fade-in">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border dark:border-white/10">
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold dark:text-gray-100">
           <Bookmark className="h-5 w-5 text-intranet-primary" />
           Quick Access
         </CardTitle>

@@ -78,11 +78,11 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Edit Task</DialogTitle>
+      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh] dark:bg-gray-900 dark:border-white/10 shadow-2xl overflow-hidden p-0">
+        <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
+          <DialogTitle className="text-xl font-semibold">Edit Task</DialogTitle>
           <DialogDescription>
-            Update the task details below
+            Update the task details below.
           </DialogDescription>
         </DialogHeader>
 
@@ -95,6 +95,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 placeholder="Task Title"
                 value={editedTask.title || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
               />
             </div>
             <div className="grid gap-2">
@@ -104,6 +105,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 placeholder="Task Description"
                 value={editedTask.description || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -115,7 +117,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   value={editedTask.assignee || ''}
                   onValueChange={(value) => setEditedTask({ ...editedTask, assignee: value })}
                 >
-                  <SelectTrigger id="task-assignee" className={loading ? "opacity-50" : ""}>
+                  <SelectTrigger id="task-assignee" className={cn("dark:bg-gray-800 dark:border-white/10", loading && "opacity-50")}>
                     <SelectValue placeholder="Select assignee" />
                   </SelectTrigger>
                   <SelectContent>
@@ -142,7 +144,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     setEditedTask({ ...editedTask, status: value })
                   }
                 >
-                  <SelectTrigger id="task-status">
+                  <SelectTrigger id="task-status" className="dark:bg-gray-800 dark:border-white/10">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -165,7 +167,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                     setEditedTask({ ...editedTask, priority: value })
                   }
                 >
-                  <SelectTrigger id="task-priority">
+                  <SelectTrigger id="task-priority" className="dark:bg-gray-800 dark:border-white/10">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,6 +185,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   type="date"
                   value={editedTask.startDate instanceof Date ? editedTask.startDate.toISOString().split('T')[0] : typeof editedTask.startDate === 'string' && editedTask.startDate ? editedTask.startDate.split('T')[0] : ''}
                   onChange={(e) => setEditedTask({ ...editedTask, startDate: new Date(e.target.value) })}
+                  className="dark:bg-gray-800 dark:border-white/10"
                 />
               </div>
             </div>
@@ -246,6 +249,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   type="date"
                   value={typeof editedTask.dueDate === 'string' ? editedTask.dueDate.split('T')[0] : ''}
                   onChange={(e) => setEditedTask({ ...editedTask, dueDate: e.target.value })}
+                  className="dark:bg-gray-800 dark:border-white/10"
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -257,6 +261,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                   max="100"
                   value={editedTask.completionPercentage || 0}
                   onChange={(e) => setEditedTask({ ...editedTask, completionPercentage: parseInt(e.target.value) || 0 })}
+                  className="dark:bg-gray-800 dark:border-white/10"
                 />
               </div>
             </div>
@@ -270,9 +275,9 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="flex-shrink-0 pt-4 border-t mt-auto">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleUpdateTask}>Save Changes</Button>
+        <DialogFooter className="p-6 bg-gray-50/50 dark:bg-gray-800/50 border-t dark:border-white/10">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="dark:text-gray-400 dark:hover:text-white">Cancel</Button>
+          <Button onClick={handleUpdateTask} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">Save Changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

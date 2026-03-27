@@ -150,13 +150,13 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/30">
+      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0 dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+        <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/30 dark:bg-gray-800/50 dark:border-white/10 backdrop-blur-sm transition-colors">
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
             <Pencil className="h-5 w-5 text-primary" />
             Edit Asset
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dark:text-gray-400">
             Make changes to the asset details below. Fields marked with * are required.
           </DialogDescription>
         </DialogHeader>
@@ -172,12 +172,12 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 <Label htmlFor="edit-asset-name" className="text-sm font-medium">Asset Name <span className="text-destructive">*</span></Label>
                 <Popover open={isNamePopoverOpen} onOpenChange={setIsNamePopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={isNamePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors">
+                    <Button variant="outline" role="combobox" aria-expanded={isNamePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                       {editedAsset.name || "Select or type name..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
+                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0 dark:bg-gray-900 dark:border-white/10 shadow-xl" align="start">
                     <Command>
                       <CommandInput placeholder="Search or type name..." value={editedAsset.name || ''} onValueChange={(value) => handleChange('name', value)} />
                       <CommandList>
@@ -200,12 +200,12 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 <Label htmlFor="edit-asset-type" className="text-sm font-medium">Type</Label>
                 <Popover open={isTypePopoverOpen} onOpenChange={setIsTypePopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={isTypePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors">
+                    <Button variant="outline" role="combobox" aria-expanded={isTypePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                       {editedAsset.type || "Select or type type..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
+                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0 dark:bg-gray-900 dark:border-white/10 shadow-xl" align="start">
                     <Command>
                       <CommandInput placeholder="Search or type type..." value={editedAsset.type || ''} onValueChange={(value) => handleChange('type', value)} />
                       <CommandList>
@@ -226,16 +226,16 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit-asset-brand" className="text-sm font-medium">Brand</Label>
-                <Input id="edit-asset-brand" placeholder="e.g., Dell, Apple" value={editedAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="edit-asset-brand" className="text-sm font-medium dark:text-gray-300">Brand</Label>
+                <Input id="edit-asset-brand" placeholder="e.g., Dell, Apple" value={editedAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-asset-model" className="text-sm font-medium">Model</Label>
-                <Input id="edit-asset-model" placeholder="e.g., Latitude 7490" value={editedAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="edit-asset-model" className="text-sm font-medium dark:text-gray-300">Model</Label>
+                <Input id="edit-asset-model" placeholder="e.g., Latitude 7490" value={editedAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-asset-serial-number" className="text-sm font-medium">Serial Number</Label>
-                <Input id="edit-asset-serial-number" placeholder="e.g., ABC12345" value={editedAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="edit-asset-serial-number" className="text-sm font-medium dark:text-gray-300">Serial Number</Label>
+                <Input id="edit-asset-serial-number" placeholder="e.g., ABC12345" value={editedAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
           </div>
@@ -251,12 +251,12 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 <Label htmlFor="edit-asset-assigned-to" className="text-sm font-medium">Assigned To <span className="text-destructive">*</span></Label>
                 <Popover open={isAssigneePopoverOpen} onOpenChange={setIsAssigneePopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={isAssigneePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors">
+                    <Button variant="outline" role="combobox" aria-expanded={isAssigneePopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                       {editedAsset.assigned_to || "Select Staff Member..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
+                  <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0 dark:bg-gray-900 dark:border-white/10 shadow-xl" align="start">
                     <Command>
                       <CommandInput placeholder="Search staff member..." />
                       <CommandList>
@@ -276,7 +276,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
 
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-assigned-email" className="text-sm font-medium">Assigned Email</Label>
-                <Input id="edit-asset-assigned-email" value={editedAsset.assigned_to_email || ''} readOnly disabled className="bg-muted/50 cursor-not-allowed" />
+                <Input id="edit-asset-assigned-email" value={editedAsset.assigned_to_email || ''} readOnly disabled className="bg-muted/50 cursor-not-allowed dark:bg-gray-800 dark:border-white/10 dark:text-gray-400" />
               </div>
             </div>
 
@@ -284,8 +284,10 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-unit" className="text-sm font-medium">Unit</Label>
                 <Select value={editedAsset.unit || ''} onValueChange={(value) => handleChange('unit', value)}>
-                  <SelectTrigger id="edit-asset-unit" className="bg-background/50 focus:bg-background transition-colors"><SelectValue placeholder="Select Unit (auto-filled)" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger id="edit-asset-unit" className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
+                    <SelectValue placeholder="Select Unit (auto-filled)" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="null">Select Unit</SelectItem>
                     {units.map((unit) => (<SelectItem key={unit.id} value={unit.name}>{unit.name}</SelectItem>))}
                   </SelectContent>
@@ -295,8 +297,10 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-division" className="text-sm font-medium">Division</Label>
                 <Select value={editedAsset.division || ''} onValueChange={(value) => handleChange('division', value)}>
-                  <SelectTrigger id="edit-asset-division" className="bg-background/50 focus:bg-background transition-colors"><SelectValue placeholder="Select Division (auto-filled)" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger id="edit-asset-division" className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
+                    <SelectValue placeholder="Select Division (auto-filled)" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="null">Select Division</SelectItem>
                     {divisions.map((division) => (<SelectItem key={division.id} value={division.name}>{division.name}</SelectItem>))}
                   </SelectContent>
@@ -324,8 +328,10 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-condition" className="text-sm font-medium">Condition</Label>
                 <Select value={editedAsset.condition || ''} onValueChange={(value) => handleChange('condition', value)}>
-                  <SelectTrigger id="edit-asset-condition" className="bg-background/50 focus:bg-background transition-colors"><SelectValue placeholder="Select Condition" /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger id="edit-asset-condition" className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
+                    <SelectValue placeholder="Select Condition" />
+                  </SelectTrigger>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="null">Select Condition</SelectItem>
                     {ASSET_CONDITIONS.map((option) => (<SelectItem key={option} value={option}>{option}</SelectItem>))}
                   </SelectContent>
@@ -336,9 +342,9 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 <Label htmlFor="edit-asset-vendor" className="text-sm font-medium">Vendor</Label>
                 <Popover open={isVendorPopoverOpen} onOpenChange={setIsVendorPopoverOpen}>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" role="combobox" aria-expanded={isVendorPopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors">
+                    <Button variant="outline" role="combobox" aria-expanded={isVendorPopoverOpen} className="w-full justify-between font-normal text-left bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                       {editedAsset.vendor || "Select or type vendor..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-muted-foreground" />
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[--radix-popover-content-available-height] p-0">
@@ -377,7 +383,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                     type="number"
                     step="0.01"
                     placeholder="e.g., 1200.50"
-                    className="pl-7 bg-background/50 focus:bg-background transition-colors"
+                    className="pl-7 bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                     value={editedAsset.purchase_cost ?? ''}
                     onChange={(e) => handleChange('purchase_cost', e.target.value)}
                   />
@@ -404,12 +410,12 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-life" className="text-sm font-medium">Life Expectancy (Years)</Label>
-                <Input id="edit-asset-life" type="number" placeholder="e.g., 3" value={editedAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="edit-asset-life" type="number" placeholder="e.g., 3" value={editedAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-ytd-usage" className="text-sm font-medium">YTD Usage</Label>
-                <Input id="edit-asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={editedAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="edit-asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={editedAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
           </div>
@@ -433,7 +439,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                         handleChange('invoice_url', e.target.value);
                         setShowInvoiceUpload(false);
                       }}
-                      className="bg-background/50 focus:bg-background transition-colors"
+                      className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                     />
                     <Button
                       variant="outline"
@@ -459,7 +465,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
 
               <div className="space-y-2">
                 <Label htmlFor="edit-asset-barcode-url" className="text-sm font-medium">Barcode URL</Label>
-                <Input id="edit-asset-barcode-url" placeholder="https://..." value={editedAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="edit-asset-barcode-url" placeholder="https://..." value={editedAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
 
@@ -481,7 +487,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 placeholder="Enter asset description or specs..."
                 value={editedAsset.description || ''}
                 onChange={(e) => handleChange('description', e.target.value)}
-                className="min-h-[100px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+                className="min-h-[100px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
               />
             </div>
 
@@ -492,7 +498,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
                 placeholder="Additional contextual notes about the asset"
                 value={editedAsset.notes || ''}
                 onChange={(e) => handleChange('notes', e.target.value)}
-                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
               />
             </div>
 
@@ -509,11 +515,11 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-muted/30 sm:justify-between items-center gap-4">
+        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-muted/30 sm:justify-between items-center gap-4 dark:bg-gray-800/50 dark:border-white/10 transition-colors">
           <Button variant="destructive" onClick={onDelete}>Delete Asset</Button>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={handleClose}>Cancel</Button>
-            <Button onClick={handleSaveChanges}>Save Changes</Button>
+            <Button onClick={handleSaveChanges} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">Save Changes</Button>
           </div>
         </DialogFooter>
       </DialogContent>

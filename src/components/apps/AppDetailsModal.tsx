@@ -29,11 +29,11 @@ export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClos
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
+            <DialogContent className="max-w-md sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden dark:bg-gray-900 border dark:border-white/10">
                 <DialogHeader className="p-6 pb-2">
                     <div className="flex flex-col items-center sm:items-start text-center sm:text-left gap-4">
                         {/* Icon */}
-                        <div className="h-20 w-20 rounded-xl bg-gray-50 flex items-center justify-center text-5xl shadow-sm border border-gray-100 p-2">
+                        <div className="h-20 w-20 rounded-xl bg-gray-50 dark:bg-white/5 flex items-center justify-center text-5xl shadow-sm border border-gray-100 dark:border-white/10 p-2">
                             {isIconUrl ? (
                                 <img
                                     src={app.icon}
@@ -50,8 +50,8 @@ export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClos
                         </div>
 
                         <div className="space-y-1">
-                            <DialogTitle className="text-2xl">{app.name}</DialogTitle>
-                            <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                            <DialogTitle className="text-2xl dark:text-gray-100">{app.name}</DialogTitle>
+                            <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2.5 py-0.5 text-xs font-medium text-gray-800 dark:text-gray-300">
                                 {app.category || 'Uncategorized'}
                             </span>
                         </div>
@@ -59,7 +59,7 @@ export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClos
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto px-6 py-2">
-                    <DialogDescription className="text-base text-gray-600 text-center sm:text-left">
+                    <DialogDescription className="text-base text-gray-600 dark:text-gray-400 text-center sm:text-left">
                         {app.description || 'No description available for this application.'}
                     </DialogDescription>
 
@@ -68,7 +68,7 @@ export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClos
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 pt-2 sm:justify-between gap-2 border-t mt-auto">
+                <DialogFooter className="p-6 pt-2 sm:justify-between gap-2 border-t dark:border-white/10 mt-auto">
                     <Button
                         type="button"
                         variant="secondary"

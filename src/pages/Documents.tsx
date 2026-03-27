@@ -1346,27 +1346,28 @@ export default function Documents() {
     breadcrumbs: BreadcrumbItem[];
     onBreadcrumbClick: (breadcrumb: BreadcrumbItem) => void
   }) => (
-    <div className="flex items-center gap-2 text-sm text-gray-600 mb-6 p-3 bg-gray-50 rounded-lg">
+    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-6 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border dark:border-white/10">
       {breadcrumbs.map((breadcrumb, index) => (
         <div key={breadcrumb.id} className="flex items-center gap-2">
           <button
             onClick={() => onBreadcrumbClick(breadcrumb)}
-            className="text-primary hover:text-primary/80 hover:underline font-medium"
+            className="text-primary dark:text-blue-400 hover:text-primary/80 hover:underline font-medium"
           >
             {breadcrumb.name}
           </button>
           {index < breadcrumbs.length - 1 && (
-            <ChevronRight className="h-4 w-4 text-gray-400" />
+            <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-600" />
           )}
         </div>
       ))}
     </div>
   );
 
+
   // File card component for individual documents
   const FileCard = ({ file, onClick }: { file: MockDocument; onClick: (file: MockDocument) => void }) => (
     <Card
-      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] bg-white border border-gray-200"
+      className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10"
       onClick={() => onClick(file)}
     >
       <CardContent className="p-4">
@@ -1375,16 +1376,16 @@ export default function Documents() {
             {file.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-medium text-gray-900 text-sm line-clamp-2 mb-1" title={file.name}>
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm line-clamp-2 mb-1" title={file.name}>
               {file.name}
             </h4>
             {file.description && (
-              <p className="text-xs text-gray-600 line-clamp-2 mb-2">{file.description}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">{file.description}</p>
             )}
           </div>
         </div>
 
-        <div className="space-y-1 text-xs text-gray-500 mb-3">
+        <div className="space-y-1 text-xs text-gray-500 dark:text-gray-500 mb-3">
           <div className="flex items-center justify-between">
             <span>{file.size}</span>
             <span>{file.lastModified}</span>
@@ -1395,12 +1396,12 @@ export default function Documents() {
         {file.tags && file.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-3">
             {file.tags.slice(0, 3).map((tag, index) => (
-              <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+              <span key={index} className="px-2 py-1 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-full text-xs border dark:border-white/10">
                 {tag}
               </span>
             ))}
             {file.tags.length > 3 && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+              <span className="px-2 py-1 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 rounded-full text-xs">
                 +{file.tags.length - 3}
               </span>
             )}
@@ -1409,13 +1410,13 @@ export default function Documents() {
 
         {/* Shared with avatars */}
         {file.sharedWith && file.sharedWith.length > 0 && (
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-            <span className="text-xs text-gray-400">Shared with:</span>
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-white/5">
+            <span className="text-xs text-gray-400 dark:text-gray-500">Shared with:</span>
             <div className="flex -space-x-1">
               {file.sharedWith.slice(0, 3).map((user, index) => (
                 <div
                   key={user.id}
-                  className={`w-5 h-5 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border border-white relative`}
+                  className={`w-5 h-5 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border border-white dark:border-gray-800 relative`}
                   title={user.name}
                   style={{ zIndex: 10 - index }}
                 >
@@ -1423,7 +1424,7 @@ export default function Documents() {
                 </div>
               ))}
               {file.sharedWith.length > 3 && (
-                <div className="w-5 h-5 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border border-white">
+                <div className="w-5 h-5 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border border-white dark:border-gray-800">
                   +{file.sharedWith.length - 3}
                 </div>
               )}
@@ -1434,6 +1435,7 @@ export default function Documents() {
     </Card>
   );
 
+
   // New component for visual document/folder cards
   const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions }: {
     folder: DocumentFolder;
@@ -1443,7 +1445,7 @@ export default function Documents() {
     showAdminActions?: boolean;
   }) => (
     <Card
-      className="group relative overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-gradient-to-br from-white to-gray-50/50 border border-gray-200/60"
+      className="group relative overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 shadow-sm"
       onClick={() => onClick(folder)}
     >
       {/* Hover action buttons - top right */}
@@ -1456,7 +1458,7 @@ export default function Documents() {
                 e.stopPropagation();
                 onEdit(folder);
               }}
-              className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-primary hover:text-white hover:border-primary transition-all opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all opacity-0 group-hover:opacity-100"
               title="Edit category"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -1469,7 +1471,7 @@ export default function Documents() {
                 e.stopPropagation();
                 onDelete(folder);
               }}
-              className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all opacity-0 group-hover:opacity-100"
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
               title="Delete category"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -1484,16 +1486,16 @@ export default function Documents() {
             {folder.icon}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-lg text-gray-900 truncate mb-1" title={folder.name}>
+            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100 truncate mb-1" title={folder.name}>
               {folder.name}
             </h3>
             {folder.description && (
-              <p className="text-sm text-gray-600 line-clamp-2 mb-2">{folder.description}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">{folder.description}</p>
             )}
           </div>
         </div>
 
-        <div className="space-y-2 text-sm text-gray-500">
+        <div className="space-y-2 text-sm text-gray-500 dark:text-gray-500">
           {folder.fileCount > 0 && (
             <div className="flex items-center gap-2">
               <File className="h-4 w-4" />
@@ -1516,21 +1518,21 @@ export default function Documents() {
 
         {/* Shared with avatars */}
         {folder.sharedWith && folder.sharedWith.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-gray-100">
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400">Shared with:</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">Shared with:</span>
               <div className="flex -space-x-2">
                 {folder.sharedWith.slice(0, 3).map((user, index) => (
                   <div
                     key={user.id}
-                    className={`w-6 h-6 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border-2 border-white relative z-${10 - index}`}
+                    className={`w-6 h-6 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800 relative z-${10 - index}`}
                     title={user.name}
                   >
                     {user.initials}
                   </div>
                 ))}
                 {folder.sharedWith.length > 3 && (
-                  <div className="w-6 h-6 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border-2 border-white">
+                  <div className="w-6 h-6 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800">
                     +{folder.sharedWith.length - 3}
                   </div>
                 )}
@@ -1540,8 +1542,8 @@ export default function Documents() {
         )}
 
         {folder.category === 'company-category' && (
-          <div className="mt-2 pt-2 border-t border-gray-100">
-            <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/5">
+            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
               <Building className="h-3 w-3" />
               <span>Organisational Wide</span>
             </div>
@@ -1550,6 +1552,7 @@ export default function Documents() {
       </CardContent>
     </Card>
   );
+
 
   const handleFolderClick = (folder: DocumentFolder) => {
     if (activePrimaryTab === 'my-documents' && folder.isFolder) {
@@ -1688,19 +1691,26 @@ export default function Documents() {
     <PageLayout>
       <div className="mb-6 animate-fade-in flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-2">Document Management System</h1>
-          <p className="text-gray-500">Access and manage organisational and personal documents</p>
+          <h1 className="text-2xl font-bold mb-2 dark:text-gray-100">Document Management System</h1>
+          <p className="text-gray-500 dark:text-gray-400">Access and manage organisational and personal documents</p>
         </div>
-        <Button onClick={loadData} variant="outline" disabled={isUploading || isLoading}>
+        <Button onClick={loadData} variant="outline" disabled={isUploading || isLoading} className="dark:border-white/10 dark:hover:bg-gray-800">
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
         </Button>
       </div>
 
+
       <Tabs value={activePrimaryTab} onValueChange={handlePrimaryTabChange} className="w-full">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 w-full px-0.5 md:pr-1.5">
-          <TabsList>
+
+          <TabsList className="dark:bg-gray-800/50 dark:border dark:border-white/10 p-1">
             {primaryTabsConfig.map(tab => (
-              <TabsTrigger key={tab.id} value={tab.id} disabled={isLoading || isUploading}>
+              <TabsTrigger 
+                key={tab.id} 
+                value={tab.id} 
+                disabled={isLoading || isUploading}
+                className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400"
+              >
                 {tab.icon} {tab.label}
               </TabsTrigger>
             ))}
@@ -1709,12 +1719,12 @@ export default function Documents() {
             <Input
               placeholder={searchPlaceholder} value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full md:w-[300px]" disabled={isUploading || isLoading}
+              className="w-full md:w-[300px] dark:bg-white/5 dark:border-white/10 dark:placeholder:text-gray-500" 
+              disabled={isUploading || isLoading}
             />
-            {/* Show Add Document button if not on 'My Documents' tab */}
-            {/* Button moved to header section below as per user request */}
           </div>
         </div>
+
 
 
 
@@ -1770,7 +1780,8 @@ export default function Documents() {
               )}
 
               {!isLoading && (!authError || activePrimaryTab !== 'my-documents') && (
-                <div className="space-y-8 border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+                <div className="space-y-8 border border-gray-200 dark:border-white/10 rounded-lg p-6 bg-white/50 dark:bg-gray-900/20">
+
                   {/* Breadcrumb Navigation */}
                   {navigationState.breadcrumbs.length > 0 && (
                     <BreadcrumbNavigation
@@ -1788,18 +1799,19 @@ export default function Documents() {
                       <div>
                         <div className="mb-4 flex items-center justify-between">
                           <div>
-                            <h2 className="text-xl font-semibold text-primary mb-1">
+                            <h2 className="text-xl font-semibold text-primary dark:text-gray-100 mb-1">
                               {activePrimaryTab === 'company-wide' && 'Document Categories'}
                               {activePrimaryTab === 'my-documents' && 'My Files'}
                               {activePrimaryTab === 'team-unit' && 'Team Documents'}
                               {activePrimaryTab === 'external-shared' && 'External Documents'}
                             </h2>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
                               {activePrimaryTab === 'company-wide' && 'Browse documents by organizational category'}
                               {activePrimaryTab === 'my-documents' && 'Your personal files and folders'}
                               {activePrimaryTab === 'team-unit' && 'Shared team and division documents'}
                               {activePrimaryTab === 'external-shared' && 'Documents shared with external parties'}
                             </p>
+
                           </div>
                           {activePrimaryTab !== 'my-documents' && canAddDocument && (
                             <div className="flex items-center gap-2">
@@ -1909,11 +1921,12 @@ export default function Documents() {
                       {currentCategoryData.sections.map((section) => (
                         <div key={section.id} className="space-y-4">
                           <div>
-                            <h3 className="text-lg font-semibold text-primary">{section.name}</h3>
+                            <h3 className="text-lg font-semibold text-primary dark:text-gray-100">{section.name}</h3>
                             {section.description && (
-                              <p className="text-sm text-gray-600">{section.description}</p>
+                              <p className="text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
                             )}
                           </div>
+
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {section.files.map((file) => (
                               <FileCard

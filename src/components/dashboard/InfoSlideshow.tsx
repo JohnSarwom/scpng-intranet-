@@ -173,13 +173,13 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
   // Loading State
   if (isLoading) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="shadow-sm animate-fade-in rounded-xl dark:bg-gray-800 dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <div className="flex items-center gap-2">
             {icon}
-            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+            <CardTitle className="text-lg font-bold dark:text-gray-100">{title}</CardTitle>
           </div>
-          <Badge variant={badgeVariant} className="font-medium">
+          <Badge variant={badgeVariant} className="font-medium bg-intranet-primary/10 text-intranet-primary border-none">
             {badgeText}
           </Badge>
         </CardHeader>
@@ -196,11 +196,11 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
   // Error State
   if (error) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="shadow-sm animate-fade-in rounded-xl dark:bg-gray-800 dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <div className="flex items-center gap-2">
             {icon}
-            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+            <CardTitle className="text-lg font-bold dark:text-gray-100">{title}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -210,7 +210,7 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md">
               {error}
             </p>
-            <Button onClick={onRefetch} variant="outline" size="sm">
+            <Button onClick={() => onRefetch()} variant="outline" size="sm" className="dark:border-white/10 dark:hover:bg-white/5">
               Try Again
             </Button>
           </div>
@@ -222,16 +222,16 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
   // No Slides State
   if (!slides || slides.length === 0) {
     return (
-      <Card className="shadow-sm animate-fade-in rounded-xl">
+      <Card className="shadow-sm animate-fade-in rounded-xl dark:bg-gray-800 dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <div className="flex items-center gap-2">
             {icon}
-            <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+            <CardTitle className="text-lg font-bold dark:text-gray-100">{title}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center h-[350px] space-y-4">
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400 font-medium">
               📋 No content available. Check back later!
             </p>
           </div>
@@ -242,15 +242,15 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
 
   // Main Slideshow
   return (
-    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in">
+    <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border border-gray-200 dark:border-white/10">
       {/* Header with Navigation */}
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <div className="flex items-center gap-2">
           {icon}
-          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+          <CardTitle className="text-lg font-bold dark:text-gray-100">{title}</CardTitle>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={badgeVariant} className="font-medium">
+          <Badge variant={badgeVariant} className="font-bold bg-intranet-primary/10 text-intranet-primary border-none uppercase text-[10px] tracking-wider">
             {badgeText}
           </Badge>
           {slides.length > 1 && (

@@ -52,10 +52,10 @@ const EditPhotoModal: React.FC<EditPhotoModalProps> = ({ isOpen, onClose, photo,
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent className="dark:bg-gray-900 dark:border-white/10">
         <DialogHeader>
-          <DialogTitle>Edit Photo Details</DialogTitle>
-          <DialogDescription>Update the caption for this photo.</DialogDescription>
+          <DialogTitle className="dark:text-gray-100">Edit Photo Details</DialogTitle>
+          <DialogDescription className="dark:text-gray-400">Update the caption for this photo.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="aspect-video w-full overflow-hidden rounded-md">
@@ -66,7 +66,7 @@ const EditPhotoModal: React.FC<EditPhotoModalProps> = ({ isOpen, onClose, photo,
             placeholder="Enter a caption for the photo"
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
-            className="min-h-[100px]"
+            className="min-h-[100px] dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
           />
         </div>
         <DialogFooter>

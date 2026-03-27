@@ -227,34 +227,34 @@ const Contacts = () => {
     const photoUrl = photos?.profileUrl;
 
     return (
-      <Card key={contact.id} className="overflow-hidden animate-fade-in" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
-        <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary"></div>
+      <Card key={contact.id} className="overflow-hidden animate-fade-in dark:bg-gray-800 dark:border-white/10 shadow-sm" style={{ animationDelay: `${0.3 + index * 0.05}s` }}>
+        <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary opacity-90"></div>
         <CardContent className="p-6 pt-0 relative">
           <div className="flex justify-center">
             <img
               src={photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${contact.displayName}&backgroundColor=600018`}
               alt={contact.displayName}
-              className="w-20 h-20 rounded-full border-4 border-background -mt-10 shadow-md object-cover"
+              className="w-20 h-20 rounded-full border-4 border-background dark:border-gray-800 -mt-10 shadow-md object-cover"
             />
           </div>
 
           <div className="text-center mt-2">
-            <h3 className="font-bold">{contact.displayName}</h3>
-            <p className="text-sm text-muted-foreground">{contact.jobTitle || 'No position specified'}</p>
+            <h3 className="font-bold dark:text-gray-100">{contact.displayName}</h3>
+            <p className="text-sm text-muted-foreground dark:text-gray-400">{contact.jobTitle || 'No position specified'}</p>
             {contact.department && (
-              <span className="inline-block px-3 py-1 bg-secondary text-secondary-foreground text-xs rounded-full mt-1">
+              <span className="inline-block px-3 py-1 bg-secondary/10 dark:bg-white/5 text-secondary dark:text-gray-300 text-xs rounded-full mt-2 border dark:border-white/10">
                 {contact.department}
               </span>
             )}
             {contact.companyName && (
-              <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
+              <div className="mt-2 text-xs text-muted-foreground dark:text-gray-400 flex items-center justify-center">
                 <Building className="h-3 w-3 mr-1" />
                 {contact.companyName}
               </div>
             )}
             {/* Show division badge for admins */}
             {isAdmin && (contact as any).divisionId && (
-              <div className="mt-1 text-xs text-muted-foreground flex items-center justify-center">
+              <div className="mt-1 text-xs text-muted-foreground dark:text-gray-400 flex items-center justify-center">
                 <Shield className="h-3 w-3 mr-1" />
                 {(contact as any).divisionId.replace(/-/g, ' ')}
               </div>
@@ -263,32 +263,32 @@ const Contacts = () => {
 
           <div className="mt-4 space-y-2">
             {contact.emailAddresses?.[0] && (
-              <div className="flex items-center text-sm">
-                <Mail className="h-4 w-4 mr-2 text-intranet-primary" />
+              <div className="flex items-center text-sm dark:text-gray-300">
+                <Mail className="h-4 w-4 mr-2 text-intranet-primary dark:text-intranet-primary/80" />
                 <span className="truncate">{contact.emailAddresses[0].address}</span>
               </div>
             )}
 
             {(contact.businessPhones?.[0] || contact.mobilePhone) && (
-              <div className="flex items-center text-sm">
-                <Phone className="h-4 w-4 mr-2 text-intranet-primary" />
+              <div className="flex items-center text-sm dark:text-gray-300">
+                <Phone className="h-4 w-4 mr-2 text-intranet-primary dark:text-intranet-primary/80" />
                 <span>{contact.businessPhones?.[0] || contact.mobilePhone}</span>
               </div>
             )}
 
             {contact.officeLocation && (
-              <div className="flex items-center text-sm">
-                <MapPin className="h-4 w-4 mr-2 text-intranet-primary" />
+              <div className="flex items-center text-sm dark:text-gray-300">
+                <MapPin className="h-4 w-4 mr-2 text-intranet-primary dark:text-intranet-primary/80" />
                 <span>{contact.officeLocation}</span>
               </div>
             )}
           </div>
 
-          <div className="mt-4 flex justify-between">
+          <div className="mt-6">
             <Button
               variant="outline"
               size="sm"
-              className="w-full icon-hover-effect"
+              className="w-full icon-hover-effect dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"
               onClick={() => {
                 setSelectedContact(contact);
                 setIsModalOpen(true);
@@ -307,23 +307,25 @@ const Contacts = () => {
       {isLoading ? (
         // Loading skeletons
         Array.from({ length: 8 }).map((_, index) => (
-          <Card key={index} className="overflow-hidden">
-            <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary"></div>
+        Array.from({ length: 8 }).map((_, index) => (
+          <Card key={index} className="overflow-hidden dark:bg-gray-800 dark:border-white/10">
+            <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary opacity-50"></div>
             <CardContent className="p-6 pt-0 relative">
               <div className="flex justify-center">
-                <Skeleton className="w-20 h-20 rounded-full -mt-10" />
+                <Skeleton className="w-20 h-20 rounded-full -mt-10 dark:bg-gray-700" />
               </div>
               <div className="text-center mt-2">
-                <Skeleton className="h-6 w-32 mx-auto mb-2" />
-                <Skeleton className="h-4 w-24 mx-auto" />
+                <Skeleton className="h-6 w-32 mx-auto mb-2 dark:bg-gray-700" />
+                <Skeleton className="h-4 w-24 mx-auto dark:bg-gray-700" />
               </div>
               <div className="mt-4 space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-full dark:bg-gray-700" />
+                <Skeleton className="h-4 w-3/4 dark:bg-gray-700" />
+                <Skeleton className="h-4 w-1/2 dark:bg-gray-700" />
               </div>
             </CardContent>
           </Card>
+        ))
         ))
       ) : contactsToRender.length > 0 ? (
         contactsToRender.map((contact, index) => renderContactCard(contact, index))
@@ -405,7 +407,7 @@ const Contacts = () => {
 
           return (
             <div key={divisionId} className="animate-fade-in">
-              <h2 className="text-xl font-semibold mb-4 px-4 py-2 bg-secondary text-white rounded-lg">{divisionName}</h2>
+              <h2 className="text-xl font-semibold mb-4 px-4 py-2 bg-secondary/10 dark:bg-white/5 text-secondary dark:text-gray-100 rounded-lg border dark:border-white/10">{divisionName}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {contacts.map((contact, index) => renderContactCard(contact, index))}
               </div>
@@ -466,7 +468,7 @@ const Contacts = () => {
 
           return (
             <div key={unitName} className="animate-fade-in">
-              <h2 className="text-xl font-semibold mb-4 px-4 py-2 bg-secondary text-white rounded-lg">{formattedUnitName}</h2>
+              <h2 className="text-xl font-semibold mb-4 px-4 py-2 bg-secondary/10 dark:bg-white/5 text-secondary dark:text-gray-100 rounded-lg border dark:border-white/10">{formattedUnitName}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {contacts.map((contact, index) => renderContactCard(contact, index))}
               </div>
@@ -501,20 +503,20 @@ const Contacts = () => {
       </div>
 
       <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full md:w-auto">
-          <TabsTrigger value="all" className="flex items-center gap-2">
+        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full dark:bg-gray-800/50 dark:border dark:border-white/10 p-1 h-auto">
+          <TabsTrigger value="all" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
             <Users className="h-4 w-4" />
             All Contacts
           </TabsTrigger>
-          <TabsTrigger value="division" className="flex items-center gap-2">
+          <TabsTrigger value="division" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
             <Briefcase className="h-4 w-4" />
             Division Contacts
           </TabsTrigger>
-          <TabsTrigger value="units" className="flex items-center gap-2">
+          <TabsTrigger value="units" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
             <Building className="h-4 w-4" />
             Unit Contacts
           </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
+          <TabsTrigger value="users" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
             <Users className="h-4 w-4" />
             User Contacts
           </TabsTrigger>
@@ -523,10 +525,10 @@ const Contacts = () => {
         <TabsContent value="all">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-grow animate-fade-in">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
               <Input
                 placeholder="Search by name, position, or email..."
-                className="pl-10"
+                className="pl-10 dark:bg-white/5 dark:border-white/10 dark:text-gray-200 dark:placeholder:text-gray-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -534,12 +536,12 @@ const Contacts = () => {
 
             <div className="flex flex-col md:flex-row gap-2 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] dark:bg-white/5 dark:border-white/10 dark:text-gray-200">
                   <SelectValue placeholder="Department" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                   {departments.map((dept) => (
-                    <SelectItem key={dept} value={dept.toLowerCase()}>
+                    <SelectItem key={dept} value={dept.toLowerCase()} className="dark:text-gray-200 dark:focus:bg-white/5">
                       {dept}
                     </SelectItem>
                   ))}
@@ -547,12 +549,12 @@ const Contacts = () => {
               </Select>
 
               <Select value={companyFilter} onValueChange={setCompanyFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[180px] dark:bg-white/5 dark:border-white/10 dark:text-gray-200">
                   <SelectValue placeholder="Company" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="dark:bg-gray-800 dark:border-white/10">
                   {companies.map((company) => (
-                    <SelectItem key={company} value={company.toLowerCase()}>
+                    <SelectItem key={company} value={company.toLowerCase()} className="dark:text-gray-200 dark:focus:bg-white/5">
                       {company}
                     </SelectItem>
                   ))}

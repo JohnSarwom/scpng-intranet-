@@ -344,13 +344,13 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleCloseAndReset()}>
-      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0">
-        <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/30">
+      <DialogContent className="sm:max-w-[700px] flex flex-col max-h-[90vh] p-0 overflow-hidden gap-0 dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+        <DialogHeader className="px-6 py-4 border-b border-border/50 bg-muted/30 dark:bg-gray-800/50 dark:border-white/10 backdrop-blur-sm transition-colors">
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
             <PackagePlus className="h-5 w-5 text-primary" />
             Add New Asset
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="dark:text-gray-400">
             Fill in the details for the new asset. Fields marked with * are required.
           </DialogDescription>
         </DialogHeader>
@@ -370,7 +370,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                   placeholder="e.g., Dell Latitude 5420"
                   value={newAsset.name || ''}
                   onChange={(e) => handleChange('name', e.target.value)}
-                  className="w-full bg-background/50 focus:bg-background transition-colors"
+                  className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                 />
               </div>
               {/* Type Input - Text field in SharePoint */}
@@ -381,7 +381,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                   placeholder="e.g., Laptop, Desktop PC, Monitor"
                   value={newAsset.type || ''}
                   onChange={(e) => handleChange('type', e.target.value)}
-                  className="w-full bg-background/50 focus:bg-background transition-colors"
+                  className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                 />
               </div>
             </div>
@@ -389,16 +389,16 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
             {/* Row: Brand, Model, Serial Number */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="asset-brand" className="text-sm font-medium">Brand</Label>
-                <Input id="asset-brand" placeholder="e.g., Dell, Apple" value={newAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="asset-brand" className="text-sm font-medium dark:text-gray-300">Brand</Label>
+                <Input id="asset-brand" placeholder="e.g., Dell, Apple" value={newAsset.brand || ''} onChange={(e) => handleChange('brand', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="asset-model" className="text-sm font-medium">Model</Label>
-                <Input id="asset-model" placeholder="e.g., Latitude 7490" value={newAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="asset-model" className="text-sm font-medium dark:text-gray-300">Model</Label>
+                <Input id="asset-model" placeholder="e.g., Latitude 7490" value={newAsset.model || ''} onChange={(e) => handleChange('model', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="asset-serial-number" className="text-sm font-medium">Serial Number</Label>
-                <Input id="asset-serial-number" placeholder="e.g., ABC12345" value={newAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Label htmlFor="asset-serial-number" className="text-sm font-medium dark:text-gray-300">Serial Number</Label>
+                <Input id="asset-serial-number" placeholder="e.g., ABC12345" value={newAsset.serial_number || ''} onChange={(e) => handleChange('serial_number', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
           </div>
@@ -444,10 +444,10 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                   value={newAsset.unit || ''}
                   onValueChange={(value) => handleChange('unit', value)}
                 >
-                  <SelectTrigger id="asset-unit" className="bg-background/50 focus:bg-background transition-colors">
+                  <SelectTrigger id="asset-unit" className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                     <SelectValue placeholder="Select Unit" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="null">Select Unit</SelectItem>
                     {units.map((unit) => (
                       <SelectItem key={unit.id} value={unit.name}>
@@ -463,10 +463,10 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                   value={newAsset.division || ''}
                   onValueChange={(value) => handleChange('division', value)}
                 >
-                  <SelectTrigger id="asset-division" className="bg-background/50 focus:bg-background transition-colors">
+                  <SelectTrigger id="asset-division" className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200">
                     <SelectValue placeholder="Select Division" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="dark:bg-gray-900 dark:border-white/10">
                     <SelectItem value="null">Select Division</SelectItem>
                     {divisions.map((division) => (
                       <SelectItem key={division.id} value={division.name}>
@@ -489,24 +489,24 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Condition Input - Text field in SharePoint */}
               <div className="space-y-2">
-                <Label htmlFor="asset-condition" className="text-sm font-medium">Condition</Label>
+                <Label htmlFor="asset-condition" className="text-sm font-medium dark:text-gray-300">Condition</Label>
                 <Input
                   id="asset-condition"
                   placeholder="e.g., Excellent, Good, Fair, Poor"
                   value={newAsset.condition || ''}
                   onChange={(e) => handleChange('condition', e.target.value)}
-                  className="bg-background/50 focus:bg-background transition-colors"
+                  className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                 />
               </div>
               {/* Vendor Input */}
               <div className="space-y-2">
-                <Label htmlFor="asset-vendor" className="text-sm font-medium">Vendor</Label>
+                <Label htmlFor="asset-vendor" className="text-sm font-medium dark:text-gray-300">Vendor</Label>
                 <Input
                   id="asset-vendor"
                   placeholder="e.g., Dell, HP, Lenovo"
                   value={newAsset.vendor || ''}
                   onChange={(e) => handleChange('vendor', e.target.value)}
-                  className="bg-background/50 focus:bg-background transition-colors"
+                  className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                 />
               </div>
             </div>
@@ -529,7 +529,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                     type="number"
                     step="0.01"
                     placeholder="e.g., 1200.50"
-                    className="pl-7 bg-background/50 focus:bg-background transition-colors"
+                    className="pl-7 bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                     value={newAsset.purchase_cost ?? ''}
                     onChange={(e) => handleChange('purchase_cost', e.target.value)}
                   />
@@ -557,11 +557,11 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="asset-life" className="text-sm font-medium">Life Expectancy (Years)</Label>
-                <Input id="asset-life" type="number" placeholder="e.g., 3" value={newAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="asset-life" type="number" placeholder="e.g., 3" value={newAsset.life_expectancy_years ?? ''} onChange={(e) => handleChange('life_expectancy_years', e.target.value ? parseInt(e.target.value, 10) : undefined)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="asset-ytd-usage" className="text-sm font-medium">YTD Usage</Label>
-                <Input id="asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={newAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="asset-ytd-usage" placeholder="e.g., 50 hours, 1000km" value={newAsset.ytd_usage || ''} onChange={(e) => handleChange('ytd_usage', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
           </div>
@@ -585,14 +585,14 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                     onChange={(e) => {
                       handleChange('invoice_url', e.target.value);
                     }}
-                    className="bg-background/50 focus:bg-background transition-colors"
+                    className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
                   />
                 </div>
               </div>
               {/* Barcode URL Input */}
               <div className="space-y-2">
                 <Label htmlFor="asset-barcode-url" className="text-sm font-medium">Barcode URL</Label>
-                <Input id="asset-barcode-url" placeholder="https://..." value={newAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} className="bg-background/50 focus:bg-background transition-colors" />
+                <Input id="asset-barcode-url" placeholder="https://..." value={newAsset.barcode_url || ''} onChange={(e) => handleChange('barcode_url', e.target.value)} className="bg-background/50 focus:bg-background transition-colors dark:bg-gray-800 dark:border-white/10 dark:text-gray-200" />
               </div>
             </div>
 
@@ -652,7 +652,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                 placeholder="Enter asset description or specs (e.g., CPU, RAM, Storage)..."
                 value={newAsset.description || ''}
                 onChange={(e) => handleChange('description', e.target.value)}
-                className="min-h-[100px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+                className="min-h-[100px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
               />
             </div>
 
@@ -664,19 +664,19 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
                 placeholder="Additional contextual notes about the asset"
                 value={newAsset.notes || ''}
                 onChange={(e) => handleChange('notes', e.target.value)}
-                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
               />
             </div>
 
             {/* Admin Comments */}
             <div className="space-y-2">
-              <Label htmlFor="asset-admin-comments" className="text-sm font-medium">Admin Comments</Label>
+              <Label htmlFor="asset-admin-comments" className="text-sm font-medium dark:text-gray-300">Admin Comments</Label>
               <Textarea
                 id="asset-admin-comments"
                 placeholder="Internal comments visible to admins"
                 value={newAsset.admin_comments || ''}
                 onChange={(e) => handleChange('admin_comments', e.target.value)}
-                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar"
+                className="min-h-[80px] bg-background/50 focus:bg-background transition-colors resize-y custom-scrollbar dark:bg-gray-800 dark:border-white/10 dark:text-gray-200"
               />
             </div>
           </div>
@@ -684,7 +684,7 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
 
         {/* ChecklistSection removed based on schema analysis */}
 
-        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-muted/30 sm:justify-end gap-2">
+        <DialogFooter className="px-6 py-4 border-t border-border/50 bg-muted/30 sm:justify-end gap-2 dark:bg-gray-800/50 dark:border-white/10 transition-colors">
           <Button variant="outline" onClick={handleCloseAndReset}>Cancel</Button>
           <Button onClick={handleAddAsset} disabled={isUploading}>
             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

@@ -105,6 +105,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 type={field.type}
                 placeholder={field.placeholder}
                 pattern={field.pattern}
+                className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
               />
             )}
           />
@@ -128,6 +129,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 {...formField}
                 type="tel"
                 placeholder={field.placeholder || "+675 123 4567"}
+                className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
               />
             )}
           />
@@ -167,7 +169,8 @@ export const FormField: React.FC<FormFieldProps> = ({
                   step={field.step}
                   className={cn(
                     field.type === 'currency' && "pl-12",
-                    commonProps.className
+                    commonProps.className,
+                    "dark:bg-white/5 dark:border-white/10 dark:text-gray-100"
                   )}
                   onChange={(e) => formField.onChange(e.target.valueAsNumber || e.target.value)}
                 />
@@ -198,6 +201,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 {...formField}
                 placeholder={field.placeholder}
                 rows={field.rows || 3}
+                className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
               />
             )}
           />
@@ -217,7 +221,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 value={formField.value}
                 onValueChange={formField.onChange}
               >
-                <SelectTrigger className={commonProps.className}>
+                <SelectTrigger className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}>
                   <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
@@ -347,7 +351,8 @@ export const FormField: React.FC<FormFieldProps> = ({
                     className={cn(
                       "w-full justify-start text-left font-normal",
                       !formField.value && "text-muted-foreground",
-                      commonProps.className
+                      commonProps.className,
+                      "dark:bg-white/5 dark:border-white/10 dark:text-gray-100 hover:dark:bg-white/10"
                     )}
                     disabled={commonProps.disabled}
                   >
@@ -387,6 +392,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 {...formField}
                 type="time"
                 placeholder={field.placeholder}
+                className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
               />
             )}
           />
@@ -412,6 +418,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                   value={displayValue}
                   type="datetime-local"
                   placeholder={field.placeholder}
+                  className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
                   onChange={(e) => {
                     if (e.target.value) {
                       // Store as a full ISO string in the form state

@@ -185,14 +185,13 @@ const MarketData = () => {
 
     // Get computed CSS colors for theme-aware chart rendering
     const getThemeColors = useCallback(() => {
-        const computedStyle = getComputedStyle(document.documentElement);
         const isDark = document.documentElement.classList.contains('dark');
 
         return {
-            gridColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.08)',
+            gridColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)',
             textColor: isDark ? '#9ca3af' : '#6b7280',
-            tooltipBg: isDark ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.95)',
-            tooltipBorder: isDark ? '#374151' : '#e5e7eb'
+            tooltipBg: isDark ? '#111827' : 'rgba(255,255,255,0.95)',
+            tooltipBorder: isDark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'
         };
     }, []);
 
@@ -596,16 +595,16 @@ const MarketData = () => {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium shadow-sm">
+                            <div className="flex items-center gap-2 px-4 py-2.5 bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-lg text-sm font-medium shadow-sm">
                                 <div className={`status-dot w-2 h-2 rounded-full ${isLiveUpdates ? 'bg-primary animate-pulse' : 'bg-muted'}`}></div>
                                 <span className="text-foreground">{isLiveUpdates ? 'Market Open' : 'Market Paused'}</span>
-                                <span className="text-muted-foreground">|</span>
+                                <span className="text-muted-foreground dark:text-gray-500">|</span>
                                 <span className="text-foreground font-mono">{currentTime}</span>
                             </div>
 
                             <div className="flex flex-wrap items-center gap-2">
                                 <Link to="/market-summary">
-                                    <button className="bg-card hover:bg-accent border border-border text-foreground px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                    <button className="bg-card dark:bg-gray-800 hover:bg-accent dark:hover:bg-gray-700 border border-border dark:border-white/10 text-foreground px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                                         <FileText className="w-4 h-4" />
                                         Daily Summary
                                     </button>
@@ -613,7 +612,7 @@ const MarketData = () => {
 
                                 <Dialog>
                                     <DialogTrigger asChild>
-                                        <button className="bg-card hover:bg-accent border border-border text-foreground px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+                                        <button className="bg-card dark:bg-gray-800 hover:bg-accent dark:hover:bg-gray-700 border border-border dark:border-white/10 text-foreground px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
                                             <Settings className="w-4 h-4" />
                                             Settings
                                         </button>
@@ -667,7 +666,7 @@ const MarketData = () => {
                                                                 onClick={() => setTimeRange(option.value)}
                                                                 className={`px-3 py-2 text-sm font-medium rounded-lg border transition-colors ${timeRange === option.value
                                                                     ? 'bg-primary text-primary-foreground border-primary'
-                                                                    : 'bg-card text-foreground border-border hover:bg-accent'
+                                                                    : 'bg-card dark:bg-gray-800 text-foreground border-border dark:border-white/10 hover:bg-accent dark:hover:bg-gray-700'
                                                                     }`}
                                                             >
                                                                 {option.label}
@@ -747,7 +746,7 @@ const MarketData = () => {
                                 </Dialog>
 
                                 <button
-                                    className="bg-card hover:bg-accent border border-border text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                    className="bg-card dark:bg-gray-800 hover:bg-accent dark:hover:bg-gray-700 border border-border dark:border-white/10 text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                     onClick={toggleFullscreen}
                                 >
                                     {isFullscreen ? '⊗ Exit Fullscreen' : '⛶ Fullscreen'}
@@ -762,17 +761,17 @@ const MarketData = () => {
                         </header>
 
                         {/* KPI Row */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                             {[
                                 { label: 'Total Market Cap', value: 'K 145.2B', change: '+2.4%', positive: true },
                                 { label: 'Total Volume', value: totalVolume.toLocaleString(), change: '+12.8%', positive: true },
                                 { label: 'Trades Today', value: '156', change: '+24', positive: true },
                                 { label: 'Top Gainer', value: topGainer.symbol, change: `+${topGainer.change.toFixed(1)}%`, positive: true }
                             ].map((kpi, i) => (
-                                <div key={i} className="bg-card border border-border rounded-xl p-4 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                                <div key={i} className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-4 relative overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                                     <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-primary/60 opacity-60"></div>
-                                    <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{kpi.label}</div>
-                                    <div className="text-2xl font-bold text-foreground font-mono mb-1">{kpi.value}</div>
+                                    <div className="text-xs text-muted-foreground dark:text-gray-400 uppercase tracking-wide mb-2">{kpi.label}</div>
+                                    <div className="text-2xl font-bold text-foreground dark:text-gray-100 font-mono mb-1">{kpi.value}</div>
                                     <div className={`text-sm font-semibold ${kpi.positive ? 'text-green-500' : 'text-red-500'}`}>
                                         {kpi.change}
                                     </div>
@@ -786,13 +785,13 @@ const MarketData = () => {
                                 <div
                                     key={c.symbol}
                                     className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all border ${c.symbol === selectedSymbol
-                                        ? 'bg-accent/50 border-primary shadow-sm'
-                                        : 'bg-card/30 border-border hover:bg-accent/30'
+                                        ? 'bg-accent/50 dark:bg-white/5 border-primary shadow-sm'
+                                        : 'bg-card/30 dark:bg-gray-800/30 border-border dark:border-white/5 hover:bg-accent/30 dark:hover:bg-white/5'
                                         }`}
                                     onClick={() => selectCompany(c.symbol)}
                                     style={c.symbol === selectedSymbol ? {
                                         borderColor: c.colors.primary,
-                                        backgroundColor: c.colors.glow
+                                        backgroundColor: c.colors.glow.replace('0.3', '0.15')
                                     } : {}}
                                 >
                                     <span className="font-bold text-sm text-foreground">{c.symbol}</span>
@@ -807,7 +806,7 @@ const MarketData = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
                             <div className="space-y-4">
                                 {/* Main Chart Card */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
                                     <div className="p-5">
                                         <div className="flex items-center gap-4 mb-4">
                                             <div
@@ -820,8 +819,8 @@ const MarketData = () => {
                                                 {selectedCompany.symbol}
                                             </div>
                                             <div className="flex-1">
-                                                <h2 className="text-lg font-bold text-foreground">{selectedCompany.name}</h2>
-                                                <div className="text-sm text-muted-foreground">Sector: {selectedCompany.sector}</div>
+                                                <h2 className="text-lg font-bold text-foreground dark:text-gray-100">{selectedCompany.name}</h2>
+                                                <div className="text-sm text-muted-foreground dark:text-gray-400">Sector: {selectedCompany.sector}</div>
                                                 <div className="flex gap-5 mt-3">
                                                     {[
                                                         { label: 'Last Price', value: `K ${selectedCompany.last.toFixed(2)}` },
@@ -830,10 +829,10 @@ const MarketData = () => {
                                                         { label: 'Market Cap', value: selectedCompany.mcap }
                                                     ].map((stat, i) => (
                                                         <div key={i}>
-                                                            <div className="text-xs text-muted-foreground uppercase">{stat.label}</div>
+                                                            <div className="text-xs text-muted-foreground dark:text-gray-400 uppercase">{stat.label}</div>
                                                             <div className={`font-mono text-base font-semibold mt-0.5 ${stat.color !== undefined
                                                                 ? stat.color ? 'text-green-500' : 'text-red-500'
-                                                                : 'text-foreground'
+                                                                : 'text-foreground dark:text-gray-100'
                                                                 }`}>
                                                                 {stat.value}
                                                             </div>
@@ -874,8 +873,8 @@ const MarketData = () => {
                                 </div>
 
                                 {/* Market Table */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                                    <div className="flex justify-between items-center px-5 py-4 border-b border-border">
+                                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="flex justify-between items-center px-5 py-4 border-b border-border dark:border-white/10">
                                         <div>
                                             <div className="text-sm font-semibold text-foreground">Market Overview</div>
                                             <div className="text-xs text-muted-foreground">Click row to select • Live updates</div>
@@ -884,20 +883,20 @@ const MarketData = () => {
                                     <div className="overflow-x-auto">
                                         <table className="w-full">
                                             <thead>
-                                                <tr className="border-b border-border">
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Symbol</th>
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Last Price</th>
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Change</th>
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Volume</th>
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Market Cap</th>
-                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Chart</th>
+                                                <tr className="border-b border-border dark:border-white/10">
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Symbol</th>
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Last Price</th>
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Change</th>
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Volume</th>
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Market Cap</th>
+                                                    <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground dark:text-gray-400 uppercase tracking-wide">Chart</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {companies.map(c => (
                                                     <tr
                                                         key={c.symbol}
-                                                        className={`cursor-pointer transition-colors border-b border-border last:border-0 ${c.symbol === selectedSymbol ? 'bg-accent/50' : 'hover:bg-accent/30'
+                                                        className={`cursor-pointer transition-colors border-b border-border dark:border-white/10 last:border-0 ${c.symbol === selectedSymbol ? 'bg-accent/50 dark:bg-white/5' : 'hover:bg-accent/30 dark:hover:bg-white/5'
                                                             }`}
                                                         onClick={() => selectCompany(c.symbol)}
                                                     >
@@ -910,12 +909,12 @@ const MarketData = () => {
                                                                     {c.symbol.slice(0, 3)}
                                                                 </div>
                                                                 <div>
-                                                                    <div className="font-semibold text-sm text-foreground">{c.symbol}</div>
-                                                                    <div className="text-xs text-muted-foreground">{c.name}</div>
+                                                                    <div className="font-semibold text-sm text-foreground dark:text-gray-100">{c.symbol}</div>
+                                                                    <div className="text-xs text-muted-foreground dark:text-gray-400">{c.name}</div>
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-4 py-3.5 font-mono font-semibold text-sm text-foreground">K {c.last.toFixed(2)}</td>
+                                                        <td className="px-4 py-3.5 font-mono font-semibold text-sm text-foreground dark:text-gray-100">K {c.last.toFixed(2)}</td>
                                                         <td className={`px-4 py-3.5 font-mono font-semibold text-sm ${c.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                             {c.change >= 0 ? '+' : ''}{c.change.toFixed(1)}%
                                                         </td>
@@ -938,15 +937,15 @@ const MarketData = () => {
                             {/* Sidebar */}
                             <div className="flex flex-col gap-4">
                                 {/* Live Price Card */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                                    <div className="px-5 py-4 border-b border-border">
-                                        <div className="text-sm font-semibold text-foreground">Live Price</div>
-                                        <div className="text-xs text-muted-foreground">{selectedSymbol}</div>
+                                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="px-5 py-4 border-b border-border dark:border-white/10">
+                                        <div className="text-sm font-semibold text-foreground dark:text-gray-100">Live Price</div>
+                                        <div className="text-xs text-muted-foreground dark:text-gray-400">{selectedSymbol}</div>
                                     </div>
                                     <div className="p-5">
-                                        <div className="flex items-center gap-3 px-4 py-3.5 bg-muted/20 rounded-lg">
+                                        <div className="flex items-center gap-3 px-4 py-3.5 bg-muted/20 dark:bg-white/5 rounded-lg">
                                             <div className="live-dot"></div>
-                                            <div className="font-mono text-2xl font-bold text-foreground">K {selectedCompany.last.toFixed(2)}</div>
+                                            <div className="font-mono text-2xl font-bold text-foreground dark:text-gray-100">K {selectedCompany.last.toFixed(2)}</div>
                                             <div className={`text-sm font-semibold ${selectedCompany.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                                                 {selectedCompany.change >= 0 ? '+' : ''}{selectedCompany.change.toFixed(1)}%
                                             </div>
@@ -955,10 +954,10 @@ const MarketData = () => {
                                 </div>
 
                                 {/* Heatmap */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                                    <div className="px-5 py-4 border-b border-border">
-                                        <div className="text-sm font-semibold text-foreground">Market Heatmap</div>
-                                        <div className="text-xs text-muted-foreground">Daily % change</div>
+                                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="px-5 py-4 border-b border-border dark:border-white/10">
+                                        <div className="text-sm font-semibold text-foreground dark:text-gray-100">Market Heatmap</div>
+                                        <div className="text-xs text-muted-foreground dark:text-gray-400">Daily % change</div>
                                     </div>
                                     <div className="p-5">
                                         <div className="heatmap-grid">
@@ -987,22 +986,22 @@ const MarketData = () => {
                                 </div>
 
                                 {/* News Feed */}
-                                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col">
-                                    <div className="px-5 py-4 border-b border-border">
+                                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm flex flex-col">
+                                    <div className="px-5 py-4 border-b border-border dark:border-white/10">
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <div className="text-sm font-semibold text-foreground">Market News</div>
-                                                <div className="text-xs text-muted-foreground">
+                                                <div className="text-sm font-semibold text-foreground dark:text-gray-100">Market News</div>
+                                                <div className="text-xs text-muted-foreground dark:text-gray-400">
                                                     {newsLoading ? 'Loading...' : `${marketNews.length} updates`}
                                                 </div>
                                             </div>
                                             <button
                                                 onClick={refetchNews}
                                                 disabled={newsLoading}
-                                                className="p-1.5 hover:bg-accent rounded-lg transition-colors disabled:opacity-50"
+                                                className="p-1.5 hover:bg-accent dark:hover:bg-white/5 rounded-lg transition-colors disabled:opacity-50"
                                                 title="Refresh news"
                                             >
-                                                <RefreshCw className={`w-4 h-4 ${newsLoading ? 'animate-spin' : ''}`} />
+                                                <RefreshCw className={`w-4 h-4 ${newsLoading ? 'animate-spin' : ''} dark:text-gray-400`} />
                                             </button>
                                         </div>
                                     </div>
@@ -1034,7 +1033,7 @@ const MarketData = () => {
                                             marketNews.map((news) => (
                                                 <div
                                                     key={news.id}
-                                                    className="pb-3 border-b border-border last:border-0 last:pb-0 px-3 py-2 -mx-3 rounded-lg cursor-pointer transition-colors hover:bg-accent/30"
+                                                    className="pb-3 border-b border-border dark:border-white/5 last:border-0 last:pb-0 px-3 py-2 -mx-3 rounded-lg cursor-pointer transition-colors hover:bg-accent/30 dark:hover:bg-white/5"
                                                     onClick={() => {
                                                         // console.log('News clicked:', { title: news.title, url: news.url });
                                                         if (news.url) {
@@ -1046,13 +1045,13 @@ const MarketData = () => {
                                                 >
                                                     <div className="flex items-center justify-between gap-2 mb-1.5">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                                                            <span className="text-xs bg-primary/10 dark:bg-primary/20 text-primary px-2 py-0.5 rounded-full font-medium">
                                                                 {news.company}
                                                             </span>
-                                                            <div className="text-xs text-muted-foreground">{news.timeAgo}</div>
+                                                            <div className="text-xs text-muted-foreground dark:text-gray-400">{news.timeAgo}</div>
                                                         </div>
                                                     </div>
-                                                    <div className="text-sm font-semibold text-foreground leading-snug hover:text-primary transition-colors">
+                                                    <div className="text-sm font-semibold text-foreground dark:text-gray-200 leading-snug hover:text-primary transition-colors">
                                                         {news.title}
                                                     </div>
                                                 </div>
@@ -1064,10 +1063,10 @@ const MarketData = () => {
                         </div>
 
                         {/* Comparison Chart - Full Width */}
-                        <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm mt-4">
-                            <div className="px-5 py-4 border-b border-border">
-                                <div className="text-sm font-semibold text-foreground">Performance Comparison</div>
-                                <div className="text-xs text-muted-foreground">Normalized returns • 30 Day</div>
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl overflow-hidden shadow-sm mt-4">
+                            <div className="px-5 py-4 border-b border-border dark:border-white/10">
+                                <div className="text-sm font-semibold text-foreground dark:text-gray-100">Performance Comparison</div>
+                                <div className="text-xs text-muted-foreground dark:text-gray-400">Normalized returns • 30 Day</div>
                             </div>
                             <div className="py-5">
                                 <div className="compare-chart-container">

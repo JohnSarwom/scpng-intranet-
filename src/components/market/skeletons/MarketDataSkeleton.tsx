@@ -29,7 +29,7 @@ export const MarketDataSkeleton = () => {
                 {/* KPI Row */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
                     {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="bg-card border border-border rounded-xl p-4">
+                        <div key={i} className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-4">
                             <Skeleton className="h-4 w-24 mb-3" />
                             <Skeleton className="h-8 w-32 mb-2" />
                             <Skeleton className="h-4 w-16" />
@@ -49,7 +49,7 @@ export const MarketDataSkeleton = () => {
                     {/* Left Column */}
                     <div className="space-y-4">
                         {/* Main Chart Card */}
-                        <div className="bg-card border border-border rounded-xl p-5">
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5">
                             <div className="flex items-center gap-4 mb-6">
                                 <Skeleton className="w-12 h-12 rounded-xl" />
                                 <div className="flex-1">
@@ -69,8 +69,8 @@ export const MarketDataSkeleton = () => {
                         </div>
 
                         {/* Market Table */}
-                        <div className="bg-card border border-border rounded-xl p-5">
-                            <div className="flex justify-between items-center pb-4 border-b border-border mb-4">
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-border dark:border-white/10 mb-4">
                                 <div>
                                     <Skeleton className="h-5 w-32 mb-1" />
                                     <Skeleton className="h-3 w-48" />
@@ -105,8 +105,8 @@ export const MarketDataSkeleton = () => {
                     {/* Right Column (Sidebar) */}
                     <div className="flex flex-col gap-4">
                         {/* Live Price */}
-                        <div className="bg-card border border-border rounded-xl p-5">
-                            <div className="pb-4 border-b border-border mb-4">
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5">
+                            <div className="pb-4 border-b border-border dark:border-white/10 mb-4">
                                 <Skeleton className="h-5 w-24 mb-1" />
                                 <Skeleton className="h-3 w-16" />
                             </div>
@@ -114,8 +114,8 @@ export const MarketDataSkeleton = () => {
                         </div>
 
                         {/* Heatmap */}
-                        <div className="bg-card border border-border rounded-xl p-5">
-                            <div className="pb-4 border-b border-border mb-4">
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5">
+                            <div className="pb-4 border-b border-border dark:border-white/10 mb-4">
                                 <Skeleton className="h-5 w-32 mb-1" />
                                 <Skeleton className="h-3 w-24" />
                             </div>
@@ -127,8 +127,8 @@ export const MarketDataSkeleton = () => {
                         </div>
 
                         {/* News Feed */}
-                        <div className="bg-card border border-border rounded-xl p-5">
-                            <div className="flex justify-between items-center pb-4 border-b border-border mb-4">
+                        <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5">
+                            <div className="flex justify-between items-center pb-4 border-b border-border dark:border-white/10 mb-4">
                                 <div>
                                     <Skeleton className="h-5 w-24 mb-1" />
                                     <Skeleton className="h-3 w-20" />
@@ -137,7 +137,7 @@ export const MarketDataSkeleton = () => {
                             </div>
                             <div className="space-y-4">
                                 {[1, 2, 3, 4, 5].map((i) => (
-                                    <div key={i} className="pb-3 border-b border-border last:border-0 last:pb-0">
+                                    <div key={i} className="pb-3 border-b border-border dark:border-white/10 last:border-0 last:pb-0">
                                         <div className="flex justify-between gap-2 mb-2">
                                             <Skeleton className="h-4 w-16 rounded-full" />
                                             <Skeleton className="h-3 w-12" />
@@ -152,8 +152,8 @@ export const MarketDataSkeleton = () => {
                 </div>
 
                 {/* Comparison Chart */}
-                <div className="bg-card border border-border rounded-xl p-5 mt-4">
-                    <div className="pb-4 border-b border-border mb-4">
+                <div className="bg-card dark:bg-gray-800 border border-border dark:border-white/10 rounded-xl p-5 mt-4">
+                    <div className="pb-4 border-b border-border dark:border-white/10 mb-4">
                         <Skeleton className="h-5 w-48 mb-1" />
                         <Skeleton className="h-3 w-32" />
                     </div>

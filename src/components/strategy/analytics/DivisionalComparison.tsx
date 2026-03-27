@@ -51,14 +51,15 @@ const CustomTooltipContent = ({ active, payload, label }: any) => {
     if (!active || !payload || payload.length === 0) return null;
     const entry = payload[0]?.payload;
     return (
-        <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-xs min-w-[160px]">
-            <p className="font-bold text-sm mb-2">{entry?.fullName || label}</p>
+        <div className="bg-popover dark:bg-gray-900 border border-border dark:border-white/10 rounded-lg shadow-lg p-3 text-xs min-w-[160px]">
+            <p className="font-bold text-sm mb-2 text-foreground dark:text-gray-100">{entry?.fullName || label}</p>
             <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-1.5">
-                        <div className="w-2.5 h-2.5 rounded-sm bg-[#600018] shrink-0" />
-                        <span className="text-muted-foreground">Objectives</span>
+                        <div className="w-2.5 h-2.5 rounded-sm bg-[#600018] dark:bg-intranet-primary-light shrink-0" />
+                        <span className="text-muted-foreground dark:text-gray-400">Objectives</span>
                     </div>
+
                     <span className="font-bold">{entry?.objectiveProgress ?? 0}%
                         <span className="font-normal text-muted-foreground ml-1">({entry?.objCount ?? 0})</span>
                     </span>
@@ -95,7 +96,8 @@ const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({
 
     return (
         <Dialog>
-            <Card className="animate-fade-in group relative">
+            <Card className="animate-fade-in group relative dark:bg-gray-900 dark:border-white/10 shadow-sm transition-all duration-300">
+
                 <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -168,7 +170,7 @@ const DivisionalComparison: React.FC<DivisionalComparisonProps> = ({
                 </CardContent>
             </Card>
 
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-md dark:bg-gray-950 dark:border-white/10">
                 <DialogHeader>
                     <DialogTitle>About Divisional Performance</DialogTitle>
                     <DialogDescription>How Objectives &amp; KRA progress is calculated</DialogDescription>
