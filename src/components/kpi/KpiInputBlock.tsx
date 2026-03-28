@@ -125,13 +125,14 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
         <Button
           type="button"
           variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-muted-foreground dark:text-gray-400 hover:text-destructive dark:hover:text-red-400 dark:hover:bg-red-900/20"
+          size="sm"
+          className="h-8 px-2 text-destructive hover:text-destructive dark:hover:bg-red-900/20 gap-1.5"
           onClick={() => onRemove(kpiIndex)}
-          disabled={disabled || isOnlyBlock} // Disable remove if it's the only block
-          aria-label="Remove KPI"
+          disabled={disabled}
+          aria-label="Delete KPI"
         >
           <Trash2 className="h-4 w-4" />
+          <span className="text-xs font-medium">Delete KPI</span>
         </Button>
       </CardHeader>
       <CardContent className="p-4 space-y-4">

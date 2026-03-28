@@ -7,8 +7,18 @@ import KpiInputBlock from './KpiInputBlock';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { KraStatus } from '@/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Update interface
 interface KpiModalProps {
@@ -27,6 +37,8 @@ interface KpiModalProps {
   editingKpi?: { kraId: string; kpi: Partial<Kpi> }; // New prop for single KPI editing
   container?: HTMLElement | null; // Add container prop
   isReadOnly?: boolean; // New prop for read-only view mode
+  onDeleteKra?: (id: string | number) => Promise<void>;
+  onDeleteKpi?: (id: string | number) => Promise<void>;
 }
 
 const KpiModal: React.FC<KpiModalProps> = ({
@@ -44,11 +56,14 @@ const KpiModal: React.FC<KpiModalProps> = ({
   editingKpi,
   container,
   isReadOnly = false,
+  onDeleteKra,
+  onDeleteKpi,
 }) => {
   // Initialize state based on whether we are editing or adding
   const [formData, setFormData] = useState<Partial<Kra>>({});
   const [kpiBlocks, setKpiBlocks] = useState<Partial<Kpi>[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ type: 'kra' | 'kpi'; id: string | number; name: string } | null>(null);
 
   // Determine if we are adding a new KRA
   const isAddingNew = !kraData?.id;
@@ -160,8 +175,52 @@ const KpiModal: React.FC<KpiModalProps> = ({
   };
 
   const handleRemoveKpi = (index: number) => {
-    // TODO: Add confirmation if the KPI block has existing data (e.g., an ID from the backend)
-    setKpiBlocks(prev => prev.filter((_, i) => i !== index));
+    const kpi = kpiBlocks[index];
+    if (kpi && kpi.id && !isAddingNew) {
+      // If it has an ID, trigger permanent deletion flow
+      setDeleteConfirmation({
+        type: 'kpi',
+        id: kpi.id,
+        name: kpi.name || `KPI #${index + 1}`
+      });
+    } else {
+      // Otherwise just remove from state
+      setKpiBlocks(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleTriggerDeleteKra = () => {
+    if (kraData?.id) {
+      setDeleteConfirmation({
+        type: 'kra',
+        id: kraData.id,
+        name: kraData.title || 'this KRA'
+      });
+    }
+  };
+
+  const confirmDeletion = async () => {
+    if (!deleteConfirmation) return;
+
+    setIsSubmitting(true);
+    try {
+      if (deleteConfirmation.type === 'kra' && onDeleteKra) {
+        await onDeleteKra(deleteConfirmation.id);
+        onClose(); // Close modal after KRA delete
+      } else if (deleteConfirmation.type === 'kpi' && onDeleteKpi) {
+        await onDeleteKpi(deleteConfirmation.id);
+        // Remove from local state after successful DB delete
+        setKpiBlocks(prev => prev.filter(k => k.id !== deleteConfirmation.id));
+        if (editingKpi) {
+          onClose(); // If editing a single KPI, close modal after delete
+        }
+      }
+    } catch (error) {
+      console.error("Deletion failed:", error);
+    } finally {
+      setIsSubmitting(false);
+      setDeleteConfirmation(null);
+    }
   };
 
   const handleSubmit = async (event?: React.FormEvent) => {
@@ -247,6 +306,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
                   isAddingNew={isAddingNew}
                   container={container}
                   disabled={isSubmitting || isReadOnly}
+                  onDelete={handleTriggerDeleteKra}
                 />
                 <Separator />
               </>
@@ -294,6 +354,45 @@ const KpiModal: React.FC<KpiModalProps> = ({
             </Button>
           )}
         </DialogFooter>
+
+        {/* Deletion Confirmation Dialog */}
+        <AlertDialog open={!!deleteConfirmation} onOpenChange={(open) => !open && setDeleteConfirmation(null)}>
+          <AlertDialogContent className="dark:bg-gray-950 dark:border-white/10" container={container}>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-destructive dark:text-red-400">
+                <AlertTriangle className="h-5 w-5" />
+                Confirm Deletion
+              </AlertDialogTitle>
+              <AlertDialogDescription className="dark:text-gray-400">
+                {deleteConfirmation?.type === 'kra' ? (
+                  <>
+                    Are you sure you want to delete the KRA <strong>"{deleteConfirmation?.name}"</strong>?
+                    <br /><br />
+                    <span className="text-destructive dark:text-red-400 font-semibold italic">
+                      Warning: This action will also permanently delete all associated KPIs. This cannot be undone.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Are you sure you want to delete the KPI <strong>"{deleteConfirmation?.name}"</strong>?
+                    This action cannot be undone.
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="pt-4 border-t dark:border-white/10">
+              <AlertDialogCancel className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" disabled={isSubmitting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeletion}
+                className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white shadow-lg shadow-red-500/20"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Delete Permanently
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

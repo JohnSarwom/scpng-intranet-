@@ -1051,7 +1051,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 )}
               </div>
 
-              <TabsContent value="kpis" className="px-6 pb-6 mt-0">
+              <TabsContent value="kpis" className="px-6 pb-6 pt-6 mt-0">
                 <PremiumTable containerClassName="h-[calc(100vh-220px)] relative border dark:border-white/10">
                     <PremiumTableHeader>
                       <PremiumTableRow className="border-b dark:border-white/10 hover:bg-transparent">
@@ -1187,27 +1187,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
 
                               <PremiumTableCell sticky="right" className="align-top text-right px-2 py-1 whitespace-nowrap align-middle border-b dark:border-white/10">
                                 <div className="flex justify-end items-center space-x-1">
-
                                   {canEdit ? (
                                     <>
-                                      {kpi && kpi.id && kpi.name !== '-' && (
-                                        <TooltipProvider delayDuration={100}>
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="p-1 h-8 w-8 text-destructive hover:text-destructive dark:hover:bg-red-900/20"
-                                                onClick={() => handleDeleteKpiClick(row.originalKra.id, kpi)}
-                                                aria-label="Delete KPI"
-                                              >
-                                                <Trash2 className="h-4 w-4" />
-                                              </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Delete KPI</TooltipContent>
-                                          </Tooltip>
-                                        </TooltipProvider>
-                                      )}
                                       {kpi && kpi.id && kpi.name !== '-' && (
                                         <TooltipProvider delayDuration={100}>
                                           <Tooltip>
@@ -1236,27 +1217,10 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                               onClick={() => handleOpenEditKraModal(row.originalKra)}
                                               aria-label="Edit KRA"
                                             >
-                                              <Settings className="h-4 w-4" />
+                                              <Edit className="h-4 w-4" />
                                             </Button>
                                           </TooltipTrigger>
-                                          <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Edit KRA Settings</TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-
-                                      <TooltipProvider delayDuration={100}>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className="p-1 h-8 w-8 text-destructive hover:text-destructive dark:hover:bg-red-900/20"
-                                              onClick={() => handleDeleteKra(row.originalKra.id)}
-                                              aria-label="Delete KRA"
-                                            >
-                                              <XCircle className="h-4 w-4" />
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Delete KRA</TooltipContent>
+                                          <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Edit KRA</TooltipContent>
                                         </Tooltip>
                                       </TooltipProvider>
                                     </>
@@ -1292,7 +1256,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                   </PremiumTable>
                 </TabsContent>
 
-                <TabsContent value="objectives" className="px-6 pb-6 mt-0">
+                <TabsContent value="objectives" className="px-6 pb-6 pt-6 mt-0">
                 <PremiumTable containerClassName="max-h-[600px] border dark:border-white/10 rounded-xl overflow-hidden relative">
                     <PremiumTableHeader>
                       <PremiumTableRow>
@@ -1392,7 +1356,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 </PremiumTable>
               </TabsContent>
 
-              <TabsContent value="timeline" className="px-6 pb-6 mt-0">
+              <TabsContent value="timeline" className="px-6 pb-6 pt-6 mt-0">
                 <div>
                   <KRATimelineTab
                     kras={kras}
@@ -1403,7 +1367,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 </div>
               </TabsContent>
 
-              <TabsContent value="insights" className="px-6 pb-6 mt-0">
+              <TabsContent value="insights" className="px-6 pb-6 pt-6 mt-0">
                 <KRAInsightsTab kras={kras} />
               </TabsContent>
             </Tabs>
@@ -1424,6 +1388,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
           editingKpi={editingKpiDetails}
           container={isFullScreen ? containerRef.current : null}
           isReadOnly={!canEdit}
+          onDeleteKra={onDeleteKra}
+          onDeleteKpi={onDeleteKpi}
         />
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>

@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Check, ChevronsUpDown, X } from "lucide-react";
+import { Check, ChevronsUpDown, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils"; // For conditional classes
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ interface KraFormSectionProps {
   existingKraTitles?: string[]; // Add prop for existing titles
   existingKraObjects?: Kra[]; // Full KRA objects for ID-based linking
   isAddingNew: boolean; // Add prop to know if we are adding a new KRA
+  onDelete?: () => void; // New prop for deletion
   container?: HTMLElement | null;
   disabled?: boolean;
 }
@@ -48,6 +49,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
   existingKraTitles = [], // Accept prop
   existingKraObjects = [], // Full KRA objects for ID-based linking
   isAddingNew, // Destructure the new prop
+  onDelete, // Destructure deletion handler
   container,
   disabled = false,
 }) => {
@@ -87,7 +89,21 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium dark:text-gray-200">KRA Information</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium dark:text-gray-200">KRA Information</h3>
+        {!isAddingNew && onDelete && !disabled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-destructive hover:text-destructive dark:hover:bg-red-900/20 gap-1.5"
+            onClick={onDelete}
+            title="Delete KRA"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="text-xs font-medium">Delete KRA</span>
+          </Button>
+        )}
+      </div>
       {/* KRA Title Combobox */}
       <div className="grid gap-1.5">
         <Label htmlFor="kra-title" className="dark:text-gray-300">KRA Title *</Label>
