@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { StrategicItem, mockStrategyData } from '@/mockData/strategyData';
 import { useStrategySharePoint } from '@/hooks/useStrategySharePoint';
-import { Loader2, Table as TableIcon, BarChart as BarChartIcon, LayoutDashboard as DashboardIcon, Network, Globe as GlobeIcon } from 'lucide-react';
+import { Loader2, Table as TableIcon, BarChart as BarChartIcon, LayoutDashboard as DashboardIcon, Network, Globe as GlobeIcon, Database, Copy, CheckCircle2 } from 'lucide-react';
 import DonutChart from '@/components/organization/DonutChart';
 import BarChart from '@/components/organization/BarChart';
 import { TaskCompletionDonut } from '@/components/dashboard/TaskCompletionDonut';
@@ -365,6 +365,56 @@ const Strategy = () => {
         }
     };
 
+    const [isCopying, setIsCopying] = useState(false);
+    const handleCopyStrategyJSON = async () => {
+        if (!isAdmin) {
+            toast({
+                title: "Access Denied",
+                description: "Only administrators can export strategy data.",
+                variant: "destructive"
+            });
+            return;
+        }
+        
+        setIsCopying(true);
+        try {
+            const exportData = {
+                _metadata: {
+                    exportDate: new Date().toISOString(),
+                    source: "SCPNG Intranet - Strategy Hub",
+                    version: "Corporate Plan 2026-2028"
+                },
+                organization: {
+                    mission: effectiveMission,
+                    vision: effectiveVision,
+                },
+                pillars: effectivePillars,
+                objectives: effectiveObjectives,
+                strategicKRAs: strategyData?.strategicKRAs || [],
+                alignments: effectiveAlignments,
+                hierarchy: (strategyData as any)?.hierarchy || DEFAULT_ORG_STRUCTURE
+            };
+
+            const jsonString = JSON.stringify(exportData, null, 2);
+            await navigator.clipboard.writeText(jsonString);
+            
+            toast({
+                title: "Data Copied!",
+                description: "Strategy table and structure copied to clipboard in JSON format.",
+                className: "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800"
+            });
+        } catch (error) {
+            console.error('❌ [Strategy] Copy failed:', error);
+            toast({
+                title: "Copy Failed",
+                description: "Could not copy strategy data to clipboard.",
+                variant: "destructive"
+            });
+        } finally {
+            setTimeout(() => setIsCopying(false), 2000);
+        }
+    };
+
     if (isLoading) {
         return <StrategyPageSkeleton />;
     }
@@ -680,10 +730,30 @@ const Strategy = () => {
 
                         {/* 3. Strategic Goals (Provided Content) */}
                         <div className="space-y-6">
-                            <h2 className="text-xl font-semibold px-1 flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-yellow-500" />
-                                Strategic Goals
-                            </h2>
+                            <div className="flex justify-between items-center px-1">
+                                <h2 className="text-xl font-semibold flex items-center gap-2">
+                                    <Zap className="w-5 h-5 text-yellow-500" />
+                                    Strategic Goals
+                                </h2>
+                                
+                                {isAdmin && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={handleCopyStrategyJSON}
+                                        className="h-9 px-3 border-intranet-primary/20 text-intranet-primary hover:bg-intranet-primary/5 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/5 gap-2 transition-all active:scale-95"
+                                        title="Copy strategy data as JSON"
+                                    >
+                                        {isCopying ? (
+                                            <CheckCircle2 className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <Database className="w-4 h-4" />
+                                        )}
+                                        <span className="text-xs font-bold uppercase tracking-wider hidden sm:inline">JSON</span>
+                                        <Copy className="w-3 h-3 opacity-50" />
+                                    </Button>
+                                )}
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {effectiveObjectives.filter((o: any) => !o.isFeatured).map((objective: any, index: number) => {
