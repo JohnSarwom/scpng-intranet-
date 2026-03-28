@@ -1008,9 +1008,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       {/* Header Actions */}
       <div className="flex justify-between items-center mb-2">
         <div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-            Operational Intelligence
-          </h2>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            Unit Performance & Analytics
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Generate reports and manage automated dispatch schedules for your unit.
           </p>
