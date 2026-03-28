@@ -21,6 +21,129 @@ import { useMsal } from '@azure/msal-react';
 import { getGraphClient } from '@/services/graphService';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { toast } from 'sonner';
+import { Copy } from 'lucide-react';
+import useRoleBasedAuth from '@/hooks/useRoleBasedAuth';
+
+// ===== Metadata for Internal Reference & Setup =====
+
+const SHAREPOINT_METADATA = {
+  site: "https://scpng1.sharepoint.com/sites/scpngintranet",
+  lists: {
+    tasks: {
+      displayName: "Operations_Tasks",
+      url: "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Operations_Tasks/AllItems.aspx",
+      schema: {
+        Title: "Text (Task Title)",
+        Description: "Note (Task Description)",
+        Status: "Choice (Todo, In Progress, Review, Done)",
+        Priority: "Choice (Low, Medium, High, Urgent)",
+        DueDate: "DateTime (yyyy-MM-dd)",
+        StartDate: "DateTime (yyyy-MM-dd)",
+        Department: "Text (Unit Name/ID)",
+        SubtasksJSON: "Note (JSON Array for Subtasks)",
+        CommentsJSON: "Note (JSON Array for Comments)",
+        Tags: "Text (Comma-separated keywords)",
+        RelatedKRALookupId: "Lookup (Performance_KRAs)",
+        RelatedKPILookupId: "Lookup (Performance_KPIs)",
+        RelatedTaskGroupLookupId: "Lookup (Operations_TaskGroups)",
+        Assignees: "Note (JSON Array for Assigned Users)",
+        AttachmentsJSON: "Note (JSON Array for File Meta)"
+      },
+      sample: {
+        Title: "Conduct Quarterly Risk Audit",
+        Description: "Perform the mandatory Q1 2026 security and risk audit for IT systems.",
+        Status: "In Progress",
+        Priority: "High",
+        DueDate: "2026-03-31",
+        Department: "Technology Division",
+        Tags: "audit,compliance,q1",
+        SubtasksJSON: "[{\"title\":\"Check firewalls\",\"completed\":true},{\"title\":\"Review access logs\",\"completed\":false}]"
+      }
+    },
+    kras: {
+      displayName: "Performance_KRAs",
+      url: "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Performance_KRAs/AllItems.aspx",
+      schema: {
+        Title: "Text (KRA Title)",
+        Description: "Note (Detailed Description)",
+        Status: "Choice (Open, In Progress, Closed)",
+        Progress: "Number (0-100)",
+        Unit: "Text (Owner Unit)",
+        Division: "Text (Owner Division)",
+        Responsible: "Text (Primary Owner Name)",
+        Assignees: "Note (JSON Array for Project Team)",
+        EndDate: "DateTime",
+        UnitObjectiveLookupId: "Lookup (Unit_Objectives)"
+      },
+      sample: {
+        Title: "Financial Stability & Compliance",
+        Description: "Ensure all regulatory standards are met for market stability.",
+        Status: "In Progress",
+        Progress: 72,
+        Unit: "Internal Audit",
+        Division: "Executive Office",
+        Responsible: "Sarah Miller",
+        EndDate: "2026-12-31T00:00:00Z"
+      }
+    },
+    kpis: {
+      displayName: "Performance_KPIs",
+      url: "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Performance_KPIs/AllItems.aspx",
+      schema: {
+        Title: "Text (Metric Name)",
+        Metric: "Text (e.g., %, #, PGK)",
+        ActualValue: "Number",
+        TargetValue: "Number",
+        Status: "Choice (On Track, At Risk, Behind, Completed)",
+        Description: "Note (Calculation details)",
+        StartDate: "DateTime",
+        EndDate: "DateTime",
+        CalculationType: "Choice (Manual, Sum, Average)",
+        ChecklistJSON: "Note (JSON Array for sub-metrics)",
+        RelatedKRALookupId: "Lookup (Performance_KRAs)"
+      },
+      sample: {
+        Title: "% of Investigations Resolved",
+        Metric: "%",
+        ActualValue: 85,
+        TargetValue: 90,
+        Status: "On Track",
+        Description: "Percentage of reported cases closed within 30 days.",
+        CalculationType: "Manual"
+      }
+    },
+    objectives: {
+      displayName: "Unit_Objectives",
+      url: "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Unit_Objectives/AllItems.aspx",
+      schema: {
+        Title: "Text (Objective Name)",
+        Description: "Note",
+        GoalType: "Choice (Org, Division, Unit, Individual)",
+        Division: "Text",
+        Unit: "Text",
+        Progress: "Number (0-100)",
+        Status: "Choice (On Track, At Risk, Completed, Not Started)",
+        Owner: "Text (Responsible Name)",
+        Year: "Text (e.g. 2026)",
+        StartDate: "DateTime (yyyy-MM-dd)",
+        EndDate: "DateTime (yyyy-MM-dd)",
+        ParentGoalIdLookupId: "Lookup (Strategic_Objectives)"
+      },
+      sample: {
+        Title: "Modernize Digital Archiving",
+        Description: "Phase 1 implementation of the cloud archiving system.",
+        GoalType: "Division",
+        Division: "Corporate Services",
+        Unit: "Records Management",
+        Progress: 40,
+        Status: "In Progress",
+        Year: "2026",
+        StartDate: "2026-01-01",
+        EndDate: "2026-06-30"
+      }
+    }
+  }
+};
 
 // ===== Types =====
 
@@ -530,6 +653,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   tasks, kras, kpis, objectives, userContext
 }) => {
   const { instance: msalInstance } = useMsal();
+  const { isAdmin } = useRoleBasedAuth();
 
   const [timePeriod, setTimePeriod] = useState<ReportTimePeriod>('monthly');
   const [selectedCategories, setSelectedCategories] = useState<CategoryKey[]>(['tasks', 'kras', 'kpis', 'objectives']);
@@ -800,6 +924,19 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
     setGenerating(false);
   };
 
+  const handleCopyMetadata = () => {
+    try {
+      const metadata = JSON.stringify(SHAREPOINT_METADATA, null, 2);
+      navigator.clipboard.writeText(metadata);
+      toast.success("SharePoint metadata schema copied to clipboard", {
+        description: "Includes list URLs, schemas, and sample data for Tasks, KRAs, KPIs, and Objectives."
+      });
+    } catch (err) {
+      console.error('Failed to copy metadata:', err);
+      toast.error('Failed to copy metadata to clipboard');
+    }
+  };
+
   const handlePrint = () => window.print();
 
   const handleExportCSV = () => {
@@ -867,7 +1004,31 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const unitName = userContext?.unit || 'Unit';
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-6 mt-4 px-1">
+      {/* Header Actions */}
+      <div className="flex justify-between items-center mb-2">
+        <div>
+          <h2 className="text-xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+            Operational Intelligence
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Generate reports and manage automated dispatch schedules for your unit.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2 bg-white/5 border-white/10 hover:bg-white/10 text-gray-300 transition-all duration-300"
+              onClick={handleCopyMetadata}
+            >
+              <Copy className="h-4 w-4" />
+              Copy List Metadata
+            </Button>
+          )}
+        </div>
+      </div>
       {/* Config Panel */}
       <Card className="dark:bg-gray-900 dark:border-white/10 shadow-sm overflow-hidden">
         <CardHeader

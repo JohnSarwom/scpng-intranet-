@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMsal } from '@azure/msal-react';
-import { SharePointOpsService } from '@/services/sharePointOpsService';
+import { SharePointOpsService, resetOpsServiceCache } from '@/services/sharePointOpsService';
+import { SharePointListSetupService } from '@/services/sharePointListSetupService';
 import { getGraphClient } from '@/services/graphService';
 import { Kra, Kpi, Project, Task, KRA, Objective, FilterScope, UserContext, TaskGroup } from '@/types';
 import { useToast } from '@/components/ui/use-toast';
@@ -678,4 +679,113 @@ export function useSharePointTaskGroups() {
         },
         refresh: query.refetch
     };
+}
+
+export function useSharePointCustomContacts(userEmail?: string) {
+    const getService = useOpsService();
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const queryKey = ['sharePoint', 'customContacts', userEmail];
+    const query = useQuery({
+        queryKey,
+        queryFn: async () => {
+            if (!userEmail) return [];
+            try {
+                const service = await getService();
+                const data = await service.getCustomContacts(userEmail);
+                console.log('✅ [useSharePointOps] Loaded Custom Contacts:', data.length);
+                return data;
+            } catch (err) {
+                console.error('❌ [useSharePointOps] Failed to fetch Custom Contacts', err);
+                return [];
+            }
+        },
+        enabled: !!userEmail
+    });
+
+    return {
+        data: (query.data || []).map((c: any) => ({ ...c, isCustom: true })) as any[],
+        loading: query.isLoading,
+        error: query.error as Error | null,
+        add: async (item: any) => {
+            if (!userEmail) throw new Error('User email required');
+            try {
+                const service = await getService();
+                const newContact = await service.addCustomContact(item, userEmail);
+                queryClient.setQueryData(queryKey, (old: any[] | undefined) => [...(old || []), newContact]);
+                toast({ title: "Success", description: "Custom contact added" });
+                return newContact;
+            } catch (error: any) {
+                console.error('Failed to add custom contact', error);
+                toast({ title: "Error", description: error.message || "Failed to add contact", variant: "destructive" });
+                throw error;
+            }
+        },
+        update: async (id: string, item: any) => {
+            try {
+                const service = await getService();
+                const updated = await service.updateCustomContact(id, item);
+                queryClient.setQueryData(queryKey, (old: any[] | undefined) => 
+                    (old || []).map(c => c.id === id ? { ...c, ...updated } : c)
+                );
+                toast({ title: "Success", description: "Contact updated" });
+                return updated;
+            } catch (error: any) {
+                console.error('Failed to update custom contact', error);
+                toast({ title: "Error", description: error.message || "Failed to update contact", variant: "destructive" });
+                throw error;
+            }
+        },
+        remove: async (id: string) => {
+            try {
+                const service = await getService();
+                await service.deleteCustomContact(id);
+                queryClient.setQueryData(queryKey, (old: any[] | undefined) => 
+                    (old || []).filter(c => c.id !== id)
+                );
+                toast({ title: "Success", description: "Contact deleted" });
+                return true;
+            } catch (error: any) {
+                console.error('Failed to delete custom contact', error);
+                toast({ title: "Error", description: error.message || "Failed to delete contact", variant: "destructive" });
+                throw error;
+            }
+        },
+        refresh: query.refetch
+    };
+}
+
+export function useSharePointSetup() {
+    const { instance: msalInstance } = useMsal();
+    const { toast } = useToast();
+    const getService = useOpsService();
+
+    const initializeCustomContactsList = async () => {
+        try {
+            const service = await getService();
+            const graphClient = service.client;
+            const siteId = service.siteId;
+
+            if (!siteId) throw new Error('SharePoint Site ID not initialized');
+
+            const setupService = new SharePointListSetupService(graphClient, siteId);
+            const result = await setupService.createCustomContactsList();
+
+            if (result.success) {
+                toast({ title: "Success", description: result.message });
+                // Reset cache so the new list ID is picked up
+                resetOpsServiceCache();
+            } else {
+                toast({ title: "Error", description: result.message, variant: "destructive" });
+            }
+            return result;
+        } catch (error: any) {
+            console.error('Setup failed', error);
+            toast({ title: "Error", description: error.message || "Setup failed", variant: "destructive" });
+            throw error;
+        }
+    };
+
+    return { initializeCustomContactsList };
 }

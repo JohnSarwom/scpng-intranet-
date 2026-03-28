@@ -729,7 +729,8 @@ export class SharePointListSetupService {
             'Market_Settings',
             'Strategic_Goals',
             'Strategic_KRAs',
-            'Strategic_Initiatives'
+            'Strategic_Initiatives',
+            'User_Custom_Contacts'
         ];
         try {
             for (const name of listNames) {
@@ -3802,6 +3803,42 @@ export class SharePointListSetupService {
         } catch (error: any) {
             console.error('❌ [Seeding] Failed to seed Officer Profiles:', error);
             return { success: false, message: `Failed to seed profiles: ${error.message}`, details: error };
+        }
+    }
+
+    /**
+     * Create User_Custom_Contacts list
+     */
+    async createCustomContactsList(): Promise<{ success: boolean; message: string; details?: any }> {
+        console.log('🚀 [Setup] Creating User_Custom_Contacts list...');
+        try {
+            // Check if exists
+            const check = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'User_Custom_Contacts'").get();
+            if (check.value && check.value.length > 0) {
+                return { success: true, message: 'User_Custom_Contacts list already exists', details: check.value[0] };
+            }
+
+            const list = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .post({
+                    displayName: 'User_Custom_Contacts',
+                    columns: [
+                        { name: 'JobTitle', text: {} },
+                        { name: 'Department', text: {} },
+                        { name: 'Email', text: {} },
+                        { name: 'Phone', text: {} },
+                        { name: 'Company', text: {} },
+                        { name: 'OfficeLocation', text: {} },
+                        { name: 'OwnerEmail', text: { enforceUniqueValues: false } }
+                    ],
+                    list: { template: 'genericList' }
+                });
+
+            console.log('✅ [Setup] User_Custom_Contacts list created successfully');
+            return { success: true, message: 'User_Custom_Contacts list created successfully!', details: list };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to create User_Custom_Contacts list:', error);
+            return { success: false, message: `Failed to create list: ${error.message}`, details: error };
         }
     }
 }

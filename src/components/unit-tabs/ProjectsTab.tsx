@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  PremiumTable,
+  PremiumTableHeader,
+  PremiumTableBody,
+  PremiumTableHead,
+  PremiumTableRow,
+  PremiumTableCell,
+} from '@/components/ui/PremiumTable';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -149,7 +156,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'planned':
-        return <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20 font-semibold px-2.5 py-0.5 rounded-full">Planned</Badge>;
+        return <Badge className="bg-intranet-primary/10 text-intranet-primary dark:bg-intranet-primary/20 dark:text-red-400 border border-intranet-primary/20 font-semibold px-2.5 py-0.5 rounded-full">Planned</Badge>;
       case 'in-progress':
         return <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20 font-semibold px-2.5 py-0.5 rounded-full">In Progress</Badge>;
       case 'completed':
@@ -223,44 +230,43 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
           </div>
         </CardHeader>
         <CardContent className="pt-6">
-          <div className="overflow-auto border dark:border-white/5 rounded-xl h-[calc(100vh-220px)] relative kanban-scrollbar bg-white/50 dark:bg-black/20 backdrop-blur-sm">
-            <table className="w-full caption-bottom text-sm min-w-[1200px] table-fixed md:table-auto">
-              <TableHeader className="sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b dark:border-white/10">
-                <TableRow className="dark:hover:bg-transparent border-none">
-                  <TableHead className="w-[200px] min-w-[200px] sticky left-0 top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-r dark:border-white/5 dark:text-gray-300 font-semibold">Name</TableHead>
-                  <TableHead className="min-w-[120px] dark:text-gray-300 font-semibold">Status</TableHead>
-                  <TableHead className="min-w-[200px] dark:text-gray-300 font-semibold">Manager</TableHead>
-                  <TableHead className="min-w-[150px] dark:text-gray-300 font-semibold">Assignees</TableHead>
-                  <TableHead className="min-w-[200px] dark:text-gray-300 font-semibold">Timeline</TableHead>
-                  <TableHead className="min-w-[150px] dark:text-gray-300 font-semibold">Budget</TableHead>
-                  <TableHead className="min-w-[100px] dark:text-gray-300 font-semibold">Progress</TableHead>
-                  <TableHead className="text-right min-w-[100px] sticky right-0 top-0 z-50 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-l dark:border-white/5 dark:text-gray-300 font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <PremiumTable containerClassName="h-[calc(100vh-220px)]">
+            <PremiumTableHeader>
+              <PremiumTableRow className="hover:bg-transparent border-none">
+                <PremiumTableHead sticky="left" className="w-[200px] min-w-[200px]">Name</PremiumTableHead>
+                <PremiumTableHead className="min-w-[120px]">Status</PremiumTableHead>
+                <PremiumTableHead className="min-w-[200px]">Manager</PremiumTableHead>
+                <PremiumTableHead className="min-w-[150px]">Assignees</PremiumTableHead>
+                <PremiumTableHead className="min-w-[200px]">Timeline</PremiumTableHead>
+                <PremiumTableHead className="min-w-[150px]">Budget</PremiumTableHead>
+                <PremiumTableHead className="min-w-[100px]">Progress</PremiumTableHead>
+                <PremiumTableHead sticky="right" className="text-right min-w-[100px]">Actions</PremiumTableHead>
+              </PremiumTableRow>
+            </PremiumTableHeader>
+            <PremiumTableBody>
                 {filteredProjects.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="text-center py-20 text-muted-foreground dark:text-gray-500 italic">
+                  <PremiumTableRow>
+                    <PremiumTableCell colSpan={8} className="text-center py-20 text-muted-foreground dark:text-gray-500 italic">
                       {searchQuery ? 'No projects found matching your search.' : 'No projects found. Create your first project by clicking "Add Project".'}
-                    </TableCell>
-                  </TableRow>
+                    </PremiumTableCell>
+                  </PremiumTableRow>
                 ) : (
                   filteredProjects.map((project) => {
                     const isDeleting = deletingIds.has(project.id);
                     return (
-                      <TableRow
+                      <PremiumTableRow
                         key={project.id}
-                        className={`transition-all duration-300 ease-out border-b border-gray-100/50 dark:border-white/5 hover:bg-gray-50/50 dark:hover:bg-white/5 group ${isDeleting ? 'opacity-0 h-0 p-0 overflow-hidden border-0 scale-y-0' : 'opacity-100'}`}
+                        className={isDeleting ? 'opacity-0 h-0 p-0 overflow-hidden border-0 scale-y-0' : 'opacity-100'}
                         style={isDeleting ? { visibility: 'hidden', height: 0, padding: 0, border: 0 } : {}}
                       >
-                        <TableCell className="font-medium sticky left-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-r dark:border-white/5 dark:text-gray-100 group-hover:bg-gray-50/80 dark:group-hover:bg-gray-800/80 transition-colors">
+                        <PremiumTableCell sticky="left" className="font-medium">
                           <div className="flex flex-col gap-0.5">
                             <span className="font-semibold">{project.name}</span>
                             <span className="text-[10px] text-gray-500 truncate dark:text-gray-400 font-normal">#{project.id.split('-').pop()}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>{getStatusBadge(project.status)}</TableCell>
-                        <TableCell>
+                        </PremiumTableCell>
+                        <PremiumTableCell>{getStatusBadge(project.status)}</PremiumTableCell>
+                        <PremiumTableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-7 w-7 ring-1 ring-gray-200 dark:ring-white/10 shadow-sm">
                               <AvatarFallback className="text-[10px] bg-primary/10 text-primary dark:bg-blue-500/20 dark:text-blue-400 font-bold">
@@ -269,8 +275,8 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                             </Avatar>
                             <span className="text-sm dark:text-gray-300 font-medium">{getManagerName(project.manager)}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </PremiumTableCell>
+                        <PremiumTableCell>
                           <div className="flex -space-x-2 overflow-hidden pl-1">
                             {project.assignees && project.assignees.length > 0 ? (
                               <TooltipProvider>
@@ -298,30 +304,30 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                               <span className="text-muted-foreground dark:text-gray-500 text-xs italic">Unassigned</span>
                             )}
                           </div>
-                        </TableCell>
-                        <TableCell className="dark:text-gray-300 tabular-nums">
+                        </PremiumTableCell>
+                        <PremiumTableCell className="dark:text-gray-300 tabular-nums">
                           {formatDate(project.startDate)} - {formatDate(project.endDate)}
-                        </TableCell>
-                        <TableCell className="dark:text-gray-300 font-medium tabular-nums">
+                        </PremiumTableCell>
+                        <PremiumTableCell className="dark:text-gray-300 font-medium tabular-nums">
                           <div className="flex flex-col">
-                            <span>{formatCurrency(project.budgetSpent)}</span>
-                            <span className="text-[10px] text-gray-400">of {formatCurrency(project.budget)}</span>
+                            <span className="font-bold text-intranet-primary dark:text-red-400/90">{formatCurrency(project.budgetSpent)}</span>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium italic opacity-80">of {formatCurrency(project.budget)}</span>
                           </div>
-                        </TableCell>
-                        <TableCell>
+                        </PremiumTableCell>
+                        <PremiumTableCell>
                           <div className="flex flex-col gap-1.5 min-w-[80px]">
                             <div className="flex justify-between items-center px-0.5">
                               <span className="text-[10px] font-bold dark:text-gray-400">{project.progress}%</span>
                             </div>
-                            <Progress value={project.progress} className="h-1.5 w-full bg-gray-100 dark:bg-white/5 overflow-hidden">
+                            <Progress value={project.progress} className="h-1.5 w-full bg-gray-100 dark:bg-white/10 overflow-hidden rounded-full shadow-inner">
                               <div 
-                                className="h-full bg-blue-500 transition-all duration-500 ease-out" 
+                                className="h-full bg-gradient-to-r from-intranet-primary to-intranet-secondary transition-all duration-700 ease-in-out" 
                                 style={{ width: `${project.progress}%` }} 
                               />
                             </Progress>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right sticky right-0 z-20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-l dark:border-white/5 group-hover:bg-gray-50/80 dark:group-hover:bg-gray-800/80 transition-colors">
+                        </PremiumTableCell>
+                        <PremiumTableCell sticky="right" className="text-right">
                           <div className="flex justify-end gap-1">
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(project)} className="h-8 w-8 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-500/10 transition-colors">
                               <Edit className="h-4 w-4" />
@@ -330,14 +336,13 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </PremiumTableCell>
+                      </PremiumTableRow>
                     );
                   })
                 )}
-              </TableBody>
-            </table>
-          </div>
+            </PremiumTableBody>
+          </PremiumTable>
         </CardContent>
       </Card>
 

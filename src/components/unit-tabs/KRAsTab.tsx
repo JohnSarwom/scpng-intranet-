@@ -17,13 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  PremiumTable,
+  PremiumTableHeader,
+  PremiumTableBody,
+  PremiumTableHead,
+  PremiumTableRow,
+  PremiumTableCell,
+} from '@/components/ui/PremiumTable';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Tabs,
@@ -961,7 +961,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       itemProps: {
         style: {
           // Style based on KPI status or type - using a distinct color for now
-          background: '#2196F3', // Example blue color for KPIs
+          background: '#83002A', // SCPNG Maroon theme color
           color: 'white',
           borderLeft: '3px solid #1976D2', // Add a border to distinguish
         },
@@ -1051,37 +1051,34 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 )}
               </div>
 
-
-              <TabsContent value="kpis">
-                <div className="overflow-auto kanban-scrollbar border-x dark:border-white/10 h-[calc(100vh-220px)] relative border-b dark:border-white/10">
-                  <table className="w-full caption-bottom text-sm min-w-full table-fixed md:table-auto border-separate border-spacing-0">
-                    <TableHeader className="sticky top-0 z-50 bg-gray-50 dark:bg-gray-900">
-                      <TableRow className="border-b dark:border-white/10">
-                        <TableHead className="w-[150px] min-w-[150px] sticky left-0 top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Objective</TableHead>
-                        <TableHead className="w-[180px] min-w-[180px] sticky left-[150px] top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">KRA</TableHead>
-                        <TableHead className="w-[100px] min-w-[100px] sticky left-[330px] top-0 z-[60] bg-gray-50 dark:bg-gray-900 border-r dark:border-white/10 font-bold dark:text-gray-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Status</TableHead>
-                        <TableHead className="w-[20%] min-w-[200px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">KPI Deliverables</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Start</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Target Date</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-center">Qtr</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Target</TableHead>
-                        <TableHead className="min-w-[80px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Actual</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">KPI Status</TableHead>
-                        <TableHead className="min-w-[100px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200 text-right">Cost (K)</TableHead>
-                        <TableHead className="min-w-[120px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Assignees</TableHead>
-                        <TableHead className="min-w-[150px] sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Comments</TableHead>
-                        <TableHead className="sticky top-0 z-40 bg-gray-50 dark:bg-gray-900 border-b dark:border-white/10 font-bold dark:text-gray-200">Links</TableHead>
-                        <TableHead className="text-right min-w-[100px] sticky right-0 top-0 bg-gray-50 dark:bg-gray-900 border-l dark:border-white/10 border-b dark:border-white/10 z-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)] font-bold dark:text-gray-200">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
+              <TabsContent value="kpis" className="px-6 pb-6 mt-0">
+                <PremiumTable containerClassName="h-[calc(100vh-220px)] relative border dark:border-white/10">
+                    <PremiumTableHeader>
+                      <PremiumTableRow className="border-b dark:border-white/10 hover:bg-transparent">
+                        <PremiumTableHead sticky="left" className="w-[150px] min-w-[150px] z-[60]">Objective</PremiumTableHead>
+                        <PremiumTableHead sticky="left" className="w-[180px] min-w-[180px] left-[150px] z-[60]">KRA</PremiumTableHead>
+                        <PremiumTableHead sticky="left" className="w-[100px] min-w-[100px] left-[330px] z-[60]">Status</PremiumTableHead>
+                        <PremiumTableHead className="w-[20%] min-w-[200px]">KPI Deliverables</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[100px] text-center">Start</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[100px] text-center">Target Date</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[80px] text-center">Qtr</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[80px] text-right">Target</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[80px] text-right">Actual</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[100px]">KPI Status</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[100px] text-right">Cost (K)</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[120px]">Assignees</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[150px]">Comments</PremiumTableHead>
+                        <PremiumTableHead>Links</PremiumTableHead>
+                        <PremiumTableHead sticky="right" className="text-right min-w-[100px]">Actions</PremiumTableHead>
+                      </PremiumTableRow>
+                    </PremiumTableHeader>
+                    <PremiumTableBody>
                       {processedRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={15} className="h-24 text-center dark:text-gray-400">
+                        <PremiumTableRow>
+                          <PremiumTableCell colSpan={15} className="h-24 text-center dark:text-gray-400">
                             No KPIs found matching the current filters.
-                          </TableCell>
-                        </TableRow>
+                          </PremiumTableCell>
+                        </PremiumTableRow>
                       ) : (
                         processedRows.map((row, rowIndex) => {
                           const {
@@ -1101,23 +1098,23 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                           );
 
                           return (
-                            <TableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b dark:border-white/10">
+                            <PremiumTableRow key={`${originalKra.id}-${kpi?.id || rowIndex}`} className="group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors border-b dark:border-white/10">
                               {isFirstRowOfObjective && (
-                                <TableCell className="align-top border-r dark:border-white/10 text-sm font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:text-gray-300" rowSpan={objectiveRowSpan}>
+                                <PremiumTableCell sticky="left" className="align-top border-r dark:border-white/10 text-sm font-medium z-30" rowSpan={objectiveRowSpan}>
                                   <div className="w-full h-full min-h-full py-2">
                                     {objectiveName}
                                   </div>
-                                </TableCell>
+                                </PremiumTableCell>
                               )}
                               {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r dark:border-white/10 sticky left-[150px] z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:text-gray-300" rowSpan={kraTitleRowSpan}>
-                                  <div className="w-full h-full min-h-full py-2 font-semibold group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                <PremiumTableCell sticky="left" className="align-top border-r dark:border-white/10 left-[150px] z-30" rowSpan={kraTitleRowSpan}>
+                                  <div className="w-full h-full min-h-full py-2 font-semibold group-hover:text-intranet-primary dark:group-hover:text-intranet-primary transition-colors">
                                     {kraTitle}
                                   </div>
-                                </TableCell>
+                                </PremiumTableCell>
                               )}
                               {isFirstRowOfKraTitleGroup && (
-                                <TableCell className="align-top border-r dark:border-white/10 sticky left-[330px] z-30 bg-white dark:bg-gray-900 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" rowSpan={kraTitleRowSpan}>
+                                <PremiumTableCell sticky="left" className="align-top border-r dark:border-white/10 left-[330px] z-30" rowSpan={kraTitleRowSpan}>
                                   <div className="w-full h-full min-h-full flex items-center py-2">
                                     <Badge variant={
                                       originalKra.status?.toLowerCase() === 'closed' ? 'secondary' :
@@ -1127,25 +1124,25 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                       {originalKra.status || 'Open'}
                                     </Badge>
                                   </div>
-                                </TableCell>
+                                </PremiumTableCell>
                               )}
                               {/* KPI Cells */}
-                              <TableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-300 py-4">
+                              <PremiumTableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-300 py-4">
                                 {kpi?.name !== '-' ? kpi?.name : <span className="text-muted-foreground dark:text-gray-500">-</span>}
-                              </TableCell>
+                              </PremiumTableCell>
 
-                              <TableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.start_date || kpi?.startDate)}</TableCell>
-                              <TableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.target_date || kpi?.targetDate)}</TableCell>
-                              <TableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{targetQuarter}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.target ?? '-'}</TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.actual ?? '-'}</TableCell>
-                              <TableCell className="align-top whitespace-nowrap border-b dark:border-white/10 py-4">
+                              <PremiumTableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.start_date || kpi?.startDate)}</PremiumTableCell>
+                              <PremiumTableCell className="align-top text-sm whitespace-nowrap border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{formatDate(kpi?.target_date || kpi?.targetDate)}</PremiumTableCell>
+                              <PremiumTableCell className="align-top text-sm border-b dark:border-white/10 dark:text-gray-400 py-4 text-center">{targetQuarter}</PremiumTableCell>
+                              <PremiumTableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.target ?? '-'}</PremiumTableCell>
+                              <PremiumTableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">{kpi?.actual ?? '-'}</PremiumTableCell>
+                              <PremiumTableCell className="align-top whitespace-nowrap border-b dark:border-white/10 py-4">
                                 {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground dark:text-gray-500">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">
+                              </PremiumTableCell>
+                              <PremiumTableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">
                                 {kpi?.cost ? `K ${Number(kpi.cost).toLocaleString()}` : <span className="text-muted-foreground dark:text-gray-500">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top border-b dark:border-white/10 py-4">
+                              </PremiumTableCell>
+                              <PremiumTableCell className="align-top border-b dark:border-white/10 py-4">
                                 {kpi?.assignees && kpi.assignees.length > 0 ? (
                                   <div className="flex -space-x-2 overflow-hidden">
                                     {(kpi.assignees as any[]).map((assignee: any, index: number) => (
@@ -1161,9 +1158,9 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                     ))}
                                   </div>
                                 ) : <span className="text-muted-foreground dark:text-gray-500">-</span>}
-                              </TableCell>
-                              <TableCell className="align-top text-xs text-muted-foreground dark:text-gray-500 border-b dark:border-white/10 py-4 max-w-[150px] truncate">{kpi?.comments || '-'}</TableCell>
-                              <TableCell className="align-top border-b dark:border-white/10 py-4">
+                              </PremiumTableCell>
+                              <PremiumTableCell className="align-top text-xs text-muted-foreground dark:text-gray-500 border-b dark:border-white/10 py-4 max-w-[150px] truncate">{kpi?.comments || '-'}</PremiumTableCell>
+                              <PremiumTableCell className="align-top border-b dark:border-white/10 py-4">
                                 {linkedTasks.length > 0 ? (
                                   <Popover>
                                     <PopoverTrigger asChild>
@@ -1186,9 +1183,9 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                 ) : (
                                   <span className="text-muted-foreground dark:text-gray-500 text-xs">-</span>
                                 )}
-                              </TableCell>
+                              </PremiumTableCell>
 
-                              <TableCell className="align-top text-right sticky right-0 bg-white dark:bg-gray-900 border-l dark:border-white/10 px-2 py-1 whitespace-nowrap align-middle border-b dark:border-white/10 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                              <PremiumTableCell sticky="right" className="align-top text-right px-2 py-1 whitespace-nowrap align-middle border-b dark:border-white/10">
                                 <div className="flex justify-end items-center space-x-1">
 
                                   {canEdit ? (
@@ -1276,7 +1273,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                                 onClick={() => handleOpenEditKpiModal(row.originalKra.id, row.kpi)}
                                                 aria-label="View KPI"
                                               >
-                                                <Eye className="h-4 w-4 text-muted-foreground hover:text-primary dark:hover:text-blue-400" />
+                                                <Eye className="h-4 w-4 text-muted-foreground hover:text-intranet-primary dark:hover:text-intranet-primary" />
                                               </Button>
                                             </TooltipTrigger>
                                             <TooltipContent className="dark:bg-gray-950 dark:border-white/10">View KPI Details</TooltipContent>
@@ -1286,43 +1283,41 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                     </>
                                   )}
                                 </div>
-                              </TableCell>
-                            </TableRow>
+                              </PremiumTableCell>
+                            </PremiumTableRow>
                           );
                         })
                       )}
-                    </TableBody>
-                  </table>
-                </div>
-              </TabsContent>
+                    </PremiumTableBody>
+                  </PremiumTable>
+                </TabsContent>
 
-              <TabsContent value="objectives">
-                <div className="overflow-auto border dark:border-white/10 rounded-xl bg-white dark:bg-gray-950 shadow-sm">
-                  <Table>
-                    <TableHeader className="bg-gray-50/50 dark:bg-gray-800/50">
-                      <TableRow className="dark:border-white/10">
-                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Objective Name</TableHead>
-                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Strategic Alignment</TableHead>
-                        <TableHead className="w-[20%] font-bold dark:text-gray-200">Key Deliverable</TableHead>
-                        <TableHead className="w-[10%] font-bold dark:text-gray-200">Goal Type</TableHead>
-                        <TableHead className="font-bold dark:text-gray-200">Description</TableHead>
-                        <TableHead className="w-[10%] font-bold dark:text-gray-200">Status</TableHead>
-                        <TableHead className="w-[10%] text-center font-bold dark:text-gray-200">Progress</TableHead>
-                        <TableHead className="text-right w-[10%] font-bold dark:text-gray-200">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                <TabsContent value="objectives" className="px-6 pb-6 mt-0">
+                <PremiumTable containerClassName="max-h-[600px] border dark:border-white/10 rounded-xl overflow-hidden relative">
+                    <PremiumTableHeader>
+                      <PremiumTableRow>
+                        <PremiumTableHead className="w-[20%]">Objective Name</PremiumTableHead>
+                        <PremiumTableHead className="w-[20%]">Strategic Alignment</PremiumTableHead>
+                        <PremiumTableHead className="w-[20%]">Key Deliverable</PremiumTableHead>
+                        <PremiumTableHead className="w-[10%]">Goal Type</PremiumTableHead>
+                        <PremiumTableHead>Description</PremiumTableHead>
+                        <PremiumTableHead className="w-[10%]">Status</PremiumTableHead>
+                        <PremiumTableHead className="w-[10%] text-center">Progress</PremiumTableHead>
+                        <PremiumTableHead sticky="right" className="text-right w-[10%]">Actions</PremiumTableHead>
+                      </PremiumTableRow>
+                    </PremiumTableHeader>
+                    <PremiumTableBody>
                       {objectivesData.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
+                        <PremiumTableRow>
+                          <PremiumTableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
                             No Objectives defined yet. Use the "Add Objective" button.
-                          </TableCell>
-                        </TableRow>
+                          </PremiumTableCell>
+                        </PremiumTableRow>
                       ) : (
                         objectivesData.map((objective) => (
-                          <TableRow key={objective.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors dark:border-white/10">
-                            <TableCell className="font-bold dark:text-gray-200">{objective.title}</TableCell>
-                            <TableCell>
+                          <PremiumTableRow key={objective.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors dark:border-white/10">
+                            <PremiumTableCell className="font-bold dark:text-gray-200">{objective.title}</PremiumTableCell>
+                            <PremiumTableCell>
                               {(() => {
                                 // Try to resolve title from prop or lookup
                                 const title = objective.parentGoalTitle ||
@@ -1336,15 +1331,15 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                   <span className="text-muted-foreground dark:text-gray-500 text-[10px] italic">Direct/Board</span>
                                 );
                               })()}
-                            </TableCell>
-                            <TableCell>
+                            </PremiumTableCell>
+                            <PremiumTableCell>
                               {objective.linkedDeliverable ? (
                                 <span className="text-sm font-medium dark:text-gray-300">{objective.linkedDeliverable}</span>
                               ) : (
                                 <span className="text-muted-foreground dark:text-gray-500 text-xs">-</span>
                               )}
-                            </TableCell>
-                            <TableCell>
+                            </PremiumTableCell>
+                            <PremiumTableCell>
                               <Badge
                                 variant={objective.goalType === 'Org' ? 'default' : 'secondary'}
                                 className={cn(
@@ -1353,12 +1348,12 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                               >
                                 {objective.goalType || 'Unit'}
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-sm text-muted-foreground dark:text-gray-400 max-w-[200px] truncate">{objective.description || '-'}</TableCell>
-                            <TableCell>
+                            </PremiumTableCell>
+                            <PremiumTableCell className="text-sm text-muted-foreground dark:text-gray-400 max-w-[200px] truncate">{objective.description || '-'}</PremiumTableCell>
+                            <PremiumTableCell>
                               <StatusBadge status={calculateObjectiveStatus(objective, kras) || 'Not Started'} />
-                            </TableCell>
-                            <TableCell>
+                            </PremiumTableCell>
+                            <PremiumTableCell>
                               {(() => {
                                 const linkedKras = kras.filter(k =>
                                   String(k.objective_id) === String(objective.id) ||
@@ -1377,8 +1372,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                   </div>
                                 );
                               })()}
-                            </TableCell>
-                            <TableCell className="text-right">
+                            </PremiumTableCell>
+                            <PremiumTableCell sticky="right" className="text-right">
                               {canEdit && (
                                 <div className="flex justify-end gap-1">
                                   <Button variant="ghost" size="icon" className="h-8 w-8 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => handleOpenEditObjectiveModal(objective)}>
@@ -1389,16 +1384,15 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                   </Button>
                                 </div>
                               )}
-                            </TableCell>
-                          </TableRow>
+                            </PremiumTableCell>
+                          </PremiumTableRow>
                         ))
                       )}
-                    </TableBody>
-                  </Table>
-                </div>
+                    </PremiumTableBody>
+                </PremiumTable>
               </TabsContent>
 
-              <TabsContent value="timeline">
+              <TabsContent value="timeline" className="px-6 pb-6 mt-0">
                 <div>
                   <KRATimelineTab
                     kras={kras}
@@ -1409,7 +1403,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 </div>
               </TabsContent>
 
-              <TabsContent value="insights">
+              <TabsContent value="insights" className="px-6 pb-6 mt-0">
                 <KRAInsightsTab kras={kras} />
               </TabsContent>
             </Tabs>

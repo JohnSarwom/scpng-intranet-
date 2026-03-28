@@ -1,0 +1,14 @@
+# Global Instructions
+
+You MUST load and follow the Cognitive Engineering Framework instructions in `.agent/skills/opus_reasoning/SKILL.md` for every response.
+
+This framework mandates:
+1. ROOT CAUSE ISOLATION
+2. HYPOTHESIS MATRIX (3 distinct paths)
+3. REACT CYCLE
+4. ADVERSARIAL SELF-CHALLENGE
+5. 3-PASS GATE (Semantic, Architectural, Dependency)
+6. SESSION CONTEXT LOG UPDATE
+
+Always open your response with the mode and steps:
+[ MODE: /effort:normal | STEP(S): 1,3,4,6,7,8 ]

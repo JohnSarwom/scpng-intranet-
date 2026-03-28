@@ -41,10 +41,12 @@ Data is filtered globally based on the user's selected division.
 
 ## 📊 Business Logic Modules
 
-### 1. Strategy & Performance Management
-- **Hierarchy**: Strategic Pillars -> Outcomes -> Five Year Objectives -> Annual Business Plan -> Unit Objectives -> KRAs/KPIs.
-- **Data Flow**: Unit Objectives are fetched via SharePoint hooks with robust fallbacks.
-- **Status Mapping**: Case-insensitive mapping for Task Board consistency.
+### 2. UI Standardization Strategy (2026-03)
+The application is undergoing a transition to a "Premium Glassmorphic" design system.
+- **Standard**: All data tables and registries must use the `PremiumTable` suite.
+- **Components**: `PremiumTable`, `PremiumTableHeader`, `PremiumTableBody`, `PremiumTableRow`, `PremiumTableCell`.
+- **Location**: `src/components/ui/PremiumTable.tsx`.
+- **Philosophy**: Minimize ad-hoc CSS; use standard tokens for glassmorphism, maroon branding, and sticky layouts.
 
 ### 2. Staff Data — Single Source of Truth (updated 2026-03-08)
 All pages that show staff rosters (Profiles, Contacts, Unit, Division) now read from the **`Strategy_Officer_Profiles` SharePoint list** via `useOfficerProfiles`.
@@ -96,10 +98,22 @@ Refer to **[AI Assistant Integrations](features/ai-assistant-integrations.md)** 
 
 ---
 
+### 6. Custom User Contacts (added 2026-03-28 08:00 PM)
+Allows users to manage private contacts stored in SharePoint, isolated by `OwnerEmail`.
+
+- **Primary Hook**: `useSharePointCustomContacts` — Handles CRUD operations for the logged-in user.
+- **Setup Service**: `SharePointListSetupService.createCustomContactsList()` — Programmatically provisions the `User_Custom_Contacts` list.
+- **UI Tab**: "My Contacts" in `Contacts.tsx`.
+- **Isolation**: Filters by `fields/OwnerEmail eq '{userEmail}'`.
+
+---
+
 ## 📂 Documentation Map (Spokes)
 | Document | Purpose |
 | :--- | :--- |
 | [AUTH.md](guides/auth.md) | Deep dive into Azure AD + Supabase integration. |
 | [SHAREPOINT.md](guides/sharepoint.md) | Schema and Power Automate flow documentation. |
+| [CONTACTS.md](features/contacts.md) | **Detailed guide for the Custom Contacts feature.** |
+| [CUSTOM_CONTACT_SCHEMA.md](database/user-custom-contacts-schema.md) | **Database schema for the User_Custom_Contacts list.** |
 | [UI_PATTERNS.md](guides/ui_patterns.md) | Shared design tokens, modal patterns, and Tailwind rules. |
 | [HISTORY_MAP.md](ARCHIVE_MAP.md) | Index of 100+ archived implementation/fix logs. |

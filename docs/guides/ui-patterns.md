@@ -62,7 +62,7 @@ To scroll only a specific Radix UI `ScrollArea` component WITHOUT affecting pare
 - **Improved Focus**: Ensures the user stays centered on the modal while seeing fresh content.
 
 ---
-*Last Updated: 2026-03-25*
+*Last Updated: 2026-03-28 18:57*
 
 ## Premium Dark Mode Standards
 
@@ -91,3 +91,18 @@ To maintain a cohesive look when using tabs or button-based filters (like year s
 - [x] Text: `text-gray-100` (Primary) / `text-gray-400` (Secondary)
 - [x] Tabs/Filters: `bg-gray-800/50` (List) / `bg-gray-700` (Active Trigger)
 - [x] Placeholders: `dark:placeholder:text-gray-500`
+
+## Standardized UI Components
+
+### Premium Table Suite 
+The `PremiumTable` suite (`src/components/ui/PremiumTable.tsx`) is the **mandatory** standard for all data-heavy displays in the intranet.
+
+**Key features:**
+- **Glassmorphism**: Built-in `backdrop-blur-md` and semi-transparent backgrounds.
+- **Maroon Branding**: Consistent use of SCPNG primary colors for accents.
+- **Sticky Column Support**: Easy horizontal scrolling with persistent "Name", "Objective", or "Actions" columns using the `sticky` prop.
+- **High-Contrast Borders**: Standardized `border-gray-200` (Light) and `border-white/10` (Dark) for clear row separation.
+- **Interactive States**: Smooth transitions and distinct header/row hover effects.
+
+**Usage Mandate:**
+All future refactors of `ReportsTab`, `TasksTab`, `AssetsTab`, and other registry views MUST migrate to this suite to maintain visual consistency.

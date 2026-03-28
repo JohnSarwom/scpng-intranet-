@@ -21,7 +21,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import ContactDetailsModal from '@/components/contacts/ContactDetailsModal';
 import AddContactDialog from '@/components/contacts/AddContactDialog';
+import CustomContactDialog from '@/components/contacts/CustomContactDialog';
 import { useEmployeePhotos } from '@/hooks/useEmployeePhotos';
+import { useSharePointCustomContacts, useSharePointSetup } from '@/hooks/useSharePointOps';
+import { Trash2, Edit, UserCircle, Loader2 } from 'lucide-react';
 
 const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,14 +32,27 @@ const Contacts = () => {
   const [companyFilter, setCompanyFilter] = useState('all');
   const { contacts, isLoading, error, refetch } = useMicrosoftContacts();
   const { isAdmin, user: roleUser, loading: roleLoading } = useRoleBasedAuth();
-  const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [allContacts, setAllContacts] = useState<MicrosoftContact[]>([]);
   const [selectedContact, setSelectedContact] = useState<MicrosoftContact | null>(null);
+  const [selectedDivision, setSelectedDivision] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddContactOpen, setIsAddContactOpen] = useState(false);
+  const [isCustomContactOpen, setIsCustomContactOpen] = useState(false);
+  const [editingCustomContact, setEditingCustomContact] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
-  // const { isInitialized: photosInitialized } = useEmployeePhotos(); // Removed duplicate
   const [photoUrls, setPhotoUrls] = useState<Map<string, { profileUrl?: string; modalUrl?: string }>>(new Map());
+
+  // Personal Custom Contacts Hook
+  const { 
+    data: customContacts, 
+    loading: customLoading, 
+    add: addCustom, 
+    update: updateCustom, 
+    remove: removeCustom 
+  } = useSharePointCustomContacts(roleUser?.user_email || undefined);
+  
+  const { initializeCustomContactsList } = useSharePointSetup();
 
   // Helper to normalize office location to division ID
   const getDivisionIdFromOffice = (office?: string) => {
@@ -49,15 +65,8 @@ const Contacts = () => {
       .replace(/^-+|-+$/g, '');
   };
 
-  // Set initial division for non-admins
-  useEffect(() => {
-    if (!isAdmin && roleUser?.division_name && !selectedDivision) {
-      const divisionId = getDivisionIdFromOffice(roleUser.division_name);
-      if (divisionId) {
-        setSelectedDivision(divisionId);
-      }
-    }
-  }, [isAdmin, roleUser, selectedDivision]);
+  // Note: Auto-setting division for non-admins was removed to allow full organizational visibility
+  // as per task: "they should be able to see the whole officers contacts and not only those that are restricted"
 
   const handleCopyAll = () => {
     if (allContacts.length === 0) {
@@ -138,10 +147,7 @@ const Contacts = () => {
 
   // Filter by division, search term, and other filters
   const filteredContacts = allContacts.filter(contact => {
-    // Division filter
-    const matchesDivision = isAdmin
-      ? true // Admins see everything
-      : !selectedDivision // If no division is selected
+    const matchesDivision = !selectedDivision // If no division is selected
         ? true // Show all
         : (contact as any).divisionId === selectedDivision; // Otherwise filter by division
 
@@ -164,9 +170,7 @@ const Contacts = () => {
     const isDivisionContact = contact.department && contact.department.trim() !== '';
 
     // Apply division filtering based on user's permissions
-    const matchesDivision = isAdmin
-      ? true // Admins see all divisions 
-      : !selectedDivision
+    const matchesDivision = !selectedDivision
         ? true
         : (contact as any).divisionId === selectedDivision;
 
@@ -200,9 +204,7 @@ const Contacts = () => {
     const isUserContact = contact.userPrincipalName && contact.userPrincipalName.includes('@');
 
     // Apply division filtering based on user's permissions
-    const matchesDivision = isAdmin
-      ? true // Admins see all divisions
-      : !selectedDivision
+    const matchesDivision = !selectedDivision
         ? true
         : (contact as any).divisionId === selectedDivision;
 
@@ -211,17 +213,17 @@ const Contacts = () => {
 
   // Get unique departments from filtered contacts
   const departments = ['All', ...new Set(allContacts
-    .filter(contact => isAdmin || !selectedDivision || (contact as any).divisionId === selectedDivision)
+    .filter(contact => !selectedDivision || (contact as any).divisionId === selectedDivision)
     .map(contact => contact.department)
     .filter((dept): dept is string => !!dept))];
 
   // Get unique companies from filtered contacts
   const companies = ['All', ...new Set(allContacts
-    .filter(contact => isAdmin || !selectedDivision || (contact as any).divisionId === selectedDivision)
+    .filter(contact => !selectedDivision || (contact as any).divisionId === selectedDivision)
     .map(contact => contact.companyName)
     .filter((company): company is string => !!company))];
 
-  const renderContactCard = (contact: MicrosoftContact, index: number) => {
+  const renderContactCard = (contact: MicrosoftContact & { isCustom?: boolean }, index: number) => {
     const email = contact.emailAddresses?.[0]?.address || contact.mail;
     const photos = email ? photoUrls.get(email) : null;
     const photoUrl = photos?.profileUrl;
@@ -284,11 +286,11 @@ const Contacts = () => {
             )}
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              className="w-full icon-hover-effect dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"
+              className={contact.isCustom ? "flex-1 dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300" : "w-full dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"}
               onClick={() => {
                 setSelectedContact(contact);
                 setIsModalOpen(true);
@@ -296,6 +298,33 @@ const Contacts = () => {
             >
               View Profile
             </Button>
+            {contact.isCustom && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2 dark:border-white/10 dark:hover:bg-white/5 dark:text-blue-400"
+                  onClick={() => {
+                    setEditingCustomContact(contact);
+                    setIsCustomContactOpen(true);
+                  }}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="px-2 dark:border-white/10 dark:hover:bg-red-900/20 dark:text-red-400"
+                  onClick={async () => {
+                    if (confirm('Are you sure you want to delete this contact?')) {
+                      await removeCustom(contact.id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card >
@@ -306,7 +335,6 @@ const Contacts = () => {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {isLoading ? (
         // Loading skeletons
-        Array.from({ length: 8 }).map((_, index) => (
         Array.from({ length: 8 }).map((_, index) => (
           <Card key={index} className="overflow-hidden dark:bg-gray-800 dark:border-white/10">
             <div className="h-12 bg-gradient-to-r from-intranet-primary to-intranet-secondary opacity-50"></div>
@@ -325,7 +353,6 @@ const Contacts = () => {
               </div>
             </CardContent>
           </Card>
-        ))
         ))
       ) : contactsToRender.length > 0 ? (
         contactsToRender.map((contact, index) => renderContactCard(contact, index))
@@ -495,34 +522,58 @@ const Contacts = () => {
       <div className="mb-6 animate-fade-in">
         <h1 className="text-2xl font-bold mb-2">Organization Directory</h1>
         <p className="text-gray-500">
-          {selectedDivision && !isAdmin
-            ? "View contacts within your division"
-            : "Find and connect with colleagues across the SCPNG organization"
-          }
+          Find and connect with colleagues across the SCPNG organization
         </p>
       </div>
 
-      <Tabs defaultValue="all" className="space-y-6">
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full dark:bg-gray-800/50 dark:border dark:border-white/10 p-1 h-auto">
-          <TabsTrigger value="all" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
-            <Users className="h-4 w-4" />
-            All Contacts
-          </TabsTrigger>
-          <TabsTrigger value="division" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
-            <Briefcase className="h-4 w-4" />
-            Division Contacts
-          </TabsTrigger>
-          <TabsTrigger value="units" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
-            <Building className="h-4 w-4" />
-            Unit Contacts
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
-            <Users className="h-4 w-4" />
-            User Contacts
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="flex justify-between items-center">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full max-w-2xl dark:bg-gray-800/50 dark:border dark:border-white/10 p-1 h-auto">
+            <TabsTrigger value="all" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
+              <Users className="h-4 w-4" />
+              All Contacts
+            </TabsTrigger>
+            <TabsTrigger value="division" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
+              <Briefcase className="h-4 w-4" />
+              Division Contacts
+            </TabsTrigger>
+            <TabsTrigger value="units" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
+              <Building className="h-4 w-4" />
+              Unit Contacts
+            </TabsTrigger>
+            <TabsTrigger value="users" className="flex items-center gap-2 px-6 py-2 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100 dark:text-gray-400">
+              <UserCircle className="h-4 w-4" />
+              My Contacts
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="all">
+          {activeTab === 'users' && (
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Button 
+                  onClick={initializeCustomContactsList}
+                  variant="outline"
+                  className="border-intranet-primary text-intranet-primary hover:bg-intranet-primary/10 gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Initialize Private Contacts Storage
+                </Button>
+              )}
+              <Button 
+                onClick={() => {
+                  setEditingCustomContact(null);
+                  setIsCustomContactOpen(true);
+                }}
+                className="bg-intranet-primary hover:bg-intranet-primary/90 text-white gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Private Contact
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <TabsContent value="all" className="animate-fade-in-up">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-grow animate-fade-in">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
@@ -560,34 +611,36 @@ const Contacts = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {isAdmin && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-2 dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"
+                    onClick={() => setIsAddContactOpen(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="gap-2 dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"
+                    onClick={handleCopyAll}
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="dark:border-white/10 dark:hover:bg-white/5 dark:text-gray-300"
+                    onClick={refetch}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
+              )}
             </div>
-
-            {isAdmin && (
-              <div className="flex gap-2">
-                <Button
-                  className="whitespace-nowrap animate-fade-in btn-hover-effect"
-                  style={{ animationDelay: '0.2s' }}
-                  onClick={refetch}
-                  disabled={isLoading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-
-                <Button className="whitespace-nowrap animate-fade-in btn-hover-effect" style={{ animationDelay: '0.2s' }} onClick={() => setIsAddContactOpen(true)}>
-                  <Plus size={16} className="mr-1" />
-                  Add Contact
-                </Button>
-                <Button
-                  className="whitespace-nowrap animate-fade-in btn-hover-effect"
-                  style={{ animationDelay: '0.2s' }}
-                  onClick={handleCopyAll}
-                >
-                  <Copy size={16} className="mr-1" />
-                  Copy All
-                </Button>
-              </div>
-            )}
           </div>
 
           {error && (
@@ -667,9 +720,16 @@ const Contacts = () => {
           {renderUnitContactsSection()}
         </TabsContent>
 
-        <TabsContent value="users">
-          {/* User Contacts Tab */}
-          {renderContactsGrid(userContacts)}
+        <TabsContent value="users" className="animate-fade-in-up">
+          {customLoading ? (
+            <div className="flex justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {customContacts.map((contact: any, index: number) => renderContactCard(contact, index))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
       <ContactDetailsModal
@@ -683,6 +743,19 @@ const Contacts = () => {
         open={isAddContactOpen}
         onOpenChange={setIsAddContactOpen}
         onContactAdded={refetch}
+      />
+
+      <CustomContactDialog
+        open={isCustomContactOpen}
+        onOpenChange={setIsCustomContactOpen}
+        editingContact={editingCustomContact}
+        onContactSaved={async (data) => {
+          if (editingCustomContact) {
+            await updateCustom(editingCustomContact.id, data);
+          } else {
+            await addCustom(data);
+          }
+        }}
       />
     </PageLayout>
   );

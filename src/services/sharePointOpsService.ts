@@ -27,7 +27,8 @@ const OPS_CONFIG = {
         COMPONENT_VISIBILITY: 'System_Component_Visibility',
         WORKPLANS: 'Division_WorkPlans',
         NOTIFICATIONS: 'System_Notifications',
-        REPORT_SCHEDULES: 'Report_Schedules'
+        REPORT_SCHEDULES: 'Report_Schedules',
+        CUSTOM_CONTACTS: 'User_Custom_Contacts'
     }
 };
 
@@ -799,6 +800,94 @@ export class SharePointOpsService {
                     }
                 });
         }
+    }
+
+    // --- Custom Contacts Methods ---
+
+    async getCustomContacts(userEmail: string): Promise<any[]> {
+        if (!this.listIds['CUSTOM_CONTACTS']) return [];
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['CUSTOM_CONTACTS']}/items`)
+                .expand('fields')
+                .filter(`fields/OwnerEmail eq '${userEmail}'`)
+                .get();
+
+            return (response.value || []).map((item: any) => ({
+                id: item.id,
+                displayName: item.fields.Title,
+                jobTitle: item.fields.JobTitle,
+                department: item.fields.Department,
+                mail: item.fields.Email,
+                emailAddresses: [{ address: item.fields.Email }],
+                businessPhones: item.fields.Phone ? [item.fields.Phone] : [],
+                mobilePhone: item.fields.Phone,
+                companyName: item.fields.Company,
+                officeLocation: item.fields.OfficeLocation,
+                ownerEmail: item.fields.OwnerEmail,
+                isCustom: true
+            }));
+        } catch (error) {
+            console.error('Failed to get custom contacts', error);
+            return [];
+        }
+    }
+
+    async addCustomContact(contact: any, userEmail: string): Promise<any> {
+        if (!this.listIds['CUSTOM_CONTACTS']) throw new Error('Custom Contacts list not found');
+
+        const payload = {
+            fields: {
+                Title: contact.displayName,
+                JobTitle: contact.jobTitle,
+                Department: contact.department,
+                Email: contact.mail || contact.emailAddresses?.[0]?.address,
+                Phone: contact.mobilePhone || contact.businessPhones?.[0],
+                Company: contact.companyName,
+                OfficeLocation: contact.officeLocation,
+                OwnerEmail: userEmail
+            }
+        };
+
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['CUSTOM_CONTACTS']}/items`)
+            .post(payload);
+
+        return {
+            id: response.id,
+            ...contact,
+            isCustom: true
+        };
+    }
+
+    async updateCustomContact(id: string, contact: any): Promise<any> {
+        if (!this.listIds['CUSTOM_CONTACTS']) throw new Error('Custom Contacts list not found');
+
+        const fields: any = {};
+        if (contact.displayName) fields.Title = contact.displayName;
+        if (contact.jobTitle) fields.JobTitle = contact.jobTitle;
+        if (contact.department) fields.Department = contact.department;
+        if (contact.mail) fields.Email = contact.mail;
+        if (contact.mobilePhone) fields.Phone = contact.mobilePhone;
+        if (contact.companyName) fields.Company = contact.companyName;
+        if (contact.officeLocation) fields.OfficeLocation = contact.officeLocation;
+
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['CUSTOM_CONTACTS']}/items/${id}`)
+            .patch({ fields });
+
+        return {
+            id,
+            ...contact,
+            isCustom: true
+        };
+    }
+
+    async deleteCustomContact(id: string): Promise<void> {
+        if (!this.listIds['CUSTOM_CONTACTS']) throw new Error('Custom Contacts list not found');
+        await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['CUSTOM_CONTACTS']}/items/${id}`)
+            .delete();
     }
 
     async updateGenericViewSetting(id: string, settingsJson: string): Promise<void> {

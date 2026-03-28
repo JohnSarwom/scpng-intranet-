@@ -57,6 +57,7 @@ Links to related components.
 - ticketing - Ticket management components
 - reports - Reporting components
 - ui - Basic UI elements
+    - [PremiumTable](PremiumTable.md) - Standard glassmorphic table suite
 - unit-tabs - Unit management tabs
 - kra - Key Result Area components
 - assets - Asset management components

@@ -113,7 +113,7 @@ const MainSidebar: React.FC<MainSidebarProps> = memo(({
       className={cn(
         "fixed inset-y-0 left-0 w-20 min-w-[5rem] flex-shrink-0",
         "bg-gradient-to-b from-[#400010] to-[#200008] dark:from-[#300010] dark:to-black",
-        "flex flex-col items-center py-6 z-40 shadow-xl rounded-r-2xl transition-all duration-300"
+        "flex flex-col items-center py-6 z-40 shadow-xl rounded-r-2xl border-r border-white/5 transition-all duration-300"
       )}
     >
       {/* P6: Branding / Logo - Consistent sizing */}

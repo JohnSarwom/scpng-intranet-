@@ -61,4 +61,30 @@ const KanbanBoard = () => {
 
 -   **Portal Target**: The target must be the exact DOM node that `requestFullscreen()` was called on.
 -   **CSS Context**: When portaled into the container, the overlay inherits styles from that container. Ensure your overlay layout styles (fixed positioning, etc.) still work correctly within this new context.
--   **Z-Index**: Even inside the full-screen container, ensure the overlay has a high z-index to sit above the columns/cards.
+-   **Z-Index**: Even inside the full-screen container, ensure the overlay has a [high z-index](file:///c:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/unit-tabs/TasksTab.tsx#L2050-L2077) to sit above the columns/cards.
+
+## Update: Offset Bug Fix (2026-03-28 20:46)
+
+### The Problem
+During the Task Registry implementation, an offset bug was identified where the drag overlay would appear several hundred pixels away from the cursor in "Normal" mode, but correctly in "Full Screen" mode.
+
+### The Cause
+In normal mode, the `<DragOverlay>` was being rendered inline within a deeply nested glassmorphic layout. This layout used CSS `transform` and `position: relative` with scrolling, which created a new **containing block** for the `position: fixed` overlay. However, `@dnd-kit` calculates the drag position relative to the global viewport. This mismatch resulted in the visual offset.
+
+### The Fix
+The logic was updated to **always** use `createPortal`:
+1.  **Normal Mode**: Portal to `document.body`. This ensures the overlay is relative to the viewport, matching the library's coordinate system.
+2.  **Full-Screen Mode**: Portal to the full-screen container (required for visibility).
+
+```tsx
+{createPortal(
+  <DragOverlay>
+    {/* ... card content ... */}
+  </DragOverlay>,
+  isFullScreen ? containerRef.current! : document.body
+)}
+```
+
+This ensures consistent coordinate alignment across all view modes.
+
+**Last Updated**: 2026-03-28 20:46

@@ -2047,7 +2047,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                 </div>
               )}
 
-              {isFullScreen && containerRef.current ? createPortal(
+              {createPortal(
                 <DragOverlay>
                   {activeDragItem ? (
                     <div className="opacity-90 w-[280px] cursor-grabbing">
@@ -2056,24 +2056,12 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                         assignee={staffMembers?.find(s => s.email === activeDragItem.assignee)}
                         isDragOverlay
                         className="shadow-2xl scale-105 rotate-2 cursor-grabbing"
+                        container={isFullScreen ? containerRef.current : null}
                       />
                     </div>
                   ) : null}
                 </DragOverlay>,
-                containerRef.current
-              ) : (
-                <DragOverlay>
-                  {activeDragItem ? (
-                    <div className="opacity-90 w-[280px] cursor-grabbing">
-                      <TaskCard
-                        {...activeDragItem}
-                        assignee={staffMembers?.find(s => s.email === activeDragItem.assignee)}
-                        isDragOverlay
-                        className="shadow-2xl scale-105 rotate-2 cursor-grabbing"
-                      />
-                    </div>
-                  ) : null}
-                </DragOverlay>
+                (isFullScreen && containerRef.current) ? containerRef.current : document.body
               )}
             </div>
           </DndContext>
