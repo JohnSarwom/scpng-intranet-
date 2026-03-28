@@ -271,6 +271,15 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
 
   return (
     <div className="space-y-6 mt-4">
+      {/* Tab Header */}
+      <div className="px-1 mb-2">
+        <h2 className="text-lg font-bold text-black">
+          Division Reports
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Generate and export comprehensive performance reports across various scopes and time periods.
+        </p>
+      </div>
       {/* Report Generator Panel */}
       <Card>
         <CardHeader className="pb-3">

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 import { useDivisionData } from '@/hooks/useDivisionData';
 import { useDivisionMetrics } from '@/hooks/useDivisionMetrics';
@@ -14,12 +15,11 @@ import { DivisionOverviewTab } from '@/components/division/tabs/DivisionOverview
 import { DivisionUnitsTab } from '@/components/division/tabs/DivisionUnitsTab';
 import { DivisionWorkPlansTab } from '@/components/division/tabs/DivisionWorkPlansTab';
 import { DivisionReportsTab } from '@/components/division/tabs/DivisionReportsTab';
-import { DivisionAnalyticsTab } from '@/components/division/tabs/DivisionAnalyticsTab';
-import { DivisionSettingsTab } from '@/components/division/tabs/DivisionSettingsTab';
 
 const Division = () => {
   const { divisionId } = useParams<{ divisionId?: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>(() => {
     const state = location.state as { activeTab?: string } | null;
     return state?.activeTab || 'overview';
@@ -31,11 +31,6 @@ const Division = () => {
 
   // Permissions
   const canEditWorkPlans = useMemo(() => {
-    const role = divisionData.userContext.role?.toLowerCase();
-    return divisionData.canEditStrategy;
-  }, [divisionData]);
-
-  const canViewSettings = useMemo(() => {
     const role = divisionData.userContext.role?.toLowerCase();
     return divisionData.canEditStrategy;
   }, [divisionData]);
@@ -87,16 +82,27 @@ const Division = () => {
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="overflow-x-auto flex-nowrap">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="units">Units</TabsTrigger>
-          <TabsTrigger value="workplans">Work Plans</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          {canViewSettings && (
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <TabsList className="overflow-x-auto flex-nowrap mb-0">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="units">Units</TabsTrigger>
+            <TabsTrigger value="workplans">Work Plans</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabsList>
+
+          {activeTab === 'workplans' && canEditWorkPlans && (
+            <Button
+              size="sm"
+              className="gap-1.5 bg-[#83002A] hover:bg-[#5C001E] shrink-0"
+              onClick={() => {
+                navigate(`/division/${divisionId}/workplan/new`);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              New Work Plan
+            </Button>
           )}
-        </TabsList>
+        </div>
 
         <TabsContent value="overview" className="mt-0">
           <DivisionOverviewTab data={divisionData} metrics={metrics} />
@@ -113,20 +119,6 @@ const Division = () => {
         <TabsContent value="reports" className="mt-0">
           <DivisionReportsTab data={divisionData} metrics={metrics} />
         </TabsContent>
-
-        <TabsContent value="analytics" className="mt-0">
-          <DivisionAnalyticsTab data={divisionData} metrics={metrics} />
-        </TabsContent>
-
-        {canViewSettings && (
-          <TabsContent value="settings" className="mt-0">
-            <DivisionSettingsTab
-              divisionId={divisionData.division?.id || ''}
-              canEdit={canEditWorkPlans}
-              onRefresh={divisionData.refresh}
-            />
-          </TabsContent>
-        )}
       </Tabs>
     </PageLayout>
   );

@@ -373,23 +373,12 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
   }, [workPlans, data.objectives, data.combinedKras]);
 
   const [selectedPlan, setSelectedPlan] = useState<WorkPlan | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const filteredPlans = useMemo(() => {
-    if (statusFilter === 'all') return enrichedPlans;
-    return enrichedPlans.filter(p => p.status === statusFilter);
-  }, [enrichedPlans, statusFilter]);
+  const filteredPlans = enrichedPlans;
 
   const goToNew = () => navigate(`/division/${divisionId}/workplan/new`);
   const goToEdit = (plan: WorkPlan) => navigate(`/division/${divisionId}/workplan/${plan.id}/edit`);
 
-  // Stats for header
-  const stats = useMemo(() => ({
-    total: enrichedPlans.length,
-    active: enrichedPlans.filter(p => p.status === 'active').length,
-    completed: enrichedPlans.filter(p => p.status === 'completed').length,
-    draft: enrichedPlans.filter(p => p.status === 'draft').length,
-  }), [enrichedPlans]);
 
   // ── Detail view ──
   if (selectedPlan) {
@@ -408,62 +397,24 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
   // ── List view ──
   return (
     <div className="space-y-4 mt-4">
-
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Total Plans', value: stats.total, icon: FileText, color: 'text-blue-600' },
-          { label: 'Active', value: stats.active, icon: BarChart3, color: 'text-green-600' },
-          { label: 'Draft', value: stats.draft, icon: Clock, color: 'text-amber-600' },
-          { label: 'Completed', value: stats.completed, icon: CheckCircle, color: 'text-gray-600' },
-        ].map(({ label, value, icon: Icon, color }) => (
-          <Card key={label}>
-            <CardContent className="p-3 flex items-center gap-3">
-              <Icon className={`h-5 w-5 ${color} shrink-0`} />
-              <div>
-                <p className="text-lg font-bold leading-none">{value}</p>
-                <p className="text-xs text-muted-foreground">{label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Tab Header */}
+      <div className="px-1 mb-2">
+        <h2 className="text-lg font-bold text-black">
+          Division Work Plans
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Strategic roadmaps and operational work plans aligned with corporate objectives for the current period.
+        </p>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-3">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="draft">Draft</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="archived">Archived</SelectItem>
-          </SelectContent>
-        </Select>
 
-        {canEdit && (
-          <Button
-            size="sm"
-            className="gap-1.5 bg-[#83002A] hover:bg-[#5C001E]"
-            onClick={goToNew}
-          >
-            <Plus className="h-4 w-4" />
-            New Work Plan
-          </Button>
-        )}
-      </div>
 
       {/* Cards grid */}
       {filteredPlans.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center h-48 text-muted-foreground">
             <FileText className="h-8 w-8 mb-2 opacity-40" />
-            <p className="text-sm">
-              {statusFilter !== 'all' ? `No ${statusFilter} work plans` : 'No work plans yet'}
-            </p>
+            <p className="text-sm">No work plans yet</p>
             {canEdit && (
               <Button variant="link" size="sm" className="mt-1 text-[#83002A]" onClick={goToNew}>
                 + Create your first work plan

@@ -15,7 +15,6 @@ import {
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { DivisionMetrics } from '@/types/division.types';
 import { calculateTaskTrends } from '@/utils/dashboardUtils';
-import DivisionAIChat from '../analytics/DivisionAIChat';
 
 // --- Insight Card ---
 const insightIcons: Record<InsightCategory, React.ReactNode> = {
@@ -488,9 +487,6 @@ export const DivisionAnalyticsTab: React.FC<DivisionAnalyticsTabProps> = ({ data
           </CardContent>
         </Card>
       </div>
-
-      {/* AI Chat Integration */}
-      <DivisionAIChat data={data} metrics={metrics} />
     </div>
   );
 };

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users, Target, Search, ExternalLink,
   Building2, List, LayoutGrid,
@@ -265,7 +266,6 @@ interface DivisionUnitsTabProps {
 
 export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metrics }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('units');
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedUnit, setSelectedUnit] = useState<UnitComparisonData | null>(null);
   const [selectedOfficer, setSelectedOfficer] = useState<OfficerProfile | null>(null);
   const [selectedOfficerStats, setSelectedOfficerStats] = useState<OfficerStats | null>(null);
@@ -295,24 +295,10 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
   }, [data]);
 
   // Filtered units (view 1)
-  const filteredUnits = useMemo(() => {
-    if (!searchQuery.trim()) return metrics.unitComparisons;
-    return metrics.unitComparisons.filter(u =>
-      u.unitName.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [metrics.unitComparisons, searchQuery]);
+  const filteredUnits = metrics.unitComparisons;
 
   // Filtered staff (views 2 & 3)
-  const filteredStaff = useMemo(() => {
-    if (!searchQuery.trim()) return data.staff;
-    const q = searchQuery.toLowerCase();
-    return data.staff.filter(s =>
-      s.name.toLowerCase().includes(q) ||
-      s.unit.toLowerCase().includes(q) ||
-      s.jobTitle.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q)
-    );
-  }, [data.staff, searchQuery]);
+  const filteredStaff = data.staff;
 
   const handleOfficerClick = (staffMember: { name: string; email: string; unit: string; jobTitle: string }) => {
     const matched = officerProfiles?.find(p => p.email.toLowerCase() === staffMember.email.toLowerCase());
@@ -348,7 +334,6 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
 
   const switchView = (mode: ViewMode) => {
     setViewMode(mode);
-    setSearchQuery('');
   };
 
   const countLabel = viewMode === 'units'
@@ -363,34 +348,26 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
 
   return (
     <div className="space-y-4 mt-4">
+      {/* Tab Header */}
+      <div className="px-1 mb-2">
+        <h2 className="text-lg font-bold text-black">
+          Division Units
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Monitor and manage performance across all functional units and departments within this division.
+        </p>
+      </div>
+
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={viewMode === 'units' ? 'Search units...' : 'Search officers...'}
-            className="pl-9"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-        </div>
-
         {/* View mode toggles */}
-        <div className="flex items-center gap-0.5 border rounded-lg p-0.5 bg-muted/30">
-          {viewButtons.map(({ mode, icon: Icon, label }) => (
-            <button
-              key={mode}
-              onClick={() => switchView(mode)}
-              title={label}
-              className={`p-1.5 rounded-md transition-all ${viewMode === mode
-                  ? 'bg-[#800020] text-white shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                }`}
-            >
-              <Icon className="h-4 w-4" />
-            </button>
-          ))}
-        </div>
+        <Tabs value={viewMode} onValueChange={(v) => switchView(v as ViewMode)}>
+          <TabsList>
+            <TabsTrigger value="units">Units</TabsTrigger>
+            <TabsTrigger value="officers">Officer Cards</TabsTrigger>
+            <TabsTrigger value="table">Table View</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         <div className="text-sm text-muted-foreground whitespace-nowrap">{countLabel}</div>
       </div>
