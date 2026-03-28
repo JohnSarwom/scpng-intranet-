@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useImperativeHandle, forwardRef } from 'react';
 import {
   Card,
   CardContent,
@@ -191,7 +191,12 @@ interface KRAsTabProps {
   onEditTask?: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
 }
 
-export const KRAsTab: React.FC<KRAsTabProps> = ({
+export interface KRAsTabHandle {
+  handleOpenAddKraModal: () => void;
+  handleOpenAddObjectiveModal: () => void;
+}
+
+export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   kras: krasFromProps,
   tasks: tasksFromProps,
   objectivesData,
@@ -210,7 +215,12 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
   strategicObjectives = [],
   canEdit = false,
   onEditTask
-}) => {
+}, ref) => {
+  useImperativeHandle(ref, () => ({
+    handleOpenAddKraModal,
+    handleOpenAddObjectiveModal,
+  }));
+
   const kras = krasFromProps; // Use props directly
   const tasks = tasksFromProps || [];
   const { user } = useSupabaseAuth();
@@ -999,14 +1009,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               >
                 {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
-              {canEdit && (
-                <Button
-                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98]"
-                  onClick={handleAddButtonClick}
-                >
-                  <Plus className="h-4 w-4" /> {addButtonLabel}
-                </Button>
-              )}
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -1488,7 +1490,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                     const deliverables = parentParams?.deliverables || [];
 
                     if (deliverables.length === 0) {
-                      return <p className="text-sm text-red-500 pt-2 font-medium">No key resource areas (KRAs) found for the selected objective.</p>;
+                      return <p className="text-sm text-red-500 pt-2 font-medium">No key result areas (KRAs) found for the selected objective.</p>;
                     }
 
                     return (
@@ -1676,7 +1678,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
                   id="objective-description"
                   value={newObjectiveData.description || ''}
                   onChange={(e) => handleObjectiveFormChange('description', e.target.value)}
-                  className="col-span-3 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus-visible:ring-blue-500"
+                  className="col-span-3 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus-visible:ring-intranet-primary"
                   rows={5}
                 />
               </div>
@@ -1685,7 +1687,7 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
               <DialogClose asChild>
                 <Button type="button" variant="outline" className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" disabled={isSavingObjective}>Cancel</Button>
               </DialogClose>
-              <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white shadow-lg shadow-blue-500/20">
+              <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1 bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">
                 {isSavingObjective ? <Loader2 size={16} className="animate-spin" /> : null}
                 <span>{isSavingObjective ? 'Saving...' : 'Save Objective'}</span>
               </Button>
@@ -1736,6 +1738,6 @@ export const KRAsTab: React.FC<KRAsTabProps> = ({
       </AlertDialog>
     </TooltipProvider >
   );
-};
+});
 
 export default KRAsTab;

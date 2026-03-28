@@ -53,13 +53,12 @@ const IconMap: Record<string, React.ComponentType<any>> = {
     Rocket: Rocket
 };
 
-// Strategic objectives mock data
 const strategicObjectives = [
     {
         id: 1,
         title: "Expand Markets & Connectivity",
         description: "Enhance PNGX infrastructure and market accessibility to increase participant engagement.",
-        goals: [
+        kras: [
             "PNGX Systems: Implement ongoing Trading, Clearing, and Settlement systems.",
             "Market Clean Up: Acquire PNG Registries Ltd and resolve K35 million in undistributed dividends.",
             "Broker Expansion: Amend Business Rules to increase the number of licensed brokers beyond two."
@@ -71,7 +70,7 @@ const strategicObjectives = [
         id: 2,
         title: "Regulatory Framework Reform",
         description: "Modernize the legal environment to ensure fair, efficient, and transparent markets.",
-        goals: [
+        kras: [
             "Legislative Updates: Pass amendments to the SC Act and Capital Market Act by end of 2026.",
             "Thematic Green Bonds: Finalize Green Bond rules with IFC by April 2026.",
             "New Codes: Implement Unit Trust, Trustee Guidelines, and Fund Management Codes by end of 2025."
@@ -83,7 +82,7 @@ const strategicObjectives = [
         id: 3,
         title: "Administrative Fundamentals",
         description: "Strengthen internal governance and complete the transition to the SCPNG identity.",
-        goals: [
+        kras: [
             "Board Appointment: Appoint new Board Members by April 2026 following parliamentary name change.",
             "Strategic Planning: Finalize the 'Strategic Plan 2025–2030' with ADB and IFC by September 2025.",
             "Policy Finalization: Complete all internal office policies and procedural guides by May 2025."
@@ -95,7 +94,7 @@ const strategicObjectives = [
         id: 4,
         title: "Investor Education",
         description: "Empower the public through the 'Invest Smart PNG' campaign and safety awareness.",
-        goals: [
+        kras: [
             "Digital Reach: Expand social media reach to 2–3 million followers via awareness series.",
             "Investor Bootcamps: Conduct quarterly weekend workshops for first-time investors with PNGX.",
             "Regional Workshops: Execute roadshows and pop-up events in underrepresented regional centers."
@@ -107,7 +106,7 @@ const strategicObjectives = [
         id: 5,
         title: "National & International Cooperation",
         description: "Solidify global standing and domestic partnerships for capacity building.",
-        goals: [
+        kras: [
             "IOSCO MMOU: Finalize assessment and engagement for the MMOU by end of 2026.",
             "Global Partnerships: Maintain ongoing regulatory assistance MOAs with ADB and IFC.",
             "Inter-Agency MOAs: Finalize data access and SME support agreements with the IPA."
@@ -636,10 +635,10 @@ const Strategy = () => {
                             <div className="text-center md:text-left">
                                 <h2 className="text-xl font-semibold px-1 flex items-center justify-center md:justify-start gap-2">
                                     <Award className="w-5 h-5 text-gray-500" />
-                                    The 4 Strategic Pillars
+                                    Core Functions
                                 </h2>
                                 <p className="text-sm text-muted-foreground mt-1 px-1">
-                                    Embedding our mandate and operational focus into key thematic areas.
+                                    Embedding our mandate and operational focus into core business functions.
                                 </p>
                             </div>
 
@@ -723,12 +722,12 @@ const Strategy = () => {
                                                     </div>
 
                                                     <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
-                                                        <div className="font-bold text-[10px] mb-2 uppercase tracking-widest text-intranet-primary">Key Resource Areas (KRAs):</div>
+                                                        <div className="font-bold text-[10px] mb-2 uppercase tracking-widest text-intranet-primary">Key Result Areas (KRAs):</div>
                                                         <ul className="space-y-2">
-                                                            {(objective.goals || []).map((goal: string, idx: number) => (
+                                                            {(objective.kras || []).map((kra: string, idx: number) => (
                                                                 <li key={idx} className="flex items-start gap-2 text-[10px] leading-relaxed text-gray-600 dark:text-gray-400">
                                                                     <ChevronRight className="h-3 w-3 mt-0.5 text-intranet-primary flex-shrink-0" />
-                                                                    <span>{goal}</span>
+                                                                    <span>{kra}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>
@@ -769,7 +768,7 @@ const Strategy = () => {
                                                             <Target className="w-3 h-3" /> Targets & Milestones:
                                                         </div>
                                                         <ul className="space-y-2">
-                                                            {(objective.goals || []).map((target: string, idx: number) => (
+                                                            {(objective.kras || []).map((target: string, idx: number) => (
                                                                 <li key={idx} className="flex items-start gap-2 text-[10px] font-medium text-gray-700 dark:text-gray-300">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-intranet-primary mt-1 flex-shrink-0" />
                                                                     {target}
@@ -1097,8 +1096,8 @@ const Strategy = () => {
                             {!isLoadingHierarchy && !divisionHierarchy && (
                                 <Accordion type="single" collapsible className="w-full space-y-4">
                                     {effectiveAlignments.map((division: any, index: number) => {
-                                        const alignedTitle = division.alignedObjectiveTitle || (division.objectives && division.objectives[0]?.title);
-                                        const kraList = division.kras || (division.objectives && division.objectives[0]?.kras) || [];
+                                        const alignedTitle = division.alignedGoal || division.alignedObjectiveTitle || (division.objectives && division.objectives[0]?.title);
+                                        const kraList = division.initiatives || division.kras || (division.objectives && division.objectives[0]?.kras) || [];
 
                                         return (
                                             <AccordionItem
@@ -1126,7 +1125,7 @@ const Strategy = () => {
                                                         <div className="space-y-3">
                                                             <div className="flex items-center gap-3">
                                                                 <div className="h-4 w-1 bg-intranet-primary rounded-full"></div>
-                                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">Aligned Strategic Objective & Execution</span>
+                                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-intranet-primary/70">Aligned Strategic Goal & Execution</span>
                                                             </div>
                                                             <div className="text-base font-bold text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-white/10 flex items-center gap-3">
                                                                 <Target className="w-5 h-5 text-intranet-primary dark:text-intranet-primary-light flex-shrink-0" />
@@ -1171,7 +1170,7 @@ const Strategy = () => {
                                     Overall Organizational Achievement
                                 </h2>
                                 <p className="text-sm text-muted-foreground mt-1 px-1">
-                                    Aggregate progress across all strategic objectives for the 2025/26 cycle.
+                                    Aggregate progress across all strategic goals for the 2025/26 cycle.
                                 </p>
                             </div>
 
@@ -1212,9 +1211,9 @@ const Strategy = () => {
                                             <div className="space-y-1 mb-6">
                                                 <h3 className="font-bold text-base text-gray-800 dark:text-gray-100 flex items-center gap-2">
                                                     <Target className="w-4 h-4 text-intranet-primary" />
-                                                    Objectives Breakdown
+                                                    Strategic Goals Breakdown
                                                 </h3>
-                                                <p className="text-xs text-muted-foreground">Individual progress per strategic objective</p>
+                                                <p className="text-xs text-muted-foreground">Individual progress per strategic goal</p>
                                             </div>
                                             {effectiveObjectives.map((objective: any, index: number) => {
                                                 const Icon = IconMap[objective.icon] || Target;
@@ -1244,7 +1243,7 @@ const Strategy = () => {
                                             {/* Summary stats row */}
                                             <div className="grid grid-cols-3 gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
                                                 {[
-                                                    { label: 'Objectives', value: effectiveObjectives.length, icon: Layers },
+                                                    { label: 'Strategic Goals', value: effectiveObjectives.length, icon: Layers },
                                                     { label: 'On Track (≥40%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 40).length, icon: TrendingUp },
                                                     { label: 'Completed (≥75%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 75).length, icon: Award },
                                                 ].map(({ label, value, icon: StatIcon }, i) => (
@@ -1294,7 +1293,7 @@ const Strategy = () => {
                                 <CardContent>
                                     <p className="text-sm text-muted-foreground leading-relaxed">
                                         The Commission is currently in the <strong>Operationalization Phase</strong> of the 2025-2026 cycle.
-                                        Four of the documented strategic objectives and executions are currently "On Track," primarily driven by
+                                        Four of the documented strategic goals and executions are currently "On Track," primarily driven by
                                         Administrative Fundamentals and Cooperation efforts. Legislative reforms and the "Centurion System" execution remain high
                                         priorities for the coming quarters to ensure full alignment with updated market regulations.
                                     </p>
@@ -1343,7 +1342,7 @@ const Strategy = () => {
 
                                 <div className="flex items-center gap-2">
                                     <Target className="h-5 w-5 text-intranet-primary" />
-                                    <CardTitle className="text-lg">Detailed Pillar Alignment & KRA Report</CardTitle>
+                                    <CardTitle className="text-lg">Detailed Strategic Goal Alignment & KRA Report</CardTitle>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-0">
@@ -1351,7 +1350,7 @@ const Strategy = () => {
 
                                     <TableHeader>
                                         <TableRow className="bg-muted/50">
-                                            <TableHead className="w-[200px] text-[10px] uppercase font-black tracking-widest">Strategic Pillar</TableHead>
+                                            <TableHead className="w-[200px] text-[10px] uppercase font-black tracking-widest">Strategic Goal</TableHead>
                                             <TableHead className="text-[10px] uppercase font-black tracking-widest">Primary KRA Focus</TableHead>
                                             <TableHead className="text-[10px] uppercase font-black tracking-widest text-center">Deadline</TableHead>
                                             <TableHead className="text-[10px] uppercase font-black tracking-widest">Execution Status</TableHead>

@@ -16,6 +16,11 @@ import ChecklistSection from '@/components/ChecklistSection';
 import { Task } from '@/types';
 import type { StaffMember } from '@/types/staff';
 import { toast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { X } from "lucide-react";
+import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
 
 interface EditTaskModalProps {
   open: boolean;
@@ -78,7 +83,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh] dark:bg-gray-900 dark:border-white/10 shadow-2xl overflow-hidden p-0">
+      <DialogContent className="sm:max-w-[600px] flex flex-col max-h-[90vh] dark:bg-gray-950 dark:border-white/10 shadow-2xl overflow-hidden p-0">
         <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
           <DialogTitle className="text-xl font-semibold">Edit Task</DialogTitle>
           <DialogDescription>
@@ -86,7 +91,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="overflow-y-auto flex-grow pr-2 -mr-2">
+        <div className="overflow-y-auto flex-grow pr-2 -mr-2 px-6">
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="task-title">Title</Label>
@@ -95,7 +100,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 placeholder="Task Title"
                 value={editedTask.title || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
-                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
               />
             </div>
             <div className="grid gap-2">
@@ -105,7 +110,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 placeholder="Task Description"
                 value={editedTask.description || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
-                className="dark:bg-gray-800 dark:border-white/10 focus:ring-blue-500/50"
+                className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -277,7 +282,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
         <DialogFooter className="p-6 bg-gray-50/50 dark:bg-gray-800/50 border-t dark:border-white/10">
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="dark:text-gray-400 dark:hover:text-white">Cancel</Button>
-          <Button onClick={handleUpdateTask} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">Save Changes</Button>
+          <Button onClick={handleUpdateTask} className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">Save Changes</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

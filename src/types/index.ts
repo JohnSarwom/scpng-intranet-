@@ -123,6 +123,7 @@ export interface Task {
   checklist?: ChecklistItem[];
   unit_id?: string;
   kra_id?: string;
+  initiative_id?: string;
   kpi_id?: string;
   completed?: boolean;
   recurrence?: string;
@@ -137,6 +138,43 @@ export interface Task {
   authorEmail?: string;      // Alias for backward compatibility
   assigneeViewMap?: Record<string, string>; // email -> groupId for per-assignee board placement
   attachments?: { name: string; url: string; size?: number }[];
+}
+
+export interface StrategicGoal {
+  id: string | number;
+  title: string;
+  description?: string;
+  progress?: number;
+  status?: string;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  owner?: string;
+  ownerEmail?: string;
+}
+
+export interface StrategicKRA {
+  id: string | number;
+  goalId?: string | number | null;
+  title: string;
+  description?: string;
+  progress?: number;
+  status?: string;
+  owner?: string;
+}
+
+export interface StrategicInitiative {
+  id: string | number;
+  kraId?: string | number | null;
+  title: string;
+  description?: string;
+  unit?: string;
+  division?: string;
+  owner?: User | null;
+  ownerId?: string | number | null;
+  startDate?: string | Date;
+  endDate?: string | Date;
+  progress?: number;
+  status?: string;
 }
 
 export interface Project {
@@ -349,6 +387,7 @@ export interface Kpi {
   tempId?: string;
   id: string | number;
   kra_id?: string | number | null;
+  initiative_id?: string | number | null;
   name: string;
   description?: string;
   target: number;

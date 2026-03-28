@@ -24,7 +24,7 @@ export const STRATEGY_QUESTION_LIBRARY: StrategyQuestionCategory[] = [
         questions: [
             { id: 'o1', text: 'What is the overall completion rate across all strategic objectives?' },
             { id: 'o2', text: 'How does current progress compare to our targets for this quarter?' },
-            { id: 'o3', text: 'Which strategic pillars are performing above or below expectations?' },
+            { id: 'o3', text: 'Which core functions are performing above or below expectations?' },
             { id: 'o4', text: 'Provide an executive summary of the current strategic position.' },
         ]
     },

@@ -47,7 +47,7 @@ import KRATimelineTab from '@/components/KRATimelineTab';
 import KRAInsightsTab from '@/components/KRAInsightsTab';
 
 // Import unit-tabs components
-import { KRAsTab } from '@/components/unit-tabs/KRAsTab';
+import { KRAsTab, KRAsTabHandle } from '@/components/unit-tabs/KRAsTab';
 import { useTaskGroupPreferences } from '@/hooks/useTaskGroupPreferences'; // Import preference hook
 
 // Import modal components
@@ -213,6 +213,7 @@ const Unit = () => {
   const [kraSectionTab, setKraSectionTab] = useState<string>("kpis"); // Renamed from kraSectionTab
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const kraTabRef = useRef<KRAsTabHandle>(null);
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
@@ -792,9 +793,29 @@ const Unit = () => {
                     <Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="icon" className="h-8 w-8 dark:bg-gray-800 dark:border-white/10" onClick={() => setViewMode('list')} title="List View"><List className="h-4 w-4" /></Button>
                   </div>
 
-                  <Button size="sm" onClick={() => handleCreateTask()} disabled={isDataLoading} className="dark:bg-blue-600 dark:hover:bg-blue-700 dark:text-white shadow-lg shadow-blue-500/20">
+                  <Button size="sm" onClick={() => handleCreateTask()} disabled={isDataLoading} className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">
                     {isDataLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-2 h-3.5 w-3.5" />}
                     Task
+                  </Button>
+                </div>
+              )}
+
+              {activeTab === 'kras-objectives' && canEditStrategy && (
+                <div className="flex items-center gap-4">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (kraSectionTab === 'objectives') {
+                        kraTabRef.current?.handleOpenAddObjectiveModal();
+                      } else {
+                        kraTabRef.current?.handleOpenAddKraModal();
+                      }
+                    }}
+                    disabled={isDataLoading}
+                    className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg"
+                  >
+                    {isDataLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-2 h-3.5 w-3.5" />}
+                    {kraSectionTab === 'objectives' ? 'Add Objective' : 'Add KRA'}
                   </Button>
                 </div>
               )}
@@ -906,6 +927,7 @@ const Unit = () => {
               <KRADataGridSkeleton />
             ) : (
               <KRAsTab
+                ref={kraTabRef}
                 kras={combinedKrasForTabs}
                 tasks={taskState.data}
                 objectivesData={objectivesData}
@@ -931,8 +953,8 @@ const Unit = () => {
           <TabsContent value="reports" className="space-y-6">
             <ReportsTab
               tasks={taskState.data || []}
-              kras={kraState.data || []}
-              kpis={kpiState.data || []}
+              kras={(kraState.data || []) as any}
+              kpis={(kpiState.data || []) as any}
               objectives={objectivesData || []}
               userContext={userContext}
             />

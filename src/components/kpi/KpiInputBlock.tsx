@@ -144,7 +144,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             onChange={(e) => onChange('name', e.target.value)}
             placeholder="e.g., Average Resolution Time"
             disabled={disabled}
-            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
             required
           />
         </div>
@@ -162,7 +162,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             <ToggleGroupItem 
               value="manual" 
               aria-label="Manual Calculation" 
-              className="gap-2 dark:data-[state=on]:bg-blue-600 dark:data-[state=on]:text-white dark:text-gray-400"
+              className="gap-2 dark:data-[state=on]:bg-intranet-primary dark:data-[state=on]:text-white dark:text-gray-400"
             >
               <Calculator className="h-4 w-4" />
               Manual Input
@@ -201,7 +201,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 onChange={(e) => onChange('target', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 95"
                 disabled={disabled}
-                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
                 required
               />
             </div>
@@ -214,7 +214,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 onChange={(e) => onChange('actual', e.target.value ? parseFloat(e.target.value) : undefined)}
                 placeholder="e.g., 92"
                 disabled={disabled}
-                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
               />
             </div>
           </div>
@@ -231,7 +231,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="e.g., 1500.00"
             step="0.01" // Allow decimal input for currency
             disabled={disabled}
-            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
           />
         </div>
 
@@ -257,7 +257,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
                 value={formData.targetDate?.substring(0, 10) || ''}
                 onChange={(e) => onChange('targetDate', e.target.value)}
                 min={formData.startDate?.substring(0, 10) || ''} // Prevent target date before start date
-                className="flex-1 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+                className="flex-1 dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
                 disabled={disabled}
               />
               {/* Display Calculated Quarter */}
@@ -315,7 +315,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="Describe this KPI..."
             rows={2}
             disabled={disabled}
-            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
           />
         </div>
 
@@ -329,7 +329,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             placeholder="Enter comments..."
             rows={2}
             disabled={disabled}
-            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+            className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
           />
         </div>
       </CardContent>

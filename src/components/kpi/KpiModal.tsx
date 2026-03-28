@@ -288,7 +288,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
             </Button>
           </DialogClose>
           {!isReadOnly && (
-            <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20">
+            <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting} className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {isAddingNew ? (isSubmitting ? 'Adding...' : 'Add KRA') : (isSubmitting ? 'Saving...' : 'Save Changes')}
             </Button>

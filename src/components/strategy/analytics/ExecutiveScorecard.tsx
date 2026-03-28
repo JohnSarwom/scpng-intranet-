@@ -111,7 +111,7 @@ const ExecutiveScorecard: React.FC<ExecutiveScorecardProps> = ({ objectives }) =
             bg: executionColour.bg,
         },
         {
-            label: 'At-Risk Objectives',
+            label: 'At-Risk Strategic Goals',
             value: atRiskCount.toString(),
             sub: atRiskCount === 0 ? 'All on schedule' : 'Behind schedule',
             icon: AlertTriangle,

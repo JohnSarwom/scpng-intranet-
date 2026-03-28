@@ -12,6 +12,7 @@ import { SharePointListSetupService } from '@/services/sharePointListSetupServic
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { PowerAutomateService } from '@/services/powerAutomateService';
 import { RegulatorySharePointSetupService } from '@/services/regulatorySharePointSetupService';
+import { StrategyMigrationService } from '@/services/strategyMigrationService';
 import { AnnouncementsSharePointService } from '@/services/announcementsSharePointService';
 import { getGraphClient } from '@/services/graphService';
 import {
@@ -79,8 +80,10 @@ const TestGround = () => {
     const [isSettingUpOps, setIsSettingUpOps] = useState(false);
     const [isSettingUpLists, setIsSettingUpLists] = useState(false);
     const [isSettingUpStrategyHub, setIsSettingUpStrategyHub] = useState(false);
-    const [isSettingUpRegulatory, setIsSettingUpRegulatory] = useState(false);
+    const [isSettingUpCorporatePlan, setIsSettingUpCorporatePlan] = useState(false);
+    const [isMigratingStrategy, setIsMigratingStrategy] = useState(false);
     const [setupResult, setSetupResult] = useState<any>(null);
+    const [isSettingUpRegulatory, setIsSettingUpRegulatory] = useState(false);
     const [isSettingUpAnnouncements, setIsSettingUpAnnouncements] = useState(false);
     const [isPurgingOps, setIsPurgingOps] = useState(false);
     const [isSeedingOfficers, setIsSeedingOfficers] = useState(false);
@@ -523,6 +526,87 @@ const TestGround = () => {
             });
         } finally {
             setIsSettingUpStrategyHub(false);
+        }
+    };
+
+    const handleSetupCorporatePlan = async () => {
+        setIsSettingUpCorporatePlan(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Deploying Corporate Plan 2026-2028",
+                description: "Creating Goals, KRAs, and Initiatives lists...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.setupCorporatePlanLists();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Corporate Plan Deployed!",
+                    description: "The new 5-Level hierarchy lists are now live.",
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Corporate Plan Setup failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Deployment Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpCorporatePlan(false);
+        }
+    };
+
+    const handleMigrateStrategyData = async () => {
+        setIsMigratingStrategy(true);
+        setSetupResult(null);
+        try {
+            toast({
+                title: "🚀 Starting Data Migration",
+                description: "Moving legacy objectives into the new 5-level Corporate Plan hierarchy...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const migrationService = new StrategyMigrationService(graphClient, site.id);
+            await migrationService.initialize();
+            
+            const result = await migrationService.migrateData();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Migration Complete",
+                    description: `Migrated ${result.stats?.initiatives || 0} initiatives. Detailed stats in console.`,
+                });
+                console.log("Migration Stats:", result.stats);
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Migration failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Migration Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsMigratingStrategy(false);
         }
     };
 
@@ -2259,7 +2343,7 @@ const TestGround = () => {
                                 </h3>
                                 <ul className="grid grid-cols-1 gap-2 text-sm font-medium">
                                     <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Strategy Config (Mission/Vision)</li>
-                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Strategic Pillars (4 Pillars)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Core Functions (4 Functions)</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Strategic Objectives (Full Cards)</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Divisional Alignment (Cascade)</li>
                                     <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Roadmap Milestones (Analytics)</li>
@@ -2337,6 +2421,83 @@ const TestGround = () => {
                                     >
                                         <ListChecks className="h-4 w-4 mr-2" />
                                         Deploy Objectives Only
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Corporate Plan 2026-2028 Setup Card (NEW) */}
+                <Card className="border-2 border-emerald-500/50 shadow-lg bg-gradient-to-br from-white to-emerald-50 dark:from-gray-900 dark:to-emerald-900/10">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-2xl flex items-center gap-2 text-emerald-700 dark:text-emerald-400 text-bold">
+                                    <Target className="h-6 w-6" />
+                                    Corporate Plan 2026-2028 Schema Setup
+                                </CardTitle>
+                                <CardDescription className="text-base font-medium mt-1">
+                                    Deploy the new 5-level hierarchy lists (Goals &gt; KRAs &gt; Initiatives) to SharePoint.
+                                </CardDescription>
+                            </div>
+                            <Badge className="bg-emerald-600 text-white">Critical Update</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <Layers className="h-4 w-4" /> New List Structure
+                                </h3>
+                                <ul className="grid grid-cols-1 gap-2 text-sm font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> Strategic_Goals (Top level, replaces Pillars)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> Strategic_KRAs (Mid level, replaces org-objectives)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-emerald-500" /> Strategic_Initiatives (Unit level, replaces div-alignment)</li>
+                                    <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-4 w-4" /> Performance_KPIs (Existing)</li>
+                                    <li className="flex items-center gap-2 text-muted-foreground"><CheckCircle className="h-4 w-4" /> Operations_Tasks (Existing)</li>
+                                </ul>
+                            </div>
+
+                            <div className="bg-emerald-500/5 rounded-2xl p-6 border border-emerald-500/10 flex flex-col justify-center">
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={handleSetupCorporatePlan}
+                                        disabled={isSettingUpCorporatePlan || isMigratingStrategy}
+                                        size="lg"
+                                        className="w-full bg-emerald-600 hover:bg-emerald-700 shadow-md py-6 text-lg font-bold"
+                                    >
+                                        {isSettingUpCorporatePlan ? (
+                                            <>
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Deploying Corporate Lists...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Database className="h-6 w-6 mr-2" />
+                                                Create 2026-2028 Lists
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleMigrateStrategyData}
+                                        disabled={isMigratingStrategy || isSettingUpCorporatePlan}
+                                        size="lg"
+                                        variant="outline"
+                                        className="w-full border-emerald-600 text-emerald-700 hover:bg-emerald-50 shadow-sm py-6 text-lg font-bold"
+                                    >
+                                        {isMigratingStrategy ? (
+                                            <>
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Migrating Legacy Data...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="h-6 w-6 mr-2" />
+                                                Migrate Legacy Data
+                                            </>
+                                        )}
                                     </Button>
                                 </div>
                             </div>

@@ -336,7 +336,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           placeholder="Add any overall notes for this KRA..."
           rows={3}
           disabled={disabled}
-          className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/20"
+          className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
         />
       </div>
 

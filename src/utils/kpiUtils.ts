@@ -176,3 +176,89 @@ export const calculateObjectiveStatus = (objective: any, kras: any[]): string =>
     if (progress > 0) return 'In Progress';
     return 'Not Started';
 };
+
+// ==========================================
+// CORPORATE PLAN 2026-2028: NEW RESTRUCTURED PROGRESS LOGIC
+// ==========================================
+
+/**
+ * Calculates the progress of a Strategic Initiative by averaging the progress of its KPIs.
+ */
+export const calculateInitiativeProgress = (initiative: any, kpis: Partial<Kpi>[] = []): number => {
+    const initId = initiative.id ? String(initiative.id) : '';
+    if (!initId) return 0;
+
+    // Priority: If Initiative is marked Completed, force 100%
+    const status = (initiative.status || '').toLowerCase();
+    if (['completed', 'closed', 'done'].includes(status)) {
+        return 100;
+    }
+
+    // Filter KPIs that belong to this Initiative
+    const initKpis = kpis.filter(kpi => String(kpi.initiative_id || '') === initId);
+
+    if (!initKpis || initKpis.length === 0) {
+        // Fallback to stored progress if no KPIs available
+        return initiative.progress || 0;
+    }
+
+    // Average the progress of all child KPIs (unlike the old KRA logic which just counted completed KPIs)
+    const totalProgress = initKpis.reduce((sum, kpi) => sum + calculateKpiProgress(kpi), 0);
+    return Math.round(totalProgress / initKpis.length);
+};
+
+/**
+ * Calculates the progress of a Strategic KRA by averaging the progress of its Initiatives.
+ */
+export const calculateCorporateKraProgress = (kra: any, initiatives: any[] = [], kpis: Partial<Kpi>[] = []): number => {
+    const kraId = kra.id ? String(kra.id) : '';
+    if (!kraId) return 0;
+
+    // Priority: If KRA is marked Completed, force 100%
+    const status = (kra.status || '').toLowerCase();
+    if (['completed', 'closed', 'done'].includes(status)) {
+        return 100;
+    }
+
+    // Filter Initiatives that belong to this KRA
+    const kraInitiatives = initiatives.filter(init => String(init.kraId || '') === kraId);
+
+    if (!kraInitiatives || kraInitiatives.length === 0) {
+        // Fallback to stored progress
+        return kra.progress || 0;
+    }
+
+    const totalProgress = kraInitiatives.reduce((sum, init) => {
+        return sum + calculateInitiativeProgress(init, kpis);
+    }, 0);
+
+    return Math.round(totalProgress / kraInitiatives.length);
+};
+
+/**
+ * Calculates the progress of a Strategic Goal by averaging the progress of its KRAs.
+ */
+export const calculateCorporateGoalProgress = (goal: any, kras: any[] = [], initiatives: any[] = [], kpis: Partial<Kpi>[] = []): number => {
+    const goalId = goal.id ? String(goal.id) : '';
+    if (!goalId) return 0;
+
+    // Priority: If Goal is marked Completed, force 100%
+    const status = (goal.status || '').toLowerCase();
+    if (['completed', 'closed', 'done'].includes(status)) {
+        return 100;
+    }
+
+    // Filter KRAs that belong to this Goal
+    const goalKras = kras.filter(kra => String(kra.goalId || '') === goalId);
+
+    if (!goalKras || goalKras.length === 0) {
+        // Fallback to stored progress
+        return goal.progress || 0;
+    }
+
+    const totalProgress = goalKras.reduce((sum, kra) => {
+        return sum + calculateCorporateKraProgress(kra, initiatives, kpis);
+    }, 0);
+
+    return Math.round(totalProgress / goalKras.length);
+};

@@ -1,6 +1,6 @@
 /**
  * EditStrategicObjectiveModal Component
- * Modal for editing Strategic Objectives in the Strategy Hub
+ * Modal for editing Strategic Goals in the Strategy Hub
  */
 
 import React, { useState, useEffect } from 'react';
@@ -63,8 +63,8 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
     const [progress, setProgress] = useState(0);
     const [status, setStatus] = useState('on-track');
     const [icon, setIcon] = useState('Target');
-    const [goals, setGoals] = useState<string[]>([]);
-    const [newGoal, setNewGoal] = useState('');
+    const [kras, setKras] = useState<string[]>([]);
+    const [newKra, setNewKra] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Edit mode state
@@ -88,24 +88,23 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
             }
             setIcon(iconVal);
 
-            // Handle goals/deliverables
-            // StrategyService returns 'goals' property from 'Deliverables' field
-            setGoals((objective as any).goals || []);
+            // Handle KRAs
+            setKras((objective as any).kras || []);
             setEditingIndex(null); // Reset editing state
         }
     }, [objective, isOpen]);
 
-    const handleAddGoal = () => {
-        if (newGoal.trim()) {
-            setGoals([...goals, newGoal.trim()]);
-            setNewGoal('');
+    const handleAddKra = () => {
+        if (newKra.trim()) {
+            setKras([...kras, newKra.trim()]);
+            setNewKra('');
         }
     };
 
-    const handleRemoveGoal = (index: number) => {
-        const newGoals = [...goals];
-        newGoals.splice(index, 1);
-        setGoals(newGoals);
+    const handleRemoveKra = (index: number) => {
+        const newKras = [...kras];
+        newKras.splice(index, 1);
+        setKras(newKras);
         if (editingIndex === index) {
             setEditingIndex(null);
         } else if (editingIndex !== null && editingIndex > index) {
@@ -115,14 +114,14 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
     const handleStartEdit = (index: number) => {
         setEditingIndex(index);
-        setEditText(goals[index]);
+        setEditText(kras[index]);
     };
 
     const handleSaveEdit = () => {
         if (editingIndex !== null && editText.trim()) {
-            const newGoals = [...goals];
-            newGoals[editingIndex] = editText.trim();
-            setGoals(newGoals);
+            const newKras = [...kras];
+            newKras[editingIndex] = editText.trim();
+            setKras(newKras);
             setEditingIndex(null);
             setEditText('');
         }
@@ -152,8 +151,8 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                 // progress,
                 status: status as any,
                 icon,
-                // Pass goals as is, service will join them
-                goals: goals
+                // Pass kras as is, service will join them
+                kras: kras
             } as any);
 
             toast({
@@ -263,11 +262,11 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
                     {/* Key Deliverables / Goals */}
                     <div className="space-y-3 pt-2 border-t dark:border-white/10">
-                        <Label className="dark:text-gray-300">Key Resource Areas (KRAs) & Milestones</Label>
+                        <Label className="dark:text-gray-300">Key Result Areas (KRAs) & Milestones</Label>
 
 
                         <div className="space-y-2">
-                            {goals.map((goal, index) => (
+                            {kras.map((kra, index) => (
                                 <div key={index} className="flex items-start gap-2 group">
                                     {editingIndex === index ? (
                                         <div className="flex-1 flex gap-2">
@@ -307,7 +306,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                                     ) : (
                                         <>
                                             <div className="flex-1 p-2 rounded-md bg-muted/50 dark:bg-gray-800/50 text-sm dark:text-gray-300 border dark:border-white/5">
-                                                {goal}
+                                                {kra}
                                             </div>
 
                                             <Button
@@ -325,7 +324,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-9 w-9 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity dark:hover:bg-red-950/30"
-                                                onClick={() => handleRemoveGoal(index)}
+                                                onClick={() => handleRemoveKra(index)}
                                                 disabled={isSubmitting}
                                             >
                                                 <X className="w-4 h-4" />
@@ -339,13 +338,13 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
                         <div className="flex gap-2 mt-2">
                             <Input
-                                value={newGoal}
-                                onChange={(e) => setNewGoal(e.target.value)}
-                                placeholder="Add a new deliverable..."
+                                value={newKra}
+                                onChange={(e) => setNewKra(e.target.value)}
+                                placeholder="Add a new KRA..."
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                         e.preventDefault();
-                                        handleAddGoal();
+                                        handleAddKra();
                                     }
                                 }}
                                 disabled={isSubmitting}
@@ -353,8 +352,8 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={handleAddGoal}
-                                disabled={isSubmitting || !newGoal.trim()}
+                                onClick={handleAddKra}
+                                disabled={isSubmitting || !newKra.trim()}
                             >
                                 <Plus className="w-4 h-4" />
                             </Button>

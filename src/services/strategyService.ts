@@ -19,7 +19,11 @@ const STRATEGY_CONFIG = {
         ALIGNMENT: 'Divisional_Alignment',
         MILESTONES: 'Strategy_Milestones',
         RISKS: 'Strategy_Risks',
-        HIERARCHY: 'Org_Hierarchy'
+        HIERARCHY: 'Org_Hierarchy',
+        // New Corporate Plan 5-Level Hierarchy Lists
+        GOALS: 'Strategic_Goals',
+        KRAS: 'Strategic_KRAs',
+        INITIATIVES: 'Strategic_Initiatives'
     }
 };
 
@@ -144,7 +148,10 @@ export class StrategyService {
                 milestones,
                 risks,
                 hierarchy: hierarchy.structure,
-                hierarchyDetails: hierarchy.details
+                hierarchyDetails: hierarchy.details,
+                strategicGoals: await this.fetchStrategicGoals(),
+                strategicKRAs: await this.fetchStrategicKRAs(),
+                strategicInitiatives: await this.fetchStrategicInitiatives()
             };
 
         } catch (error) {
@@ -235,6 +242,84 @@ export class StrategyService {
         }
     }
 
+    // ==========================================
+    // CORPORATE PLAN 2026-2028: NEW RESTRUCTURED LISTS
+    // ==========================================
+
+    async fetchStrategicGoals(): Promise<any[]> {
+        if (!this.listIds['GOALS']) return [];
+        try {
+            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['GOALS']}/items`)
+                .expand('fields')
+                .get();
+
+            return (items.value || []).map((item: any) => ({
+                id: item.id,
+                title: item.fields.Title,
+                description: item.fields.Description || '',
+                progress: item.fields.Progress || 0,
+                status: item.fields.Status || 'On Track',
+                startDate: item.fields.StartDate || null,
+                endDate: item.fields.EndDate || null,
+                owner: item.fields.Owner || '',
+                ownerEmail: item.fields.OwnerEmail || '',
+                icon: item.fields.Icon || 'Target',
+                isFeatured: item.fields.IsFeatured === true || item.fields.IsFeatured === 1 || item.fields.IsFeatured === "1"
+            }));
+        } catch (error) {
+            console.error('❌ [StrategyService] Error fetching Strategic Goals:', error);
+            return [];
+        }
+    }
+
+    async fetchStrategicKRAs(): Promise<any[]> {
+        if (!this.listIds['KRAS']) return [];
+        try {
+            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
+                .expand('fields')
+                .get();
+
+            return (items.value || []).map((item: any) => ({
+                id: item.id,
+                goalId: item.fields.ParentGoalIdLookupId || null, 
+                title: item.fields.Title,
+                description: item.fields.Description || '',
+                progress: item.fields.Progress || 0,
+                status: item.fields.Status || 'On Track',
+                owner: item.fields.Owner || '',
+            }));
+        } catch (error) {
+            console.error('❌ [StrategyService] Error fetching Strategic KRAs:', error);
+            return [];
+        }
+    }
+
+    async fetchStrategicInitiatives(): Promise<any[]> {
+        if (!this.listIds['INITIATIVES']) return [];
+        try {
+            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['INITIATIVES']}/items`)
+                .expand('fields')
+                .get();
+
+            return (items.value || []).map((item: any) => ({
+                id: item.id,
+                kraId: item.fields.ParentKRAIdLookupId || null,
+                title: item.fields.Title,
+                description: item.fields.Description || '',
+                unit: item.fields.Unit || '',
+                division: item.fields.Division || '',
+                ownerId: item.fields.OwnerId || '',
+                startDate: item.fields.StartDate || null,
+                endDate: item.fields.EndDate || null,
+                progress: item.fields.Progress || 0,
+                status: item.fields.Status || 'On Track',
+            }));
+        } catch (error) {
+            console.error('❌ [StrategyService] Error fetching Strategic Initiatives:', error);
+            return [];
+        }
+    }
+
     /**
      * Update a single objective
      */
@@ -261,8 +346,8 @@ export class StrategyService {
 
         if (data.icon) fields.Icon = data.icon;
 
-        if (data.goals && Array.isArray(data.goals)) {
-            fields.Deliverables = data.goals.join(', ');
+        if (data.kras && Array.isArray(data.kras)) {
+            fields.Deliverables = data.kras.join(', ');
         }
 
         await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`).patch({

@@ -91,7 +91,7 @@ const OrganizationalOverview = () => {
               </div>
             </div>
 
-            {/* Strategic Pillars 2x2 Grid */}
+            {/* Core Functions 2x2 Grid */}
             <div className="grid grid-cols-2 gap-3 pt-2">
               {strategicPillars.map((pillar, idx) => (
                 <div key={idx} className={`p-3 rounded-xl border border-gray-100 dark:border-gray-800 ${pillar.bg} flex flex-col gap-1.5 group hover:shadow-sm transition-all`}>

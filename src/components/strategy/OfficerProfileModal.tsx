@@ -205,7 +205,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                             <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
                                                 <Target className="w-5 h-5" />
                                             </div>
-                                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Objectives</span>
+                                            <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Strategic Goals</span>
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-2xl font-black text-gray-900 dark:text-gray-100">{performance.totalObjectives}</span>

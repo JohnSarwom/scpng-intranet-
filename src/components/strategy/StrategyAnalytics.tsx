@@ -102,8 +102,8 @@ const StrategyAnalytics: React.FC<StrategyAnalyticsProps> = ({
             {/* Row 2: Objective Progress Bar Chart + Divisional Comparison */}
             <div className="grid grid-cols-1 gap-6">
                 <BarChart
-                    title="Objective & Execution Progress"
-                    description="Progress tracking across Strategy Objectives & Executions"
+                    title="Strategic Goal & Execution Progress"
+                    description="Progress tracking across Strategic Goals & Executions"
                     data={filteredObjectives.map((obj: any) => ({
                         name: obj.title,
                         current: obj.progress || 0,

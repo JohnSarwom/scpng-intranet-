@@ -726,7 +726,10 @@ export class SharePointListSetupService {
             'Organizational_Documents',
             'Market_Companies',
             'Market_PriceHistory',
-            'Market_Settings'
+            'Market_Settings',
+            'Strategic_Goals',
+            'Strategic_KRAs',
+            'Strategic_Initiatives'
         ];
         try {
             for (const name of listNames) {
@@ -749,6 +752,123 @@ export class SharePointListSetupService {
             return { success: false, message: error.message };
         }
     }
+
+    // ==========================================
+    // CORPORATE PLAN 2026-2028: NEW RESTRUCTURED LISTS
+    // ==========================================
+
+    /**
+     * Create Strategic_Goals list (Level 1)
+     */
+    private async createStrategicGoalsList() {
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Strategic_Goals',
+                columns: [
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'Status', choice: { choices: ['On Track', 'At Risk', 'Behind', 'Completed'] } },
+                    { name: 'Progress', number: { decimalPlaces: 'none', minimum: 0, maximum: 100 } },
+                    { name: 'Year', text: {} },
+                    { name: 'StartDate', dateTime: { format: 'dateOnly' } },
+                    { name: 'EndDate', dateTime: { format: 'dateOnly' } },
+                    { name: 'Owner', personOrGroup: {} },
+                    { name: 'Icon', text: {} },
+                    { name: 'IsFeatured', boolean: {} }
+                ],
+                list: { template: 'genericList' }
+            });
+        return list;
+    }
+
+    /**
+     * Create Strategic_KRAs list (Level 2)
+     */
+    private async createStrategicKRAsList(goalsListId: string) {
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Strategic_KRAs',
+                columns: [
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'Status', choice: { choices: ['On Track', 'At Risk', 'Behind', 'Completed'] } },
+                    { name: 'Progress', number: { decimalPlaces: 'none', minimum: 0, maximum: 100 } },
+                    { name: 'Owner', personOrGroup: {} }
+                ],
+                list: { template: 'genericList' }
+            });
+        
+        await this.addLookupColumn(list.id, 'ParentGoalId', goalsListId, 'Title');
+        return list;
+    }
+
+    /**
+     * Create Strategic_Initiatives list (Level 3)
+     */
+    private async createStrategicInitiativesList(krasListId: string) {
+        const list = await this.client
+            .api(`/sites/${this.siteId}/lists`)
+            .post({
+                displayName: 'Strategic_Initiatives',
+                columns: [
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'Division', text: {} },
+                    { name: 'Status', choice: { choices: ['On Track', 'At Risk', 'Behind', 'Completed'] } },
+                    { name: 'Progress', number: { decimalPlaces: 'none', minimum: 0, maximum: 100 } },
+                    { name: 'Baseline', text: { allowMultipleLines: true } },
+                    { name: 'Target', text: { allowMultipleLines: true } },
+                    { name: 'Owner', personOrGroup: {} },
+                    { name: 'StartDate', dateTime: { format: 'dateOnly' } },
+                    { name: 'EndDate', dateTime: { format: 'dateOnly' } }
+                ],
+                list: { template: 'genericList' }
+            });
+
+        await this.addLookupColumn(list.id, 'ParentKRAId', krasListId, 'Title');
+        return list;
+    }
+
+    /**
+     * Provision the New 5-Level Corporate Plan Hierarchy Lists
+     */
+    async setupCorporatePlanLists(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Setting up Corporate Plan 2026-2028 Lists...');
+        try {
+            const results = { goals: null as any, kras: null as any, initiatives: null as any };
+            
+            // Check if exist already to prevent error
+            const goalsCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Strategic_Goals'").get();
+            if (goalsCheck.value && goalsCheck.value.length > 0) {
+                 return { success: false, message: 'Corporate Plan lists already exist', details: null };
+            }
+
+            console.log('📝 Creating Strategic_Goals...');
+            results.goals = await this.createStrategicGoalsList();
+            
+            console.log('📝 Creating Strategic_KRAs...');
+            results.kras = await this.createStrategicKRAsList(results.goals.id);
+            
+            console.log('📝 Creating Strategic_Initiatives...');
+            results.initiatives = await this.createStrategicInitiativesList(results.kras.id);
+            
+            // Also ensure Performance_KPIs has a lookup to Strategic_Initiatives
+            try {
+                const kpiCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Performance_KPIs'").get();
+                if (kpiCheck.value && kpiCheck.value.length > 0) {
+                    await this.addLookupColumn(kpiCheck.value[0].id, 'RelatedInitiative', results.initiatives.id, 'Title');
+                }
+            } catch (e) {
+                console.warn('Could not link KPIs to Initiatives', e);
+            }
+
+            return { success: true, message: 'Corporate Plan Lists created successfully!', details: results };
+        } catch (error: any) {
+            console.error('❌ [Setup] Failed to create Corporate Plan Lists:', error);
+            return { success: false, message: `Failed: ${error.message}`, details: error };
+        }
+    }
+    // ==========================================
+
 
     /**
      * Check if lists already exist

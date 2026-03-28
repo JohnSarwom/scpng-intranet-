@@ -33,9 +33,9 @@ interface StrategySetupWizardProps {
 
 const STEPS = [
     { title: "Foundation", icon: Target, desc: "Mission & Vision" },
-    { title: "Strategic Pillars", icon: Award, desc: "Core Mandate & Pillars" },
-    { title: "Strategic Goals", icon: Layers, desc: "5 Focus Areas & Execution" },
-    { title: "Alignment", icon: Users, desc: "Division KRAs" },
+    { title: "Core Divisions", icon: Award, desc: "Core Mandate & Functions" },
+    { title: "Strategic Goals", icon: Layers, desc: "4 Focus Areas & KRAs" },
+    { title: "Initiatives Alignment", icon: Users, desc: "Division Initiatives" },
     { title: "Review", icon: CheckCircle2, desc: "Strategy Summary" }
 ];
 
@@ -58,98 +58,86 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
     const [objectives, setObjectives] = useState([
         {
             id: 1,
-            title: "Expand Markets & Connectivity",
-            description: "Enhance PNGX infrastructure and market accessibility to increase participant engagement.",
-            goals: [
-                "PNGX Systems: Implement ongoing Trading, Clearing, and Settlement systems.",
-                "Market Clean Up: Acquire PNG Registries Ltd and resolve K35 million in undistributed dividends.",
-                "Broker Expansion: Amend Business Rules to increase the number of licensed brokers beyond two."
+            title: "Policy Development",
+            description: "Update the PNG capital market legislative framework to encourage additional products in the market.",
+            kras: [
+                "1.1 Policy and Legislative Reform",
+                "1.2 Introduce New Regulations & Codes",
+                "1.3 Improve Investment Landscape (FSDs)"
             ],
             icon: "TrendingUp",
-            progress: 45
+            progress: 0
         },
         {
             id: 2,
-            title: "Regulatory Framework Reform",
-            description: "Modernize the legal environment to ensure fair, efficient, and transparent markets.",
-            goals: [
-                "Legislative Updates: Pass amendments to the SC Act and Capital Market Act by end of 2026.",
-                "Thematic Green Bonds: Finalize Green Bond rules with IFC by April 2026.",
-                "New Codes: Implement Unit Trust, Trustee Guidelines, and Fund Management Codes by end of 2025."
+            title: "Enforcement and Compliance",
+            description: "Licencing and supervision of the legislation and rules.",
+            kras: [
+                "2.1 Strengthen Licensing Frameworks",
+                "2.2 Risk-Based Supervision",
+                "2.3 Active Enforcement Actions"
             ],
             icon: "ShieldCheck",
-            progress: 30
+            progress: 0
         },
         {
             id: 3,
-            title: "Administrative Fundamentals",
-            description: "Strengthen internal governance and complete the transition to the SCPNG identity.",
-            goals: [
-                "Board Appointment: Appoint new Board Members by April 2026 following parliamentary name change.",
-                "Strategic Planning: Finalize the 'Strategic Plan 2025–2030' with ADB and IFC by September 2025.",
-                "Policy Finalization: Complete all internal office policies and procedural guides by May 2025."
+            title: "Education & Awareness",
+            description: "Empower Investors, stakeholders and service providers through education and awareness.",
+            kras: [
+                "3.1 Establish the National Investor Education Program",
+                "3.2 Digital Reach & Media Campaigns",
+                "3.3 Stakeholder Workshops"
             ],
-            icon: "Building2",
-            progress: 60
+            icon: "GraduationCap",
+            progress: 0
         },
         {
             id: 4,
-            title: "Investor Education",
-            description: "Empower the public through the 'Invest Smart PNG' campaign and safety awareness.",
-            goals: [
-                "Digital Reach: Expand social media reach to 2–3 million followers via awareness series.",
-                "Investor Bootcamps: Conduct quarterly weekend workshops for first-time investors with PNGX.",
-                "Regional Workshops: Execute roadshows and pop-up events in underrepresented regional centers."
+            title: "Enhance Institutional Performance",
+            description: "Improve capability, capacity and services by the SCPNG.",
+            kras: [
+                "4.1 ICT Infrastructure & Digitization",
+                "4.2 Internal Governance & Policies",
+                "4.3 Staff Capacity Building & Recruitment"
             ],
-            icon: "GraduationCap",
-            progress: 25
-        },
-        {
-            id: 5,
-            title: "National & International Cooperation",
-            description: "Solidify global standing and domestic partnerships for capacity building.",
-            goals: [
-                "IOSCO MMOU: Finalize assessment and engagement for the MMOU by end of 2026.",
-                "Global Partnerships: Maintain ongoing regulatory assistance MOAs with ADB and IFC.",
-                "Inter-Agency MOAs: Finalize data access and SME support agreements with the IPA."
-            ],
-            icon: "Globe",
-            progress: 40
+            icon: "Building2",
+            progress: 0
         }
     ]);
 
     const [alignments, setAlignments] = useState([
         {
-            name: "Legal Services (LSD)",
-            director: "Director Legal Services",
-            alignedPillar: "Regulatory Framework Reform",
+            name: "Legal and Compliance",
+            director: "General Counsel",
+            alignedGoal: "Policy Development",
             icon: "ShieldCheck",
-            kras: [
-                "Pass amendments to the SC Act and Capital Market Act by end of 2026.",
-                "Finalize assessment and engagement for IOSCO MMOU by end of 2026.",
-                "Strengthen legal enforcement & compliance protocols."
+            initiatives: [
+                "Draft the Capital Market Development Policy",
+                "Draft & submit legislative amendments to SEC & CMA",
+                "Develop Special Purpose Vehicle (SPV) legal structure"
             ]
         },
         {
-            name: "Licensing (LISD)",
-            director: "Director LIS",
-            alignedPillar: "Expand Markets & Connectivity",
+            name: "Licensing and Supervision",
+            director: "Director Licensing",
+            alignedGoal: "Enforcement and Compliance",
             icon: "Zap",
-            kras: [
-                "Implement ongoing Trading, Clearing, and Settlement systems.",
-                "Acquire PNG Registries Ltd and resolve dividend issues.",
-                "Amend Business Rules for broker expansion."
+            initiatives: [
+                "Review and licence regulated service providers",
+                "Implement risk-based supervision systems",
+                "Conduct enforcement investigations on market misconduct"
             ]
         },
         {
-            name: "Research & Publication (RPD)",
+            name: "Research and Publication",
             director: "Director R&P",
-            alignedPillar: "Investor Education",
+            alignedGoal: "Education & Awareness",
             icon: "GraduationCap",
-            kras: [
-                "Expand social media reach to 2-3 million followers.",
-                "Execute quarterly investor bootcamps and regional roadshows.",
-                "Advance 'Invest Smart PNG' awareness series."
+            initiatives: [
+                "Establish the National Investor Education Program",
+                "Execute investor bootcamps and regional roadshows",
+                "Develop financial literacy campaigns"
             ]
         }
     ]);
@@ -268,7 +256,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                             <div className="flex items-center justify-between mb-2">
                                                 <h3 className="text-sm font-black uppercase tracking-widest text-intranet-primary flex items-center gap-2">
                                                     <Award className="w-4 h-4" />
-                                                    The 4 Strategic Pillars
+                                                    Core Functions
                                                 </h3>
                                             </div>
 
@@ -320,9 +308,9 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                     onClick={() => {
                                                         const newPillar = {
                                                             id: Date.now(),
-                                                            title: "New Strategic Objective",
-                                                            description: "New objective description...",
-                                                            goals: ["Key deliverable one"],
+                                                            title: "New Strategic Goal",
+                                                            description: "New goal description...",
+                                                            kras: ["Key Result Area 1"],
                                                             icon: "Target",
                                                             progress: 0
                                                         };
@@ -332,7 +320,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                     size="sm"
                                                     className="h-8 text-[9px] font-black uppercase tracking-widest border-intranet-primary/20 text-intranet-primary"
                                                 >
-                                                    <PlusCircle className="w-3 h-3 mr-1.5" /> Add Objective
+                                                    <PlusCircle className="w-3 h-3 mr-1.5" /> Add Strategic Goal
                                                 </Button>
                                             </div>
 
@@ -362,7 +350,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                             setObjectives(newPillars);
                                                                         }}
                                                                         className="h-8 text-sm font-bold bg-transparent border-none p-0 focus-visible:ring-0 shadow-none text-gray-900 dark:text-gray-100"
-                                                                        placeholder="Objective Title"
+                                                                        placeholder="Strategic Goal Title"
                                                                     />
                                                                     <Textarea
                                                                         value={pillar.description}
@@ -372,24 +360,24 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                             setObjectives(newPillars);
                                                                         }}
                                                                         className="min-h-[40px] text-[11px] bg-transparent border-none p-0 focus-visible:ring-0 shadow-none text-muted-foreground resize-none"
-                                                                        placeholder="Objective Description"
+                                                                        placeholder="Strategic Goal Description"
                                                                     />
                                                                 </div>
 
                                                                 <div className="space-y-2">
                                                                     <div className="text-[9px] font-black tracking-widest text-intranet-primary flex items-center gap-1.5">
                                                                         <Activity className="w-3 h-3" />
-                                                                        KEY RESOURCE AREAS (KRAs)
+                                                                        KEY RESULT AREAS (KRAs)
                                                                     </div>
                                                                     <div className="space-y-2">
-                                                                        {pillar.goals.map((goal, gIdx) => (
+                                                                        {pillar.kras.map((kra, gIdx) => (
                                                                             <div key={gIdx} className="flex items-center gap-2 group/goal">
                                                                                 <div className="w-1.5 h-1.5 rounded-full bg-intranet-primary/40 flex-shrink-0" />
                                                                                 <Input
-                                                                                    value={goal}
+                                                                                    value={kra}
                                                                                     onChange={(e) => {
                                                                                         const newPillars = [...objectives];
-                                                                                        newPillars[i].goals[gIdx] = e.target.value;
+                                                                                        newPillars[i].kras[gIdx] = e.target.value;
                                                                                         setObjectives(newPillars);
                                                                                     }}
                                                                                     className="h-6 text-[11px] bg-transparent border-none p-0 focus-visible:ring-0 shadow-none text-gray-700 dark:text-gray-300"
@@ -399,7 +387,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                                     size="icon"
                                                                                     onClick={() => {
                                                                                         const newPillars = [...objectives];
-                                                                                        newPillars[i].goals = newPillars[i].goals.filter((_, idx) => idx !== gIdx);
+                                                                                        newPillars[i].kras = newPillars[i].kras.filter((_, idx) => idx !== gIdx);
                                                                                         setObjectives(newPillars);
                                                                                     }}
                                                                                     className="h-5 w-5 text-muted-foreground hover:text-red-500 opacity-0 group-hover/goal:opacity-100 transition-opacity"
@@ -413,7 +401,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                             size="sm"
                                                                             onClick={() => {
                                                                                 const newPillars = [...objectives];
-                                                                                newPillars[i].goals.push("New deliverable...");
+                                                                                newPillars[i].kras.push("New KRA...");
                                                                                 setObjectives(newPillars);
                                                                             }}
                                                                             className="h-6 text-[9px] font-bold text-muted-foreground hover:text-intranet-primary p-0"
@@ -450,17 +438,17 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                             <div className="flex items-center justify-between">
                                                 <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 flex items-center gap-3 flex-1 mr-4">
                                                     <Shield className="w-4 h-4 flex-shrink-0" />
-                                                    <p className="text-[10px] font-medium leading-tight">Map divisions to strategic pillars and define their Key Result Areas (KRAs).</p>
+                                                    <p className="text-[10px] font-medium leading-tight">Map divisions to core functions and define their Key Result Areas (KRAs).</p>
                                                 </div>
                                                 <Button
                                                     onClick={() => {
                                                         const newAlignment = {
                                                             name: "New Division",
                                                             director: "Director Title",
-                                                            alignedPillar: objectives[0]?.title || "Strategic Pillar",
+                                                            alignedGoal: objectives[0]?.title || "Strategic Goal",
 
                                                             icon: "LayoutDashboard",
-                                                            kras: ["Key Result Area 1"]
+                                                            initiatives: ["New Initiative 1"]
                                                         };
                                                         setAlignments([...alignments, newAlignment]);
                                                     }}
@@ -511,12 +499,12 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <Label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">Aligned Strategic Pillar</Label>
+                                                                    <Label className="text-[9px] font-black text-muted-foreground uppercase tracking-widest leading-none">Aligned Strategic Goal</Label>
                                                                     <select
-                                                                        value={align.alignedPillar}
+                                                                        value={align.alignedGoal}
                                                                         onChange={(e) => {
                                                                             const newAlignments = [...alignments];
-                                                                            newAlignments[i].alignedPillar = e.target.value;
+                                                                            newAlignments[i].alignedGoal = e.target.value;
                                                                             setAlignments(newAlignments);
                                                                         }}
                                                                         className="w-full h-7 rounded-md border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-2 py-1 text-[10px] focus:outline-none focus:ring-1 focus:ring-intranet-primary"
@@ -531,17 +519,17 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                             <div className="space-y-2">
                                                                 <Label className="text-[9px] font-black text-intranet-primary uppercase tracking-widest flex items-center gap-1.5">
                                                                     <Briefcase className="w-3 h-3" />
-                                                                    KEY RESULT AREAS (KRAs)
+                                                                    STRATEGIC INITIATIVES
                                                                 </Label>
                                                                 <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 scrollbar-thin">
-                                                                    {align.kras.map((kra, kIdx) => (
+                                                                    {align.initiatives.map((init, kIdx) => (
                                                                         <div key={kIdx} className="flex items-center gap-2 group/kra">
                                                                             <div className="w-1 h-3 rounded-full bg-intranet-primary flex-shrink-0" />
                                                                             <Input
-                                                                                value={kra}
+                                                                                value={init}
                                                                                 onChange={(e) => {
                                                                                     const newAlignments = [...alignments];
-                                                                                    newAlignments[i].kras[kIdx] = e.target.value;
+                                                                                    newAlignments[i].initiatives[kIdx] = e.target.value;
                                                                                     setAlignments(newAlignments);
                                                                                 }}
                                                                                 className="h-7 text-[10px] bg-transparent border-none p-0 focus-visible:ring-0 shadow-none text-gray-700 dark:text-gray-300"
@@ -551,7 +539,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                                 size="icon"
                                                                                 onClick={() => {
                                                                                     const newAlignments = [...alignments];
-                                                                                    newAlignments[i].kras = newAlignments[i].kras.filter((_, idx) => idx !== kIdx);
+                                                                                    newAlignments[i].initiatives = newAlignments[i].initiatives.filter((_, idx) => idx !== kIdx);
                                                                                     setAlignments(newAlignments);
                                                                                 }}
                                                                                 className="h-5 w-5 text-muted-foreground hover:text-red-500 opacity-0 group-hover/kra:opacity-100 transition-opacity"
@@ -565,12 +553,12 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                                         size="sm"
                                                                         onClick={() => {
                                                                             const newAlignments = [...alignments];
-                                                                            newAlignments[i].kras.push("New KRA area...");
+                                                                            newAlignments[i].initiatives.push("New Initiative...");
                                                                             setAlignments(newAlignments);
                                                                         }}
                                                                         className="h-6 text-[9px] font-bold text-muted-foreground hover:text-intranet-primary p-0"
                                                                     >
-                                                                        + Add KRA
+                                                                        + Add Initiative
                                                                     </Button>
                                                                 </div>
                                                             </div>
@@ -599,7 +587,7 @@ export const StrategySetupWizard: React.FC<StrategySetupWizardProps> = ({ isOpen
                                                     <div className="text-lg font-black text-purple-600">{pillars.length}</div>
                                                 </div>
                                                 <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/30 border-none">
-                                                    <div className="text-[9px] font-black uppercase text-muted-foreground opacity-60 mb-1">Objectives</div>
+                                                    <div className="text-[9px] font-black uppercase text-muted-foreground opacity-60 mb-1">Strategic Goals</div>
                                                     <div className="text-lg font-black text-intranet-primary">{objectives.length}</div>
                                                 </div>
                                                 <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/30 border-none">

@@ -491,7 +491,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden dark:bg-gray-900 dark:border-white/10 shadow-2xl">
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden dark:bg-gray-950 dark:border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
           <div className="flex justify-between items-start">
             <div>
@@ -522,7 +522,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   placeholder="Enter task title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-blue-500/50 dark:text-gray-100"
+                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-intranet-primary/50 dark:text-gray-100"
                   required
                   autoFocus
                 />
@@ -534,7 +534,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   placeholder="Add a detailed description..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-blue-500/50 dark:text-gray-100"
+                  className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-intranet-primary/50 dark:text-gray-100"
                   rows={4}
                 />
               </div>
@@ -597,7 +597,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
               <div className="space-y-1">
                 <Label htmlFor="recurrence" className="dark:text-gray-300">Repeat</Label>
                 <Select value={recurrence} onValueChange={setRecurrence}>
-                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-blue-500/50">
+                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/50">
                     <SelectValue placeholder="Select recurrence" />
                   </SelectTrigger>
                   <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
@@ -725,7 +725,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                     type="checkbox"
                     checked={subtask.completed}
                     onChange={() => handleToggleSubtask(subtask.id)}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-white/20 dark:bg-gray-800 text-blue-600 focus:ring-blue-500"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-white/20 dark:bg-gray-800 text-intranet-primary focus:ring-intranet-primary"
                   />
                   <span className={cn("flex-grow dark:text-gray-300 text-sm", subtask.completed && "line-through text-muted-foreground")}>
                     {subtask.text}
@@ -821,7 +821,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
         <DialogFooter className="px-6 py-4 bg-gray-50 dark:bg-gray-800/30 border-t border-gray-200 dark:border-gray-700/50 flex-shrink-0">
           <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="px-6 py-2 rounded-lg">Cancel</Button>
-          <Button type="submit" form="task-form" disabled={isSubmitting} className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg">
+          <Button type="submit" form="task-form" disabled={isSubmitting} className="bg-intranet-primary hover:bg-intranet-secondary text-white px-6 py-2 rounded-lg shadow-lg">
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
