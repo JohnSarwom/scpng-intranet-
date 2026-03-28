@@ -534,6 +534,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const [timePeriod, setTimePeriod] = useState<ReportTimePeriod>('monthly');
   const [selectedCategories, setSelectedCategories] = useState<CategoryKey[]>(['tasks', 'kras', 'kpis', 'objectives']);
   const [generating, setGenerating] = useState(false);
+  const [isGeneratorExpanded, setIsGeneratorExpanded] = useState(false);
+  const [isScheduleExpanded, setIsScheduleExpanded] = useState(false);
   const [currentReport, setCurrentReport] = useState<GeneratedReport | null>(null);
   const [reportHistory, setReportHistory] = useState<GeneratedReport[]>([]);
 
@@ -867,17 +869,40 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   return (
     <div className="space-y-6 mt-4">
       {/* Config Panel */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Report Generator
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Configure the time period and data categories to include in your report.
-          </CardDescription>
+      <Card className="dark:bg-gray-900 dark:border-white/10 shadow-sm overflow-hidden">
+        <CardHeader
+          className="pb-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+          onClick={() => setIsGeneratorExpanded(!isGeneratorExpanded)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-intranet-primary" />
+                Report Generator
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Configure the time period and data categories to include in your report.
+              </CardDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsGeneratorExpanded(!isGeneratorExpanded);
+              }}
+            >
+              {isGeneratorExpanded ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {isGeneratorExpanded && (
+          <CardContent className="space-y-4 pt-0 border-t dark:border-white/10 mt-3 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Time Period */}
             <div className="space-y-1.5">
@@ -944,32 +969,54 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             )}
           </Button>
         </CardContent>
+        )}
       </Card>
 
       {/* Schedule Reports */}
-      <Card id="schedule-form-card" className="dark:bg-gray-900 dark:border-white/10">
-        <CardHeader className="pb-3 border-b dark:border-white/10">
+      <Card id="schedule-form-card" className="dark:bg-gray-900 dark:border-white/10 shadow-sm overflow-hidden">
+        <CardHeader
+          className="pb-3 border-b dark:border-white/10 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+          onClick={() => setIsScheduleExpanded(!isScheduleExpanded)}
+        >
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Bell className="h-4 w-4" />
+                <Bell className="h-4 w-4 text-intranet-primary" />
                 Schedule Recurring Reports
               </CardTitle>
               <CardDescription className="text-xs mt-1">
                 Receive automated reports via email from automation@scpng.gov.pg at your preferred schedule.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">{scheduleActive ? 'Active' : 'Inactive'}</span>
-              <Switch
-                checked={scheduleActive}
-                onCheckedChange={setScheduleActive}
-                disabled={scheduleLoading}
-              />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <span className="text-xs text-muted-foreground">{scheduleActive ? 'Active' : 'Inactive'}</span>
+                <Switch
+                  checked={scheduleActive}
+                  onCheckedChange={setScheduleActive}
+                  disabled={scheduleLoading}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsScheduleExpanded(!isScheduleExpanded);
+                }}
+              >
+                {isScheduleExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
+        {isScheduleExpanded && (
+          <CardContent className="space-y-4 pt-4 animate-in fade-in slide-in-from-top-2 duration-200">
           {scheduleLoading ? (
             <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -978,12 +1025,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           ) : (
             <>
               {/* Status banner */}
-              {scheduleNextSend && scheduleActive && (
-                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-green-600" />
+               {scheduleNextSend && scheduleActive && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/50 rounded-lg p-3 flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-green-700" />
                   <div className="text-sm">
-                    <span className="font-medium text-green-700 dark:text-green-400">Next report: </span>
-                    <span className="text-green-600 dark:text-green-500">{scheduleNextSend}</span>
+                    <span className="font-semibold text-green-800 dark:text-green-400">Next report: </span>
+                    <span className="text-green-700 dark:text-green-500">{scheduleNextSend}</span>
                   </div>
                 </div>
               )}
@@ -1064,8 +1111,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
 
               {/* Custom Date Range Options */}
               {schedulePeriod === 'custom' && (
-                <div className="space-y-3 rounded-lg border p-3 bg-blue-50/50 dark:bg-blue-950/20 dark:border-blue-900/30">
-                  <div className="flex items-center gap-2 text-xs font-medium text-blue-700 dark:text-blue-400">
+                <div className="space-y-3 rounded-lg border p-3 bg-intranet-primary/5 dark:bg-intranet-primary/10 dark:border-intranet-primary/20">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-intranet-primary dark:text-intranet-secondary">
                     <Calendar className="h-3.5 w-3.5" />
                     Custom Date Range Configuration
                   </div>
@@ -1077,7 +1124,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                       onClick={() => setIsOneTime(true)}
                       className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                         isOneTime
-                          ? 'bg-blue-600 text-white shadow-sm'
+                          ? 'bg-intranet-primary text-white shadow-md'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`}
                     >
@@ -1089,7 +1136,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                       onClick={() => setIsOneTime(false)}
                       className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
                         !isOneTime
-                          ? 'bg-blue-600 text-white shadow-sm'
+                          ? 'bg-intranet-primary text-white shadow-md'
                           : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                       }`}
                     >
@@ -1177,9 +1224,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                           <p className="text-[10px] text-muted-foreground">Recurrence interval</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 p-2">
-                        <Info className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                      <div className="flex items-start gap-2 rounded-md bg-intranet-primary/5 dark:bg-intranet-primary/10 border border-intranet-primary/20 p-2">
+                        <Info className="h-3.5 w-3.5 text-intranet-primary dark:text-intranet-secondary mt-0.5 shrink-0" />
+                        <p className="text-xs text-intranet-primary dark:text-intranet-secondary font-medium">
                           Every {customIntervalDays || '14'} days at {TIME_OPTIONS.find(t => t.value === scheduleTime)?.label || scheduleTime}, a report covering the last {rollingWindowDays || '30'} days will be sent.
                         </p>
                       </div>
@@ -1197,9 +1244,9 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                 <div className="flex flex-wrap gap-3">
                   {ALL_CATEGORIES.map(cat => (
                     <div key={cat.key} className="flex items-center gap-1.5">
-                      <Checkbox
+                       <Checkbox
                         id={`sched-cat-${cat.key}`}
-                        className="dark:border-white/20"
+                        className="dark:border-white/20 data-[state=checked]:bg-intranet-primary data-[state=checked]:border-intranet-primary"
                         checked={scheduleCategories.includes(cat.key)}
                         onCheckedChange={() => toggleScheduleCategory(cat.key)}
                       />
@@ -1222,7 +1269,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
                   value={scheduleManagerEmail}
                   onChange={e => setScheduleManagerEmail(e.target.value)}
                   placeholder="e.g., manager@scpng.gov.pg"
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-blue-500/20 dark:bg-gray-950 dark:border-white/10 dark:text-gray-100"
+                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-intranet-primary/20 dark:bg-gray-950 dark:border-white/10 dark:text-gray-100"
                 />
               </div>
 
@@ -1241,32 +1288,43 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             </>
           )}
         </CardContent>
+        )}
       </Card>
 
       {/* Manage All Schedules */}
-      <Card>
-        <CardHeader className="pb-3">
+      <Card className="dark:bg-gray-900 dark:border-white/10 shadow-sm overflow-hidden">
+        <CardHeader
+          className="pb-3 cursor-pointer hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors"
+          onClick={() => {
+            if (!schedulesExpanded) loadAllSchedules();
+            setSchedulesExpanded(!schedulesExpanded);
+          }}
+        >
           <div className="flex items-center justify-between">
-            <div>
+            <div className="space-y-1">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                <Users className="h-4 w-4" />
+                <Users className="h-4 w-4 text-intranet-primary" />
                 Manage Report Schedules
               </CardTitle>
-              <CardDescription className="text-xs mt-1">
+              <CardDescription className="text-xs">
                 View, edit, or delete report schedules across the organization.
               </CardDescription>
             </div>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => {
+              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
                 if (!schedulesExpanded) loadAllSchedules();
                 setSchedulesExpanded(!schedulesExpanded);
               }}
-              className="gap-1.5"
             >
-              {schedulesExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-              {schedulesExpanded ? 'Hide' : 'View All'}
+              {schedulesExpanded ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
             </Button>
           </div>
         </CardHeader>

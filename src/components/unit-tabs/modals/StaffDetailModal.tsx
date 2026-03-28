@@ -152,14 +152,14 @@ export const StaffDetailModal: React.FC<StaffDetailModalProps> = ({
 
                 <div className="flex-1 overflow-hidden p-6 bg-slate-50 dark:bg-gray-950 flex flex-col min-h-0">
                     <Tabs defaultValue="tasks" className="flex-1 flex flex-col min-h-0">
-                        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 dark:bg-gray-900/50 p-1 rounded-xl mb-4 shrink-0 border dark:border-white/10 backdrop-blur-sm">
-                            <TabsTrigger value="tasks" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
+                        <TabsList className="grid w-full grid-cols-3 dark:bg-gray-800/50 dark:border-white/10 border p-1 mb-4 shrink-0 backdrop-blur-sm">
+                            <TabsTrigger value="tasks" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">
                                 <CheckCircle className="h-4 w-4 mr-2" /> Tasks
                             </TabsTrigger>
-                            <TabsTrigger value="kpis" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
+                            <TabsTrigger value="kpis" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">
                                 <Target className="h-4 w-4 mr-2" /> KPIs
                             </TabsTrigger>
-                            <TabsTrigger value="objectives" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-gray-100 data-[state=active]:shadow-sm dark:text-gray-400">
+                            <TabsTrigger value="objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">
                                 <Activity className="h-4 w-4 mr-2" /> KRAs
                             </TabsTrigger>
                         </TabsList>

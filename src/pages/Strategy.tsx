@@ -394,15 +394,24 @@ const Strategy = () => {
     const baseObjectives = objectives && objectives.length > 0 ? objectives : strategicObjectives;
 
     const effectiveObjectives = baseObjectives.map((obj: any) => {
-        // Calculate progress directly from child unit-level objectives
+        // 1. Calculate progress directly from child unit-level objectives
         const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || []);
 
-        if (childProgress > 0) {
-            return { ...obj, progress: childProgress };
-        }
+        // 2. CORPORATE PLAN 2026-2028: Check if this objective has new Strategic KRAs linked to it
+        const newKRAs = (strategyData?.strategicKRAs || [])
+            .filter((k: any) => String(k.goalId) === String(obj.id))
+            .map((k: any) => k.title)
+            .filter((t: string) => !t.includes("General Execution")); // Filter out migration placeholders
 
-        // Fallback to stored/manual progress
-        return obj;
+        // Merge legacy and new KRAs, removing duplicates and empty strings
+        const combinedKRAs = Array.from(new Set([...(obj.kras || []), ...newKRAs]))
+            .filter(k => k && k.trim().length > 0);
+
+        return { 
+            ...obj, 
+            progress: childProgress > 0 ? childProgress : (obj.progress || 0),
+            kras: combinedKRAs 
+        };
     });
 
     // Overall progress across all strategic objectives

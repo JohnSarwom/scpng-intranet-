@@ -46,7 +46,7 @@ export const useStrategySharePoint = () => {
                 return mockStrategyData;
             }
         },
-        staleTime: 1000 * 60 * 10, // 10 minutes
+        staleTime: 0, // Disable cache temporarily to ensure user sees the latest data
     });
 
     const updateMutation = useMutation({

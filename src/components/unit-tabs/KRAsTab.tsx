@@ -1014,11 +1014,11 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
           <CardContent className="p-0">
             <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
               <div className="flex justify-between items-center px-6 py-4 border-b dark:border-white/10 bg-gray-50/30 dark:bg-gray-800/10">
-                <TabsList className="bg-slate-200/50 dark:bg-gray-900 p-1 rounded-xl">
-                  <TabsTrigger value="kpis" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">KRA/KPIs</TabsTrigger>
-                  {!isStaff && <TabsTrigger value="objectives" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Objectives</TabsTrigger>}
-                  <TabsTrigger value="timeline" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Timeline</TabsTrigger>
-                  <TabsTrigger value="insights" className="rounded-lg data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-blue-400 dark:text-gray-400">Insights</TabsTrigger>
+                <TabsList className="dark:bg-gray-800/50 dark:border-white/10 border p-1">
+                  <TabsTrigger value="kpis" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">KRA/KPIs</TabsTrigger>
+                  {!isStaff && <TabsTrigger value="objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Objectives</TabsTrigger>}
+                  <TabsTrigger value="timeline" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Timeline</TabsTrigger>
+                  <TabsTrigger value="insights" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Insights</TabsTrigger>
                 </TabsList>
 
                 {activeTab === 'timeline' && (
@@ -1329,7 +1329,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                   (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
 
                                 return title ? (
-                                  <Badge variant="outline" className="bg-blue-50/50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800/30">
+                                  <Badge variant="outline" className="bg-intranet-primary/5 text-intranet-primary border-intranet-primary/20 dark:bg-intranet-primary/10 dark:text-intranet-primary/90 dark:border-intranet-primary/30">
                                     {title}
                                   </Badge>
                                 ) : (

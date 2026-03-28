@@ -253,9 +253,9 @@ const PersonalKPIStats: React.FC = () => {
       </CardHeader>
       <CardContent className="h-80">
         <Tabs defaultValue="performance" className="w-full h-full flex flex-col">
-          <TabsList className="grid grid-cols-2 mb-4 flex-shrink-0 dark:bg-gray-900/50 dark:border-gray-700">
-            <TabsTrigger value="performance" className="dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">Performance Trends</TabsTrigger>
-            <TabsTrigger value="goals" className="dark:data-[state=active]:bg-gray-800 dark:data-[state=active]:text-white">Quarterly Goals</TabsTrigger>
+          <TabsList className="grid grid-cols-2 mb-4 flex-shrink-0 dark:bg-gray-800/50 dark:border-white/10 border p-1">
+            <TabsTrigger value="performance" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Performance Trends</TabsTrigger>
+            <TabsTrigger value="goals" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Quarterly Goals</TabsTrigger>
           </TabsList>
 
           <TabsContent value="performance" className="space-y-4 flex-1 overflow-hidden">

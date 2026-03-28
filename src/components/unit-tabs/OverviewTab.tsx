@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Calendar, BarChart2, Target, Clock, Flag,
-  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2, Crosshair, TrendingUp, Zap
+  CheckCircle, AlertTriangle, Briefcase, Settings, Cloud, Activity, Info, Maximize2, Minimize2, Crosshair, TrendingUp, Zap,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { KPIPerformanceBar } from '@/components/dashboard/KPIPerformanceBar';
 import { TaskTrendsLine } from '@/components/dashboard/TaskTrendsLine';
@@ -111,6 +112,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   userContext
 }) => {
   const [selectedInsight, setSelectedInsight] = useState('overview');
+  const [isInsightsExpanded, setIsInsightsExpanded] = useState(false);
   const [showSwitchDialog, setShowSwitchDialog] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -550,8 +552,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     <div ref={containerRef} className={cn("space-y-6 border border-gray-200 dark:border-gray-700 rounded-lg p-6 transition-all duration-300", isFullScreen ? "bg-background overflow-y-auto h-screen fixed inset-0 z-50 border-0 m-0 rounded-none" : "bg-gradient-to-br from-card to-muted/30 shadow-sm")}>
       <div className="flex flex-row items-start justify-between gap-4">
         <div className="flex flex-col space-y-1.5">
-          <h2 className="text-2xl font-bold tracking-tight">Dashboard Overview</h2>
-          <p className="text-muted-foreground">High-level summary of unit performance and metrics.</p>
+          <h2 className="text-2xl font-bold tracking-tight">Personal Performance Overview</h2>
+          <p className="text-muted-foreground">High-level summary of your individual performance and metrics.</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           <Button variant="ghost" size="icon" onClick={toggleFullscreen} title={isFullScreen ? "Exit Full Screen" : "Full Screen"}>
@@ -578,18 +580,41 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
       <div className="space-y-6">
         {/* Unit Performance Highlights */}
         <div className="grid grid-cols-1 gap-4">
-          <Card className="bg-gradient-to-br from-[#400010]/5 to-transparent border-[#400010]/10 overflow-hidden relative">
+          <Card className="bg-gradient-to-br from-[#400010]/5 to-transparent border-[#400010]/10 overflow-hidden relative shadow-sm transition-all duration-300">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <Zap className="w-32 h-32 text-primary rotate-12" />
             </div>
-            <CardHeader className="pb-2">
-              <div className="flex items-center gap-2">
-                <Zap className="w-5 h-5 text-primary" />
-                <CardTitle className="text-lg">Unit Insights & Performance Analysis</CardTitle>
+            <CardHeader
+              className="pb-2 cursor-pointer hover:bg-[#400010]/5 transition-colors"
+              onClick={() => setIsInsightsExpanded(!isInsightsExpanded)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-lg">Personal Performance Insights</CardTitle>
+                  </div>
+                  <CardDescription>Automated performance analysis for {userContext?.full_name || 'your profile'}</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsInsightsExpanded(!isInsightsExpanded);
+                  }}
+                >
+                  {isInsightsExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </Button>
               </div>
-              <CardDescription>Automated operational intelligence for {userUnit || 'the Unit'}</CardDescription>
             </CardHeader>
-            <CardContent>
+            {isInsightsExpanded && (
+              <CardContent className="animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-1">
@@ -613,9 +638,9 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <div className="pt-4 border-t border-[#400010]/10 mt-2">
                 <div className="flex justify-between items-center mb-1">
                   <span className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1">
-                    <Crosshair size={14} className="text-primary animate-pulse" /> Unit Strategic Alignment Signal
+                    <Crosshair size={14} className="text-primary animate-pulse" /> Personal Strategic Alignment Signal
                   </span>
-                  <span className="text-xs font-bold text-primary">{Math.round(insights.kraHealthPct)}% synchronized with Enterprise Strategy</span>
+                  <span className="text-xs font-bold text-primary">{Math.round(insights.kraHealthPct)}% aligned with Strategic Objectives</span>
                 </div>
                 <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
                   <div 
@@ -625,6 +650,7 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
                 </div>
               </div>
             </CardContent>
+            )}
           </Card>
         </div>
 

@@ -218,6 +218,8 @@ export class StrategyService {
                     // Normalize isFeatured to boolean
                     const isFeatured = item.fields.IsFeatured === true || item.fields.IsFeatured === 1 || item.fields.IsFeatured === "1";
 
+                    const krasRaw = item.fields.Deliverables || item.fields.Deliverable || item.fields.KRAs || item.fields.KRA || '';
+                    
                     return {
                         id: item.id,
                         title: item.fields.Title,
@@ -225,7 +227,7 @@ export class StrategyService {
                         progress: item.fields.Progress || 0,
                         status: (item.fields.Status?.toLowerCase().replace(' ', '-') || 'on-track') as any,
                         icon: item.fields.Icon || 'Target',
-                        goals: item.fields.Deliverables ? item.fields.Deliverables.split(',').map((s: string) => s.trim()) : [],
+                        kras: krasRaw ? krasRaw.split(',').map((s: string) => s.trim()) : [],
                         isFeatured: isFeatured,
                         division: item.fields.Division || '',
                         unit: item.fields.Unit || '',

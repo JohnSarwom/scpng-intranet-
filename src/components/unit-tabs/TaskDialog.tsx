@@ -594,20 +594,6 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   container={container}
                 />
               </div>
-              <div className="space-y-1">
-                <Label htmlFor="recurrence" className="dark:text-gray-300">Repeat</Label>
-                <Select value={recurrence} onValueChange={setRecurrence}>
-                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/50">
-                    <SelectValue placeholder="Select recurrence" />
-                  </SelectTrigger>
-                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="sm:col-span-2 space-y-1">
                 <Label htmlFor="assignee">Assignees</Label>
                 <GlobalAssigneeSelector
@@ -655,6 +641,20 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                         {kpi.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="recurrence" className="dark:text-gray-300">Repeat</Label>
+                <Select value={recurrence} onValueChange={setRecurrence}>
+                  <SelectTrigger id="recurrence" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/50">
+                    <SelectValue placeholder="Select recurrence" />
+                  </SelectTrigger>
+                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

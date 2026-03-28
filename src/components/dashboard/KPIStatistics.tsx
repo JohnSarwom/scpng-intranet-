@@ -37,10 +37,10 @@ const KPIStatistics: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="chart" className="w-full">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="chart">Performance</TabsTrigger>
-            <TabsTrigger value="progress">Completion</TabsTrigger>
-            <TabsTrigger value="table">Metrics</TabsTrigger>
+          <TabsList className="grid grid-cols-3 mb-4 dark:bg-gray-800/50 dark:border-white/10 border p-1">
+            <TabsTrigger value="chart" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Performance</TabsTrigger>
+            <TabsTrigger value="progress" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Completion</TabsTrigger>
+            <TabsTrigger value="table" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Metrics</TabsTrigger>
           </TabsList>
           
           <TabsContent value="chart" className="space-y-4">
