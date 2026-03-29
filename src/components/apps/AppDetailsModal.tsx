@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 import { AppLink } from '@/types/apps';
+import { useNavigate } from 'react-router-dom';
 
 interface AppDetailsModalProps {
     isOpen: boolean;
@@ -18,12 +19,19 @@ interface AppDetailsModalProps {
 }
 
 export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClose, app }) => {
+    const navigate = useNavigate();
+
     if (!app) return null;
 
     const isIconUrl = app.icon?.startsWith('http');
 
     const handleOpenApp = () => {
-        window.open(app.url, app.isExternal ? '_blank' : '_self');
+        // Use navigate for internal apps (starting with /) that are not external
+        if (!app.isExternal && app.url.startsWith('/')) {
+            navigate(app.url);
+        } else {
+            window.open(app.url, app.isExternal ? '_blank' : '_self');
+        }
         onClose();
     };
 
@@ -90,3 +98,5 @@ export const AppDetailsModal: React.FC<AppDetailsModalProps> = ({ isOpen, onClos
         </Dialog>
     );
 };
+
+export default AppDetailsModal;
