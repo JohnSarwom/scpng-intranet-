@@ -158,9 +158,12 @@ const AppsSection: React.FC = () => {
     }));
   }, [sharePointApps]);
 
-  // Determine which apps to use
+  // Determine which apps to use — always include static customApps so they show for all users
   const allApps = useSharePoint && convertedSharePointApps.length > 0
-    ? convertedSharePointApps
+    ? [
+        ...convertedSharePointApps,
+        ...customApps.filter(ca => !convertedSharePointApps.some(spa => spa.id === ca.id))
+      ]
     : [...microsoft365Apps, ...customApps];
 
   // Filter apps by category
@@ -216,7 +219,7 @@ const AppsSection: React.FC = () => {
   };
 
   const bulkApps = [
-    { appId: 'meeting-minutes', name: 'Meeting Minutes', description: 'Official SCPNG collaborative meeting minutes generator and registry.', icon: '📄', url: '/meeting-minutes', category: 'SCPNG Apps', isExternal: false }
+    { appId: 'meeting-minutes', name: 'SCPNG Meeting Minutes Generator (BETA)', description: 'Official SCPNG collaborative meeting minutes generator and registry (Phase 1 Testing).', icon: '📄', url: '/meeting-minutes', category: 'SCPNG Apps', isExternal: false }
   ];
 
   const handleBulkDeploy = async () => {
