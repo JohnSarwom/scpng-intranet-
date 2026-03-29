@@ -339,7 +339,7 @@ const MeetingMinutesForm = ({ data, onChange }: {
                   <Input 
                       value={data.particulars.venue} 
                       onChange={(e) => updateParticulars('venue', e.target.value)}
-                      placeholder="e.g. SCPNG Conference Room"
+                      placeholder="e.g. SCPNG Main Board Room"
                       className="border-gray-300 h-11 rounded-lg"
                   />
                 </div>

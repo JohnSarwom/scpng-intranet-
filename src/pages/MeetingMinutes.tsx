@@ -14,7 +14,7 @@ const MeetingMinutes = () => {
       startTime: '09:00',
       endTime: '10:00',
       facilitator: '',
-      venue: 'SCPNG Library / Conference Room',
+      venue: 'SCPNG Main Board Room',
       minutesBy: '',
       objective: '',
       order: ''
