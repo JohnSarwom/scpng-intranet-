@@ -38,17 +38,21 @@ interface AddAppModalProps {
 }
 
 const CATEGORIES = [
-  'Microsoft 365',
   'SCPNG Apps',
-  'AI Apps',
+  'Microsoft 365',
+  'National Portals',
+  'Finance Systems',
   'Legal Apps',
+  'Document Utilities',
+  'Media Optimization',
+  'File Conversion',
+  'AI Apps',
+  'External Services',
+  'HR Systems',
   'Productivity',
   'Communication',
   'Utilities',
   'Custom',
-  'HR Systems',
-  'Finance Systems',
-  'External Services',
 ];
 
 export const AddAppModal: React.FC<AddAppModalProps> = ({ isOpen, onClose, onSuccess }) => {
@@ -332,10 +336,10 @@ export const AddAppModal: React.FC<AddAppModalProps> = ({ isOpen, onClose, onSuc
             </Label>
             <Input
               id="appUrl"
-              type="url"
+              type="text"
               value={appUrl}
               onChange={(e) => setAppUrl(e.target.value)}
-              placeholder="https://..."
+              placeholder="/meeting-minutes or https://..."
               disabled={isSubmitting}
               required
             />

@@ -51,6 +51,7 @@ import { SlideshowProvider } from '@/contexts/SlideshowContext';
 import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
 import WorkPlanBuilderPage from './pages/WorkPlanBuilderPage';
 import WebsiteAnalytics from './pages/WebsiteAnalytics';
+import MeetingMinutes from './pages/MeetingMinutes';
 
 // MSAL Imports
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
@@ -311,7 +312,12 @@ const AppRoutes = () => {
       } />
 
       {/* Available to all authenticated users */}
-      <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
+
+      <Route path="/meeting-minutes" element={
+        <ProtectedRoute>
+          <MeetingMinutes />
+        </ProtectedRoute>
+      } />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -10,9 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Users, Target, Search, ExternalLink,
-  Building2, List, LayoutGrid,
+  Building2, List, LayoutGrid, Share2, Printer, Flag,
 } from 'lucide-react';
-import { UnitComparisonData, RAGStatus } from '@/types/division.types';
+import { UnitComparisonData } from '@/types/division.types';
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { DivisionMetrics } from '@/types/division.types';
 import { useNavigate } from 'react-router-dom';
@@ -84,58 +84,88 @@ function computeOfficerStats(email: string, data: UseDivisionDataReturn): Office
 const ragText = (score: number) =>
   score >= 70 ? 'text-green-600' : score >= 40 ? 'text-amber-600' : 'text-red-600';
 
-// --- Unit Performance Card ---
+// --- Unit Performance Card (Premium Design) ---
 interface UnitPerformanceCardProps {
   unit: UnitComparisonData;
   onClick: () => void;
 }
 
 const UnitPerformanceCard: React.FC<UnitPerformanceCardProps> = ({ unit, onClick }) => {
-  const ragStatus: RAGStatus = unit.overallScore >= 70 ? 'green' : unit.overallScore >= 40 ? 'amber' : 'red';
-  const ragColors = {
-    green: 'border-l-green-200 dark:border-l-green-800',
-    amber: 'border-l-amber-200 dark:border-l-amber-800',
-    red: 'border-l-red-200 dark:border-l-red-800',
-  };
-  const dotColors = { green: 'bg-green-500', amber: 'bg-amber-500', red: 'bg-red-500' };
+  const scoreColor = unit.overallScore >= 70 ? 'text-green-600' : unit.overallScore >= 40 ? 'text-amber-600' : 'text-[#800020]';
 
   return (
-    <Card
-      className={`cursor-pointer hover:shadow-lg transition-all border-l-4 ${ragColors[ragStatus]}`}
+    <div
+      className="group relative w-full bg-white rounded-2xl p-5 border border-gray-200 shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-[#800020]/5"
       onClick={onClick}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <div className={`h-2.5 w-2.5 rounded-full ${dotColors[ragStatus]}`} />
-            <h3 className="font-semibold text-sm">{unit.unitName}</h3>
+      {/* Header: Icon + Name + Staff Badge */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'rgba(128, 0, 32, 0.08)' }}>
+          <Building2 className="h-4 w-4 text-[#800020]" />
+        </div>
+        <h3 className="text-base font-bold text-gray-900 group-hover:text-[#800020] transition-colors duration-300 flex-1 min-w-0">
+          {unit.unitName}
+        </h3>
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md border border-[#800020]/20 text-[#800020] text-[11px] font-bold tracking-wide whitespace-nowrap" style={{ backgroundColor: 'rgba(128, 0, 32, 0.08)' }}>
+          {unit.staffCount} Officers
+        </span>
+      </div>
+
+      {/* Metrics */}
+      <div className="space-y-4">
+        {/* Task Completion */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm text-gray-500">Task Completion</span>
+            <span className="text-sm font-semibold text-gray-900">{unit.taskCompletion}%</span>
           </div>
-          <Badge variant="outline" className="text-xs">{unit.staffCount} staff</Badge>
+          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#800020] rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${unit.taskCompletion}%` }}
+            />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Task Completion</span>
-              <span className="font-medium">{unit.taskCompletion}%</span>
-            </div>
-            <Progress value={unit.taskCompletion} className="h-1.5" />
+        {/* KRA Progress */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm text-gray-500">KRA Progress</span>
+            <span className="text-sm font-semibold text-gray-900">{unit.kraProgress}%</span>
           </div>
-          <div>
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">KRA Progress</span>
-              <span className="font-medium">{unit.kraProgress}%</span>
-            </div>
-            <Progress value={unit.kraProgress} className="h-1.5" />
+          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#800020] rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${unit.kraProgress}%` }}
+            />
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">Overall Score</span>
-          <span className="text-lg font-bold">{unit.overallScore}%</span>
+        {/* KPI Progress */}
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-baseline">
+            <span className="text-sm text-gray-500">KPI On Track</span>
+            <span className="text-sm font-semibold text-gray-900">{unit.kpiOnTrack}%</span>
+          </div>
+          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[#800020] rounded-full transition-all duration-700 ease-out"
+              style={{ width: `${unit.kpiOnTrack}%` }}
+            />
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Footer: Label left, Score right */}
+      <div className="mt-6 pt-4 border-t border-gray-100 flex justify-between items-center">
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          Overall Performance
+        </p>
+        <div className={`text-3xl font-extrabold tracking-tight ${scoreColor}`}>
+          {unit.overallScore}<span className="text-xl ml-0.5">%</span>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -147,12 +177,14 @@ const StaffRoster: React.FC<{
   const unitStaff = staff.filter(s => s.unit === unitName);
   return (
     <div>
-      <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-        <Users className="h-4 w-4" />
-        Staff ({unitStaff.length})
-      </h4>
+      <div className="flex items-center gap-2 mb-4">
+        <Users className="h-4 w-4 text-gray-500" />
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md border border-[#800020]/20 text-[#800020] text-[11px] font-bold tracking-wide whitespace-nowrap" style={{ backgroundColor: 'rgba(128, 0, 32, 0.08)' }}>
+          {unitStaff.length} Officers
+        </span>
+      </div>
       {unitStaff.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No staff found for this unit.</p>
+        <p className="text-sm text-muted-foreground">No officers found for this unit.</p>
       ) : (
         <Table>
           <TableHeader>
@@ -342,7 +374,8 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
     <div className="space-y-4 mt-4">
       {/* Tab Header */}
       <div className="px-1 mb-2">
-        <h2 className="text-lg font-bold text-black">
+        <h2 className="text-lg font-bold text-[#800020] flex items-center gap-2">
+          <Building2 className="h-5 w-5" />
           Division Units
         </h2>
         <p className="text-xs text-muted-foreground mt-1">
@@ -522,40 +555,59 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
 
       {/* Unit Drill-Down Modal (units view) */}
       <Dialog open={!!selectedUnit} onOpenChange={() => setSelectedUnit(null)}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-[#83002A]" />
-              {selectedUnit?.unitName}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedUnit && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-3">
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xl font-bold">{selectedUnit.taskCompletion}%</div>
-                    <div className="text-xs text-muted-foreground">Task Completion</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xl font-bold">{selectedUnit.kraProgress}%</div>
-                    <div className="text-xs text-muted-foreground">KRA Progress</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-3 text-center">
-                    <div className="text-xl font-bold">{selectedUnit.staffCount}</div>
-                    <div className="text-xs text-muted-foreground">Staff Members</div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <StaffRoster unitName={selectedUnit.unitName} staff={data.staff} />
+        <DialogContent className="max-w-2xl max-h-[80vh] p-0 flex flex-col overflow-hidden gap-0">
+          {/* Sticky Header */}
+          <div className="relative overflow-hidden flex items-center gap-3 px-6 py-4 border-b border-[#83002A]/20 flex-shrink-0 bg-gradient-to-r from-[#83002A] to-[#5C001E]">
+            <div className="absolute inset-0 bg-black/10" />
+            <div className="relative z-10 w-10 h-10 rounded-xl flex items-center justify-center bg-white/15 backdrop-blur-sm">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-          )}
+            <DialogHeader className="relative z-10 flex-1 space-y-0">
+              <DialogTitle className="text-lg font-bold text-white">
+                {selectedUnit?.unitName}
+              </DialogTitle>
+            </DialogHeader>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-5">
+            {selectedUnit && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-center">
+                    <div className="text-xl font-bold text-[#800020]">{selectedUnit.taskCompletion}%</div>
+                    <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-1">Tasks Done</div>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-center">
+                    <div className="text-xl font-bold text-[#800020]">{selectedUnit.kraProgress}%</div>
+                    <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-1">KRA Progress</div>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 text-center">
+                    <div className="text-xl font-bold text-[#800020]">{selectedUnit.kpiOnTrack}%</div>
+                    <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-1">KPI On Track</div>
+                  </div>
+                </div>
+
+                <StaffRoster unitName={selectedUnit.unitName} staff={data.staff} />
+              </div>
+            )}
+          </div>
+
+          {/* Fixed Footer */}
+          <div className="border-t border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0 bg-gray-50">
+            <p className="text-xs text-gray-400">Last updated: Today</p>
+            <div className="flex items-center gap-2">
+              <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Share">
+                <Share2 className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Print">
+                <Printer className="w-4 h-4" />
+              </button>
+              <button className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors" title="Flag">
+                <Flag className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

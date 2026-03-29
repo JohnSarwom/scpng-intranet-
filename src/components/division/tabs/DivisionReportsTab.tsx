@@ -301,7 +301,7 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
         if (!graphClient) { setScheduleLoading(false); return; }
         const opsService = new SharePointOpsService(graphClient);
         await opsService.initialize();
-        const existing = await opsService.getReportSchedule(userContext.email);
+        const existing = await opsService.getReportSchedule(userContext.email, 'division');
         if (existing) {
           setScheduleActive(existing.IsActive === 'true');
           setSchedulePeriod((existing.TimePeriod as ReportTimePeriod) || 'weekly');
@@ -351,7 +351,8 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
         userEmail: targetEmail,
         userName: targetName,
         division: data.division?.name || userContext.division || '',
-        unit: data.division?.name || '',
+        unit: '',
+        scope: 'division',
         timePeriod: schedulePeriod,
         categories: scheduleCategories,
         isActive: scheduleActive,

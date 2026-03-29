@@ -18,6 +18,12 @@ Feature-specific documentation and business logic.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.
 - **[Performance](modules/performance/)**: KRAs, KPIs, and Initiatives.
 - **[Leave Application](modules/leave-application/)**: Employee leave management system.
+- **[Meeting Minutes](modules/meeting-minutes/overview.md)**: In-browser meeting minutes generator with Word and PDF export.
+  - **[Template Structure](modules/meeting-minutes/template-structure.md)**: Placeholder map and loop syntax for the Word template.
+  - **[Word Export Logic](modules/meeting-minutes/word-export-logic.md)**: docxtemplater service architecture and payload mapping.
+  - **[HTML Preview](modules/meeting-minutes/html-preview.md)**: Live preview component design and PDF export notes.
+  - **[Errors & Fixes](modules/meeting-minutes/errors-and-fixes.md)**: Full error log with root causes and resolutions.
+  - **[History](modules/meeting-minutes/history.md)**: Chronological development timeline.
 
 ### 🎨 [UI Library](ui/)
 Documentation for global, reusable premium components.

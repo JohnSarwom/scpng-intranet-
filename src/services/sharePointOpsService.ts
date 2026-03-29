@@ -6,7 +6,14 @@
 import { Client } from '@microsoft/microsoft-graph-client';
 import { Task, Project, KRA, Kpi, Objective, Risk, FilterScope, UserContext, TaskGroup } from '@/types';
 import { ChecklistItem } from '@/components/ChecklistSection';
-import { Report } from '@/types/reports';
+interface Report {
+    id: string;
+    name: string;
+    template_id: string;
+    created_by: string;
+    date_range: { start_date: string; end_date: string };
+    content: Record<string, any>;
+}
 import { Logger } from '@/utils/logger';
 import { WorkPlan, WorkPlanGoal } from '@/types/division.types';
 
@@ -105,6 +112,7 @@ export class SharePointOpsService {
                 this.ensureCustomDateColumns().catch(err =>
                     console.warn('⚠️ [SP Ops] Auto-ensure custom date columns failed (non-blocking):', err.message)
                 );
+
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
                 this.initializationPromise = null; // Reset on error
@@ -207,6 +215,7 @@ export class SharePointOpsService {
             console.warn('⚠️ [SP Ops] Failed to check/create OwnerEmail on TaskGroups:', err.message);
         }
     }
+
 
     private async ensureCustomDateColumns(): Promise<void> {
         const listId = this.listIds['REPORT_SCHEDULES'];
@@ -1864,7 +1873,7 @@ export class SharePointOpsService {
             .delete();
     }
 
-    async getReportSchedule(userEmail: string): Promise<any | null> {
+    async getReportSchedule(userEmail: string, scope?: 'unit' | 'division'): Promise<any | null> {
         if (!this.listIds['REPORT_SCHEDULES']) {
             try { await this.createReportSchedulesList(); } catch { return null; }
         }
@@ -1872,18 +1881,25 @@ export class SharePointOpsService {
         if (!listId) return null;
 
         try {
+            // Fetch all and filter in JS — avoids OData non-indexed column restrictions
             const response = await this.client
                 .api(`/sites/${this.siteId}/lists/${listId}/items`)
-                .filter(`fields/UserEmail eq '${userEmail}'`)
                 .expand('fields')
-                .top(1)
+                .top(500)
                 .get();
 
-            if (response.value && response.value.length > 0) {
-                const item = response.value[0];
-                return { id: item.id, ...item.fields };
-            }
-            return null;
+            const items: any[] = (response.value || []).map((item: any) => ({ id: item.id, ...item.fields }));
+
+            const match = items.find(item => {
+                const emailMatch = (item.UserEmail || '').toLowerCase() === userEmail.toLowerCase();
+                if (!emailMatch) return false;
+                // Division schedules have Unit=''; unit schedules have a Unit value
+                if (scope === 'division') return !item.Unit;
+                if (scope === 'unit') return !!item.Unit;
+                return true;
+            });
+
+            return match || null;
         } catch (e) {
             console.error('[SP Ops] Failed to get report schedule:', e);
             return null;
@@ -1908,6 +1924,7 @@ export class SharePointOpsService {
         customIntervalDays?: string;
         isOneTime?: boolean;
         itemId?: string;
+        scope?: 'unit' | 'division';
     }): Promise<any> {
         if (!this.listIds['REPORT_SCHEDULES']) {
             await this.createReportSchedulesList();
@@ -1959,8 +1976,8 @@ export class SharePointOpsService {
             return { id: schedule.itemId, ...fields };
         }
 
-        // Otherwise check if a schedule already exists for this user (first match)
-        const existing = await this.getReportSchedule(schedule.userEmail);
+        // Otherwise check if a schedule already exists for this user+scope combination
+        const existing = await this.getReportSchedule(schedule.userEmail, schedule.scope || 'unit');
 
         if (existing) {
             // Update

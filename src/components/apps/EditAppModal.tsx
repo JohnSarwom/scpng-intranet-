@@ -39,17 +39,21 @@ interface EditAppModalProps {
 }
 
 const CATEGORIES = [
-    'Microsoft 365',
     'SCPNG Apps',
-    'AI Apps',
+    'Microsoft 365',
+    'National Portals',
+    'Finance Systems',
     'Legal Apps',
+    'Document Utilities',
+    'Media Optimization',
+    'File Conversion',
+    'AI Apps',
+    'External Services',
+    'HR Systems',
     'Productivity',
     'Communication',
     'Utilities',
     'Custom',
-    'HR Systems',
-    'Finance Systems',
-    'External Services',
 ];
 
 export const EditAppModal: React.FC<EditAppModalProps> = ({ isOpen, onClose, onSuccess, app }) => {

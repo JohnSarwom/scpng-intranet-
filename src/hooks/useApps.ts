@@ -18,6 +18,7 @@ interface UseAppsReturn {
   refetch: () => Promise<void>;
   getAppsByCategory: (category: string) => SharePointApp[];
   getAppById: (appId: string) => SharePointApp | undefined;
+  addApplication: (app: Omit<SharePointApp, 'id'>) => Promise<SharePointApp>;
 }
 
 export const useApps = (): UseAppsReturn => {
@@ -81,6 +82,23 @@ export const useApps = (): UseAppsReturn => {
     refetch: async () => { await query.refetch(); },
     getAppsByCategory,
     getAppById,
+    addApplication: async (app: Omit<SharePointApp, 'id'>) => {
+      if (!account) throw new Error('No account found');
+      
+      const response = await instance.acquireTokenSilent({
+        scopes: ['Sites.FullControl.All', 'Sites.ReadWrite.All'],
+        account: account,
+      });
+
+      const client = Client.init({
+        authProvider: (done) => {
+          done(null, response.accessToken);
+        },
+      });
+
+      const service = new AppsSharePointService(client);
+      return await service.addApplication(app);
+    },
   };
 };
 

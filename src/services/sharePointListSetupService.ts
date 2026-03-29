@@ -3972,7 +3972,7 @@ export class SharePointListSetupService {
                                 AssignedToEmail: user.email,
                                 AssignedDate: new Date().toISOString().split('T')[0],
                                 Unit: user.department || '',
-                                Division: user.division || 'General', 
+                                Division: user.officeLocation || 'General', 
                                 [divisionIdField]: user.divisionId || '', // Dynamically use the resolved field name
                                 PurchaseCost: template.purchase_cost.toString(),
                                 IsDeleted: false,
@@ -4185,6 +4185,62 @@ export class SharePointListSetupService {
             console.error('❌ [Setup] Bulk purge failed:', error);
             throw error;
         }
+    }
+
+    /**
+     * Set up Meeting Minutes infrastructure (Document Library + Registry List)
+     */
+    async setupMeetingMinutesInfrastructure(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Setting up Meeting Minutes infrastructure...');
+        try {
+            const results = { library: null as any, registry: null as any };
+            
+            // 1. Create Document Library for Drafts
+            console.log('   Starting Library creation...');
+            results.library = await this.createMeetingMinutesDraftsLibrary();
+            console.log('✅ [Setup] Meeting Minutes Drafts library ready');
+
+            // 2. Create Registry List
+            console.log('   Starting Registry List creation...');
+            results.registry = await this.createMeetingMinutesRegistryList();
+            console.log('✅ [Setup] Meeting Minutes Registry list ready');
+
+            return {
+                success: true,
+                message: "Meeting Minutes infrastructure created successfully.",
+                details: results
+            };
+        } catch (error: any) {
+            console.error('❌ Meeting Minutes setup failed:', error);
+            const errorMsg = error.response?.data?.error?.message || error.message || "Unknown error";
+            return { success: false, message: `Setup failed: ${errorMsg}`, details: error };
+        }
+    }
+
+    private async createMeetingMinutesDraftsLibrary() {
+        return await this.createList(
+            'Meeting_Minutes_Drafts',
+            'Storage for meeting minutes Word drafts and shared documents',
+            [],
+            'documentLibrary'
+        );
+    }
+
+    private async createMeetingMinutesRegistryList() {
+        return await this.createList(
+            'Meeting_Minutes_Registry',
+            'Registry for tracking meeting metadata and session status',
+            [
+                { name: 'MeetingID', text: {} },
+                { name: 'MeetingDate', dateTime: { format: 'dateOnly' } },
+                { name: 'Facilitator', text: {} },
+                { name: 'Venue', text: {} },
+                { name: 'Status', choice: { choices: ['Draft', 'Shared', 'Finalized'] } },
+                // Use allowMultipleLines for URLs to avoid the 255 char limit of single-line text
+                { name: 'DocumentUrl', text: { allowMultipleLines: true } },
+                { name: 'AttendeesJSON', text: { allowMultipleLines: true } }
+            ]
+        );
     }
 }
 

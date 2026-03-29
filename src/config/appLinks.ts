@@ -148,7 +148,15 @@ export const microsoft365Apps: AppLink[] = [
 ];
 
 export const customApps: AppLink[] = [
-  // Add your custom internal apps here
+  {
+    id: 'meeting-minutes',
+    name: 'Meeting Minutes',
+    description: 'Official SCPNG collaborative meeting minutes generator and registry.',
+    icon: '📄',
+    url: '/meeting-minutes',
+    category: 'SCPNG Apps',
+    isExternal: false
+  }
 ];
 
 export const allApps = [...microsoft365Apps, ...customApps];

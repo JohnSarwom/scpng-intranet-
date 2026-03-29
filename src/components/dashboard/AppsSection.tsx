@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ExternalLink, Plus, Grid3x3, Loader2, AlertCircle, RefreshCw, Pencil } from 'lucide-react';
+import { ExternalLink, Plus, Grid3x3, Loader2, AlertCircle, RefreshCw, Pencil, Database, CloudUpload } from 'lucide-react';
 import { microsoft365Apps, customApps } from '@/config/appLinks';
 import { AppLink } from '@/types/apps';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ import { EditAppModal } from '@/components/apps/EditAppModal';
 import { AppDetailsModal } from '@/components/apps/AppDetailsModal';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { AppGridSkeleton } from '@/components/dashboard/AppGridSkeleton';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppCardProps {
   app: AppLink;
@@ -115,9 +116,33 @@ const AppsSection: React.FC = () => {
 
   // Check if user is admin
   const { isAdmin } = useRoleBasedAuth();
+  const { toast } = useToast();
 
   // Fetch apps from SharePoint
-  const { apps: sharePointApps, categories, loading, error, refetch } = useApps();
+  const { apps: sharePointApps, categories, loading, error, refetch, addApplication } = useApps();
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  const sortedCategories = useMemo(() => {
+    // Definitive sort order for categories
+    const order = [
+      'SCPNG Apps',
+      'Microsoft 365',
+      'Finance Systems',
+      'Legal Apps',
+      'AI Apps',
+      'HR Systems',
+      'Productivity',
+      'Communication',
+      'Utilities',
+      'External Services',
+      'National Portals',
+      'Document Utilities',
+      'Media Optimization',
+      'File Conversion',
+      'Custom'
+    ];
+    return order;
+  }, []);
 
   // Convert SharePoint apps to AppLink format
   const convertedSharePointApps: AppLink[] = useMemo(() => {
@@ -169,10 +194,89 @@ const AppsSection: React.FC = () => {
     return grouped;
   }, [allApps]);
 
-  // Get available categories (from SharePoint or static)
   const availableCategories = useSharePoint && categories.length > 0
     ? categories
     : Array.from(new Set(allApps.map(app => app.category))).sort();
+
+  const handleCopyData = () => {
+    try {
+      const dataStr = JSON.stringify(allApps, null, 2);
+      navigator.clipboard.writeText(dataStr);
+      toast({
+        title: "Data Copied",
+        description: "Application backend data has been copied to clipboard as JSON.",
+      });
+    } catch (err) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy data to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const bulkApps = [
+    { appId: 'meeting-minutes', name: 'Meeting Minutes', description: 'Official SCPNG collaborative meeting minutes generator and registry.', icon: '📄', url: '/meeting-minutes', category: 'SCPNG Apps', isExternal: false }
+  ];
+
+  const handleBulkDeploy = async () => {
+    setIsDeploying(true);
+    let successCount = 0;
+    let skipCount = 0;
+    let failCount = 0;
+
+    try {
+      const existingAppIds = new Set(sharePointApps.map(app => app.appId));
+      
+      for (let i = 0; i < bulkApps.length; i++) {
+        const appData = bulkApps[i];
+        
+        if (existingAppIds.has(appData.appId)) {
+          skipCount++;
+          continue;
+        }
+
+        try {
+          await addApplication({
+            appId: appData.appId,
+            title: appData.name,
+            description: appData.description,
+            icon: appData.icon,
+            appUrl: appData.url,
+            category: appData.category,
+            isExternal: appData.isExternal || false,
+            isActive: true,
+            displayOrder: 100 + (i * 10)
+          });
+          successCount++;
+          if (successCount % 5 === 0) {
+            toast({
+              title: "Deploying...",
+              description: `Deployed ${successCount}/${bulkApps.length} apps.`,
+            });
+          }
+        } catch (err) {
+          console.error(`Failed to deploy ${appData.name}:`, err);
+          failCount++;
+        }
+      }
+
+      await refetch();
+      
+      toast({
+        title: "Deployment Complete",
+        description: `Successfully deployed ${successCount} apps. Skipped ${skipCount} existing. Failed ${failCount}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Deployment Failed",
+        description: "An error occurred during bulk deployment.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   return (
     <div className="space-y-4 mb-8">
@@ -201,7 +305,26 @@ const AppsSection: React.FC = () => {
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-2xl font-bold dark:text-gray-100">
               <Grid3x3 className="h-6 w-6 text-intranet-primary" />
-              Apps
+              <span>Apps</span>
+              {isAdmin && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={handleCopyData}
+                    className="p-1 rounded-md text-gray-400 hover:text-intranet-primary hover:bg-intranet-primary/10 transition-colors"
+                    title="Copy Backend Data (JSON)"
+                  >
+                    <Database className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={handleBulkDeploy}
+                    disabled={isDeploying}
+                    className="p-1 rounded-md text-gray-400 hover:text-intranet-primary hover:bg-intranet-primary/10 transition-colors disabled:opacity-50"
+                    title="Deploy Optimized Catalog to Backend"
+                  >
+                    {isDeploying ? <Loader2 className="h-4 w-4 animate-spin" /> : <CloudUpload className="h-4 w-4" />}
+                  </button>
+                </div>
+              )}
             </CardTitle>
             <div className="flex items-center gap-3">
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -259,21 +382,8 @@ const AppsSection: React.FC = () => {
               {selectedCategory === 'all' && (
                 <>
                   {Object.keys(appsByCategory).sort((a, b) => {
-                    const order = [
-                      'SCPNG Apps',
-                      'Microsoft 365',
-                      'Finance Systems',
-                      'Legal Apps',
-                      'External Services',
-                      'AI Apps',
-                      'HR Systems',
-                      'Productivity',
-                      'Communication',
-                      'Utilities',
-                      'Custom'
-                    ];
-                    const indexA = order.indexOf(a);
-                    const indexB = order.indexOf(b);
+                    const indexA = sortedCategories.indexOf(a);
+                    const indexB = sortedCategories.indexOf(b);
 
                     // If both are in the list, sort by index
                     if (indexA !== -1 && indexB !== -1) return indexA - indexB;

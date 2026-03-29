@@ -21,6 +21,7 @@ import {
     Palette,
     MessageSquareText,
     ClipboardList,
+    FilePlus,
     LucideIcon
 } from 'lucide-react';
 
