@@ -234,7 +234,7 @@ const Unit = () => {
       id: obj.id,
       title: obj.title,
       description: obj.description,
-      deliverables: (obj as any).goals || [] // Map goals to deliverables
+      deliverables: (obj as any).kras || []
     }));
   }, [strategyData.objectives]);
 
@@ -263,7 +263,7 @@ const Unit = () => {
   // --- Modified Objective Handlers (Moved Down) ---
   const handleSaveObjective = useCallback(async (objective: Objective) => {
     if (!canEditStrategy) {
-      toast({ title: "Permission Denied", description: "Only Managers can edit Objectives.", variant: "destructive" });
+      toast({ title: "Permission Denied", description: "Only Managers can edit Initiatives.", variant: "destructive" });
       return;
     }
     try {
@@ -272,23 +272,23 @@ const Unit = () => {
       } else {
         await objectivesState.add(objective);
       }
-      toast({ title: "Success", description: "Objective saved to SharePoint." });
+      toast({ title: "Success", description: "Initiative saved to SharePoint." });
     } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Failed to save objective", variant: "destructive" });
+      toast({ title: "Error", description: e.message || "Failed to save initiative", variant: "destructive" });
       throw e;
     }
   }, [objectivesState, canEditStrategy]);
 
   const handleDeleteObjective = useCallback(async (objectiveId: string | number) => {
     if (!canEditStrategy) {
-      toast({ title: "Permission Denied", description: "Only Managers can delete Objectives.", variant: "destructive" });
+      toast({ title: "Permission Denied", description: "Only Managers can delete Initiatives.", variant: "destructive" });
       return;
     }
     try {
       await objectivesState.remove(String(objectiveId));
-      toast({ title: "Success", description: "Objective deleted from SharePoint." });
+      toast({ title: "Success", description: "Initiative deleted from SharePoint." });
     } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Failed to delete objective", variant: "destructive" });
+      toast({ title: "Error", description: e.message || "Failed to delete initiative", variant: "destructive" });
       throw e;
     }
   }, [objectivesState, canEditStrategy]);
@@ -755,7 +755,7 @@ const Unit = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {objectivesError && <p>Objectives Error: {objectivesError.message}</p>}
+            {objectivesError && <p>Initiatives Error: {objectivesError.message}</p>}
             {taskState.error && <p>Tasks Error: {taskState.error.message}</p>}
             {projectState.error && <p>Projects Error: {projectState.error.message}</p>}
             {kraState.error && <p>KRAs Error: {kraState.error.message}</p>}
@@ -769,7 +769,7 @@ const Unit = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <TabsList className="dark:bg-gray-800/50 dark:border-white/10 border p-1">
               <TabsTrigger value="tasks" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Tasks & Daily Operations</TabsTrigger>
-              <TabsTrigger value="kras-objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">KRAs & Objectives</TabsTrigger>
+              <TabsTrigger value="kras-objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">KRAs & Initiatives</TabsTrigger>
               <TabsTrigger value="projects" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Projects</TabsTrigger>
               <TabsTrigger value="overview" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Overview</TabsTrigger>
               {canViewStaffMetrics && (
@@ -815,7 +815,7 @@ const Unit = () => {
                     className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg"
                   >
                     {isDataLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-2 h-3.5 w-3.5" />}
-                    {kraSectionTab === 'objectives' ? 'Add Objective' : 'Add KRA'}
+                    {kraSectionTab === 'objectives' ? 'Add Initiative' : 'Add KRA'}
                   </Button>
                 </div>
               )}

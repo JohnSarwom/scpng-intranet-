@@ -9,13 +9,13 @@ import EditAssetModal from './modals/EditAssetModal';
 import TableErrorMessage from '@/components/TableErrorMessage';
 import { StaffMember, divisions, staffMembers } from '@/data/divisions';
 import { units } from '@/data/units';
-import { UserAsset } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
 
 interface AssetsTabProps {
-  assets: UserAsset[];
-  addAsset: (asset: Omit<UserAsset, 'id'>) => void;
-  editAsset: (id: string, asset: Partial<UserAsset>) => void;
-  deleteAsset?: (id: string) => void;
+  assets: Asset[];
+  addAsset: (asset: Omit<Asset, 'id'>) => void;
+  editAsset: (id: string | number, asset: Partial<Asset>) => void;
+  deleteAsset?: (id: string | number) => void;
   error?: Error | null;
   onRetry?: () => void;
   staffMembers?: StaffMember[]; // Prop kept for compatibility if needed elsewhere
@@ -31,9 +31,9 @@ export const AssetsTab: React.FC<AssetsTabProps> = ({
 }) => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<UserAsset | null>(null);
+  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
 
-  const handleEdit = (asset: UserAsset) => {
+  const handleEdit = (asset: Asset) => {
     setSelectedAsset(asset);
     setShowEditModal(true);
   };
@@ -56,17 +56,22 @@ export const AssetsTab: React.FC<AssetsTabProps> = ({
     }
   };
 
-  const getStatusBadge = (status: string | undefined) => {
-    if (!status) return <Badge variant="outline">Unknown</Badge>;
-    switch (status.toLowerCase()) {
+  const getConditionBadge = (condition: string | undefined) => {
+    if (!condition) return <Badge variant="outline">Unknown</Badge>;
+    switch (condition.toLowerCase()) {
       case 'active':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/30">Active</Badge>;
+      case 'good':
+      case 'excellent':
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/30">{condition}</Badge>;
       case 'maintenance':
-        return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/30">Maintenance</Badge>;
+      case 'fair':
+      case 'poor':
+        return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800/30">{condition}</Badge>;
       case 'retired':
-        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:border-white/10">Retired</Badge>;
+      case 'decommissioned':
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:border-white/10">{condition}</Badge>;
       default:
-        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:border-white/10">{status}</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:border-white/10">{condition}</Badge>;
     }
   };
 
@@ -106,7 +111,7 @@ export const AssetsTab: React.FC<AssetsTabProps> = ({
                 <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Name</TableHead>
                 <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Type</TableHead>
                 <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Assigned To</TableHead>
-                <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Status</TableHead>
+                <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Condition</TableHead>
                 <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Purchase Date</TableHead>
                 <TableHead className="dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Warranty Expiry</TableHead>
                 <TableHead className="text-right dark:text-gray-400 font-bold uppercase text-[10px] tracking-wider">Actions</TableHead>
@@ -127,7 +132,7 @@ export const AssetsTab: React.FC<AssetsTabProps> = ({
                     <TableCell className="font-medium dark:text-gray-300">{asset.name}</TableCell>
                     <TableCell>{getTypeBadge(asset.type)}</TableCell>
                     <TableCell className="dark:text-gray-400">{asset.assigned_to || asset.assigned_to_email || 'Unassigned'}</TableCell>
-                    <TableCell>{getStatusBadge(asset.status)}</TableCell>
+                    <TableCell>{getConditionBadge(asset.condition)}</TableCell>
                     <TableCell className="dark:text-gray-400">{formatDate(asset.purchase_date)}</TableCell>
                     <TableCell className="dark:text-gray-400">{formatDate(asset.warranty_expiry_date)}</TableCell>
                     <TableCell className="text-right">
@@ -167,15 +172,15 @@ export const AssetsTab: React.FC<AssetsTabProps> = ({
           onClose={() => setShowEditModal(false)}
           asset={selectedAsset}
           onEdit={(editedAsset) => {
-            editAsset(selectedAsset.id, editedAsset);
+            editAsset(selectedAsset.id!, editedAsset);
             setShowEditModal(false);
           }}
           onDelete={deleteAsset ? () => {
             if (deleteAsset) {
-              deleteAsset(selectedAsset.id);
-              setShowEditModal(false);
+              deleteAsset(selectedAsset.id!);
+              setShowEditModal(true); // Close the modal handled by the parent
             }
-          } : () => {}}
+          } : undefined}
           divisions={divisions}
           units={units}
           staffMembers={staffMembers}

@@ -4,16 +4,16 @@ import {
   Task, 
   Project,
   Risk, 
-  UserAsset,
   TaskFilterState,
   RiskFilterState,
   AssetFilterState
 } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
+import { useAssetsSharePoint } from '@/hooks/useAssetsSharePoint';
 import { 
   mockTasks, 
   mockRisks, 
-  mockKras, 
-  mockAssets 
+  mockKras
 } from '@/data/mockData';
 
 // Context type definition
@@ -22,12 +22,12 @@ interface UnitContextType {
   tasks: Task[];
   risks: Risk[];
   kras: KRA[];
-  assets: UserAsset[];
+  assets: Asset[];
 
   // Filtered data
   filteredTasks: Task[];
   filteredRisks: Risk[];
-  filteredAssets: UserAsset[];
+  filteredAssets: Asset[];
   
   // Filters
   taskFilters: TaskFilterState;
@@ -43,7 +43,7 @@ interface UnitContextType {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   setRisks: React.Dispatch<React.SetStateAction<Risk[]>>;
   setKras: React.Dispatch<React.SetStateAction<KRA[]>>;
-  setAssets: React.Dispatch<React.SetStateAction<UserAsset[]>>;
+  setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
   
   // Loading state
   isLoading: boolean;
@@ -69,8 +69,11 @@ export const UnitProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [risks, setRisks] = useState<Risk[]>([]);
   const [filteredRisks, setFilteredRisks] = useState<Risk[]>([]);
   const [kras, setKras] = useState<KRA[]>([]);
-  const [assets, setAssets] = useState<UserAsset[]>([]);
-  const [filteredAssets, setFilteredAssets] = useState<UserAsset[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
+
+  // SharePoint Assets Hook
+  const { assets: spAssets, loading: assetsLoading, error: assetsError } = useAssetsSharePoint();
   
   // Initialize filter states
   const [taskFilters, setTaskFilters] = useState<TaskFilterState>({
@@ -103,8 +106,7 @@ export const UnitProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRisks(mockRisks);
       setFilteredRisks(mockRisks);
       setKras(mockKras);
-      setAssets(mockAssets);
-      setFilteredAssets(mockAssets);
+      // Assets are now managed by the SharePoint hook effect below
       setIsLoading(false);
     } catch (err) {
       console.error("Error loading initial data:", err);
@@ -112,6 +114,21 @@ export const UnitProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false);
     }
   }, []);
+
+  // Update assets when SharePoint data changes
+  useEffect(() => {
+    if (!assetsLoading && spAssets) {
+      setAssets(spAssets);
+      setFilteredAssets(spAssets);
+    }
+  }, [spAssets, assetsLoading]);
+
+  // Update error from SharePoint if it occurs
+  useEffect(() => {
+    if (assetsError) {
+      setError(assetsError.message);
+    }
+  }, [assetsError]);
   
   // Filter tasks when filter state changes
   useEffect(() => {
@@ -189,15 +206,19 @@ export const UnitProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     
     if (assetFilters.status !== 'all') {
-      filtered = filtered.filter(asset => asset.status === assetFilters.status);
+      // Mapping 'status' filter to 'condition' for SharePoint compatibility
+      filtered = filtered.filter(asset => 
+        asset.condition?.toLowerCase() === assetFilters.status.toLowerCase()
+      );
     }
     
+    // Note: department and assignedTo filtering might need adjustment for SharePoint schema
     if (assetFilters.department !== 'all') {
-      filtered = filtered.filter(asset => asset.department === assetFilters.department);
+      filtered = filtered.filter(asset => asset.division === assetFilters.department);
     }
     
     if (assetFilters.assignedTo !== 'all') {
-      filtered = filtered.filter(asset => asset.assignedTo === assetFilters.assignedTo);
+      filtered = filtered.filter(asset => asset.assigned_to === assetFilters.assignedTo);
     }
     
     setFilteredAssets(filtered);
@@ -257,4 +278,4 @@ export const useUnitContext = () => {
   return context;
 };
 
-export default UnitContext; 
+export default UnitContext;

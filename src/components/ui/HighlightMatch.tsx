@@ -7,30 +7,33 @@ interface HighlightMatchProps {
 }
 
 const HighlightMatch: React.FC<HighlightMatchProps> = ({ text, searchTerm, className }) => {
-  if (!searchTerm || !text) {
-    return <span className={className}>{text || 'N/A'}</span>; // Return original text if no search term or text
+  const stringText = String(text || '');
+  const stringSearchTerm = String(searchTerm || '');
+
+  if (!stringSearchTerm || !stringText) {
+    return <span className={className}>{stringText || 'N/A'}</span>;
   }
 
-  const lowerText = text.toLowerCase();
-  const lowerSearchTerm = searchTerm.toLowerCase();
+  const lowerText = stringText.toLowerCase();
+  const lowerSearchTerm = stringSearchTerm.toLowerCase();
   const parts: React.ReactNode[] = [];
   let lastIndex = 0;
 
-  while (lastIndex < text.length) {
+  while (lastIndex < stringText.length) {
     const index = lowerText.indexOf(lowerSearchTerm, lastIndex);
 
     if (index === -1) {
-      parts.push(<span key={lastIndex}>{text.substring(lastIndex)}</span>);
+      parts.push(<span key={lastIndex}>{stringText.substring(lastIndex)}</span>);
       break; // No more matches
     }
 
     // Add the part before the match
     if (index > lastIndex) {
-      parts.push(<span key={`pre-${lastIndex}`}>{text.substring(lastIndex, index)}</span>);
+      parts.push(<span key={`pre-${lastIndex}`}>{stringText.substring(lastIndex, index)}</span>);
     }
 
     // Add the highlighted match
-    const match = text.substring(index, index + searchTerm.length);
+    const match = stringText.substring(index, index + stringSearchTerm.length);
     parts.push(
       <span key={index} className="bg-yellow-200 font-semibold">
         {match}

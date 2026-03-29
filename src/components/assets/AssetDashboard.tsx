@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowUpRight, ArrowDownRight, Bell, LayoutList, ChevronRight, ChevronUp, Loader2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Bell, LayoutList, ChevronRight, ChevronUp, Loader2, Database } from "lucide-react";
 import { formatCurrency, cn, formatDate, formatRelativeTime } from "@/lib/utils";
-import { supabase } from '@/lib/supabaseClient'; // Assuming supabase client is here
-import { RealtimeChannel } from '@supabase/supabase-js';
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,514 +19,189 @@ import {
   Legend,
   BarChart,
   Bar
-} from 'recharts'; // Import recharts components and PieChart components
+} from 'recharts';
+import { useAssetsSharePoint } from "@/hooks/useAssetsSharePoint";
+import { useAssetSubSharePoint } from "@/hooks/useAssetSubSharePoint";
 
-// Define an interface for the summary data
-interface DashboardSummary {
-  total_purchase_cost: number | null;
-  total_active_assets: number | null;
-  total_distinct_active_types: number | null;
-  total_depreciated_value: number | null;
-  total_recent_purchase_cost: number | null;
-  total_recent_assets: number | null;
-  total_recent_distinct_types: number | null;
-}
-
-// Define an interface for the time series data point
-interface TimeSeriesDataPoint {
-  report_date: string; // Assuming YYYY-MM-DD format from the view
-  cumulative_purchase_cost: number;
-}
-
-// Define interface for depreciation breakdown data
-interface DepreciationByTypeDataPoint {
-  asset_type: string;
-  total_depreciated_value_for_type: number;
-}
-
-// Define interface for monthly acquisition cost data
-interface MonthlyAcquisitionDataPoint {
-  month: string; // e.g., 'Jan', 'Feb', 'Mar', etc.
-  total_acquisition: number | null;
-}
-
-interface RecentlyAssignedAsset {
-  id: number;
-  name: string | null;
-  image_url: string | null;
-  assigned_date: string | null; // Comes as date string
-  assigned_to: string | null;
-}
-
-interface RecentlyDamagedAsset {
-  id: number;
-  name: string | null;
-  image_url: string | null;
-  last_updated: string | null; // Comes as timestamp string
-  assigned_to: string | null;
-}
+// --- Colors for Donut Chart ---
+const DONUT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export function AssetDashboard() {
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [timeSeriesData, setTimeSeriesData] = useState<TimeSeriesDataPoint[]>([]); // State for chart data
-  const [depreciationByTypeData, setDepreciationByTypeData] = useState<DepreciationByTypeDataPoint[]>([]); // State for donut chart data
-  const [monthlyAcquisitionData, setMonthlyAcquisitionData] = useState<MonthlyAcquisitionDataPoint[]>([]); // State for bar chart
-  const [recentlyAssignedAssets, setRecentlyAssignedAssets] = useState<RecentlyAssignedAsset[]>([]);
-  const [recentlyDamagedAssets, setRecentlyDamagedAssets] = useState<RecentlyDamagedAsset[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [loadingChart, setLoadingChart] = useState<boolean>(true); // Separate loading for chart
-  const [loadingDonut, setLoadingDonut] = useState<boolean>(true); // Separate loading for donut
-  const [loadingMonthlyAcquisitionChart, setLoadingMonthlyAcquisitionChart] = useState<boolean>(true); // Separate loading for bar chart
-  const [loadingAssigned, setLoadingAssigned] = useState<boolean>(true);
-  const [loadingDamaged, setLoadingDamaged] = useState<boolean>(true);
-  const [monthlyAcquisitionChartError, setMonthlyAcquisitionChartError] = useState<string | null>(null); // Specific error for bar chart
-  const [assignedError, setAssignedError] = useState<string | null>(null);
-  const [damagedError, setDamagedError] = useState<string | null>(null);
+  const { assets, loading: loadingAssets, error: assetsError, refresh: refreshAssets } = useAssetsSharePoint();
+  const { useMaintenance, useInvoices, refreshMaintenance, refreshInvoices } = useAssetSubSharePoint();
+  
+  const { data: maintenanceRecords = [], isLoading: loadingMaint } = useMaintenance();
+  const { data: invoiceRecords = [], isLoading: loadingInvoices } = useInvoices();
 
-  const fetchSummary = async () => {
-    setLoading(true);
-    console.log("Fetching summary data...");
-    try {
-      const { data, error: viewError } = await supabase
-        .from('dashboard_total_value_summary')
-        .select('*')
-        .single(); // Use .single() as the view should return only one row
+  const loading = loadingAssets || loadingMaint || loadingInvoices;
+  const error = assetsError?.message;
 
-      if (viewError) {
-        throw viewError;
-      }
-
-      if (data) {
-        console.log("Summary data fetched:", data);
-        setSummary(data);
-      } else {
-        console.log("No summary data found.");
-        setSummary({
-          total_purchase_cost: 0,
-          total_active_assets: 0,
-          total_distinct_active_types: 0,
-          total_depreciated_value: 0,
-          total_recent_purchase_cost: 0,
-          total_recent_assets: 0,
-          total_recent_distinct_types: 0
-        });
-      }
-      setError(null);
-    } catch (err: any) {
-      console.error("Error fetching dashboard summary:", err);
-      setError(err.message || "Failed to fetch summary data.");
-      setSummary(null); // Clear summary on error
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // New function to fetch time series data
-  const fetchTimeSeriesData = async () => {
-    setLoadingChart(true);
-    console.log("Fetching time series data...");
-    try {
-      const { data, error: seriesError } = await supabase
-        .from('dashboard_daily_value_timeseries')
-        .select('report_date, cumulative_purchase_cost')
-        .order('report_date', { ascending: true });
-
-      if (seriesError) throw seriesError;
-
-      if (data) {
-        console.log("Time series data fetched:", data.length, "points");
-        setTimeSeriesData(data);
-      } else {
-        console.log("No time series data found.");
-        setTimeSeriesData([]);
-      }
-      // Don't reset main error here
-    } catch (err: any) {
-      console.error("Error fetching time series data:", err);
-      setError(prev => prev || err.message || "Failed to fetch time series data."); // Keep existing error if any
-      setTimeSeriesData([]);
-    } finally {
-      // Only set chart loading false when both fetches are potentially done (handled in useEffect)
-    }
-  };
-
-  // New function to fetch depreciation breakdown data
-  const fetchDepreciationData = async () => {
-    setLoadingDonut(true);
-    console.log("Fetching depreciation by type data...");
-    try {
-      const { data, error: donutError } = await supabase
-        .from('dashboard_depreciation_by_type')
-        .select('asset_type, total_depreciated_value_for_type')
-        .order('total_depreciated_value_for_type', { ascending: false });
-
-      if (donutError) throw donutError;
-
-      if (data) {
-        console.log("Depreciation data fetched:", data.length, "types");
-        setDepreciationByTypeData(data);
-      } else {
-        console.log("No depreciation data found.");
-        setDepreciationByTypeData([]);
-      }
-    } catch (err: any) {
-      console.error("Error fetching depreciation data:", err);
-      setError(prev => prev || err.message || "Failed to fetch depreciation data.");
-      setDepreciationByTypeData([]);
-    } finally {
-      // Loading state handled in fetchAllData
-    }
-  };
-
-  // Renamed function to fetch monthly acquisition data
-  const fetchMonthlyAcquisitionData = async () => {
-    setLoadingMonthlyAcquisitionChart(true);
-    setMonthlyAcquisitionChartError(null); // Clear previous error
-    console.log("Fetching monthly acquisition cost data...");
-    try {
-      // Fetch from the new Supabase view for the current year
-      const { data, error: acquisitionError } = await supabase
-        .from('dashboard_monthly_acquisition_cost') // Query the new view
-        .select('month, total_acquisition')
-        .order('month', { ascending: true }); // Ensure correct month order (Jan -> Dec relies on the view's ORDER BY)
-
-      if (acquisitionError) {
-        throw acquisitionError;
-      }
-
-      console.log("Monthly acquisition cost data fetched:", data?.length ?? 0, "points");
-      setMonthlyAcquisitionData(data || []); // Set state with fetched data or empty array
-
-    } catch (err: any) {
-      console.error("Error fetching monthly acquisition cost data:", err);
-      setMonthlyAcquisitionChartError(err.message || "Failed to fetch monthly acquisition data."); // Set specific error
-      setMonthlyAcquisitionData([]);
-    } finally {
-      // Loading state is handled in fetchAllData
-    }
-  };
-
-  const fetchRecentlyAssignedAssets = async () => {
-    setLoadingAssigned(true);
-    setAssignedError(null);
-    console.log("Fetching recently assigned assets...");
-    try {
-      const { data, error: assignedFetchError } = await supabase
-        .from('dashboard_recently_assigned_assets')
-        .select('id, name, image_url, assigned_date, assigned_to');
-
-      if (assignedFetchError) throw assignedFetchError;
-      console.log("Recently assigned assets fetched:", data?.length ?? 0);
-      setRecentlyAssignedAssets(data || []);
-    } catch (err: any) {
-      console.error("Error fetching recently assigned assets:", err);
-      setAssignedError(err.message || "Failed to fetch assigned assets.");
-      setRecentlyAssignedAssets([]);
-    } finally {
-      // setLoadingAssigned(false); // Handled in fetchAllData
-    }
-  };
-
-  const fetchRecentlyDamagedAssets = async () => {
-    setLoadingDamaged(true);
-    setDamagedError(null);
-    console.log("Fetching recently damaged assets...");
-    try {
-      const { data, error: damagedFetchError } = await supabase
-        .from('dashboard_recently_damaged_assets')
-        .select('id, name, image_url, last_updated, assigned_to');
-
-      if (damagedFetchError) throw damagedFetchError;
-      console.log("Recently damaged assets fetched:", data?.length ?? 0);
-      setRecentlyDamagedAssets(data || []);
-    } catch (err: any) {
-      console.error("Error fetching recently damaged assets:", err);
-      setDamagedError(err.message || "Failed to fetch damaged assets.");
-      setRecentlyDamagedAssets([]);
-    } finally {
-      // setLoadingDamaged(false); // Handled in fetchAllData
-    }
-  };
-
-  // Combined fetch function
-  const fetchAllData = async () => {
-    setLoading(true);
-    setLoadingChart(true);
-    setLoadingDonut(true);
-    setLoadingMonthlyAcquisitionChart(true);
-    setLoadingAssigned(true);
-    setLoadingDamaged(true);
-
-    setError(null);
-    setMonthlyAcquisitionChartError(null);
-    setAssignedError(null);
-    setDamagedError(null);
-
-    try {
-      await Promise.all([
-        fetchSummary(),
-        fetchTimeSeriesData(),
-        fetchDepreciationData(),
-        fetchMonthlyAcquisitionData(),
-        fetchRecentlyAssignedAssets(),
-        fetchRecentlyDamagedAssets()
-      ]);
-    } catch (err) {
-      console.error("Error during combined fetch:", err);
-      // setError("Failed to load some dashboard components.");
-    } finally {
-      setLoading(false);
-      setLoadingChart(false);
-      setLoadingDonut(false);
-      setLoadingMonthlyAcquisitionChart(false);
-      setLoadingAssigned(false);
-      setLoadingDamaged(false);
-    }
-  };
-
-  useEffect(() => {
-    // Fetch initial data for both summary and time series
-    fetchAllData();
-
-    // Set up Realtime subscription
-    const channel: RealtimeChannel = supabase
-      .channel('public:assets')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'assets' },
-        (payload) => {
-          console.log('Change received on assets table! Re-fetching all dashboard data.', payload);
-          // Re-fetch ALL dashboard data when assets table changes
-          fetchAllData();
-        }
-      )
-      .subscribe((status, err) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Subscribed to assets table changes');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Realtime subscription error:', err);
-          setError(prev => `Realtime error: ${err?.message}. ${prev || ''}`);
-        }
-        if (status === 'TIMED_OUT') {
-          console.warn('Realtime subscription timed out.');
-          setError(prev => `Realtime subscription timed out. ${prev || ''}`);
-        }
-      });
-
-    // Cleanup function
-    return () => {
-      console.log("Unsubscribing from assets table changes");
-      supabase.removeChannel(channel);
+  // --- 1. Aggregated Summary Data ---
+  const summary = useMemo(() => {
+    if (!assets.length) return {
+      total_purchase_cost: 0,
+      total_active_assets: 0,
+      total_distinct_active_types: 0,
+      total_depreciated_value: 0,
+      total_recent_purchase_cost: 0,
+      total_recent_assets: 0,
+      total_recent_distinct_types: 0
     };
-  }, []); // Empty dependency array
 
-  // --- Helper to display loading/error/data ---
-  const renderTotalValue = () => {
-    if (loading && !summary) { // Show loading only on initial load
-      return <span className="text-muted-foreground">Loading...</span>;
-    }
-    if (error) {
-      return <span className="text-red-600 text-sm" title={error}>Error</span>;
-    }
-    if (summary?.total_purchase_cost !== null && summary?.total_purchase_cost !== undefined) {
-      return formatCurrency(summary.total_purchase_cost);
-    }
-    return formatCurrency(0); // Default to 0 if null/undefined
-  };
+    const activeAssets = assets.filter(a => !a.is_deleted && a.condition !== 'Decommissioned' && a.condition !== 'Sold');
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    const recentAssets = activeAssets.filter(a => {
+      if (!a.purchase_date) return false;
+      return new Date(a.purchase_date) >= thirtyDaysAgo;
+    });
 
-  const renderTotalAssets = () => {
-    if (loading || error || !summary) return '-';
-    return summary.total_active_assets ?? 0;
-  }
+    const distinctTypes = new Set(activeAssets.map(a => a.type));
+    const recentTypes = new Set(recentAssets.map(a => a.type));
 
-  // Use total_distinct_active_types from the view for the category count
-  const renderCategoryCount = () => {
-    if (loading || error || !summary) return '-';
-    return summary.total_distinct_active_types ?? 0;
-  }
+    return {
+      total_purchase_cost: activeAssets.reduce((sum, a) => sum + (Number(a.purchase_cost) || 0), 0),
+      total_active_assets: activeAssets.length,
+      total_distinct_active_types: distinctTypes.size,
+      total_depreciated_value: activeAssets.reduce((sum, a) => sum + (Number(a.depreciated_value) || 0), 0),
+      total_recent_purchase_cost: recentAssets.reduce((sum, a) => sum + (Number(a.purchase_cost) || 0), 0),
+      total_recent_assets: recentAssets.length,
+      total_recent_distinct_types: recentTypes.size
+    };
+  }, [assets]);
 
-  // --- Helpers for New Acquisitions Card ---
-  const renderRecentAcquisitionValue = () => {
-    if (loading && !summary) return <span className="text-muted-foreground">Loading...</span>;
-    if (error) return <span className="text-red-600 text-sm" title={error}>Error</span>;
-    if (summary?.total_recent_purchase_cost !== null && summary?.total_recent_purchase_cost !== undefined) {
-      return formatCurrency(summary.total_recent_purchase_cost);
-    }
-    return formatCurrency(0);
-  };
+  // --- 2. Time Series Data (Acquisitions over time) ---
+  const timeSeriesData = useMemo(() => {
+    if (!assets.length) return [];
+    
+    const sortedAssets = [...assets]
+      .filter(a => a.purchase_date)
+      .sort((a, b) => new Date(a.purchase_date!).getTime() - new Date(b.purchase_date!).getTime());
 
-  const renderRecentAcquisitionCount = () => {
-    if (loading || error || !summary) return '-';
-    return summary.total_recent_assets ?? 0;
-  };
+    let cumulativeValue = 0;
+    const dataPoints: Record<string, number> = {};
 
-  const renderRecentAcquisitionCategories = () => {
-    if (loading || error || !summary) return '-';
-    return summary.total_recent_distinct_types ?? 0;
-  };
-  // --- End New Acquisitions Helpers ---
+    sortedAssets.forEach(asset => {
+      const dateKey = asset.purchase_date!.split('T')[0];
+      cumulativeValue += (Number(asset.purchase_cost) || 0);
+      dataPoints[dateKey] = cumulativeValue;
+    });
 
-  // --- Helper for Depreciation Card ---
-  const renderTotalDepreciationValue = () => {
-    if (loading && !summary) return <span className="text-muted-foreground">Loading...</span>;
-    if (error) return <span className="text-red-600 text-sm" title={error}>Error</span>;
-    if (summary?.total_depreciated_value !== null && summary?.total_depreciated_value !== undefined) {
-      return formatCurrency(summary.total_depreciated_value);
-    }
-    return formatCurrency(0);
-  };
-  // --- End Depreciation Helper ---
+    return Object.entries(dataPoints).map(([report_date, cumulative_purchase_cost]) => ({
+      report_date,
+      cumulative_purchase_cost
+    })).sort((a, b) => new Date(a.report_date).getTime() - new Date(b.report_date).getTime())
+      .slice(-30);
+  }, [assets]);
 
-  // --- Formatters for Chart Axes/Tooltips ---
-  const formatDateTick = (tickItem: string) => {
-    // Basic formatter, show month and day
-    try {
-      const date = new Date(tickItem + 'T00:00:00'); // Ensure parsing as local date
-      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-    } catch { return tickItem; } // Fallback
-  };
+  // --- 3. Depreciation by Type (Donut) ---
+  const depreciationByTypeData = useMemo(() => {
+    const byType: Record<string, number> = {};
+    assets.forEach(asset => {
+      if (asset.is_deleted) return;
+      const type = asset.type || 'Unknown';
+      byType[type] = (byType[type] || 0) + (Number(asset.depreciated_value) || 0);
+    });
 
-  const formatCurrencyTick = (tickItem: number) => {
-    if (tickItem >= 1000) {
-      return `K${(tickItem / 1000).toFixed(0)}k`;
-    }
-    return `K${tickItem}`;
-  };
+    return Object.entries(byType)
+      .map(([asset_type, total_depreciated_value_for_type]) => ({
+        asset_type,
+        total_depreciated_value_for_type
+      }))
+      .filter(d => d.total_depreciated_value_for_type > 0)
+      .sort((a, b) => b.total_depreciated_value_for_type - a.total_depreciated_value_for_type);
+  }, [assets]);
 
-  const formatTooltipCurrency = (value: number) => {
-    return formatCurrency(value); // Use existing precise formatter
-  };
-  // --- End Chart Formatters ---
+  // --- 4. Monthly Acquisition Trend (Bar) ---
+  const monthlyAcquisitionData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentYear = new Date().getFullYear();
+    const trend = months.map(m => ({ month: m, total_acquisition: 0 }));
 
-  // --- Define Colors for Donut Chart ---
-  const DONUT_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+    assets.forEach(asset => {
+      if (!asset.purchase_date || asset.is_deleted) return;
+      const d = new Date(asset.purchase_date);
+      if (d.getFullYear() === currentYear) {
+        trend[d.getMonth()].total_acquisition += (Number(asset.purchase_cost) || 0);
+      }
+    });
+
+    return trend;
+  }, [assets]);
+
+
+  // --- 7. Upcoming Maintenance (Sorted by Date) ---
+  const upcomingMaintenance = useMemo(() => {
+    return maintenanceRecords
+      .filter(m => m.status === 'Scheduled' && m.scheduled_date)
+      .sort((a, b) => new Date(a.scheduled_date!).getTime() - new Date(b.scheduled_date!).getTime())
+      .slice(0, 5);
+  }, [maintenanceRecords]);
 
   return (
     <Card className="w-full shadow-sm border">
       <CardContent className="p-6 space-y-6">
-        {/* Fixed Header */}
         <div className="shrink-0 space-y-0.5 border-b border-gray-100 dark:border-gray-800 pb-4 mb-2 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-            <p className="text-muted-foreground">Overview of asset metrics and key performance indicators.</p>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Database className="h-6 w-6 text-blue-600" />
+              Asset Dashboard
+            </h2>
+            <p className="text-muted-foreground font-medium text-sm">Unified SharePoint Intelligence</p>
           </div>
+          <Button variant="outline" size="sm" onClick={refreshAll} disabled={loading} className="gap-2 border-primary/20 hover:bg-primary/5 transition-all">
+            <Loader2 className={cn("h-4 w-4", loading && "animate-spin")} />
+            Sync Data
+          </Button>
         </div>
 
         {/* Top Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Total Asset Value Card */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border-l-4 border-l-blue-500 shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total asset value</CardTitle>
-              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+              <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Total Value</CardTitle>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-700">Live</Badge>
             </CardHeader>
             <CardContent>
-              <TooltipWrapper content="Total purchase cost of all active assets (excluding Decommissioned/Sold)">
-                <div className="text-2xl font-bold mb-1">
-                  {renderTotalValue()}
-                  <span className="text-muted-foreground text-sm font-normal">.00</span>
-                </div>
-              </TooltipWrapper>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center text-sm font-medium text-emerald-600">
-                  <ChevronUp className="mr-1 h-4 w-4" />
-                  -
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Compared to last month (TBD)
-                </div>
+              <div className="text-3xl font-extrabold tracking-tight">
+                {formatCurrency(summary.total_purchase_cost)}
               </div>
-              <div className="mt-4 flex items-center justify-between text-sm">
-                <TooltipWrapper content="Total count of active assets (excluding Decommissioned/Sold)">
-                  <div className="flex items-center text-muted-foreground">
-                    <LayoutList className="mr-1 h-4 w-4" />
-                    <span>{renderTotalAssets()} assets</span>
-                  </div>
-                </TooltipWrapper>
-                <div className="flex items-center text-muted-foreground">
-                  <Bell className="mr-1 h-4 w-4" />
-                  <span>{renderCategoryCount()} categories</span>
-                </div>
+              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground font-medium">
+                <span className="flex items-center gap-1.5"><LayoutList className="h-3.5 w-3.5" /> {summary.total_active_assets} Assets</span>
+                <span className="flex items-center gap-1.5"><Bell className="h-3.5 w-3.5" /> {summary.total_distinct_active_types} Categories</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* New Acquisitions Card */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border-l-4 border-l-emerald-500 shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">New acquisitions (30d)</CardTitle>
-              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+              <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-emerald-800/80">Growth (30D)</CardTitle>
+              <ArrowUpRight className="h-4 w-4 text-emerald-600" />
             </CardHeader>
             <CardContent>
-              <TooltipWrapper content="Sum of purchase cost for active assets acquired in the last 30 days">
-                <div className="text-2xl font-bold mb-1">
-                  {renderRecentAcquisitionValue()}
-                  <span className="text-muted-foreground text-sm font-normal">.00</span>
-                </div>
-              </TooltipWrapper>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center text-sm font-medium text-emerald-600">
-                  <ChevronUp className="mr-1 h-4 w-4" />
-                  {0}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Compared to last period (TBD)
-                </div>
+              <div className="text-3xl font-extrabold tracking-tight">
+                {formatCurrency(summary.total_recent_purchase_cost)}
               </div>
-              <div className="mt-4 flex items-center justify-between text-sm">
-                <TooltipWrapper content="Count of active assets acquired in the last 30 days">
-                  <div className="flex items-center text-muted-foreground">
-                    <LayoutList className="mr-1 h-4 w-4" />
-                    <span>{renderRecentAcquisitionCount()} assets</span>
-                  </div>
-                </TooltipWrapper>
-                <div className="flex items-center text-muted-foreground">
-                  <Bell className="mr-1 h-4 w-4" />
-                  <TooltipWrapper content="Count of distinct asset types acquired in the last 30 days">
-                    <span>{renderRecentAcquisitionCategories()} categories</span>
-                  </TooltipWrapper>
-                </div>
+              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground font-medium">
+                <span className="flex items-center gap-1.5"><LayoutList className="h-3.5 w-3.5" /> {summary.total_recent_assets} New Assets</span>
+                <span className="flex items-center gap-1.5 text-emerald-600">Active Cycle</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Depreciation Card */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden border-l-4 border-l-amber-500 shadow-md hover:shadow-lg transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Depreciation</CardTitle>
-              <div className="rounded-md bg-primary-50 px-2 py-1 text-xs">PGK</div>
+              <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-amber-800/80">Asset Lifecycles</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-amber-600" />
             </CardHeader>
             <CardContent>
-              <TooltipWrapper content="Sum of the 'depreciated_value' column for all active assets">
-                <div className="text-2xl font-bold mb-1">
-                  {renderTotalDepreciationValue()}
-                  <span className="text-muted-foreground text-sm font-normal">.00</span>
-                </div>
-              </TooltipWrapper>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center text-sm font-medium text-red-600">
-                  <ArrowDownRight className="mr-1 h-4 w-4" />
-                  {0}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  Compared to last month (TBD)
-                </div>
+              <div className="text-3xl font-extrabold tracking-tight text-amber-700/90">
+                {formatCurrency(summary.total_depreciated_value)}
               </div>
-              <div className="mt-4 flex items-center justify-between text-sm">
-                <div className="flex items-center text-muted-foreground">
-                  <LayoutList className="mr-1 h-4 w-4" />
-                  <TooltipWrapper content="Placeholder - Transaction count not available from this view">
-                    <span>- transactions</span>
-                  </TooltipWrapper>
-                </div>
-                <div className="flex items-center text-muted-foreground">
-                  <Bell className="mr-1 h-4 w-4" />
-                  <TooltipWrapper content="Placeholder - Category count not available from this view">
-                    <span>- categories</span>
-                  </TooltipWrapper>
-                </div>
+              <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground font-medium">
+                <span>Net Book Value:</span>
+                <span className="font-bold text-blue-600">{formatCurrency(summary.total_purchase_cost - summary.total_depreciated_value)}</span>
               </div>
             </CardContent>
           </Card>
@@ -536,309 +209,154 @@ export function AssetDashboard() {
 
         {/* Charts Row */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          {/* Asset Value Overview Chart - Span 8/12 columns on md+ */}
-          <Card className="overflow-hidden md:col-span-8">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">Total asset value overview</CardTitle>
-              <div className="flex items-center space-x-2">
-                <div className="flex items-center space-x-1">
-                  <div className="h-3 w-3 rounded-full bg-primary"></div>
-                  <span className="text-xs">This month</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <div className="h-3 w-3 rounded-full bg-gray-300"></div>
-                  <span className="text-xs">Same period last month</span>
-                </div>
-                <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
-                  Total value <ChevronRight className="ml-1 h-3 w-3" />
-                </div>
-              </div>
+          <Card className="overflow-hidden md:col-span-8 shadow-sm border-gray-100 hover:border-gray-200 transition-colors">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-gray-800">Asset Growth Trend (SharePoint Realtime)</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Conditional Rendering for Chart */}
-              {loadingChart ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                  <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
-                </div>
-              ) : error ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
-                  <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
-                </div>
-              ) : timeSeriesData.length === 0 ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                  <p className="text-sm text-muted-foreground">No time series data available.</p>
-                </div>
-              ) : (
-                <div className="h-[250px] w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={timeSeriesData}
-                      margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                    >
-                      <defs>
-                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.5} />
-                      <XAxis
-                        dataKey="report_date"
-                        tickFormatter={formatDateTick}
-                        tick={{ fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                      />
-                      <YAxis
-                        tickFormatter={formatCurrencyTick}
-                        tick={{ fontSize: 12 }}
-                        axisLine={false}
-                        tickLine={false}
-                        width={80} // Adjust width for labels like K100k
-                      />
-                      <RechartsTooltip
-                        contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
-                        formatter={formatTooltipCurrency}
-                        labelFormatter={formatDateTick}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="cumulative_purchase_cost"
-                        stroke="#8884d8"
-                        fillOpacity={1}
-                        fill="url(#colorValue)"
-                        name="Total Value"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
+              <div className="h-[300px] w-full mt-2">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timeSeriesData}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.1} />
+                    <XAxis dataKey="report_date" tickFormatter={formatDateTick} tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis tickFormatter={formatCurrencyTick} tick={{ fontSize: 10, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                    <RechartsTooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      formatter={(v: number) => [formatCurrency(v), "Cumulative Value"]} 
+                      labelFormatter={formatDateTick} 
+                    />
+                    <Area type="monotone" dataKey="cumulative_purchase_cost" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorValue)" dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Statistics / Depreciation Donut Chart - Span 4/12 columns on md+ */}
-          <Card className="overflow-hidden md:col-span-4">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base font-medium">Depreciation by Type</CardTitle>
-              <div className="flex items-center space-x-2">
-                <div className="rounded-md border px-2 py-1 text-xs font-medium flex items-center">
-                  Details <ChevronRight className="ml-1 h-3 w-3" />
-                </div>
-              </div>
+          <Card className="overflow-hidden md:col-span-4 shadow-sm border-gray-100 hover:border-gray-200 transition-colors">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-gray-800">Value by Category</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Conditional Rendering for Donut Chart */}
-              {loadingDonut ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                  <p className="text-sm text-muted-foreground">Loading Chart Data...</p>
+              <div className="h-[300px] w-full relative">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={depreciationByTypeData}
+                      cx="50%" cy="50%"
+                      innerRadius={65} outerRadius={85}
+                      paddingAngle={5}
+                      dataKey="total_depreciated_value_for_type"
+                      nameKey="asset_type"
+                    >
+                      {depreciationByTypeData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                      formatter={(v: number) => formatCurrency(v)} 
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-4">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest opacity-60">Total</p>
+                  <p className="text-lg font-bold">{formatCurrency(summary.total_depreciated_value)}</p>
                 </div>
-              ) : error ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-red-50 rounded-md">
-                  <p className="text-sm text-red-600" title={typeof error === 'string' ? error : 'Error loading chart'}>Error loading chart data</p>
-                </div>
-              ) : depreciationByTypeData.length === 0 ? (
-                <div className="h-[250px] w-full flex items-center justify-center bg-muted/20 rounded-md">
-                  <p className="text-sm text-muted-foreground">No depreciation data to display.</p>
-                  {/* Optionally show total depreciation value even if breakdown is empty */}
-                  <div className="absolute text-center">
-                    <p className="text-xl font-bold mt-2">{renderTotalDepreciationValue()}</p>
-                    <p className="text-xs text-muted-foreground">Total Depreciation</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="h-[250px] w-full relative"> {/* Added relative positioning */}
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <RechartsTooltip
-                        contentStyle={{ fontSize: '12px', borderRadius: '0.5rem' }}
-                        formatter={(value: number, name: string) => [`${formatCurrency(value)}`, name]}
-                      />
-                      <Pie
-                        data={depreciationByTypeData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        // label={renderCustomizedLabel} // Could add labels if needed
-                        innerRadius={60} // Make it a donut
-                        outerRadius={80}
-                        fill="#8884d8"
-                        paddingAngle={5}
-                        dataKey="total_depreciated_value_for_type"
-                        nameKey="asset_type"
-                      >
-                        {depreciationByTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={DONUT_COLORS[index % DONUT_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      {/* Adjust Legend position */}
-                      <Legend
-                        layout="horizontal" // Changed to horizontal
-                        verticalAlign="bottom" // Changed to bottom
-                        align="center" // Changed to center
-                        iconSize={10}
-                        wrapperStyle={{ fontSize: '12px', lineHeight: '1.5', marginTop: '10px' }} // Add margin top
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Center Text - Display total depreciation from summary */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <p className="text-2xl font-bold">{renderTotalDepreciationValue()}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Total Depreciation</p>
-                  </div>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Bottom Section: Charts and New Info Cards */}
-        {/* Corrected Grid Layout for Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:col-span-2 lg:col-span-3 xl:col-span-4"> {/* Span full width */}
-          {/* Left Column: Monthly Acquisition Cost Chart */}
-          {/* Corrected lg span to 2 */}
-          <Card className="lg:col-span-2 h-full flex flex-col">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              {/* Updated Title */}
-              <CardTitle className="text-sm font-medium">Monthly Acquisition Cost</CardTitle>
-              {/* Updated Filter Button (still placeholder) */}
-              <TooltipWrapper content="Select time period (future feature)">
-                <Button variant="outline" size="sm" className="h-7 text-xs px-2 py-1 cursor-not-allowed opacity-50">
-                  This year
-                  <ChevronRight className="h-3 w-3 ml-1" />
-                </Button>
-              </TooltipWrapper>
+        {/* Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <Card className="lg:col-span-2 shadow-sm border-gray-100">
+            <CardHeader>
+              <CardTitle className="text-base font-bold text-gray-800">Monthly Acquisition Trends ({new Date().getFullYear()})</CardTitle>
             </CardHeader>
-            <CardContent className="pl-2 pr-4 relative flex-grow"> {/* Adjust height and padding */}
-              {/* Use renamed loading state */}
-              {loadingMonthlyAcquisitionChart ? (
-                <div className="flex items-center justify-center h-full text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" />Loading Chart...</div>
-                /* Use renamed error state */
-              ) : monthlyAcquisitionChartError ? (
-                <div className="flex items-center justify-center h-full text-red-600">{monthlyAcquisitionChartError}</div>
-                /* Use renamed data state */
-              ) : monthlyAcquisitionData.length > 0 ? (
-                <>
-                  {/* Adjusted ResponsiveContainer height - no need for bottom text */}
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      /* Use renamed data state */
-                      data={monthlyAcquisitionData}
-                      margin={{ top: 25, right: 5, left: 20, bottom: 5 }} // Adjusted margins
-                      barCategoryGap="20%" // Space between groups
-                    >
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="month"
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis
-                        tickFormatter={formatCurrencyTick}
-                        tick={{ fontSize: 11 }}
-                        tickLine={false}
-                        axisLine={false}
-                        domain={[0, 'dataMax + 1000']}
-                        width={50} // Give YAxis some space
-                      />
-                      <RechartsTooltip
-                        contentStyle={{ fontSize: 12, borderRadius: '4px', border: '1px solid #ccc' }}
-                        /* Updated formatter for single value */
-                        formatter={(value: number | null) => [value !== null ? formatCurrency(value) : 'N/A', 'Acquisition Cost']}
-                        cursor={{ fill: 'rgba(206, 206, 206, 0.2)' }}
-                      />
-                      {/* Simplified Legend for single bar */}
-                      <Legend
-                        verticalAlign="top"
-                        align="right"
-                        height={30}
-                        iconSize={10}
-                        wrapperStyle={{ fontSize: '12px', paddingBottom: '10px', top: '-5px' }}
-                        payload={[{ value: 'Acquisition Cost', type: 'square', color: '#8884d8' }]} // Define legend item
-                      />
-                      {/* Single Bar for Acquisition */}
-                      <Bar dataKey="total_acquisition" fill="#8884d8" name="Acquisition Cost" radius={[4, 4, 0, 0]} /> {/* Using primary color */}
-                    </BarChart>
-                  </ResponsiveContainer>
-                  {/* REMOVED Budget Comparison Text */}
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">No acquisition data for this year</div>
-              )}
+            <CardContent className="h-[300px] mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyAcquisitionData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} dy={10} />
+                  <YAxis tickFormatter={formatCurrencyTick} tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip 
+                    cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    formatter={(v: number) => [formatCurrency(v), "Monthly Spending"]} 
+                  />
+                  <Bar dataKey="total_acquisition" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={32} />
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Right Column: Stacked Cards */}
-          {/* Corrected lg span to 1 and removed other spans */}
-          <div className="lg:col-span-1 flex flex-col gap-4">
-            <Card> {/* Recently Assigned Assets */}
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Assigned Assets</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {loadingAssigned ? (
-                  <div className="flex items-center justify-center h-20 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
-                  </div>
-                ) : assignedError ? (
-                  <div className="text-red-600 text-xs p-2 text-center">Error: {assignedError}</div>
-                ) : recentlyAssignedAssets.length > 0 ? (
+          <div className="space-y-6">
+            <Card className="shadow-sm border-gray-100">
+              <CardHeader className="pb-3 border-b border-gray-50 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-gray-500">Recent Assignments</CardTitle>
+                <Badge variant="outline" className="text-[10px] font-bold">5 Latest</Badge>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                {recentlyAssignedAssets.length > 0 ? (
                   recentlyAssignedAssets.map(asset => (
-                    <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
-                        <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
+                    <div key={asset.id} className="flex items-center gap-3 group">
+                      <Avatar className="h-9 w-9 border-2 border-white shadow-sm overflow-hidden bg-gray-100 group-hover:scale-105 transition-transform">
+                        {asset.image_url && <AvatarImage src={asset.image_url} alt={asset.name} />}
+                        <AvatarFallback className="bg-blue-600 text-white font-extrabold text-xs">{asset.name.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 text-xs">
-                        <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
-                        <p className="text-muted-foreground">To: {asset.assigned_to || 'N/A'}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold truncate text-gray-800 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{asset.name}</p>
+                        <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {asset.assigned_to}
+                        </p>
                       </div>
-                      <TooltipWrapper content={`Assigned on ${formatDate(asset.assigned_date)}`}>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatRelativeTime(asset.assigned_date)}
-                        </span>
-                      </TooltipWrapper>
+                      <span className="text-[10px] text-muted-foreground font-bold whitespace-nowrap bg-gray-50 px-2 py-1 rounded">
+                        {formatRelativeTime(asset.assigned_date)}
+                      </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">No assets assigned recently.</p>
+                  <p className="text-xs text-muted-foreground text-center py-6 italic font-medium">No recent assignments found.</p>
                 )}
               </CardContent>
             </Card>
-            <Card> {/* Recently Damaged Assets */}
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Recently Damaged Assets</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
-                {loadingDamaged ? (
-                  <div className="flex items-center justify-center h-20 text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" /> Loading...
-                  </div>
-                ) : damagedError ? (
-                  <div className="text-red-600 text-xs p-2 text-center">Error: {damagedError}</div>
-                ) : recentlyDamagedAssets.length > 0 ? (
-                  recentlyDamagedAssets.map(asset => (
-                    <div key={asset.id} className="flex items-center gap-3 border-b last:border-b-0 pb-2 last:pb-0">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={asset.image_url || undefined} alt={asset.name || 'Asset'} />
-                        <AvatarFallback>{asset.name?.charAt(0)?.toUpperCase() || 'A'}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 text-xs">
-                        <p className="font-medium truncate" title={asset.name || ''}>{asset.name || 'Unnamed Asset'}</p>
-                        <p className="text-muted-foreground">Assigned: {asset.assigned_to || 'N/A'}</p> {/* Shows who had it when damaged */}
+
+            <Card className="shadow-sm border-gray-100">
+              <CardHeader className="pb-3 border-b border-gray-50 flex flex-row items-center justify-between">
+                <CardTitle className="text-sm font-bold uppercase tracking-widest text-gray-500">Upcoming Maintenance</CardTitle>
+                <Wrench className="h-4 w-4 text-amber-500" />
+              </CardHeader>
+              <CardContent className="pt-4 space-y-4">
+                {upcomingMaintenance.length > 0 ? (
+                  upcomingMaintenance.map(record => (
+                    <div key={record.id} className="flex items-center gap-3 group">
+                      <div className="flex flex-col items-center justify-center w-9 h-9 border rounded-lg bg-amber-50 group-hover:bg-amber-100 transition-colors">
+                        <p className="text-[10px] font-bold text-amber-700 leading-none">{new Date(record.scheduled_date!).toLocaleDateString(undefined, { month: 'short' })}</p>
+                        <p className="text-xs font-black text-amber-800 leading-none mt-0.5">{new Date(record.scheduled_date!).getDate()}</p>
                       </div>
-                      <TooltipWrapper content={`Marked damaged on ${formatDate(asset.last_updated)}`}>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatRelativeTime(asset.last_updated)}
-                        </span>
-                      </TooltipWrapper>
+                      <div className="flex-1 min-w-0">
+                         <p className="text-xs font-bold truncate text-gray-800 uppercase tracking-tight">{getAssetName(record.asset_id)}</p>
+                        <p className="text-[10px] text-amber-700 font-bold capitalize flex items-center gap-1">
+                          <RotateCcw className="h-2.5 w-2.5" />
+                          {record.maintenance_type || 'Routine'}
+                        </p>
+                      </div>
+                      <Button size="icon" variant="ghost" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
                     </div>
                   ))
                 ) : (
-                  <p className="text-xs text-muted-foreground text-center py-4">No recently damaged assets found.</p>
+                  <p className="text-xs text-muted-foreground text-center py-6 italic font-medium">No upcoming maintenance scheduled.</p>
                 )}
-              </CardContent>
-            </Card>
-            <Card> {/* Upcoming Maintenance */}
-              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Upcoming Maintenance</CardTitle></CardHeader>
-              <CardContent>
-                {/* ... (Static Placeholder Content for Maintenance) ... */}
               </CardContent>
             </Card>
           </div>
@@ -846,4 +364,28 @@ export function AssetDashboard() {
       </CardContent>
     </Card>
   );
+
+  // Helper inside component to resolve asset names
+  function getAssetName(assetId: string) {
+    const asset = assets.find(a => a.id === assetId || a.serial_number === assetId);
+    return asset ? asset.name : assetId;
+  }
 }
+
+// Internal reusable components
+function Badge({ variant = "default", children, className }: { variant?: "default" | "secondary" | "outline", children: React.ReactNode, className?: string }) {
+  const variants = {
+    default: "bg-blue-600 text-white",
+    secondary: "bg-gray-100 text-gray-900 border-transparent",
+    outline: "border border-gray-200 text-gray-600 font-bold"
+  };
+  return (
+    <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight", variants[variant], className)}>
+      {children}
+    </span>
+  );
+}
+
+const Wrench = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+);

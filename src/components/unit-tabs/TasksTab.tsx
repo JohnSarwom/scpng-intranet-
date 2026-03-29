@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getEffectiveGroupId } from '@/utils/taskBoardUtils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PremiumKanbanBoard, PremiumKanbanColumn } from '@/components/ui/PremiumKanban';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
@@ -118,6 +119,10 @@ const BoardLane = ({
   dropTargetInfo,
   staffMembers,
   onInsertAfter,
+  onMoveLeft,
+  onMoveRight,
+  isFirst,
+  isLast,
   container
 }: {
   id: string;
@@ -143,6 +148,10 @@ const BoardLane = ({
   };
   staffMembers: StaffMember[];
   onInsertAfter: (groupId: string) => void;
+  onMoveLeft?: (groupId: string) => void;
+  onMoveRight?: (groupId: string) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
   container?: HTMLElement | null;
 }) => {
   const dropId = `group-${id}`;
@@ -188,76 +197,72 @@ const BoardLane = ({
     }
   };
 
-  return (
-    <div className={cn(
-      "w-72 flex-shrink-0 flex flex-col rounded-xl transition-all duration-300 border-2",
-      isAtm
-        ? "bg-stone-100 dark:bg-gray-950/40 dark:border-white/10 shadow-sm"
-        : "bg-muted/30 dark:bg-gray-900/30 dark:border-white/5",
-      isActuallyOver ? "bg-accent/50 border-primary dark:border-blue-500/50 border-dashed ring-4 ring-primary/5 dark:ring-blue-500/5 shadow-2xl" : "border-transparent"
-    )}>
-      <div className={cn(
-        "p-3 font-medium flex items-center justify-between rounded-t-xl",
-        isAtm
-          ? "bg-stone-200/80 dark:bg-gray-900/80 border-b dark:border-white/5"
-          : "bg-muted/50 dark:bg-gray-900/50 border-b dark:border-white/5"
-      )}>
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={tempTitle}
-            onChange={(e) => setTempTitle(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="bg-background text-foreground p-1 rounded w-full mr-2"
-            autoFocus
-          />
-        ) : (
-          <h3 onDoubleClick={handleDoubleClick} className="cursor-pointer hover:bg-muted/50 rounded px-1 transition-colors flex-grow" title="Double click to rename">
-            {title}
-          </h3>
-        )}
-        <div className="flex items-center gap-1">
-          <Badge variant="outline" className="ml-2">{tasks.length}</Badge>
-          <Button variant="ghost" size="icon" className="h-6 w-6 p-0" onClick={onAddTask}>
-            <Plus className="h-3.5 w-3.5" />
+  const headerActions = (
+    <>
+      <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-white/10" onClick={onAddTask}>
+        <Plus className="h-3.5 w-3.5" />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-6 w-6 p-0 hover:bg-white/10">
+            <MoreVertical className="h-3.5 w-3.5" />
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6 p-0">
-                <MoreVertical className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" container={container}>
-              <DropdownMenuItem onClick={() => onEdit(id)}>
-                Rename Group
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onInsertAfter(id)}>
-                Insert Group After
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onDeleteGroup(id)} className="text-red-600 focus:text-red-600">
-                Delete Group
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      <div ref={setNodeRef} className="p-2 flex-grow space-y-3 relative min-h-[500px] h-full">
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" container={container}>
+          <DropdownMenuItem onClick={() => onEdit(id)} className="text-xs font-medium">
+            Rename Group
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onInsertAfter(id)} className="text-xs font-medium">
+            Insert Group After
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={() => onMoveLeft?.(id)} 
+            disabled={isFirst}
+            className="text-xs font-medium"
+          >
+            Move Left
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => onMoveRight?.(id)} 
+            disabled={isLast}
+            className="text-xs font-medium"
+          >
+            Move Right
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => onDeleteGroup(id)} className="text-xs font-medium text-red-600 focus:text-red-600 focus:bg-red-500/10">
+            Delete Group
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  );
+
+  return (
+    <PremiumKanbanColumn
+      id={dropId}
+      title={title}
+      count={tasks.length}
+      headerActions={headerActions}
+      isOver={isActuallyOver}
+      isAtm={isAtm}
+      className={cn(isActuallyOver && "ring-intranet-primary/20 scale-[1.02]")}
+    >
+      <div ref={setNodeRef} className="flex-grow space-y-1 relative min-h-[500px]">
         {/* min-h-full ensures the drop zone covers the entire lane height even if empty */}
         <SortableContext items={incompleteTasks.map(task => task.id)} strategy={verticalListSortingStrategy}>
           {incompleteTasks.length === 0 && completedTasks.length === 0 && (
-            <div className="border-2 border-dashed border-gray-200 dark:border-gray-700/50 rounded-lg flex flex-col items-center justify-center p-6 text-center h-full min-h-[150px]">
-              <Kanban className="h-8 w-8 text-muted-foreground/30 mb-2" />
-              <p className="text-sm font-medium text-muted-foreground/50 mb-3">No tasks in this group</p>
+            <div className="border-2 border-dashed border-gray-200/50 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center p-8 text-center h-[200px] bg-white/5 backdrop-blur-sm">
+              <Kanban className="h-10 w-10 text-muted-foreground/20 mb-3" />
+              <p className="text-xs font-medium text-muted-foreground/30 mb-4 uppercase tracking-widest">No tasks in this group</p>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onAddTask}
-                className="pointer-events-auto"
+                className="pointer-events-auto border-white/10 hover:bg-white/5 font-bold text-xs uppercase tracking-tighter"
               >
-                <Plus className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-3.5 w-3.5" />
                 Add Task
               </Button>
             </div>
@@ -294,12 +299,20 @@ const BoardLane = ({
           })}
         </SortableContext>
         {completedTasks.length > 0 && (
-          <div className="mt-4">
-            <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => setShowCompleted(!showCompleted)}>
-              Completed ({completedTasks.length})
+          <div className="mt-6 pt-4 border-t border-dashed border-white/10">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="w-full justify-between px-2 hover:bg-white/5 font-medium text-[10px] uppercase tracking-widest text-muted-foreground/60"
+              onClick={() => setShowCompleted(!showCompleted)}
+            >
+              <span>Completed ({completedTasks.length})</span>
+              <div className={cn("transition-transform duration-200", showCompleted ? "rotate-180" : "")}>
+                <svg width="12" height="12" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.13523 6.15803C3.3241 5.95657 3.64057 5.94637 3.84203 6.13523L7.5 9.56464L11.158 6.13523C11.3594 5.94637 11.6759 5.95657 11.8648 6.15803C12.0536 6.35949 12.0434 6.67597 11.842 6.86484L7.84199 10.6148C7.64491 10.7996 7.35509 10.7996 7.15801 10.6148L3.15801 6.86484C2.95655 6.67597 2.94635 6.35949 3.13523 6.15803Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+              </div>
             </Button>
             {showCompleted && (
-              <div className="mt-2 space-y-3">
+              <div className="mt-4 space-y-3 opacity-60">
                 {completedTasks.map((task) => {
                   const assignee = staffMembers.find(s => s.email === task.assignee);
                   // Improved mapping with fallback: match by ID or email (case-insensitive), fall back to original User object
@@ -334,9 +347,10 @@ const BoardLane = ({
           </div>
         )}
       </div>
-    </div>
+    </PremiumKanbanColumn>
   );
 };
+
 
 const TaskGridView: React.FC<{
   tasks: BoardData;
@@ -1511,6 +1525,22 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
     setInsertAfterGroupId(null);
   };
 
+  const handleMoveGroup = (groupId: string, direction: 'left' | 'right') => {
+    setActiveBuckets(prev => {
+      const index = prev.findIndex(b => b.id === groupId);
+      if (index === -1) return prev;
+      
+      const newIndex = direction === 'left' ? index - 1 : index + 1;
+      if (newIndex < 0 || newIndex >= prev.length) return prev;
+      
+      const updated = [...prev];
+      const [movedItem] = updated.splice(index, 1);
+      updated.splice(newIndex, 0, movedItem);
+      
+      return updated;
+    });
+  };
+
   const applyTaskUpdate = (
     taskId: string,
     updates: Partial<Task>,
@@ -1905,19 +1935,15 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             onDragEnd={handleDragEnd}
             onDragStart={handleDragStart}
           >
-            <div className="flex-1 p-0 flex flex-col min-h-0 border-0 mx-0 mb-0 h-full overflow-hidden">
+            <div className="flex-1 p-0 flex flex-col min-h-0 border-0 mx-0 mb-0 overflow-hidden relative">
               {viewMode === 'board' ? (
-                // Board View
-                <div
-                  ref={scrollContainerRef}
-                  className="flex-1 overflow-x-auto overflow-y-auto kanban-scrollbar px-4 pb-4 pt-4 flex items-start space-x-6 w-full h-full"
-                >
+                <PremiumKanbanBoard ref={scrollContainerRef} className="p-4 gap-6">
                   {/* Virtual Column for Orphaned Tasks */}
                   {hasOrphanedTasks && (
                     <div
                       key="uncategorized-virtual"
                       id="board-lane-uncategorized-virtual"
-                      className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full relative"
+                      className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full relative flex-shrink-0"
                     >
                       {/* Visual indicator that this is a system column */}
                       <div className="absolute -top-3 left-0 right-0 flex justify-center z-10">
@@ -1948,12 +1974,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                     </div>
                   )}
 
-                  {activeBuckets.map(bucket => (
-                    <div
-                      key={bucket.id}
-                      id={`board-lane-${bucket.id}`}
-                      className="animate-in fade-in zoom-in-95 slide-in-from-right-4 duration-300 h-full"
-                    >
+                  {activeBuckets.map((bucket, index) => (
+                    <div key={bucket.id} className="flex-shrink-0">
                       <BoardLane
                         id={bucket.id}
                         title={bucket.title}
@@ -1976,42 +1998,46 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
                           setInsertAfterGroupId(id);
                           setIsAddingGroup(true);
                         }}
+                        onMoveLeft={(id) => handleMoveGroup(id, 'left')}
+                        onMoveRight={(id) => handleMoveGroup(id, 'right')}
+                        isFirst={index === 0}
+                        isLast={index === activeBuckets.length - 1}
                         container={isFullScreen ? containerRef.current : null}
                       />
                     </div>
                   ))}
 
                   {isAddingGroup ? (
-                    <div className="w-80 flex-shrink-0 animate-fade-in">
-                      <div className="bg-muted/30 dark:bg-muted/20 rounded-lg p-3 h-full flex flex-col">
+                    <div className="w-80 flex-shrink-0 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="bg-white/50 dark:bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-dashed border-intranet-primary/30 h-full flex flex-col shadow-xl">
                         <Input
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value)}
-                          placeholder="Group name"
+                          placeholder="New group name..."
                           autoFocus
-                          className="mb-2"
+                          className="mb-3 bg-white dark:bg-black/20 border-white/10 font-medium"
                           disabled={isCreatingGroup}
                           onKeyDown={(e) => e.key === 'Enter' && !isCreatingGroup && handleSaveNewGroup()}
                         />
                         <div className="flex space-x-2">
-                          <Button size="sm" onClick={handleSaveNewGroup} className="flex-1" disabled={isCreatingGroup}>
-                            {isCreatingGroup ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                          <Button size="sm" onClick={handleSaveNewGroup} className="flex-1 bg-intranet-primary hover:bg-intranet-primary/90 text-white font-bold uppercase tracking-tight" disabled={isCreatingGroup}>
+                            {isCreatingGroup ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Group"}
                           </Button>
-                          <Button size="sm" variant="outline" onClick={handleCancelAddGroup} className="flex-1" disabled={isCreatingGroup}>Cancel</Button>
+                          <Button size="sm" variant="ghost" onClick={handleCancelAddGroup} className="flex-1 hover:bg-red-500/10 hover:text-red-500 font-bold uppercase tracking-tight" disabled={isCreatingGroup}>Cancel</Button>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <Button
                       variant="outline"
-                      className="h-[52px] flex-shrink-0 w-80 border-dashed bg-muted/20 dark:bg-muted/10 hover:bg-muted/30 dark:hover:bg-muted/20 text-muted-foreground"
+                      className="h-[60px] flex-shrink-0 w-80 border-dashed border-2 border-white/10 bg-white/5 dark:bg-white/5 hover:bg-white/10 dark:hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-300 rounded-2xl group"
                       onClick={() => setIsAddingGroup(true)}
                     >
-                      <Plus className="mr-2 h-5 w-5" />
-                      Add New Group
+                      <Plus className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                      <span className="font-bold uppercase tracking-widest text-[11px]">Add New Group</span>
                     </Button>
                   )}
-                </div>
+                </PremiumKanbanBoard>
               ) : viewMode === 'grid' ? (
                 // Grid View
                 <div className="flex-1 overflow-y-auto p-4">

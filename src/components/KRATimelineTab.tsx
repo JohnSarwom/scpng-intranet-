@@ -201,29 +201,29 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
 
   return (
     <Card className="h-full flex flex-col dark:bg-gray-900 dark:border-white/10">
-      <CardContent className="flex-1 min-h-0 overflow-hidden p-0 max-h-[800px]"> {/* Added max-height for sticky to work if parent doesn't constrain */}
-        <div className="overflow-auto h-[700px] border dark:border-white/10 rounded-md kanban-scrollbar" ref={scrollContainerRef}>
+      <CardContent className="flex-1 min-h-0 overflow-hidden p-0">
+        <div className="overflow-auto max-h-[calc(100vh-200px)] border dark:border-white/5 rounded-xl text-sm relative kanban-scrollbar bg-white/50 dark:bg-black/20 backdrop-blur-sm" ref={scrollContainerRef}>
           <div className="timeline-view min-w-[1200px] relative">
-            <div className="flex border-b border-gray-200 dark:border-white/10 pb-2 sticky top-0 bg-background dark:bg-gray-950 z-40 shadow-sm">
-              <div className="w-48 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-0 bg-background dark:bg-gray-950 z-50 border-r border-gray-100 dark:border-white/10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-none">Objective</div>
-              <div className="w-64 px-4 py-2 text-sm font-medium text-muted-foreground shrink-0 sticky left-[12rem] bg-background dark:bg-gray-950 z-50 border-r border-gray-100 dark:border-white/10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] dark:shadow-none">KRA Details</div>
-              <div className="flex-1 flex">
+            <div className="flex border-b border-gray-200 dark:border-white/10 sticky top-0 bg-gray-50/95 dark:bg-black/40 backdrop-blur-md z-40">
+              <div className="w-48 h-12 px-6 flex items-center text-sm font-semibold dark:text-gray-300 shrink-0 sticky left-0 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md z-50 border-r border-b border-gray-200 dark:border-white/10 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">Initiative</div>
+              <div className="w-64 h-12 px-6 flex items-center text-sm font-semibold dark:text-gray-300 shrink-0 sticky left-[12rem] bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md z-50 border-r border-b border-gray-200 dark:border-white/10 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]">KRA Details</div>
+              <div className="flex-1 flex h-12 items-center">
                 {currentViewMode === 'quarters' && quarters.map(quarter => (
-                  <div key={quarter} className="flex-1 text-center text-sm font-medium text-gray-700 dark:text-gray-400">
+                  <div key={quarter} className="flex-1 text-center text-sm font-semibold dark:text-gray-300">
                     {quarter}
                   </div>
                 ))}
                 {currentViewMode === 'months' && months.map(month => (
-                  <div key={month} className="flex-1 text-center text-xs font-medium text-gray-700 dark:text-gray-400">
+                  <div key={month} className="flex-1 text-center text-xs font-semibold dark:text-gray-300">
                     {month}
                   </div>
                 ))}
                 {currentViewMode === 'weeks' && (
-                  <div className="flex w-full">
+                  <div className="flex w-full h-12 items-center">
                     {weeks.map((week, i) => (
                       <div
                         key={week}
-                        className="text-center text-xs font-medium text-gray-600 dark:text-gray-500"
+                        className="text-center text-xs font-semibold dark:text-gray-300"
                         style={{ width: '1.92%' }}
                       >
                         {i % 4 === 0 ? week : ''}
@@ -277,9 +277,9 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                   // --- End Grouping Checks ---
 
                   return (
-                    <div key={kra.id} className="flex items-stretch hover:bg-gray-50/50 dark:hover:bg-gray-800/30 relative group">
+                    <div key={kra.id} className="flex items-stretch hover:bg-intranet-primary/[0.04] dark:hover:bg-white/5 relative group transition-all duration-300 ease-out border-b border-gray-200 dark:border-white/10">
                       {/* Objective Column - Sticky */}
-                      <div className={`w-48 px-4 py-3 shrink-0 flex flex-col border-r border-gray-200 dark:border-white/10 sticky left-0 bg-background dark:bg-gray-950 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-none ${isFirstForObjective ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForObjective ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
+                      <div className={`w-48 px-6 py-3 shrink-0 flex flex-col border-r border-gray-200 dark:border-white/10 sticky left-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-30 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] group-hover:bg-intranet-primary/[0.02] dark:group-hover:bg-white/5 ${isFirstForObjective ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForObjective ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
                         {isFirstForObjective && (
                           <span className="font-medium text-gray-900 dark:text-gray-100 block truncate text-sm mb-1" title={objectives.find(o => String(o.id) === String(kra.objective_id))?.title}>
                             {(() => {
@@ -295,7 +295,7 @@ const KRATimelineTab: React.FC<KRATimelineTabProps> = ({ kras, objectives, viewM
                       </div>
 
                       {/* KRA Details Column - Sticky */}
-                      <div className={`w-64 px-4 py-3 shrink-0 border-r border-gray-200 dark:border-white/10 flex flex-col sticky left-[12rem] bg-background dark:bg-gray-950 z-30 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] dark:shadow-none ${isFirstForKraTitle ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForKraTitle ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
+                      <div className={`w-64 px-6 py-3 shrink-0 border-r border-gray-200 dark:border-white/10 flex flex-col sticky left-[12rem] bg-white/95 dark:bg-gray-900/95 backdrop-blur-md z-30 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)] group-hover:bg-intranet-primary/[0.02] dark:group-hover:bg-white/5 ${isFirstForKraTitle ? 'border-t border-gray-200 dark:border-white/10' : ''} ${isLastForKraTitle ? 'border-b border-gray-200 dark:border-white/10' : ''}`}>
                         {isFirstForKraTitle && (
                           <>
                             <div className="text-sm font-medium text-gray-900 dark:text-gray-100 block truncate" title={kra.title}>{kra.title}</div>

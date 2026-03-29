@@ -687,6 +687,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const [schedulesLoading, setSchedulesLoading] = useState(false);
   const [schedulesExpanded, setSchedulesExpanded] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Track which schedule is being edited from the admin panel
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
+  const [editingScheduleEmail, setEditingScheduleEmail] = useState<string | null>(null);
+  const [editingScheduleName, setEditingScheduleName] = useState<string | null>(null);
 
   // Load existing schedule on mount
   useEffect(() => {
@@ -741,9 +745,13 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       const opsService = new SharePointOpsService(graphClient);
       await opsService.initialize();
 
+      // When editing a specific schedule from the admin panel, use its id/email
+      const targetEmail = editingScheduleEmail || userContext.email;
+      const targetName = editingScheduleName || userContext.name || userContext.email;
+
       const result = await opsService.saveReportSchedule({
-        userEmail: userContext.email,
-        userName: userContext.name || userContext.email,
+        userEmail: targetEmail,
+        userName: targetName,
         division: userContext.division || '',
         unit: userContext.unit || '',
         timePeriod: schedulePeriod,
@@ -753,6 +761,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
         preferredDay: scheduleDay,
         preferredDayOfMonth: scheduleDayOfMonth,
         managerEmail: scheduleManagerEmail,
+        itemId: editingScheduleId || undefined,
         ...(schedulePeriod === 'custom' ? {
           customStartDate: customStartDate || undefined,
           customEndDate: customEndDate || undefined,
@@ -770,6 +779,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       }
 
       toast.success('Report schedule saved successfully');
+      // Clear admin edit context after successful save
+      setEditingScheduleId(null);
+      setEditingScheduleEmail(null);
+      setEditingScheduleName(null);
     } catch (e: any) {
       console.error('Failed to save report schedule:', e);
       toast.error(e.message || 'Failed to save schedule');
@@ -815,6 +828,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   };
 
   const handleEditSchedule = (schedule: any) => {
+    // Track the specific schedule being edited
+    setEditingScheduleId(schedule.id);
+    setEditingScheduleEmail(schedule.UserEmail);
+    setEditingScheduleName(schedule.Title || schedule.UserEmail);
     // Populate the schedule form with this user's data
     setScheduleActive(schedule.IsActive === 'true');
     setSchedulePeriod((schedule.TimePeriod as ReportTimePeriod) || 'weekly');
@@ -846,7 +863,8 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
         hour: '2-digit', minute: '2-digit'
       }));
     }
-    // Scroll to the schedule form
+    // Expand and scroll to the schedule form
+    setIsScheduleExpanded(true);
     document.getElementById('schedule-form-card')?.scrollIntoView({ behavior: 'smooth' });
     toast.info(`Editing schedule for ${schedule.Title || schedule.UserEmail}`);
   };
@@ -1143,10 +1161,12 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
             <div className="flex-1">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Bell className="h-4 w-4 text-intranet-primary" />
-                Schedule Recurring Reports
+                {editingScheduleId ? `Editing Schedule: ${editingScheduleName}` : 'Schedule Recurring Reports'}
               </CardTitle>
               <CardDescription className="text-xs mt-1">
-                Receive automated reports via email from automation@scpng.gov.pg at your preferred schedule.
+                {editingScheduleId
+                  ? `Editing schedule for ${editingScheduleEmail}. Save to apply changes.`
+                  : 'Receive automated reports via email from automation@scpng.gov.pg at your preferred schedule.'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">

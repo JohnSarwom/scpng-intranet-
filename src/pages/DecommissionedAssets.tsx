@@ -1,85 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { useToast } from "@/hooks/use-toast";
 import { FilterGroup } from '@/components/assets/filters/FilterGroup';
 import { DecommissionedAssetTableHeader } from '@/components/assets/table/DecommissionedAssetTableHeader';
 import { DecommissionedAssetTableRow } from '@/components/assets/table/DecommissionedAssetTableRow';
-
-// Sample decommissioned assets data
-const decommissionedAssets = [
-  {
-    id: '1',
-    name: 'Dell XPS 15',
-    asset_id: 'DELL-001',
-    type: 'Laptop',
-    condition: 'Decommissioned',
-    reason: 'Obsolete',
-    decommission_date: '2023-01-15',
-    assigned_to: 'John Doe',
-    email: 'john.doe@example.com',
-    unit: 'IT Unit',
-    division: 'Corporate Services',
-    description: 'Old laptop with damaged screen',
-    assigned_date: '2020-06-01',
-    purchased_date: '2020-05-15',
-    last_updated: '2023-01-15'
-  },
-  {
-    id: '2',
-    name: 'HP LaserJet Pro',
-    asset_id: 'HP-002',
-    type: 'Printer',
-    condition: 'Decommissioned',
-    reason: 'Damaged',
-    decommission_date: '2023-02-20',
-    assigned_to: 'Sarah Johnson',
-    email: 'sarah.johnson@example.com',
-    unit: 'Marketing',
-    division: 'Corporate Services',
-    description: 'Office printer with mechanical issues',
-    assigned_date: '2019-03-10',
-    purchased_date: '2019-02-28',
-    last_updated: '2023-02-20'
-  },
-  {
-    id: '3',
-    name: 'Cisco IP Phone',
-    asset_id: 'CISCO-003',
-    type: 'Phone',
-    condition: 'Decommissioned',
-    reason: 'Replaced',
-    decommission_date: '2023-03-05',
-    assigned_to: 'Mike Williams',
-    email: 'mike.williams@example.com',
-    unit: 'Legal Advisory',
-    division: 'Legal Services',
-    description: 'Office phone replaced with newer model',
-    assigned_date: '2018-11-15',
-    purchased_date: '2018-10-30',
-    last_updated: '2023-03-05'
-  },
-  {
-    id: '4',
-    name: 'Apple iMac',
-    asset_id: 'APPLE-004',
-    type: 'Desktop PC',
-    condition: 'Decommissioned',
-    reason: 'Obsolete',
-    decommission_date: '2023-04-12',
-    assigned_to: 'Emma Davis',
-    email: 'emma.davis@example.com',
-    unit: 'Design',
-    division: 'Marketing',
-    description: 'Design team iMac, no longer compatible with new software',
-    assigned_date: '2017-08-20',
-    purchased_date: '2017-08-10',
-    last_updated: '2023-04-12'
-  }
-];
+import { useAssetsSharePoint } from '@/hooks/useAssetsSharePoint';
+import { Loader2 } from 'lucide-react';
 
 const DecommissionedAssets: React.FC = () => {
   const { toast } = useToast();
+  // Fetch assets including soft-deleted ones
+  const { assets, loading, refresh } = useAssetsSharePoint({ includeDeleted: true });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [reasonFilter, setReasonFilter] = useState('all');
@@ -87,6 +20,24 @@ const DecommissionedAssets: React.FC = () => {
   const [divisionFilter, setDivisionFilter] = useState('all');
   const [sortColumn, setSortColumn] = useState<string>('decommission_date');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // Filter for decommissioned assets only
+  // Logic: Assets that ARE deleted OR have a condition like 'Out of Service' or 'Decommissioned'
+  const decommissionedAssets = useMemo(() => {
+    return assets.filter(asset => 
+      asset.is_deleted || 
+      asset.condition === 'Out of Service' || 
+      asset.condition === 'Decommissioned' ||
+      asset.condition === 'For Disposal'
+    ).map(asset => ({
+      ...asset,
+      // Map SharePoint fields to the interface expected by DecommissionedAssetTableRow
+      asset_id: asset.id || '', 
+      reason: asset.condition || 'Decommissioned', // Use condition as reason if not explicitly stored
+      decommission_date: asset.deleted_at || asset.last_updated || '',
+      email: asset.assigned_to_email || '',
+    }));
+  }, [assets]);
 
   // Handle sort column click
   const handleSort = (column: string) => {
@@ -99,10 +50,10 @@ const DecommissionedAssets: React.FC = () => {
   };
 
   // Extract unique values for filters
-  const types = [...new Set(decommissionedAssets.map(asset => asset.type))];
-  const reasons = [...new Set(decommissionedAssets.map(asset => asset.reason))];
-  const units = [...new Set(decommissionedAssets.map(asset => asset.unit))];
-  const divisions = [...new Set(decommissionedAssets.map(asset => asset.division))];
+  const types = useMemo(() => [...new Set(decommissionedAssets.map(asset => asset.type).filter(Boolean))], [decommissionedAssets]);
+  const reasons = useMemo(() => [...new Set(decommissionedAssets.map(asset => asset.reason).filter(Boolean))], [decommissionedAssets]);
+  const units = useMemo(() => [...new Set(decommissionedAssets.map(asset => asset.unit).filter(Boolean))], [decommissionedAssets]);
+  const divisions = useMemo(() => [...new Set(decommissionedAssets.map(asset => asset.division).filter(Boolean))], [decommissionedAssets]);
 
   // Create filter options
   const filterOptions = {
@@ -135,18 +86,10 @@ const DecommissionedAssets: React.FC = () => {
   // Handle filter changes
   const handleFilterChange = (key: string, value: string) => {
     switch (key) {
-      case 'type':
-        setTypeFilter(value);
-        break;
-      case 'reason':
-        setReasonFilter(value);
-        break;
-      case 'unit':
-        setUnitFilter(value);
-        break;
-      case 'division':
-        setDivisionFilter(value);
-        break;
+      case 'type': setTypeFilter(value); break;
+      case 'reason': setReasonFilter(value); break;
+      case 'unit': setUnitFilter(value); break;
+      case 'division': setDivisionFilter(value); break;
     }
   };
 
@@ -164,9 +107,9 @@ const DecommissionedAssets: React.FC = () => {
     const matchesDivision = divisionFilter === 'all' || asset.division === divisionFilter;
 
     return matchesSearch && matchesType && matchesReason && matchesUnit && matchesDivision;
-  }).sort((a, b) => {
-    const aValue = a[sortColumn as keyof typeof a];
-    const bValue = b[sortColumn as keyof typeof b];
+  }).sort((a: any, b: any) => {
+    const aValue = a[sortColumn];
+    const bValue = b[sortColumn];
 
     if (!aValue && !bValue) return 0;
     if (!aValue) return 1;
@@ -203,16 +146,29 @@ const DecommissionedAssets: React.FC = () => {
   const handleDeleteAsset = (asset: any) => {
     toast({
       title: 'Delete Asset',
-      description: `Deleting decommissioned asset: ${asset.name}`,
+      description: `Permanently deleting decommissioned asset: ${asset.name}`,
     });
   };
 
   // Format date helper
-  const formatDate = (dateString: string) => {
+  const formatDateString = (dateString: string) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString();
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+      return date.toLocaleDateString();
+    } catch {
+      return 'N/A';
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full shadow-sm border">
@@ -253,11 +209,11 @@ const DecommissionedAssets: React.FC = () => {
                       filteredAssets.map((asset) => (
                         <DecommissionedAssetTableRow
                           key={asset.id}
-                          asset={asset}
+                          asset={asset as any}
                           onView={handleViewAsset}
                           onEdit={handleEditAsset}
                           onDelete={handleDeleteAsset}
-                          formatDate={formatDate}
+                          formatDate={formatDateString}
                         />
                       ))
                     )}

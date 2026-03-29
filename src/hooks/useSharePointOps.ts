@@ -49,9 +49,11 @@ import { mockStrategyData } from '@/mockData/strategyData';
 
 export function useSharePointObjectives(department?: string, scope: FilterScope = 'Division', context?: UserContext) {
     const getService = useOpsService();
+    const queryClient = useQueryClient();
+    const objectivesQueryKey = ['sharePoint', 'objectives', department, scope, context?.division, context?.unit, context?.email, context?.role];
 
     const query = useQuery({
-        queryKey: ['sharePoint', 'objectives', department, scope, context?.division, context?.unit, context?.email, context?.role],
+        queryKey: objectivesQueryKey,
         queryFn: async () => {
             try {
                 const service = await getService();
@@ -103,7 +105,14 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
         add: async (item: Partial<Objective>) => {
             try {
                 const service = await getService();
-                await service.addObjective(item, department || context?.division);
+                const newItem = await service.addObjective(item, department || context?.division);
+                // Insert optimistically so the UI updates immediately without waiting
+                // for SharePoint's eventual-consistency delay on the next GET
+                queryClient.setQueryData(objectivesQueryKey, (prev: Objective[] | undefined) => {
+                    if (!prev) return [newItem];
+                    return [...prev, newItem];
+                });
+                // Refetch in background to sync confirmed server state
                 query.refetch();
                 return true;
             } catch (error) {

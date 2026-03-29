@@ -92,7 +92,13 @@ const TestGround = () => {
     const [isSettingUpForms, setIsSettingUpForms] = useState(false);
     const [isSettingUpDivisions, setIsSettingUpDivisions] = useState(false);
     const [isSeedingDivisions, setIsSeedingDivisions] = useState(false);
+    const [isSeedingTasks, setIsSeedingTasks] = useState(false);
+    const [isSeedingAssets, setIsSeedingAssets] = useState(false);
+    const [isPurgingDemo, setIsPurgingDemo] = useState(false);
     const [isSettingUpITRequest, setIsSettingUpITRequest] = useState(false);
+    const [isSettingUpAssetSubLists, setIsSettingUpAssetSubLists] = useState(false);
+    const [isSeedingAssetSubLists, setIsSeedingAssetSubLists] = useState(false);
+
     const [recentITRequests, setRecentITRequests] = useState<any[]>([]);
     const [isLoadingRequests, setIsLoadingRequests] = useState(false);
     const { addSharePointListItem, isLoading: isSubmittingForm } = useSharePointUpload();
@@ -125,6 +131,99 @@ const TestGround = () => {
     useEffect(() => {
         loadRecentITRequests();
     }, []);
+
+    const handleSeedTasks = async () => {
+        setIsSeedingTasks(true);
+        try {
+            toast({ title: "🚀 Seeding Tasks", description: "Generating 10 demo tasks per user..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedTenDemoTasksForEachUser();
+            toast({ title: "✅ Success", description: result.message });
+        } catch (error: any) {
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSeedingTasks(false);
+        }
+    };
+
+    const handleSeedAssets = async () => {
+        setIsSeedingAssets(true);
+        try {
+            toast({ title: "🚀 Seeding Assets", description: "Generating 10 demo assets per user..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedTenDemoAssetsForEachUser();
+            toast({ title: "✅ Success", description: result.message });
+        } catch (error: any) {
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSeedingAssets(false);
+        }
+    };
+
+    const handleSetupAssetSubLists = async () => {
+        setIsSettingUpAssetSubLists(true);
+        try {
+            toast({ title: "🚀 Setting up Asset Sub-lists", description: "Creating Maintenance and Invoices lists..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            
+            await setupService.createAssetMaintenanceList();
+            await setupService.createAssetInvoicesList();
+            
+            toast({ title: "✅ Success", description: "Maintenance and Invoices lists created." });
+        } catch (error: any) {
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSettingUpAssetSubLists(false);
+        }
+    };
+
+    const handleSeedAssetSubLists = async () => {
+        setIsSeedingAssetSubLists(true);
+        try {
+            toast({ title: "🚀 Seeding Asset Data", description: "Generating maintenance and invoice records..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.seedMaintenanceAndInvoices();
+            toast({ title: "✅ Success", description: result.message });
+        } catch (error: any) {
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSeedingAssetSubLists(false);
+        }
+    };
+
+    const handlePurgeDemoData = async () => {
+        if (!confirm('Are you sure you want to PURGE all demo data? This will delete all Tasks and Assets marked as Mock Data. This cannot be undone!')) {
+            return;
+        }
+
+        setIsPurgingDemo(true);
+        try {
+            toast({ title: "🗑️ Purging Demo Data", description: "Removing all mock tasks and assets..." });
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+            const site = await graphClient.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+            const setupService = new SharePointListSetupService(graphClient, site.id);
+            const result = await setupService.purgeAllDemoData();
+            toast({ title: "✅ Success", description: result.message });
+        } catch (error: any) {
+            toast({ title: "❌ Failed", description: error.message, variant: "destructive" });
+        } finally {
+            setIsPurgingDemo(false);
+        }
+    };
+
 
     const handleExtractIds = async () => {
         if (!spUrlToExtract) {
@@ -2194,6 +2293,136 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
+                {/* Bulk Demo Data Provisioning Card */}
+                <Card className="border-2 border-purple-500 shadow-lg bg-gradient-to-br from-white to-purple-50/30 dark:from-gray-900 dark:to-purple-950/10 overflow-hidden transform transition-all hover:scale-[1.01]">
+                    <div className="absolute top-0 left-0 w-2 h-full bg-purple-600"></div>
+                    <CardHeader className="bg-purple-500/5 pb-2">
+                        <div className="flex justify-between items-start">
+                            <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-400 text-2xl font-bold">
+                                <Zap className="h-6 w-6 fill-purple-600" />
+                                Bulk Demo Data Provisioning
+                            </CardTitle>
+                            <Badge className="bg-purple-600 text-white">Advanced Tool</Badge>
+                        </div>
+                        <CardDescription className="text-base">
+                            Quickly populate or clean up demo data across the entire intranet to test system scaling and dashboard visualizations.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 space-y-4">
+                        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3 text-sm text-amber-800 shadow-sm animate-pulse">
+                            <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                            <p>
+                                <strong>System Notice:</strong> This tool creates realistic data linked to all active users. 
+                                Every item is tagged with <code>IsMockData: true</code> for safe removal.
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Button
+                                onClick={handleSeedTasks}
+                                disabled={isSeedingTasks}
+                                size="lg"
+                                className="w-full gap-3 bg-purple-600 hover:bg-purple-700 h-16 text-lg font-bold shadow-lg hover:shadow-purple-500/20"
+                            >
+                                {isSeedingTasks ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Seeding Tasks...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ListChecks className="h-6 w-6" />
+                                        Seed 10 Tasks Per User
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSeedAssets}
+                                disabled={isSeedingAssets}
+                                size="lg"
+                                variant="outline"
+                                className="w-full gap-3 border-purple-600 text-purple-700 hover:bg-purple-50 h-16 text-lg font-bold border-2"
+                            >
+                                {isSeedingAssets ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Seeding Assets...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Database className="h-6 w-6" />
+                                        Seed 10 Assets Per User
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSetupAssetSubLists}
+                                disabled={isSettingUpAssetSubLists}
+                                size="lg"
+                                className="w-full gap-3 bg-blue-600 hover:bg-blue-700 h-16 text-lg font-bold shadow-lg"
+                            >
+                                {isSettingUpAssetSubLists ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Setting up lists...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Layers className="h-6 w-6" />
+                                        Setup Asset Sub-Lists
+                                    </>
+                                )}
+                            </Button>
+
+                            <Button
+                                onClick={handleSeedAssetSubLists}
+                                disabled={isSeedingAssetSubLists}
+                                size="lg"
+                                variant="outline"
+                                className="w-full gap-3 border-blue-600 text-blue-700 hover:bg-blue-50 h-16 text-lg font-bold border-2"
+                            >
+                                {isSeedingAssetSubLists ? (
+                                    <>
+                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                        Seeding Data...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw className="h-6 w-6" />
+                                        Seed Maintenance & Invoices
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        <div className="py-2">
+                            <Separator />
+                        </div>
+
+                        <Button
+                            onClick={handlePurgeDemoData}
+                            disabled={isPurgingDemo}
+                            variant="destructive"
+                            size="lg"
+                            className="w-full gap-3 border-red-600 bg-red-600 hover:bg-red-700 text-white h-16 text-lg font-bold shadow-xl ring-2 ring-red-500/20"
+                        >
+                            {isPurgingDemo ? (
+                                <>
+                                    <Loader2 className="h-6 w-6 animate-spin" />
+                                    Purging Demo Data...
+                                </>
+                            ) : (
+                                <>
+                                    <Trash2 className="h-6 w-6" />
+                                    Purge All Demo Data
+                                </>
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
                 {/* SharePoint ID Extractor */}
                 <Card className="border-2 border-primary/20 shadow-md">
                     <CardHeader>
@@ -3155,6 +3384,7 @@ const TestGround = () => {
                         </div>
                     </CardContent>
                 </Card>
+
 
                 {/* Mock Data Generation Card */}
                 <Card className="border-2 border-amber-500/20">

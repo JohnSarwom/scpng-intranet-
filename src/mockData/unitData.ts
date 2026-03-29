@@ -1,4 +1,5 @@
-import { Task, Project, Risk, UserAsset } from '../types';
+import { Task, Project, Risk } from '../types';
+import { Asset } from '@/services/assetsSharePointService';
 
 // Mock Tasks
 export const mockTasks: Task[] = [
@@ -10,8 +11,8 @@ export const mockTasks: Task[] = [
     dueDate: '2023-12-15',
     priority: 'high',
     status: 'in-progress',
-    category: 'Reporting',
-    relatedProject: '1'
+    projectId: '1',
+    projectName: 'Department Restructuring'
   },
   {
     id: '2',
@@ -21,8 +22,8 @@ export const mockTasks: Task[] = [
     dueDate: '2023-12-10',
     priority: 'medium',
     status: 'todo',
-    category: 'Planning',
-    relatedProject: '2'
+    projectId: '2',
+    projectName: 'IT Systems Upgrade'
   },
   {
     id: '3',
@@ -31,8 +32,7 @@ export const mockTasks: Task[] = [
     assignee: 'John Smith',
     dueDate: '2023-12-20',
     priority: 'low',
-    status: 'todo',
-    category: 'Training',
+    status: 'todo'
   },
   {
     id: '4',
@@ -42,8 +42,7 @@ export const mockTasks: Task[] = [
     dueDate: '2023-12-05',
     priority: 'urgent',
     status: 'done',
-    completionPercentage: 100,
-    category: 'Administration',
+    completionPercentage: 100
   },
   {
     id: '5',
@@ -52,8 +51,7 @@ export const mockTasks: Task[] = [
     assignee: 'Robert Brown',
     dueDate: '2023-12-30',
     priority: 'medium',
-    status: 'in-progress',
-    category: 'Maintenance',
+    status: 'in-progress'
   }
 ];
 
@@ -139,7 +137,7 @@ export const mockRisks: Risk[] = [
     description: 'Potential funding shortfalls affecting project completion',
     status: 'identified',
     impact: 'high',
-    likelihood: 'possible',
+    likelihood: 'medium', // Adjusted to match Union Risk type
     category: 'Financial',
     owner: 'Robert Brown',
     identificationDate: new Date('2023-11-05'),
@@ -153,7 +151,7 @@ export const mockRisks: Risk[] = [
     description: 'Insufficient personnel to complete project tasks on schedule',
     status: 'mitigating',
     impact: 'medium',
-    likelihood: 'likely',
+    likelihood: 'high', // Adjusted to match Union Risk type
     category: 'Resource',
     owner: 'Sarah Johnson',
     identificationDate: new Date('2023-10-20'),
@@ -167,7 +165,7 @@ export const mockRisks: Risk[] = [
     description: 'Potential compatibility problems with new software systems',
     status: 'identified',
     impact: 'medium',
-    likelihood: 'possible',
+    likelihood: 'medium',
     category: 'Technical',
     owner: 'John Smith',
     identificationDate: new Date('2023-11-10'),
@@ -180,7 +178,7 @@ export const mockRisks: Risk[] = [
     description: 'Potential changes in regulations affecting operational procedures',
     status: 'monitoring',
     impact: 'high',
-    likelihood: 'unlikely',
+    likelihood: 'low',
     category: 'Compliance',
     owner: 'Mary Wilson',
     identificationDate: new Date('2023-09-15'),
@@ -194,7 +192,7 @@ export const mockRisks: Risk[] = [
     description: 'Risk of unauthorized access to sensitive information',
     status: 'mitigating',
     impact: 'critical',
-    likelihood: 'unlikely',
+    likelihood: 'low',
     category: 'Security',
     owner: 'John Smith',
     identificationDate: new Date('2023-10-01'),
@@ -205,18 +203,18 @@ export const mockRisks: Risk[] = [
 ];
 
 // Mock Assets
-export const mockAssets: UserAsset[] = [
+export const mockAssets: Asset[] = [
   {
     id: '1',
     name: 'Laptop - Dell XPS 15',
     type: 'laptop',
     description: 'Dell XPS 15 laptop with i7 processor, 16GB RAM',
-    serialNumber: 'DXP15-789456',
-    purchaseDate: new Date('2022-06-15'),
-    warrantyExpiry: new Date('2025-06-15'),
-    status: 'active',
-    assignedTo: 'John Smith',
-    department: 'IT',
+    serial_number: 'DXP15-789456',
+    purchase_date: '2022-06-15',
+    warranty_expiry_date: '2025-06-15',
+    condition: 'Active',
+    assigned_to: 'John Smith',
+    unit: 'IT',
     notes: 'Main work laptop for IT department lead'
   },
   {
@@ -224,12 +222,12 @@ export const mockAssets: UserAsset[] = [
     name: 'Microsoft Office 365 License',
     type: 'software',
     description: 'Annual subscription for Office 365 Business Premium',
-    serialNumber: 'O365-B-789456',
-    purchaseDate: new Date('2023-01-10'),
-    warrantyExpiry: new Date('2024-01-10'),
-    status: 'active',
-    assignedTo: 'Sarah Johnson',
-    department: 'HR',
+    serial_number: 'O365-B-789456',
+    purchase_date: '2023-01-10',
+    warranty_expiry_date: '2024-01-10',
+    condition: 'Active',
+    assigned_to: 'Sarah Johnson',
+    unit: 'HR',
     notes: 'Business Premium license for HR department'
   },
   {
@@ -237,12 +235,12 @@ export const mockAssets: UserAsset[] = [
     name: 'Samsung Galaxy S22',
     type: 'mobile',
     description: 'Company-issued mobile phone',
-    serialNumber: 'SG22-897654',
-    purchaseDate: new Date('2022-03-15'),
-    warrantyExpiry: new Date('2024-03-15'),
-    status: 'active',
-    assignedTo: 'Mary Wilson',
-    department: 'Operations',
+    serial_number: 'SG22-897654',
+    purchase_date: '2022-03-15',
+    warranty_expiry_date: '2024-03-15',
+    condition: 'Active',
+    assigned_to: 'Mary Wilson',
+    unit: 'Operations',
     notes: 'Company phone with business plan'
   },
   {
@@ -250,12 +248,12 @@ export const mockAssets: UserAsset[] = [
     name: 'iPad Pro 12.9',
     type: 'tablet',
     description: 'iPad Pro for presentations and field work',
-    serialNumber: 'IPP12-456123',
-    purchaseDate: new Date('2022-05-10'),
-    warrantyExpiry: new Date('2024-05-10'),
-    status: 'maintenance',
-    assignedTo: 'Robert Brown',
-    department: 'Finance',
+    serial_number: 'IPP12-456123',
+    purchase_date: '2022-05-10',
+    warranty_expiry_date: '2024-05-10',
+    condition: 'Maintenance',
+    assigned_to: 'Robert Brown',
+    unit: 'Finance',
     notes: 'Currently being repaired - screen damage'
   },
   {
@@ -263,12 +261,12 @@ export const mockAssets: UserAsset[] = [
     name: 'Adobe Creative Cloud License',
     type: 'software',
     description: 'Full Creative Cloud suite license',
-    serialNumber: 'ACC-789-456',
-    purchaseDate: new Date('2023-02-01'),
-    warrantyExpiry: new Date('2024-02-01'),
-    status: 'active',
-    assignedTo: 'John Smith',
-    department: 'IT',
+    serial_number: 'ACC-789-456',
+    purchase_date: '2023-02-01',
+    warranty_expiry_date: '2024-02-01',
+    condition: 'Active',
+    assigned_to: 'John Smith',
+    unit: 'IT',
     notes: 'For website and graphic design work'
   }
-]; 
+];

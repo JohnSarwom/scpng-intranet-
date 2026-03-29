@@ -25,7 +25,7 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { UserAsset } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
 import { toast } from "@/components/ui/use-toast";
 import DatePicker from '@/components/DatePicker';
 import { Upload, Check, ChevronsUpDown, Loader2, Paperclip, X, PackagePlus } from 'lucide-react';
@@ -41,7 +41,7 @@ import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelect
 interface AddAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (asset: Partial<Omit<UserAsset, 'id' | 'created_at' | 'last_updated'>>) => void;
+  onAdd: (asset: Partial<Asset>) => void;
   divisions?: TypeDivision[];
   units?: Unit[];
   existingNames?: string[];
@@ -96,8 +96,8 @@ const AddAssetModal: React.FC<AddAssetModalProps> = ({
     });
   }, [employees, isLoadingEmployees, isInitialized, employeesError]);
 
-  // Initialize state based on UserAsset type (excluding fields set by parent)
-  const [newAsset, setNewAsset] = useState<Partial<Omit<UserAsset, 'id' | 'created_at' | 'last_updated'>>>({
+  // Initialize state based on Asset type
+  const [newAsset, setNewAsset] = useState<Partial<Asset>>({
     name: '',
     type: '',
     brand: '',

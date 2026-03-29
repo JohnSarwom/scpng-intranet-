@@ -221,7 +221,7 @@ export class AssetsSharePointService {
     console.log('   Extracted fields:', JSON.stringify(fields, null, 2));
 
     const asset: Asset = {
-      id: fields.AssetID || spItem.id?.toString(),
+      id: fields.AssetID?.toString() || spItem.id?.toString(),
       name: fields.Title || '',
       type: fields.Types || '',                          // Internal name is "Types" (see screenshot URL)
       brand: fields.Brand,
@@ -307,15 +307,16 @@ export class AssetsSharePointService {
   }
 
   /**
-   * Get all assets (with optional user filtering)
+   * Get all assets (with optional user filtering and soft-delete inclusion)
    */
-  async getAssets(userEmail?: string, isAdmin: boolean = false): Promise<Asset[]> {
+  async getAssets(userEmail?: string, isAdmin: boolean = false, includeDeleted: boolean = false): Promise<Asset[]> {
     if (!this.siteId || !this.listId) await this.initialize();
 
     try {
       console.log('\n📊 [GET ASSETS] Fetching assets from SharePoint...');
       console.log(`   User Email: ${userEmail || 'N/A'}`);
       console.log(`   Is Admin: ${isAdmin}`);
+      console.log(`   Include Deleted: ${includeDeleted}`);
 
       const response = await this.client
         .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
@@ -327,27 +328,21 @@ export class AssetsSharePointService {
 
       let assets = response.value.map((item: any) => this.mapFromSharePointFields(item));
 
-      // Filter out soft-deleted assets
-      assets = assets.filter((asset: Asset) => !asset.is_deleted);
-      console.log(`   Active assets (not deleted): ${assets.length}`);
+      // Filter based on includeDeleted
+      if (!includeDeleted) {
+        assets = assets.filter((asset: Asset) => !asset.is_deleted);
+        console.log(`   Active assets (not deleted): ${assets.length}`);
+      } else {
+        console.log(`   Including deleted assets: ${assets.length}`);
+      }
 
       // Apply user-level filtering (client-side)
       if (!isAdmin && userEmail) {
-        console.log(`   🔍 Filtering assets for non-admin user: ${userEmail}`);
-        console.log(`   📋 Assets before filter:`, assets.map(a => ({
-          name: a.name,
-          assigned_to_email: a.assigned_to_email
-        })));
-
         assets = assets.filter((asset: Asset) =>
           asset.assigned_to_email?.toLowerCase() === userEmail.toLowerCase()
         );
         console.log(`   ✂️ Filtered to user's assets: ${assets.length}`);
-        console.log(`   📋 Assets after filter:`, assets.map(a => ({
-          name: a.name,
-          assigned_to_email: a.assigned_to_email
-        })));
-      } else {
+      } else if (isAdmin) {
         console.log(`   👑 Admin user - showing all assets (no filtering)`);
       }
 

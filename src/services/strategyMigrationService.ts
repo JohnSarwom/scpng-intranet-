@@ -144,8 +144,7 @@ export class StrategyMigrationService {
                         Description: fields.Description || "",
                         Status: fields.Status || "Not Started",
                         Progress: fields.Progress || 0,
-                        ParentGoalIdLookupId: Number(goalId),
-                        ParentKRAIdLookupId: Number(kraId), // Matches schema from setup service
+                        ParentKRAIdLookupId: Number(kraId),
                     }
                 });
                 stats.initiatives++;

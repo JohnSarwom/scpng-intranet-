@@ -502,6 +502,26 @@ export const risksService = {
 };
 
 // Asset operations
+const mapAsset = (asset: any): any => {
+    if (!asset) return asset;
+    return {
+        ...asset,
+        id: String(asset.id || ''),
+        asset_id: String(asset.asset_id || asset.id || ''),
+        name: String(asset.name || 'Unknown Asset'),
+        type: String(asset.type || 'Uncategorized'),
+        condition: String(asset.condition || 'Unknown'),
+        brand: String(asset.brand || 'N/A'),
+        model: String(asset.model || 'N/A'),
+        serial_number: String(asset.serial_number || 'N/A'),
+        vendor: String(asset.vendor || 'N/A'),
+        assigned_to: String(asset.assigned_to || 'N/A'),
+        assigned_to_email: String(asset.assigned_to_email || 'N/A'),
+        unit: String(asset.unit || 'N/A'),
+        division: String(asset.division || 'N/A'),
+    };
+};
+
 export const assetsService = {
     // Get all assets - Now using Edge Function
     getAssets: async (accessToken?: string) => {
@@ -532,7 +552,8 @@ export const assetsService = {
 
             // Assuming the function returns the array of assets directly in `data`
             // Add type assertion if needed, e.g., return (data as YourAssetType[]) || [];
-            return data || [];
+            const rawAssets = Array.isArray(data) ? data : [];
+            return rawAssets.map(mapAsset);
         } catch (err) {
             console.error('[assetsService.getAssets] Error invoking edge function:', err);
             // Consider re-throwing or returning a specific error structure
@@ -577,7 +598,7 @@ export const assetsService = {
             }
 
             console.log('[assetsService.addAsset] Asset created successfully:', data?.[0]?.id);
-            return data?.[0] || null;
+            return data?.[0] ? mapAsset(data[0]) : null;
         } catch (error) {
             console.error('Error adding asset:', error);
             throw error;
@@ -626,7 +647,7 @@ export const assetsService = {
             }
 
             console.log('[assetsService.updateAsset] Asset updated successfully:', id);
-            return data[0];
+            return data?.[0] ? mapAsset(data[0]) : null;
         } catch (error) {
             console.error('Error updating asset:', error);
             throw error;

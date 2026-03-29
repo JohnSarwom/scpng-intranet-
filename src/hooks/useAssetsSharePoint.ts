@@ -6,7 +6,12 @@ import { getGraphClient } from '@/services/graphService';
 import { useToast } from '@/hooks/use-toast';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
-export function useAssetsSharePoint() {
+export interface UseAssetsOptions {
+  includeDeleted?: boolean;
+}
+
+export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
+  const { includeDeleted = false } = options;
   const { instance: msalInstance, accounts } = useMsal();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -67,14 +72,14 @@ export function useAssetsSharePoint() {
     error,
     refetch: refreshAssets
   } = useQuery({
-    queryKey: ['assets', userEmail, isAdmin],
+    queryKey: ['assets', userEmail, isAdmin, includeDeleted],
     queryFn: async () => {
-      console.log('📥 [useAssetsSharePoint] Fetching assets via React Query...');
+      console.log(`📥 [useAssetsSharePoint] Fetching assets (includeDeleted: ${includeDeleted}) via React Query...`);
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
       }
-      return currentService.getAssets(userEmail, isAdmin);
+      return currentService.getAssets(userEmail, isAdmin, includeDeleted);
     },
     // Only fetch when we have user info. Service will be init'd on demand if needed.
     enabled: !!userEmail && (!!roleUser || !isAdmin),

@@ -316,7 +316,7 @@ export class SharePointOpsService {
                 EndDate: objective.endDate ? new Date(objective.endDate).toISOString() : null,
                 Unit: objective.unit,
                 Owner: objective.owner,
-                ParentGoalIdLookupId: objective.parentGoalId,
+                ParentGoalIdLookupId: objective.parentGoalId ? Number(objective.parentGoalId) : null,
                 Icon: objective.icon,
                 IsFeatured: objective.isFeatured,
                 Deliverables: objective.deliverables?.join(', '),
@@ -350,7 +350,7 @@ export class SharePointOpsService {
         if (objective.division !== undefined) fields.Division = objective.division;
         if (objective.unit !== undefined) fields.Unit = objective.unit;
         if (objective.owner !== undefined) fields.Owner = objective.owner;
-        if (objective.parentGoalId !== undefined) fields.ParentGoalIdLookupId = objective.parentGoalId;
+        if (objective.parentGoalId !== undefined) fields.ParentGoalIdLookupId = objective.parentGoalId ? Number(objective.parentGoalId) : null;
         if (objective.icon !== undefined) fields.Icon = objective.icon;
         if (objective.isFeatured !== undefined) fields.IsFeatured = objective.isFeatured;
         if (objective.deliverables !== undefined) fields.Deliverables = objective.deliverables?.join(', ');
@@ -1907,6 +1907,7 @@ export class SharePointOpsService {
         rollingWindowDays?: string;
         customIntervalDays?: string;
         isOneTime?: boolean;
+        itemId?: string;
     }): Promise<any> {
         if (!this.listIds['REPORT_SCHEDULES']) {
             await this.createReportSchedulesList();
@@ -1942,6 +1943,7 @@ export class SharePointOpsService {
 
         // Custom date range fields
         if (schedule.timePeriod === 'custom') {
+            await this.ensureCustomDateColumns();
             fields.IsOneTime = schedule.isOneTime ? 'true' : 'false';
             if (schedule.customStartDate) fields.CustomStartDate = schedule.customStartDate;
             if (schedule.customEndDate) fields.CustomEndDate = schedule.customEndDate;
@@ -1949,7 +1951,15 @@ export class SharePointOpsService {
             if (schedule.customIntervalDays) fields.CustomIntervalDays = schedule.customIntervalDays;
         }
 
-        // Check if schedule already exists for this user
+        // If a specific itemId is provided (e.g. admin editing a specific schedule), patch it directly
+        if (schedule.itemId) {
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items/${schedule.itemId}/fields`)
+                .patch(fields);
+            return { id: schedule.itemId, ...fields };
+        }
+
+        // Otherwise check if a schedule already exists for this user (first match)
         const existing = await this.getReportSchedule(schedule.userEmail);
 
         if (existing) {

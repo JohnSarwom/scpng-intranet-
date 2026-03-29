@@ -5,34 +5,39 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogClose
 } from "@/components/ui/dialog";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X, Briefcase, Building, CalendarDays, CheckCircle, ShieldAlert, Clock, Info, Activity, Box, MapPin, Package } from "lucide-react";
-import { UserAsset } from '@/types';
-import { cn, formatDate } from '@/lib/utils';
+import { Briefcase, Building, CalendarDays, ShieldAlert, Clock, Info, Activity, Box, Package } from "lucide-react";
+import { Asset } from '@/services/assetsSharePointService';
+import { cn, formatDate, formatCurrency } from '@/lib/utils';
 import { DialogFooter } from "@/components/ui/dialog";
 
 interface AssetInfoModalProps {
-  asset: UserAsset | null;
+  asset: Asset | null;
   isOpen: boolean;
   onClose: () => void;
 }
 
 // Helper function for condition badge styling (similar to AssetCard)
-const getConditionBadgeClass = (condition?: string | null) => {
+const getConditionBadgeClass = (condition?: string | null | number) => {
   if (!condition) return '';
-  switch (condition.toLowerCase()) {
+  const conditionStr = String(condition).toLowerCase();
+  switch (conditionStr) {
     case 'new':
     case 'good':
+    case 'excellent':
       return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
     case 'fair':
+    case 'maintenance':
       return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800';
     case 'poor':
     case 'needs repair':
+    case 'damaged':
       return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800';
+    case 'retired':
+    case 'decommissioned':
+      return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     default:
       return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
   }
@@ -79,7 +84,7 @@ const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose 
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <span className="text-6xl font-semibold text-muted-foreground/50">
-                      {asset.name?.substring(0, 2).toUpperCase() || 'AS'}
+                      {String(asset.name || '').substring(0, 2).toUpperCase() || 'AS'}
                     </span>
                   </div>
                 )}
@@ -98,7 +103,7 @@ const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose 
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="font-normal">{asset.type || 'Uncategorized'}</Badge>
-                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">ID: {asset.id?.substring(0, 8)}</span>
+                  <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">ID: {String(asset.id || '').substring(0, 8) || 'N/A'}</span>
                 </div>
               </div>
 
@@ -144,8 +149,8 @@ const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose 
                 <InfoRow label="Assigned Date" value={formatDate(asset.assigned_date)} />
                 <InfoRow label="Expected Expiry" value={formatDate(asset.expiry_date)} />
                 <InfoRow label="Warranty Expiry" value={formatDate(asset.warranty_expiry_date)} />
-                <InfoRow label="Purchase Cost" value={asset.purchase_cost != null ? <span className="text-emerald-600 dark:text-emerald-400 font-semibold">${asset.purchase_cost.toFixed(2)}</span> : 'N/A'} />
-                <InfoRow label="Depreciated Value" value={asset.depreciated_value != null ? <span className="text-orange-600 dark:text-orange-400 font-semibold">${asset.depreciated_value.toFixed(2)}</span> : 'N/A'} />
+                <InfoRow label="Purchase Cost" value={asset.purchase_cost != null ? <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrency(asset.purchase_cost)}</span> : 'N/A'} />
+                <InfoRow label="Depreciated Value" value={asset.depreciated_value != null ? <span className="text-orange-600 dark:text-orange-400 font-semibold">{formatCurrency(asset.depreciated_value)}</span> : 'N/A'} />
                 <InfoRow label="Life Expectancy" value={asset.life_expectancy_years ? `${asset.life_expectancy_years} Years` : 'N/A'} />
                 <InfoRow label="YTD Usage" value={asset.ytd_usage || 'N/A'} />
               </div>

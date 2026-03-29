@@ -7,7 +7,7 @@ import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle, Re
 import { cn } from '@/lib/utils';
 import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BaseCard } from '@/components/ui/BaseCard';
+import { PremiumKanbanCard } from '@/components/ui/PremiumKanban';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,24 +43,25 @@ export interface TaskCardProps {
   onPriorityChange?: (id: string, priority: 'low' | 'medium' | 'high' | 'urgent') => void;
   onAssigneeChange?: (id: string, assignee: StaffMember) => void;
   onAssigneesChange?: (id: string, assignees: StaffMember[]) => void;
+  onAssigneesOrderChange?: (id: string, assignees: StaffMember[]) => void;
   onStatusChange?: (id: string, status: string) => void;
   availableAssignees?: StaffMember[];
   container?: HTMLElement | null;
 }
 
 const priorityColors = {
-  low: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800/50',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800/50',
-  high: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800/50',
-  urgent: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800/50',
+  low: 'bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/50',
+  medium: 'bg-yellow-100/50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800/50',
+  high: 'bg-orange-100/50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/50',
+  urgent: 'bg-red-100/50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/50',
 };
 
 const statusColors = {
-  todo: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:border-blue-800/50',
-  'in-progress': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-300 dark:border-purple-800/50',
-  'on-hold': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-800/50',
-  'in-review': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800/50',
-  completed: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:border-green-800/50',
+  todo: 'bg-blue-100/50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800/50',
+  'in-progress': 'bg-purple-100/50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800/50',
+  'on-hold': 'bg-orange-100/50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800/50',
+  'in-review': 'bg-yellow-100/50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800/50',
+  completed: 'bg-green-100/50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800/50',
 };
 
 const statusLabels = {
@@ -160,7 +161,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className="complete-button h-5 w-5 p-0 flex-shrink-0 mt-0.5 text-muted-foreground hover:text-primary"
+                className="complete-button h-5 w-5 p-0 flex-shrink-0 mt-0.5 text-muted-foreground hover:text-primary backdrop-blur-sm bg-white/5 dark:bg-white/5"
                 onClick={handleToggleComplete}
                 onPointerDown={(e) => e.stopPropagation()}
                 draggable="false"
@@ -174,7 +175,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       exit={{ scale: 0, opacity: 0 }}
                       transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
                     </motion.div> :
                     <motion.div
                       key="circle"
@@ -195,7 +196,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Tooltip>
         </TooltipProvider>
       )}
-      <div className={cn("text-sm font-medium leading-tight flex-grow mr-1", isCompletedOptimistic && "line-through text-muted-foreground")}>{title}</div>
+      <div className={cn("text-[13px] font-medium leading-tight flex-grow mr-1 dark:text-gray-100", isCompletedOptimistic && "line-through text-muted-foreground")}>{title}</div>
     </div>
   );
 
@@ -206,7 +207,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 p-0 edit-button text-muted-foreground hover:text-foreground"
+          className="h-6 w-6 p-0 edit-button text-muted-foreground hover:text-foreground hover:bg-white/10"
           onClick={(e) => {
             e.stopPropagation();
             onEdit();
@@ -227,7 +228,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <Button
           variant="ghost"
           size="icon"
-          className="h-6 w-6 p-0 delete-button text-muted-foreground hover:text-red-600"
+          className="h-6 w-6 p-0 delete-button text-muted-foreground hover:text-red-600 hover:bg-red-500/10"
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
@@ -253,15 +254,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   // Create card content - description if exists
   const cardContent = description ? (
-    <p className="text-xs text-muted-foreground line-clamp-2">{description}</p>
+    <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{description}</p>
   ) : undefined;
 
   // Create footer content - badges, dates, comments, assignee
   const footerContent = (
-    <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+    <div className="flex items-center space-x-2 flex-wrap gap-y-1.5 mt-2">
       {isDueDatePassed && (
-        <Badge variant="destructive" className="px-1.5 py-0.5 text-xs font-normal">
-          <AlertCircle className="h-3 w-3 mr-1" />
+        <Badge variant="destructive" className="px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30">
+          <AlertCircle className="h-2.5 w-2.5 mr-1" />
           Overdue
         </Badge>
       )}
@@ -270,7 +271,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <DropdownMenuTrigger asChild onPointerDown={(e) => e.stopPropagation()}>
             <Badge
               variant="outline"
-              className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer", statusColor, "hover:opacity-80 transition-opacity")}
+              className={cn("px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border cursor-pointer", statusColor, "hover:opacity-80 transition-opacity")}
             >
               {statusLabel}
             </Badge>
@@ -279,7 +280,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             {Object.keys(statusLabels).map(key => (
               <DropdownMenuItem
                 key={key}
-                className={cn("text-xs", statusColors[key as keyof typeof statusColors] || '')}
+                className={cn("text-xs font-medium", statusColors[key as keyof typeof statusColors] || '')}
                 onClick={() => onStatusChange?.(id, key)}
               >
                 {statusLabels[key as keyof typeof statusLabels]}
@@ -296,7 +297,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <Badge
               variant="outline"
               className={cn(
-                "px-1.5 py-0.5 text-xs font-normal border cursor-pointer",
+                "px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider border cursor-pointer",
                 priorityColors[priority],
                 "hover:opacity-80 transition-opacity"
               )}
@@ -308,7 +309,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             {(['low', 'medium', 'high', 'urgent'] as const).map(p => (
               <DropdownMenuItem
                 key={p}
-                className={cn("text-xs capitalize", priorityColors[p])}
+                className={cn("text-xs font-medium capitalize", priorityColors[p])}
                 onClick={() => onPriorityChange?.(id, p)}
               >
                 {p}
@@ -325,12 +326,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
             <TooltipTrigger asChild>
               <div
                 className={cn(
-                  "text-xs flex items-center text-muted-foreground",
-                  isDueDatePassed && "text-red-600 dark:text-red-500 font-semibold"
+                  "text-[10px] flex items-center text-muted-foreground bg-gray-100/50 dark:bg-white/5 py-0.5 px-2 rounded-full border border-gray-200 dark:border-white/10",
+                  isDueDatePassed && "text-red-600 dark:text-red-400 border-red-500/20 font-bold"
                 )}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                <CalendarDays className="h-3.5 w-3.5 mr-1.5 flex-shrink-0" />
+                <CalendarDays className="h-3 w-3 mr-1.5 flex-shrink-0" />
                 <span>
                   {startDate ? format(new Date(startDate), 'MMM d') : ''}
                   {endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}
@@ -345,8 +346,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       )}
 
       {commentsCount > 0 && (
-        <div className="inline-flex items-center text-xs gap-1">
-          <MessageSquare className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center text-[10px] font-medium gap-1 text-muted-foreground bg-gray-100/50 dark:bg-white/5 py-0.5 px-2 rounded-full border border-gray-200 dark:border-white/10">
+          <MessageSquare className="h-3 w-3 text-intranet-primary" />
           <span>{commentsCount}</span>
         </div>
       )}
@@ -355,8 +356,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="inline-flex items-center text-xs text-muted-foreground gap-1">
-                <CheckSquare className="h-3.5 w-3.5" />
+              <div className="inline-flex items-center text-[10px] font-medium text-muted-foreground bg-gray-100/50 dark:bg-white/5 py-0.5 px-2 rounded-full border border-gray-200 dark:border-white/10 gap-1">
+                <CheckSquare className="h-3 w-3 text-green-600" />
                 <span>{subtaskProgress.completed}/{subtaskProgress.total}</span>
               </div>
             </TooltipTrigger>
@@ -371,8 +372,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="inline-flex items-center text-xs text-muted-foreground gap-1">
-                <Repeat className="h-3.5 w-3.5" />
+              <div className="inline-flex items-center text-[10px] font-medium text-muted-foreground bg-gray-100/50 dark:bg-white/5 py-0.5 px-1.5 rounded-full border border-gray-200 dark:border-white/10 gap-1">
+                <Repeat className="h-3 w-3 text-blue-500" />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">
@@ -439,26 +440,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
         >
           <div className="cursor-pointer flex items-center">
             {assignees && assignees.length > 0 ? (
-              <div className="flex -space-x-2 overflow-hidden">
+              <div className="flex -space-x-2 overflow-hidden shadow-sm">
                 {assignees.slice(0, 3).map((person, index) => (
                   <TooltipProvider key={index}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Avatar className="h-8 w-8 border-2 border-background ring-2 ring-background">
+                        <Avatar className="h-6 w-6 border border-background ring-1 ring-background/50">
                           <AvatarImage src={person.avatarUrl} alt={person.name} />
-                          <AvatarFallback className="text-xs font-medium">
+                          <AvatarFallback className="text-[9px] font-bold bg-intranet-primary/5 text-intranet-primary">
                             {person.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       </TooltipTrigger>
                       <TooltipContent container={container}>
-                        <p>{person.name}</p>
+                        <p className="font-semibold">{person.name}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 ))}
                 {assignees.length > 3 && (
-                  <div className="flex items-center justify-center h-8 w-8 rounded-full ring-2 ring-background bg-muted text-xs font-medium border-2 border-background">
+                  <div className="flex items-center justify-center h-6 w-6 rounded-full ring-1 ring-background/50 bg-muted text-[9px] font-bold border border-background">
                     +{assignees.length - 3}
                   </div>
                 )}
@@ -467,20 +468,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs font-medium">
+                    <Avatar className="h-6 w-6 ring-1 ring-background/50">
+                      <AvatarImage src={assignee.avatarUrl} alt={assignee.name} />
+                      <AvatarFallback className="text-[9px] font-bold bg-intranet-primary/5 text-intranet-primary">
                         {assignee.name.split(' ').map((n, i, arr) => (i === 0 || i === arr.length - 1) ? n[0] : '').join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                   </TooltipTrigger>
                   <TooltipContent container={container}>
-                    <p>{assignee.name}</p>
+                    <p className="font-semibold">{assignee.name}</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : (
-              <div className="h-8 w-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-400" />
+              <div className="h-6 w-6 rounded-full border border-dashed border-gray-300 dark:border-white/20 flex items-center justify-center hover:border-intranet-primary/50 transition-colors">
+                <User className="h-2.5 w-2.5 text-gray-400 group-hover:text-intranet-primary" />
               </div>
             )}
           </div>
@@ -491,7 +493,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   );
 
   return (
-    <BaseCard
+    <PremiumKanbanCard
       id={id}
       headerContent={headerContent}
       headerActions={headerActions}
@@ -500,12 +502,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
       onClick={onClick}
       isDragging={false}
       isDragOverlay={isDragOverlay}
-      cardClassName={cn(
-        isDueDatePassed && "border-red-500/50 dark:border-red-600/50",
-        isCompletedOptimistic && "opacity-80 bg-gray-50 dark:bg-gray-800/40",
-        "dark:bg-gray-900 shadow-sm hover:shadow-md transition-all duration-300",
-        className
-      )}
+      isOverdue={isDueDatePassed}
+      isCompleted={isCompletedOptimistic}
+      glow={true}
+      className={cn("mb-3", className)}
     />
   );
 };

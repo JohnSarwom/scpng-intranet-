@@ -81,12 +81,6 @@ function computeOfficerStats(email: string, data: UseDivisionDataReturn): Office
 }
 
 // --- RAG helpers ---
-const ragBorderLeft = (score: number) =>
-  score >= 70 ? 'border-l-green-400' : score >= 40 ? 'border-l-amber-400' : 'border-l-red-400';
-const ragBorderTop = (score: number) =>
-  score >= 70 ? 'border-t-green-400' : score >= 40 ? 'border-t-amber-400' : 'border-t-red-400';
-const ragDot = (score: number) =>
-  score >= 70 ? 'bg-green-500' : score >= 40 ? 'bg-amber-500' : 'bg-red-500';
 const ragText = (score: number) =>
   score >= 70 ? 'text-green-600' : score >= 40 ? 'text-amber-600' : 'text-red-600';
 
@@ -203,12 +197,10 @@ const OfficerCard: React.FC<{
 
   return (
     <Card
-      className={`overflow-hidden cursor-pointer hover:shadow-lg transition-all border-t-4 ${ragBorderTop(stats.overallScore)}`}
+      className="overflow-hidden cursor-pointer hover:shadow-lg transition-all"
       onClick={onClick}
     >
-      <div className="h-10 bg-gradient-to-r from-[#600018] to-[#900030] relative">
-        <div className={`absolute bottom-2 right-2 w-2 h-2 rounded-full ${ragDot(stats.overallScore)} ring-2 ring-white`} />
-      </div>
+      <div className="h-10 bg-gradient-to-r from-[#600018] to-[#900030] relative" />
       <CardContent className="p-4 pt-0">
         <div className="flex justify-center">
           <Avatar className="w-16 h-16 -mt-8 border-4 border-white shadow-md">
@@ -562,18 +554,6 @@ export const DivisionUnitsTab: React.FC<DivisionUnitsTabProps> = ({ data, metric
               </div>
 
               <StaffRoster unitName={selectedUnit.unitName} staff={data.staff} />
-
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => { setSelectedUnit(null); navigate('/unit'); }}
-                  className="gap-2"
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Open Unit Page
-                </Button>
-              </div>
             </div>
           )}
         </DialogContent>

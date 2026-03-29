@@ -1,4 +1,5 @@
-import { Project, Risk, KRA, Task, UserAsset } from '../types';
+import { Project, Risk, KRA, Task } from '../types';
+import { Asset } from '@/services/assetsSharePointService';
 
 // Mock objectives for KRA modal
 export const mockObjectives = [
@@ -61,9 +62,11 @@ export const mockRisks: Risk[] = [
     likelihood: "medium",
     status: "mitigating",
     category: "Financial",
-    projectId: "1",
-    projectName: "Website Redesign",
+    unit_id: "1",
+    project_id: "1",
+    project_name: "Website Redesign",
     owner: "Finance Team",
+    identificationDate: new Date("2023-02-10"),
     createdAt: new Date("2023-02-10"),
     updatedAt: new Date("2023-03-15")
   },
@@ -75,9 +78,11 @@ export const mockRisks: Risk[] = [
     likelihood: "high",
     status: "identified",
     category: "Resource",
-    projectId: "1",
-    projectName: "Website Redesign",
+    unit_id: "1",
+    project_id: "1",
+    project_name: "Website Redesign",
     owner: "Project Manager",
+    identificationDate: new Date("2023-02-15"),
     createdAt: new Date("2023-02-15"),
     updatedAt: new Date("2023-02-15")
   }
@@ -142,6 +147,7 @@ export const mockKras: KRA[] = [
     endDate: new Date("2023-12-31"),
     progress: 65,
     status: "in-progress",
+    title: "Improve Customer Satisfaction",
     kpis: [
       {
         id: "1",
@@ -180,6 +186,7 @@ export const mockKras: KRA[] = [
     endDate: new Date("2023-12-31"),
     progress: 40,
     status: "in-progress",
+    title: "Increase Market Share",
     kpis: [
       {
         id: "3",
@@ -198,42 +205,42 @@ export const mockKras: KRA[] = [
   }
 ];
 
-// Mock user assets
-export const mockAssets: UserAsset[] = [
+// Mock assets
+export const mockAssets: Asset[] = [
   {
     id: "1",
     name: "MacBook Pro 16\"",
     type: "laptop",
-    serialNumber: "MP123456789",
-    assignedTo: "John Smith",
-    department: "Engineering",
-    purchaseDate: new Date("2022-06-15"),
-    warrantyExpiry: new Date("2025-06-15"),
-    status: "active",
+    serial_number: "MP123456789",
+    assigned_to: "John Smith",
+    division: "Engineering",
+    purchase_date: "2022-06-15",
+    warranty_expiry_date: "2025-06-15",
+    condition: "Good",
     notes: "16GB RAM, 1TB SSD"
   },
   {
     id: "2",
     name: "iPhone 14 Pro",
     type: "mobile",
-    serialNumber: "IP987654321",
-    assignedTo: "Jane Doe",
-    department: "Marketing",
-    purchaseDate: new Date("2022-09-20"),
-    warrantyExpiry: new Date("2024-09-20"),
-    status: "active",
+    serial_number: "IP987654321",
+    assigned_to: "Jane Doe",
+    division: "Marketing",
+    purchase_date: "2022-09-20",
+    warranty_expiry_date: "2024-09-20",
+    condition: "Active",
     notes: "256GB, Graphite"
   },
   {
     id: "3",
     name: "Adobe Creative Cloud License",
     type: "software",
-    serialNumber: "AC123456",
-    assignedTo: "Design Team",
-    department: "Design",
-    purchaseDate: new Date("2023-01-10"),
-    warrantyExpiry: new Date("2024-01-10"),
-    status: "active",
+    serial_number: "AC123456",
+    assigned_to: "Design Team",
+    division: "Design",
+    purchase_date: "2023-01-10",
+    warranty_expiry_date: "2024-01-10",
+    condition: "Excellent",
     notes: "Annual subscription"
   }
-]; 
+];

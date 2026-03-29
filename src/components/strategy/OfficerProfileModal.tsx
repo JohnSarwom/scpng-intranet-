@@ -65,14 +65,14 @@ const ragLabel = (score: number) =>
     score >= 70 ? 'On Track' : score >= 40 ? 'At Risk' : 'Off Track';
 const ragBadgeClass = (score: number) =>
     score >= 70
-        ? 'bg-green-500/20 text-green-300 border-green-500/30'
+        ? 'bg-[#800020]/20 text-[#800020] dark:text-intranet-primary-light border-[#800020]/30'
         : score >= 40
-            ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-            : 'bg-red-500/20 text-red-300 border-red-500/30';
+            ? 'bg-[#800020]/10 text-[#800020]/80 dark:text-intranet-primary-light/80 border-[#800020]/20'
+            : 'bg-[#800020]/5 text-[#800020]/60 dark:text-intranet-primary-light/60 border-[#800020]/10';
 const ragDotClass = (score: number) =>
-    score >= 70 ? 'bg-green-400' : score >= 40 ? 'bg-amber-400' : 'bg-red-400';
+    score >= 70 ? 'bg-[#800020]' : score >= 40 ? 'bg-[#800020]/70' : 'bg-[#800020]/40';
 const ragBarClass = (score: number) =>
-    score >= 70 ? 'bg-green-400' : score >= 40 ? 'bg-amber-400' : 'bg-red-400';
+    score >= 70 ? 'bg-[#800020]' : score >= 40 ? 'bg-[#800020]/70' : 'bg-[#800020]/40';
 
 const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerProfileModalProps) => {
     const [activeTab, setActiveTab] = useState(performance ? 'overview' : 'about');
@@ -202,7 +202,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                     <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
                                         <div className="flex items-center justify-between mb-3">
-                                            <div className="p-2 bg-blue-50 dark:bg-blue-900/30 rounded-lg text-blue-600 dark:text-blue-400">
+                                            <div className="p-2 bg-[#800020]/10 dark:bg-[#800020]/20 rounded-lg text-[#800020] dark:text-intranet-primary-light">
                                                 <Target className="w-5 h-5" />
                                             </div>
                                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Strategic Goals</span>
@@ -212,20 +212,20 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                             <span className="text-xs text-gray-400 dark:text-gray-500 font-medium">Active Items</span>
                                         </div>
                                         <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-blue-500 h-full rounded-full" style={{ width: '65%' }}></div>
+                                            <div className="bg-[#800020] h-full rounded-full" style={{ width: '65%' }}></div>
                                         </div>
                                     </div>
 
                                     <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
                                         <div className="flex items-center justify-between mb-3">
-                                            <div className="p-2 bg-green-50 dark:bg-green-900/30 rounded-lg text-green-600 dark:text-green-400">
+                                            <div className="p-2 bg-[#800020]/10 dark:bg-[#800020]/20 rounded-lg text-[#800020] dark:text-intranet-primary-light">
                                                 <Award className="w-5 h-5" />
                                             </div>
                                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Performance</span>
                                         </div>
                                         <div className="flex items-baseline gap-2">
                                             <span className="text-2xl font-black text-gray-900 dark:text-gray-100">{performance.overallScore}%</span>
-                                            <ArrowUpRight className="w-4 h-4 text-green-500" />
+                                            <ArrowUpRight className="w-4 h-4 text-[#800020] dark:text-intranet-primary-light" />
                                         </div>
                                         <p className="mt-1 text-[10px] text-gray-400 dark:text-gray-500 font-medium uppercase tracking-tight">Q1 Variance: +2.4%</p>
                                     </div>
@@ -233,7 +233,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
 
                                     <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group">
                                         <div className="flex items-center justify-between mb-3">
-                                            <div className="p-2 bg-amber-50 dark:bg-amber-900/30 rounded-lg text-amber-600 dark:text-amber-400">
+                                            <div className="p-2 bg-[#800020]/10 dark:bg-[#800020]/20 rounded-lg text-[#800020] dark:text-intranet-primary-light">
                                                 <TrendingUp className="w-5 h-5" />
                                             </div>
                                             <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Growth</span>
@@ -244,7 +244,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                         </div>
                                         <div className="mt-2 flex gap-1">
                                             {[1, 2, 3, 4, 5].map(i => (
-                                                <div key={i} className={`h-1.5 w-full rounded-full ${i <= 4 ? 'bg-amber-400' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
+                                                <div key={i} className={`h-1.5 w-full rounded-full ${i <= 4 ? 'bg-[#800020]' : 'bg-gray-200 dark:bg-gray-700'}`}></div>
                                             ))}
                                         </div>
                                     </div>
@@ -442,7 +442,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                 <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-[#800020] dark:bg-intranet-primary-light border-2 border-white dark:border-gray-900" />
                                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <Badge className="bg-green-100 text-green-700 text-[10px] border-0 dark:bg-green-900/30 dark:text-green-400">Current</Badge>
+                                        <Badge className="bg-[#800020]/10 text-[#800020] text-[10px] border-0 dark:bg-[#800020]/20 dark:text-intranet-primary-light">Current</Badge>
                                     </div>
                                     <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{officer.jobTitle}</p>
                                     <p className="text-xs text-[#800020] dark:text-intranet-primary-light font-medium">Securities Commission of PNG</p>
@@ -474,7 +474,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                                             <div className="bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-white/10 rounded-2xl p-5 hover:shadow-xl hover:translate-x-1 transition-all duration-300">
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">{activity.date} — {activity.type}</span>
-                                                    <div className={`w-2 h-2 rounded-full ${activity.type === 'Strategic' ? 'bg-blue-400' : 'bg-green-400'}`}></div>
+                                                    <div className="w-2 h-2 rounded-full bg-[#800020]"></div>
                                                 </div>
                                                 <h5 className="font-bold text-gray-900 dark:text-gray-100 mb-2 leading-snug group-hover:text-[#800020] dark:group-hover:text-intranet-primary-light transition-colors">{activity.title}</h5>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium">
@@ -515,7 +515,7 @@ const OfficerProfileModal = ({ officer, open, onClose, performance }: OfficerPro
                             {(isAdmin || hasPermission('admin', 'access')) && (
                                 <button
                                     onClick={() => { onClose(); navigate('/admin?tab=org-structure'); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-700 rounded-md transition-colors border border-gray-200 dark:bg-gray-800 dark:hover:bg-indigo-900/30 dark:text-gray-300 dark:hover:text-indigo-400 dark:border-white/10"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-[#800020]/5 text-gray-600 hover:text-[#800020] rounded-md transition-colors border border-gray-200 dark:bg-gray-800 dark:hover:bg-[#800020]/20 dark:text-gray-300 dark:hover:text-intranet-primary-light dark:border-white/10"
                                     title="Edit Profile in Admin Dashboard"
                                 >
                                     <Pencil className="w-3.5 h-3.5" />

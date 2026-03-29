@@ -67,6 +67,8 @@ export interface StrategyData {
     alignments?: DivisionalAlignment[];
     milestones?: StrategyMilestone[];
     risks?: StrategyRisk[];
+    strategicGoals?: Array<{ id: string; title: string; description?: string }>;
+    strategicKRAs?: Array<{ id: string; goalId: string | null; title: string; description?: string }>;
 }
 
 export const mockStrategyData: StrategyData = {
@@ -303,5 +305,12 @@ export const mockStrategyData: StrategyData = {
         { id: "r-1", title: "Legislative Delay", impact: "High", context: "Parliamentary backlog may delay SC Act amendments." },
         { id: "r-2", title: "Resource Constraints", impact: "Medium", context: "Limited specialized headcount for IOSCO compliance." },
         { id: "r-3", title: "Cyber Security Threat", impact: "Critical", context: "Digital transformation increases attack surface on market data." }
-    ]
+    ],
+    strategicGoals: [
+        { id: "mock-goal-1", title: "Markets & Connectivity", description: "Rebuilding our digital markets and strengthening international connectivity to attract investment." },
+        { id: "mock-goal-2", title: "Regulatory Reform", description: "Updating the legal landscape to adapt to modern and digital economic realities." },
+        { id: "mock-goal-3", title: "Digitisation", description: "Embracing technology to digitize internal processes and establish an e-registry platform." },
+        { id: "mock-goal-4", title: "Administrative Fundamentals & Cooperation", description: "Building a high-performance culture, optimizing resources, and enhancing inter-agency collaboration." }
+    ],
+    strategicKRAs: []
 };

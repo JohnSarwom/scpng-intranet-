@@ -9,10 +9,10 @@ const PremiumTable = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement> & { containerClassName?: string }
 >(({ className, containerClassName, ...props }, ref) => (
-  <div className={cn("overflow-auto border dark:border-white/5 rounded-xl text-sm relative kanban-scrollbar bg-white/50 dark:bg-black/20 backdrop-blur-sm", containerClassName)}>
+  <div className={cn("overflow-auto max-h-[calc(100vh-200px)] border dark:border-white/5 rounded-xl text-sm relative kanban-scrollbar bg-white/50 dark:bg-black/20 backdrop-blur-sm", containerClassName)}>
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm select-none border-collapse", className)}
+      className={cn("w-full caption-bottom text-sm select-none border-separate border-spacing-0", className)}
       {...props}
     />
   </div>
@@ -23,7 +23,7 @@ const PremiumTableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("sticky top-0 z-50 bg-gray-50/95 dark:bg-black/40 backdrop-blur-md border-b-2 border-gray-200 dark:border-white/10", className)} {...props} />
+  <thead ref={ref} className={cn("sticky top-0 z-50 bg-gray-50/95 dark:bg-black/40 backdrop-blur-md border-b border-gray-200 dark:border-white/10", className)} {...props} />
 ))
 PremiumTableHeader.displayName = "PremiumTableHeader"
 
@@ -62,10 +62,10 @@ const PremiumTableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-12 px-6 first:pl-8 last:pr-8 text-left align-middle font-semibold dark:text-gray-300 transition-colors hover:bg-gray-100/80 dark:hover:bg-white/5",
-      sticky === 'left' && "sticky z-50 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md border-r border-b-2 border-gray-200 dark:border-white/10 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]",
+      "h-12 px-6 first:pl-8 last:pr-8 text-left align-middle font-semibold dark:text-gray-300 transition-colors hover:bg-gray-100/80 dark:hover:bg-white/5 border-b border-gray-200 dark:border-white/10",
+      sticky === 'left' && "sticky z-50 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md border-r border-b border-gray-200 dark:border-white/10 shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]",
       sticky === 'left' && !className?.includes('left-') && "left-0",
-      sticky === 'right' && "sticky z-50 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md border-l border-b-2 border-gray-200 dark:border-white/10 shadow-[-4px_0_24px_-12px_rgba(0,0,0,0.1)]",
+      sticky === 'right' && "sticky z-50 bg-gray-50/95 dark:bg-gray-950/95 backdrop-blur-md border-l border-b border-gray-200 dark:border-white/10 shadow-[-4px_0_24px_-12px_rgba(0,0,0,0.1)]",
       sticky === 'right' && !className?.includes('right-') && "right-0",
       className
     )}

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Eye, Edit, Trash2 } from "lucide-react";
@@ -9,7 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
-import { Asset } from "@/types/asset";
+import { Asset } from "@/services/assetsSharePointService";
 
 interface TableActionsProps {
   asset: Asset;

@@ -1,33 +1,35 @@
 import { useState, useCallback, useEffect } from 'react';
-import { UserAsset } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
 import { useToast } from '@/components/ui/use-toast';
 
 export interface AssetFilterState {
   type: string;
-  status: string;
-  department: string;
+  condition: string;
+  division: string;
+  unit: string;
   assignedTo: string;
 }
 
-export function useAssetState(initialAssets: UserAsset[] = []) {
+export function useAssetState(initialAssets: Asset[] = []) {
   const { toast } = useToast();
-  const [assets, setAssets] = useState<UserAsset[]>(initialAssets);
-  const [filteredAssets, setFilteredAssets] = useState<UserAsset[]>(initialAssets);
+  const [assets, setAssets] = useState<Asset[]>(initialAssets);
+  const [filteredAssets, setFilteredAssets] = useState<Asset[]>(initialAssets);
   
   // Asset filtering state
   const [assetFilters, setAssetFilters] = useState<AssetFilterState>({
     type: 'all',
-    status: 'all',
-    department: 'all',
+    condition: 'all',
+    division: 'all',
+    unit: 'all',
     assignedTo: 'all'
   });
   
   // Modal states
   const [showAddAssetModal, setShowAddAssetModal] = useState(false);
   const [showEditAssetModal, setShowEditAssetModal] = useState(false);
-  const [editingAsset, setEditingAsset] = useState<UserAsset | null>(null);
+  const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [showDeleteAssetModal, setShowDeleteAssetModal] = useState(false);
-  const [deletingAsset, setDeletingAsset] = useState<UserAsset | null>(null);
+  const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
   
   // Apply asset filters
   const applyAssetFilters = useCallback(() => {
@@ -37,16 +39,20 @@ export function useAssetState(initialAssets: UserAsset[] = []) {
       filtered = filtered.filter(asset => asset.type === assetFilters.type);
     }
     
-    if (assetFilters.status !== 'all') {
-      filtered = filtered.filter(asset => asset.status === assetFilters.status);
+    if (assetFilters.condition !== 'all') {
+      filtered = filtered.filter(asset => asset.condition === assetFilters.condition);
     }
     
-    if (assetFilters.department !== 'all') {
-      filtered = filtered.filter(asset => asset.department === assetFilters.department);
+    if (assetFilters.division !== 'all') {
+      filtered = filtered.filter(asset => asset.division === assetFilters.division);
+    }
+
+    if (assetFilters.unit !== 'all') {
+      filtered = filtered.filter(asset => asset.unit === assetFilters.unit);
     }
     
     if (assetFilters.assignedTo !== 'all') {
-      filtered = filtered.filter(asset => asset.assignedTo === assetFilters.assignedTo);
+      filtered = filtered.filter(asset => asset.assigned_to === assetFilters.assignedTo);
     }
     
     setFilteredAssets(filtered);
@@ -58,7 +64,7 @@ export function useAssetState(initialAssets: UserAsset[] = []) {
   }, [assets, assetFilters, applyAssetFilters]);
   
   // Function to add an asset
-  const handleAddAsset = (asset: UserAsset) => {
+  const handleAddAsset = (asset: Asset) => {
     setAssets([...assets, asset]);
     toast({
       title: "Asset Added",
@@ -67,7 +73,7 @@ export function useAssetState(initialAssets: UserAsset[] = []) {
   };
   
   // Function to update an asset
-  const handleUpdateAsset = (updatedAsset: UserAsset) => {
+  const handleUpdateAsset = (updatedAsset: Asset) => {
     const updatedAssets = assets.map(a => a.id === updatedAsset.id ? updatedAsset : a);
     setAssets(updatedAssets);
     toast({
@@ -93,8 +99,9 @@ export function useAssetState(initialAssets: UserAsset[] = []) {
   const resetAssetFilters = () => {
     setAssetFilters({
       type: 'all',
-      status: 'all',
-      department: 'all',
+      condition: 'all',
+      division: 'all',
+      unit: 'all',
       assignedTo: 'all'
     });
   };
@@ -125,4 +132,4 @@ export function useAssetState(initialAssets: UserAsset[] = []) {
     handleUpdateAsset,
     handleDeleteAsset
   };
-} 
+}

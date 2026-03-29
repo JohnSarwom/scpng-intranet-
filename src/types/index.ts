@@ -198,45 +198,6 @@ export interface Project {
   order?: number;
 }
 
-export interface UserAsset {
-  id: string;
-  name: string;
-  type?: string;
-  brand?: string;
-  model?: string;
-  serial_number?: string;
-  asset_id?: string;
-  description?: string;
-  assigned_date: string;
-  assigned_to?: string;
-  assigned_to_email?: string;
-  unit?: string;
-  division?: string;
-  purchase_date?: string;
-  purchase_cost?: number | null;
-  depreciated_value?: number | null;
-  vendor?: string;
-  warranty_expiry_date?: string;
-  invoice_url?: string;
-  expiry_date?: string;
-  life_expectancy_years?: number;
-  status?: 'active' | 'maintenance' | 'retired';
-  condition?: string;
-  ytd_usage?: string;
-  specifications?: Record<string, any>;
-  notes?: string;
-  barcode_url?: string;
-  image_url?: string;
-  admin_comments?: string;
-  last_updated?: string;
-  last_updated_by?: string;
-  created_at?: string;
-  created_by?: string;
-  deleted_at?: string;
-  deleted_by?: string;
-  is_deleted?: boolean;
-  checklist?: ChecklistItem[];
-}
 
 export interface OrganizationUnit {
   id: string;

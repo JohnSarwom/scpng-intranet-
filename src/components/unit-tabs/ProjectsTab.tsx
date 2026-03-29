@@ -207,7 +207,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
 
   return (
     <>
-      <Card className="dark:bg-gray-900/70 dark:backdrop-blur-xl dark:border-white/10 shadow-2xl border-none">
+      <Card className="dark:bg-gray-900/70 dark:backdrop-blur-xl dark:border-white/10 shadow-md border-none">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b dark:border-white/5 bg-gray-50/50 dark:bg-gray-800/40 backdrop-blur-md rounded-t-xl">
           <div className="space-y-1">
             <CardTitle className="text-xl font-bold dark:text-gray-100">Projects</CardTitle>
@@ -232,7 +232,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
         <CardContent className="pt-6">
           <PremiumTable containerClassName="h-[calc(100vh-220px)]">
             <PremiumTableHeader>
-              <PremiumTableRow className="hover:bg-transparent border-none">
+              <PremiumTableRow className="hover:bg-transparent">
                 <PremiumTableHead sticky="left" className="w-[200px] min-w-[200px]">Name</PremiumTableHead>
                 <PremiumTableHead className="min-w-[120px]">Status</PremiumTableHead>
                 <PremiumTableHead className="min-w-[200px]">Manager</PremiumTableHead>
@@ -283,7 +283,7 @@ export const ProjectsTab: React.FC<ProjectsTabProps> = ({
                                 {project.assignees.slice(0, 3).map((assignee, i) => (
                                   <Tooltip key={assignee.id || i}>
                                     <TooltipTrigger asChild>
-                                      <Avatar className="inline-block h-7 w-7 ring-2 ring-background cursor-help transition-transform hover:-translate-y-0.5">
+                                      <Avatar className="inline-block h-7 w-7 ring-2 ring-background cursor-default transition-transform hover:-translate-y-0.5">
                                         <AvatarFallback className="text-[10px] bg-secondary text-secondary-foreground font-semibold">
                                           {assignee.initials || getInitials(assignee.name)}
                                         </AvatarFallback>

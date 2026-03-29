@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,83 +18,34 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { Plus, Search, Filter, RotateCcw, Download, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Search, RotateCcw, Download, Eye, Edit, Trash2, MoreHorizontal, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Invoice {
-  id: string;
-  invoiceNumber: string;
-  vendorName: string;
-  assetName: string;
-  assetId: string;
-  amount: number;
-  issueDate: string;
-  dueDate: string;
-  status: "paid" | "pending" | "overdue";
-  paymentDate?: string;
-  attachmentUrl?: string;
-}
-
-// Sample data
-const sampleInvoices: Invoice[] = [
-  {
-    id: "1",
-    invoiceNumber: "INV-2023-001",
-    vendorName: "Dell Inc.",
-    assetName: "DELL E2318H",
-    assetId: "DELL-001",
-    amount: 399.99,
-    issueDate: "2023-01-15",
-    dueDate: "2023-02-15",
-    status: "paid",
-    paymentDate: "2023-02-10",
-  },
-  {
-    id: "2",
-    invoiceNumber: "INV-2023-002",
-    vendorName: "Canon",
-    assetName: "Canon ImageRUNNER ADVANCE DX C3730",
-    assetId: "CANON-001",
-    amount: 2499.99,
-    issueDate: "2023-02-20",
-    dueDate: "2023-03-20",
-    status: "paid",
-    paymentDate: "2023-03-15",
-  },
-  {
-    id: "3",
-    invoiceNumber: "INV-2023-003",
-    vendorName: "HP Inc.",
-    assetName: "HP ProLiant DL380",
-    assetId: "HP-001",
-    amount: 5499.99,
-    issueDate: "2023-03-05",
-    dueDate: "2023-04-05",
-    status: "pending",
-  },
-  {
-    id: "4",
-    invoiceNumber: "INV-2023-004",
-    vendorName: "Apple",
-    assetName: "MacBook Pro",
-    assetId: "APPLE-001",
-    amount: 1999.99,
-    issueDate: "2023-03-15",
-    dueDate: "2023-04-15",
-    status: "overdue",
-  },
-];
+import { useAssetSubSharePoint } from "@/hooks/useAssetSubSharePoint";
+import { useAssetsSharePoint } from "@/hooks/useAssetsSharePoint";
 
 export function InvoicesPage() {
   const { toast } = useToast();
+  const { useInvoices } = useAssetSubSharePoint();
+  const { data: invoiceRecords = [], isLoading: loadingInvoices } = useInvoices();
+  
+  // Also fetch assets to map Asset ID to Asset Name (if needed)
+  const { assets, loading: loadingAssets } = useAssetsSharePoint();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [vendorFilter, setVendorFilter] = useState("all");
-  const [sortColumn, setSortColumn] = useState("invoiceNumber");
+  const [sortColumn, setSortColumn] = useState("issueDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   // Extract unique vendors for filter
-  const vendors = [...new Set(sampleInvoices.map((invoice) => invoice.vendorName))];
+  const vendors = [...new Set(invoiceRecords.map((invoice) => invoice.vendor_name).filter(Boolean))].sort();
+
+  // Helper to get asset name if not provided in invoice
+  const getAssetName = (record: any) => {
+    if (record.asset_name) return record.asset_name;
+    const asset = assets.find(a => a.id === record.asset_id || a.asset_id === record.asset_id);
+    return asset ? asset.name : record.asset_id;
+  };
 
   // Handle sorting
   const handleSort = (column: string) => {
@@ -105,40 +55,6 @@ export function InvoicesPage() {
       setSortColumn(column);
       setSortDirection("asc");
     }
-  };
-
-  // Filter and sort invoices
-  const filteredInvoices = sampleInvoices
-    .filter((invoice) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        invoice.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.vendorName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.assetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        invoice.assetId.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesStatus = statusFilter === "all" || invoice.status === statusFilter;
-      const matchesVendor = vendorFilter === "all" || invoice.vendorName === vendorFilter;
-
-      return matchesSearch && matchesStatus && matchesVendor;
-    })
-    .sort((a, b) => {
-      const aValue = a[sortColumn as keyof Invoice];
-      const bValue = b[sortColumn as keyof Invoice];
-
-      if (!aValue && !bValue) return 0;
-      if (!aValue) return 1;
-      if (!bValue) return -1;
-
-      const comparison = String(aValue).localeCompare(String(bValue));
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("all");
-    setVendorFilter("all");
   };
 
   // Render sort indicator
@@ -151,7 +67,8 @@ export function InvoicesPage() {
 
   // Status badge color mapping
   const getStatusBadgeClass = (status: string) => {
-    switch (status) {
+    const s = status?.toLowerCase() || "";
+    switch (s) {
       case "paid":
         return "bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded-full text-xs";
       case "pending":
@@ -163,41 +80,81 @@ export function InvoicesPage() {
     }
   };
 
-  // Action handlers
-  const handleAddInvoice = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Add invoice functionality will be available soon.",
-    });
-  };
+  // Filter and sort invoices
+  const filteredInvoices = (invoiceRecords || [])
+    .filter((invoice) => {
+      const assetName = getAssetName(invoice);
+      const matchesSearch =
+        searchQuery === "" ||
+        String(invoice.invoice_number).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(invoice.vendor_name).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(assetName).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(invoice.asset_id).toLowerCase().includes(searchQuery.toLowerCase());
 
-  const handleViewInvoice = (invoice: Invoice) => {
+      const matchesStatus = statusFilter === "all" || invoice.status?.toLowerCase() === statusFilter.toLowerCase();
+      const matchesVendor = vendorFilter === "all" || invoice.vendor_name === vendorFilter;
+
+      return matchesSearch && matchesStatus && matchesVendor;
+    })
+    .sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortColumn) {
+        case "invoiceNumber": aValue = a.invoice_number; bValue = b.invoice_number; break;
+        case "vendorName": aValue = a.vendor_name; bValue = b.vendor_name; break;
+        case "assetName": aValue = getAssetName(a); bValue = getAssetName(b); break;
+        case "assetId": aValue = a.asset_id; bValue = b.asset_id; break;
+        case "amount": aValue = a.amount; bValue = b.amount; break;
+        case "issueDate": aValue = a.issue_date; bValue = b.issue_date; break;
+        case "dueDate": aValue = a.due_date; bValue = b.due_date; break;
+        case "status": aValue = a.status; bValue = b.status; break;
+        case "paymentDate": aValue = a.payment_date; bValue = b.payment_date; break;
+        default: aValue = a.invoice_number; bValue = b.invoice_number;
+      }
+
+      if (aValue === undefined || aValue === null) aValue = "";
+      if (bValue === undefined || bValue === null) bValue = "";
+
+      const comparison = String(aValue).localeCompare(String(bValue));
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+  // Action handlers
+  const handleViewInvoice = (invoice: any) => {
     toast({
       title: "View Invoice",
-      description: `Viewing invoice ${invoice.invoiceNumber}`,
+      description: `Viewing invoice ${invoice.invoice_number}`,
     });
   };
 
-  const handleEditInvoice = (invoice: Invoice) => {
+  const handleEditInvoice = (invoice: any) => {
     toast({
       title: "Edit Invoice",
-      description: `Editing invoice ${invoice.invoiceNumber}`,
+      description: `Editing invoice ${invoice.invoice_number}`,
     });
   };
 
-  const handleDeleteInvoice = (invoice: Invoice) => {
+  const handleDeleteInvoice = (invoice: any) => {
     toast({
       title: "Delete Invoice",
-      description: `Deleting invoice ${invoice.invoiceNumber}`,
+      description: `Deleting invoice ${invoice.invoice_number}`,
     });
   };
 
-  const handleDownloadAll = () => {
-    toast({
-      title: "Download Invoices",
-      description: "Downloading all filtered invoices. Feature coming soon.",
-    });
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setVendorFilter("all");
   };
+
+  if (loadingInvoices || loadingAssets) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full shadow-sm border">
@@ -208,7 +165,7 @@ export function InvoicesPage() {
             <p className="text-muted-foreground">Manage asset-related invoices and financial records.</p>
           </div>
           <TooltipWrapper content="Add new invoice">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => toast({ title: "Coming Soon", description: "Use Asset Registry to add invoices." })}>
               <Plus className="h-4 w-4" /> Add Invoice
             </Button>
           </TooltipWrapper>
@@ -263,14 +220,6 @@ export function InvoicesPage() {
                 <RotateCcw className="h-4 w-4" /> Reset
               </Button>
             </TooltipWrapper>
-
-            <div className="flex-grow"></div>
-
-            <TooltipWrapper content="Download all invoices">
-              <Button variant="outline" onClick={handleDownloadAll} className="gap-1">
-                <Download className="h-4 w-4" /> Download All
-              </Button>
-            </TooltipWrapper>
           </div>
         </div>
 
@@ -308,16 +257,6 @@ export function InvoicesPage() {
                         <TooltipWrapper content="Click to sort by asset">
                           <div className="flex items-center">
                             Asset {renderSortIndicator("assetName")}
-                          </div>
-                        </TooltipWrapper>
-                      </TableHead>
-                      <TableHead
-                        className="font-medium cursor-pointer whitespace-nowrap"
-                        onClick={() => handleSort("assetId")}
-                      >
-                        <TooltipWrapper content="Click to sort by asset ID">
-                          <div className="flex items-center">
-                            Asset ID {renderSortIndicator("assetId")}
                           </div>
                         </TooltipWrapper>
                       </TableHead>
@@ -361,23 +300,13 @@ export function InvoicesPage() {
                           </div>
                         </TooltipWrapper>
                       </TableHead>
-                      <TableHead
-                        className="font-medium cursor-pointer whitespace-nowrap"
-                        onClick={() => handleSort("paymentDate")}
-                      >
-                        <TooltipWrapper content="Click to sort by payment date">
-                          <div className="flex items-center">
-                            Payment Date {renderSortIndicator("paymentDate")}
-                          </div>
-                        </TooltipWrapper>
-                      </TableHead>
                       <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredInvoices.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={10} className="h-24 text-center">
+                        <TableCell colSpan={8} className="h-24 text-center">
                           No invoices found
                         </TableCell>
                       </TableRow>
@@ -385,23 +314,18 @@ export function InvoicesPage() {
                       filteredInvoices.map((invoice) => (
                         <TableRow key={invoice.id}>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Invoice #: ${invoice.invoiceNumber}`}>
-                              {invoice.invoiceNumber}
+                            <TooltipWrapper content={`Invoice #: ${invoice.invoice_number}`}>
+                              {invoice.invoice_number}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Vendor: ${invoice.vendorName}`}>
-                              {invoice.vendorName}
+                            <TooltipWrapper content={`Vendor: ${invoice.vendor_name}`}>
+                              {invoice.vendor_name}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="max-w-[200px] truncate">
-                            <TooltipWrapper content={`Asset: ${invoice.assetName}`}>
-                              {invoice.assetName}
-                            </TooltipWrapper>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Asset ID: ${invoice.assetId}`}>
-                              {invoice.assetId}
+                            <TooltipWrapper content={`Asset: ${getAssetName(invoice)}`}>
+                              {getAssetName(invoice)}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
@@ -410,25 +334,20 @@ export function InvoicesPage() {
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Issue Date: ${formatDate(invoice.issueDate)}`}>
-                              {formatDate(invoice.issueDate)}
+                            <TooltipWrapper content={`Issue Date: ${formatDate(invoice.issue_date)}`}>
+                              {formatDate(invoice.issue_date)}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Due Date: ${formatDate(invoice.dueDate)}`}>
-                              {formatDate(invoice.dueDate)}
+                            <TooltipWrapper content={`Due Date: ${formatDate(invoice.due_date)}`}>
+                              {formatDate(invoice.due_date)}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <TooltipWrapper content={`Status: ${invoice.status}`}>
                               <span className={getStatusBadgeClass(invoice.status)}>
-                                {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+                                {String(invoice.status).charAt(0).toUpperCase() + String(invoice.status).slice(1)}
                               </span>
-                            </TooltipWrapper>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={invoice.paymentDate ? `Payment Date: ${formatDate(invoice.paymentDate)}` : 'Not paid yet'}>
-                              {invoice.paymentDate ? formatDate(invoice.paymentDate) : "N/A"}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="text-right sticky right-0 bg-white z-10">
@@ -470,7 +389,7 @@ export function InvoicesPage() {
         </Card>
 
         <div className="text-sm text-muted-foreground">
-          Showing {filteredInvoices.length} of {sampleInvoices.length} invoices
+          Showing {filteredInvoices.length} of {invoiceRecords.length} invoices
         </div>
       </CardContent>
     </Card>

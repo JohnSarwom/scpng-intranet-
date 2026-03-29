@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,76 +18,37 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
 import { formatDate } from "@/lib/utils";
-import { Plus, Search, RotateCcw, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react";
+import { Plus, Search, RotateCcw, Eye, Edit, Trash2, MoreHorizontal, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface MaintenanceRecord {
-  id: string;
-  assetName: string;
-  assetId: string;
-  type: "preventive" | "corrective" | "inspection";
-  description: string;
-  status: "scheduled" | "in-progress" | "completed" | "cancelled";
-  scheduledDate: string;
-  completedDate?: string;
-  technician?: string;
-  cost?: number;
-  notes?: string;
-}
-
-// Sample data
-const sampleRecords: MaintenanceRecord[] = [
-  {
-    id: "1",
-    assetName: "Canon ImageRUNNER ADVANCE DX C3730",
-    assetId: "CANON-001",
-    type: "preventive",
-    description: "Quarterly maintenance check and toner replacement",
-    status: "scheduled",
-    scheduledDate: "2023-05-15",
-    technician: "John Smith",
-  },
-  {
-    id: "2",
-    assetName: "HP ProLiant DL380",
-    assetId: "HP-001",
-    type: "corrective",
-    description: "Fan replacement and system diagnostic",
-    status: "completed",
-    scheduledDate: "2023-04-10",
-    completedDate: "2023-04-10",
-    technician: "Mike Johnson",
-    cost: 350,
-  },
-  {
-    id: "3",
-    assetName: "Dell XPS 15",
-    assetId: "DELL-005",
-    type: "inspection",
-    description: "Annual hardware inspection and software update",
-    status: "in-progress",
-    scheduledDate: "2023-05-01",
-    technician: "Sarah Williams",
-  },
-  {
-    id: "4",
-    assetName: "Polycom VVX 450",
-    assetId: "POLYCOM-002",
-    type: "corrective",
-    description: "Microphone malfunction repair",
-    status: "cancelled",
-    scheduledDate: "2023-03-22",
-    notes: "Asset will be replaced instead of repaired",
-  },
-];
+import { useAssetSubSharePoint } from "@/hooks/useAssetSubSharePoint";
+import { useAssetsSharePoint } from "@/hooks/useAssetsSharePoint";
 
 export function MaintenancePage() {
   const { toast } = useToast();
+  const { useMaintenance } = useAssetSubSharePoint();
+  const { data: maintenanceRecords = [], isLoading: loadingMaint } = useMaintenance();
+  
+  // Also fetch assets to map Asset ID to Asset Name
+  const { assets, loading: loadingAssets } = useAssetsSharePoint();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [sortColumn, setSortColumn] = useState("scheduledDate");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+
+  // Helper to get asset name from ID
+  const getAssetName = (assetId: string) => {
+    const asset = assets.find(a => a.id === assetId || a.asset_id === assetId);
+    return asset ? asset.name : assetId;
+  };
+
+  // Reset filters
+  const resetFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setTypeFilter("all");
+  };
 
   // Handle sorting
   const handleSort = (column: string) => {
@@ -98,40 +58,6 @@ export function MaintenancePage() {
       setSortColumn(column);
       setSortDirection("asc");
     }
-  };
-
-  // Filter and sort maintenance records
-  const filteredRecords = sampleRecords
-    .filter((record) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        record.assetName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.assetId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        record.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (record.technician && record.technician.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      const matchesStatus = statusFilter === "all" || record.status === statusFilter;
-      const matchesType = typeFilter === "all" || record.type === typeFilter;
-
-      return matchesSearch && matchesStatus && matchesType;
-    })
-    .sort((a, b) => {
-      const aValue = a[sortColumn as keyof MaintenanceRecord];
-      const bValue = b[sortColumn as keyof MaintenanceRecord];
-
-      if (!aValue && !bValue) return 0;
-      if (!aValue) return 1;
-      if (!bValue) return -1;
-
-      const comparison = String(aValue).localeCompare(String(bValue));
-      return sortDirection === "asc" ? comparison : -comparison;
-    });
-
-  // Reset filters
-  const resetFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("all");
-    setTypeFilter("all");
   };
 
   // Render sort indicator
@@ -144,7 +70,8 @@ export function MaintenancePage() {
 
   // Status badge color mapping
   const getStatusBadgeClass = (status: string) => {
-    switch (status) {
+    const s = status?.toLowerCase() || "";
+    switch (s) {
       case "scheduled":
         return "bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full text-xs";
       case "in-progress":
@@ -160,7 +87,8 @@ export function MaintenancePage() {
 
   // Type badge color mapping
   const getTypeBadgeClass = (type: string) => {
-    switch (type) {
+    const t = type?.toLowerCase() || "";
+    switch (t) {
       case "preventive":
         return "bg-green-100 text-green-800 border border-green-200 px-2 py-0.5 rounded-full text-xs";
       case "corrective":
@@ -173,33 +101,74 @@ export function MaintenancePage() {
   };
 
   // Action handlers
-  const handleAddMaintenance = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Add maintenance record functionality will be available soon.",
-    });
-  };
-
-  const handleViewRecord = (record: MaintenanceRecord) => {
+  const handleViewRecord = (record: any) => {
     toast({
       title: "View Maintenance Record",
-      description: `Viewing maintenance record for ${record.assetName}`,
+      description: `Viewing maintenance record for ${getAssetName(record.asset_id)}`,
     });
   };
 
-  const handleEditRecord = (record: MaintenanceRecord) => {
+  const handleEditRecord = (record: any) => {
     toast({
       title: "Edit Maintenance Record",
-      description: `Editing maintenance record for ${record.assetName}`,
+      description: `Editing maintenance record for ${getAssetName(record.asset_id)}`,
     });
   };
 
-  const handleDeleteRecord = (record: MaintenanceRecord) => {
+  const handleDeleteRecord = (record: any) => {
     toast({
       title: "Delete Maintenance Record",
-      description: `Deleting maintenance record for ${record.assetName}`,
+      description: `Deleting maintenance record for ${getAssetName(record.asset_id)}`,
     });
   };
+
+  // Filter and sort maintenance records
+  const filteredRecords = (maintenanceRecords || [])
+    .filter((record) => {
+      const assetName = getAssetName(record.asset_id);
+      const matchesSearch =
+        searchQuery === "" ||
+        String(assetName).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(record.asset_id).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(record.description).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (record.technician && String(record.technician).toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesStatus = statusFilter === "all" || record.status?.toLowerCase() === statusFilter.toLowerCase();
+      const matchesType = typeFilter === "all" || record.maintenance_type?.toLowerCase() === typeFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus && matchesType;
+    })
+    .sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      // Map sort columns to SharePoint fields
+      switch (sortColumn) {
+        case "assetName": aValue = getAssetName(a.asset_id); bValue = getAssetName(b.asset_id); break;
+        case "assetId": aValue = a.asset_id; bValue = b.asset_id; break;
+        case "type": aValue = a.maintenance_type; bValue = b.maintenance_type; break;
+        case "status": aValue = a.status; bValue = b.status; break;
+        case "scheduledDate": aValue = a.scheduled_date; bValue = b.scheduled_date; break;
+        case "completedDate": aValue = a.completed_date; bValue = b.completed_date; break;
+        case "technician": aValue = a.technician; bValue = b.technician; break;
+        case "cost": aValue = a.cost; bValue = b.cost; break;
+        default: aValue = a.description; bValue = b.description;
+      }
+
+      if (aValue === undefined || aValue === null) aValue = "";
+      if (bValue === undefined || bValue === null) bValue = "";
+
+      const comparison = String(aValue).localeCompare(String(bValue));
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+  if (loadingMaint || loadingAssets) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <Card className="w-full shadow-sm border">
@@ -210,7 +179,7 @@ export function MaintenancePage() {
             <p className="text-muted-foreground">Track and schedule maintenance operations for assets.</p>
           </div>
           <TooltipWrapper content="Add new maintenance record">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={() => toast({ title: "Coming Soon", description: "Use Asset Registry to add maintenance." })}>
               <Plus className="h-4 w-4" /> Add Record
             </Button>
           </TooltipWrapper>
@@ -364,23 +333,13 @@ export function MaintenancePage() {
                           </div>
                         </TooltipWrapper>
                       </TableHead>
-                      <TableHead
-                        className="font-medium cursor-pointer max-w-[200px]"
-                        onClick={() => handleSort("notes")}
-                      >
-                        <TooltipWrapper content="Click to sort by notes">
-                          <div className="flex items-center">
-                            Notes {renderSortIndicator("notes")}
-                          </div>
-                        </TooltipWrapper>
-                      </TableHead>
                       <TableHead className="text-right font-medium sticky right-0 bg-white z-20 whitespace-nowrap">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredRecords.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={11} className="h-24 text-center">
+                        <TableCell colSpan={10} className="h-24 text-center">
                           No maintenance records found
                         </TableCell>
                       </TableRow>
@@ -388,19 +347,19 @@ export function MaintenancePage() {
                       filteredRecords.map((record) => (
                         <TableRow key={record.id}>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Asset: ${record.assetName}`}>
-                              {record.assetName}
+                            <TooltipWrapper content={`Asset: ${getAssetName(record.asset_id)}`}>
+                              {getAssetName(record.asset_id)}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Asset ID: ${record.assetId}`}>
-                              {record.assetId}
+                            <TooltipWrapper content={`Asset ID: ${record.asset_id}`}>
+                              {record.asset_id}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Maintenance type: ${record.type}`}>
-                              <span className={getTypeBadgeClass(record.type)}>
-                                {record.type.charAt(0).toUpperCase() + record.type.slice(1)}
+                            <TooltipWrapper content={`Maintenance type: ${record.maintenance_type}`}>
+                              <span className={getTypeBadgeClass(record.maintenance_type)}>
+                                {String(record.maintenance_type).charAt(0).toUpperCase() + String(record.maintenance_type).slice(1)}
                               </span>
                             </TooltipWrapper>
                           </TableCell>
@@ -412,18 +371,18 @@ export function MaintenancePage() {
                           <TableCell className="whitespace-nowrap">
                             <TooltipWrapper content={`Status: ${record.status}`}>
                               <span className={getStatusBadgeClass(record.status)}>
-                                {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                                {String(record.status).charAt(0).toUpperCase() + String(record.status).slice(1)}
                               </span>
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={`Scheduled for: ${formatDate(record.scheduledDate)}`}>
-                              {formatDate(record.scheduledDate)}
+                            <TooltipWrapper content={`Scheduled for: ${formatDate(record.scheduled_date)}`}>
+                              {formatDate(record.scheduled_date)}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={record.completedDate ? `Completed on: ${formatDate(record.completedDate)}` : 'Not completed yet'}>
-                              {record.completedDate ? formatDate(record.completedDate) : "N/A"}
+                            <TooltipWrapper content={record.completed_date ? `Completed on: ${formatDate(record.completed_date)}` : 'Not completed yet'}>
+                              {record.completed_date ? formatDate(record.completed_date) : "N/A"}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
@@ -432,13 +391,8 @@ export function MaintenancePage() {
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            <TooltipWrapper content={record.cost ? `$${record.cost.toFixed(2)}` : 'No cost recorded'}>
-                              {record.cost ? `$${record.cost.toFixed(2)}` : "N/A"}
-                            </TooltipWrapper>
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
-                            <TooltipWrapper content={record.notes || 'No notes'}>
-                              {record.notes || "N/A"}
+                            <TooltipWrapper content={record.cost ? `$${Number(record.cost).toFixed(2)}` : 'No cost recorded'}>
+                              {record.cost ? `$${Number(record.cost).toFixed(2)}` : "N/A"}
                             </TooltipWrapper>
                           </TableCell>
                           <TableCell className="text-right sticky right-0 bg-white z-10">
@@ -480,7 +434,7 @@ export function MaintenancePage() {
         </Card>
 
         <div className="text-sm text-muted-foreground">
-          Showing {filteredRecords.length} of {sampleRecords.length} maintenance records
+          Showing {filteredRecords.length} of {maintenanceRecords.length} maintenance records
         </div>
       </CardContent>
     </Card>

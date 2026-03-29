@@ -23,6 +23,14 @@
                      no raw SQL outside repositories]
   Current task:     [describe what you're building or fixing]
 
+  MANDATORY PRELIMINARY RESEARCH:
+  Before performing any analysis or implementation, you MUST:
+  1. Consult the `docs/INTRODUCTION.md` file for the latest
+     project structure and documentation map.
+  2. Search the `docs/` directory for module-specific context
+     (e.g., `docs/modules/task-registry/unit-tabs.md`) to
+     ensure all fixes align with established logic.
+
   This section seeds the Session Context Log. Every rule, pattern,
   and constraint stated here is binding for the entire session.
   The model must never contradict these without explicitly flagging

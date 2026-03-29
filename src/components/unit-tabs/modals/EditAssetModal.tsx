@@ -25,7 +25,8 @@ import {
   CommandItem,
   CommandList
 } from "@/components/ui/command";
-import { UserAsset, Division as TypeDivision } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
+import { Division as TypeDivision } from '@/types';
 import { Unit } from '@/data/units';
 import { StaffMember } from '@/data/divisions';
 import { toast } from "@/components/ui/use-toast";
@@ -38,9 +39,9 @@ import { ASSET_CONDITIONS } from '@/constants/assetChoices';
 interface EditAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onEdit: (asset: Partial<UserAsset>) => void;
+  onEdit: (asset: Partial<Asset>) => void;
   onDelete: () => void;
-  asset: UserAsset;
+  asset: Asset;
   divisions: TypeDivision[];
   units: Unit[];
   staffMembers: StaffMember[];
@@ -72,7 +73,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
   existingTypes,
   existingVendors
 }) => {
-  const [editedAsset, setEditedAsset] = useState<Partial<UserAsset>>({});
+  const [editedAsset, setEditedAsset] = useState<Partial<Asset>>({});
   const [showInvoiceUpload, setShowInvoiceUpload] = useState(false);
   const [isAssigneePopoverOpen, setIsAssigneePopoverOpen] = useState(false);
   const [isNamePopoverOpen, setIsNamePopoverOpen] = useState(false);
@@ -110,7 +111,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
     onClose();
   }
 
-  const handleChange = useCallback((field: keyof Partial<UserAsset>, value: any) => {
+  const handleChange = useCallback((field: keyof Partial<Asset>, value: any) => {
     setEditedAsset(prev => {
       let updatedAsset = { ...prev };
 
@@ -142,7 +143,7 @@ const EditAssetModal: React.FC<EditAssetModalProps> = ({
     });
   }, [staffMembers, divisions]);
 
-  const handleDateChange = (field: keyof Partial<UserAsset>, date: Date | null | undefined) => {
+  const handleDateChange = (field: keyof Partial<Asset>, date: Date | null | undefined) => {
     handleChange(field, date ? formatDateForInput(date) : null);
   };
 

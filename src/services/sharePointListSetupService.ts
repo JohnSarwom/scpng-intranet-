@@ -12,6 +12,10 @@ import { mockProjects } from '@/mockData/projects';
 import { initialEmployeeData } from '@/data/employeeData';
 import { generateAllOfficerData, SCPNG_STAFF_DATA } from '@/data/mockPerformanceDataGenerator';
 import { MOCK_DIVISIONS_DATA, MOCK_UNITS_DATA } from '@/mockData/orgData';
+import { fetchStaffMembers } from './staffService';
+import { DEMO_TASK_TEMPLATES } from '../mockData/demoTasks';
+import { DEMO_ASSET_TEMPLATES } from '../mockData/demoAssets';
+
 
 export class SharePointListSetupService {
     private client: Client;
@@ -3841,7 +3845,350 @@ export class SharePointListSetupService {
             return { success: false, message: `Failed to create list: ${error.message}`, details: error };
         }
     }
+
+    /**
+     * Seeds 10 demo tasks for every staff member in the Operations_Tasks list.
+     */
+    async seedTenDemoTasksForEachUser(): Promise<{ success: boolean; count: number; message: string }> {
+        console.log('🚀 [Setup] Starting bulk task seeding for all staff members...');
+        try {
+            // 1. Fetch all staff members
+            const staff = await fetchStaffMembers();
+            if (!staff || staff.length === 0) {
+                throw new Error('No staff members found to seed tasks for.');
+            }
+
+            // 2. Resolve Operations_Tasks list ID
+            const listCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Operations_Tasks'").get();
+            if (!listCheck.value || listCheck.value.length === 0) {
+                throw new Error('Operations_Tasks list not found.');
+            }
+            const listId = listCheck.value[0].id;
+
+            let totalCreated = 0;
+            const batchSize = 5; // Process 5 users at a time
+
+            for (let i = 0; i < staff.length; i += batchSize) {
+                const batch = staff.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (user) => {
+                    for (const template of DEMO_TASK_TEMPLATES) {
+                        const payload = {
+                            fields: {
+                                Title: template.title,
+                                Description: template.description,
+                                Priority: template.priority,
+                                Status: 'Planned',
+                                AssignedTo: user.email,
+                                AssignedToEmail: user.email,
+                                Assignees: JSON.stringify([{ id: user.id, name: user.name, email: user.email }]),
+                                Department: user.department || '',
+                                IsMockData: true
+                            }
+                        };
+                        await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(payload);
+                        totalCreated++;
+                    }
+                }));
+                console.log(`   Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(staff.length / batchSize)}`);
+            }
+
+            return { success: true, count: totalCreated, message: `Successfully seeded ${totalCreated} tasks for ${staff.length} users.` };
+        } catch (error: any) {
+            console.error('❌ [Setup] Bulk task seeding failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Seeds 10 demo assets for every staff member in the Assets list.
+     */
+    /**
+     * Seeds 10 demo assets for every staff member in the Assets list.
+     * Includes defensive field discovery and auto-remediation for schema mismatches.
+     */
+    async seedTenDemoAssetsForEachUser(): Promise<{ success: boolean; count: number; message: string }> {
+        console.log('🚀 [Setup] Starting bulk asset seeding for all staff members...');
+        try {
+            // 1. Fetch all staff members
+            const staff = await fetchStaffMembers();
+            if (!staff || staff.length === 0) {
+                throw new Error('No staff members found to seed assets for.');
+            }
+
+            // 2. Resolve Assets list ID
+            const listCheck = await this.client.api(`/sites/${this.siteId}/lists`).filter("displayName eq 'Assets'").get();
+            if (!listCheck.value || listCheck.value.length === 0) {
+                throw new Error('Assets list not found.');
+            }
+            const listId = listCheck.value[0].id;
+
+            // 3. Ensure Critical Columns Exist (Self-healing schema)
+            console.log('   🛠️ Ensuring Assets schema integrity...');
+            const criticalColumns = [
+                { name: 'AssetID', text: {} },
+                { name: 'Types', text: {} }, // Note: Types (plural) as used in mapper
+                { name: 'Brand', text: {} },
+                { name: 'Model', text: {} },
+                { name: 'Condition', text: {} },
+                { name: 'AssignedTo', text: {} },
+                { name: 'AssignedToEmail', text: {} },
+                { name: 'AssignedDate', text: {} },
+                { name: 'Unit', text: {} },
+                { name: 'Division', text: {} },
+                { name: 'DivisionID', text: {} },
+                { name: 'PurchaseCost', text: {} }, // Note: Purchasing data stored as text in this schema
+                { name: 'IsDeleted', boolean: {} },
+                { name: 'Description', text: { allowMultipleLines: true } },
+                { name: 'IsMockData', boolean: {} }
+            ];
+
+            for (const col of criticalColumns) {
+                await this.ensureColumn(listId, col.name, col);
+            }
+
+            // 4. Resolve the actual internal name for DivisionID (handling DivisionID vs DivisionId)
+            let divisionIdField = await this.resolveFieldName(listId, ['DivisionID', 'DivisionId', 'Division ID']);
+            if (!divisionIdField) {
+                console.log('   ⚠️ DivisionID column not found after ensure, defaulting to DivisionID');
+                divisionIdField = 'DivisionID';
+            }
+
+            let totalCreated = 0;
+            const batchSize = 5;
+
+            for (let i = 0; i < staff.length; i += batchSize) {
+                const batch = staff.slice(i, i + batchSize);
+                await Promise.all(batch.map(async (user) => {
+                    for (const template of DEMO_ASSET_TEMPLATES) {
+                        const payload = {
+                            fields: {
+                                Title: template.name,
+                                AssetID: `ASSET-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                                Types: template.type,
+                                Brand: template.brand,
+                                Model: template.model,
+                                Condition: template.condition,
+                                AssignedTo: user.name,
+                                AssignedToEmail: user.email,
+                                AssignedDate: new Date().toISOString().split('T')[0],
+                                Unit: user.department || '',
+                                Division: user.division || 'General', 
+                                [divisionIdField]: user.divisionId || '', // Dynamically use the resolved field name
+                                PurchaseCost: template.purchase_cost.toString(),
+                                IsDeleted: false,
+                                Description: template.description,
+                                IsMockData: true
+                            }
+                        };
+                        
+                        try {
+                            await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(payload);
+                            totalCreated++;
+                        } catch (postErr: any) {
+                            console.warn(`      ⚠️ Failed to post asset '${template.name}' for ${user.email}:`, postErr.message);
+                        }
+                    }
+                }));
+                console.log(`   Processed batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(staff.length / batchSize)}`);
+            }
+
+            return { success: true, count: totalCreated, message: `Successfully seeded ${totalCreated} assets for ${staff.length} users.` };
+        } catch (error: any) {
+            console.error('❌ [Setup] Bulk asset seeding failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Create Asset_Maintenance list
+     */
+    async createAssetMaintenanceList(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Creating Asset_Maintenance list...');
+        return await this.createList(
+            'Asset_Maintenance',
+            'Maintenance records for organizational assets',
+            [
+                { name: 'AssetID', text: {} },
+                { name: 'MaintenanceType', choice: { choices: ['Preventive', 'Corrective', 'Inspection', 'Upgrade'] } },
+                { name: 'Description', text: { allowMultipleLines: true } },
+                { name: 'Status', choice: { choices: ['Scheduled', 'In Progress', 'Completed', 'Cancelled'] } },
+                { name: 'ScheduledDate', dateTime: { format: 'dateOnly' } },
+                { name: 'CompletedDate', dateTime: { format: 'dateOnly' } },
+                { name: 'Technician', text: {} },
+                { name: 'Cost', number: { decimalPlaces: 'two' } },
+                { name: 'IsMockData', boolean: {} }
+            ]
+        );
+    }
+
+    /**
+     * Create Asset_Invoices list
+     */
+    async createAssetInvoicesList(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('🚀 [Setup] Creating Asset_Invoices list...');
+        return await this.createList(
+            'Asset_Invoices',
+            'Financial invoices related to assets',
+            [
+                { name: 'AssetID', text: {} },
+                { name: 'VendorName', text: {} },
+                { name: 'AssetName', text: {} },
+                { name: 'InvoiceNumber', text: {} },
+                { name: 'Amount', number: { decimalPlaces: 'two' } },
+                { name: 'IssueDate', dateTime: { format: 'dateOnly' } },
+                { name: 'DueDate', dateTime: { format: 'dateOnly' } },
+                { name: 'Status', choice: { choices: ['Paid', 'Pending', 'Overdue'] } },
+                { name: 'PaymentDate', dateTime: { format: 'dateOnly' } },
+                { name: 'AttachmentUrl', text: {} },
+                { name: 'IsMockData', boolean: {} }
+            ]
+        );
+    }
+
+    /**
+     * Seed Maintenance and Invoice records for existing assets.
+     */
+    async seedMaintenanceAndInvoices(): Promise<{ success: boolean; message: string }> {
+        console.log('🚀 [Setup] Seeding Maintenance and Invoices for assets...');
+        try {
+            // 1. Resolve List IDs
+            const listsRes = await this.client.api(`/sites/${this.siteId}/lists`).select('id,displayName').get();
+            const assetsList = listsRes.value.find((l: any) => l.displayName === 'Assets');
+            const maintenanceList = listsRes.value.find((l: any) => l.displayName === 'Asset_Maintenance');
+            const invoicesList = listsRes.value.find((l: any) => l.displayName === 'Asset_Invoices');
+
+            if (!assetsList || !maintenanceList || !invoicesList) {
+                throw new Error('Required lists not found (Assets, Asset_Maintenance, or Asset_Invoices).');
+            }
+
+            // 2. Fetch some mock assets to link to
+            const assetResponse = await this.client.api(`/sites/${this.siteId}/lists/${assetsList.id}/items`)
+                .expand('fields')
+                .filter('fields/IsMockData eq true or fields/IsMockData eq null')
+                .top(50)
+                .get();
+
+            const mockAssets = assetResponse.value;
+            if (!mockAssets || mockAssets.length === 0) {
+                throw new Error('No assets found to link maintenance/invoices to. Please seed assets first.');
+            }
+
+            console.log(`   Seeding for ${mockAssets.length} assets...`);
+
+            const { DEMO_MAINTENANCE_TEMPLATES, DEMO_INVOICE_TEMPLATES } = await import('../mockData/demoAssets');
+
+            for (const asset of mockAssets) {
+                const fields = asset.fields;
+                const assetId = fields.AssetID;
+                const assetName = fields.Title;
+
+                if (!assetId) continue;
+
+                // Create 1-2 maintenance records
+                const maintCount = Math.floor(Math.random() * 2) + 1;
+                for (let i = 0; i < maintCount; i++) {
+                    const template = DEMO_MAINTENANCE_TEMPLATES[Math.floor(Math.random() * DEMO_MAINTENANCE_TEMPLATES.length)];
+                    const payload = {
+                        fields: {
+                            Title: `${template.type} for ${assetName}`,
+                            AssetID: assetId,
+                            MaintenanceType: template.type,
+                            Description: template.description,
+                            Status: template.status,
+                            ScheduledDate: new Date(Date.now() - (Math.random() * 30 * 24 * 60 * 60 * 1000)).toISOString(),
+                            CompletedDate: template.status === 'Completed' ? new Date().toISOString() : null,
+                            Technician: template.technician,
+                            Cost: template.cost,
+                            IsMockData: true
+                        }
+                    };
+                    await this.client.api(`/sites/${this.siteId}/lists/${maintenanceList.id}/items`).post(payload);
+                }
+
+                // Create 1 invoice
+                const invTemplate = DEMO_INVOICE_TEMPLATES[Math.floor(Math.random() * DEMO_INVOICE_TEMPLATES.length)];
+                const baseCost = parseFloat(fields.PurchaseCost || '1000');
+                const amount = (isNaN(baseCost) ? 1000 : baseCost) * invTemplate.amount_multiplier;
+                
+                const invPayload = {
+                    fields: {
+                        Title: `INV-${Math.random().toString(36).substr(2, 8).toUpperCase()}`,
+                        InvoiceNumber: `INV-${Math.random().toString(36).substr(2, 6).toUpperCase()}`,
+                        AssetID: assetId,
+                        VendorName: invTemplate.vendor,
+                        AssetName: assetName,
+                        Amount: amount,
+                        IssueDate: new Date(Date.now() - (60 * 24 * 60 * 60 * 1000)).toISOString(),
+                        DueDate: new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)).toISOString(),
+                        Status: invTemplate.status,
+                        IsMockData: true
+                    }
+                };
+                await this.client.api(`/sites/${this.siteId}/lists/${invoicesList.id}/items`).post(invPayload);
+            }
+
+            return { success: true, message: 'Maintenance and Invoice records seeded successfully!' };
+        } catch (error: any) {
+            console.error('❌ [Setup] Seeding failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Purges all items marked as IsMockData from Tasks and Assets lists.
+     */
+    async purgeAllDemoData(): Promise<{ success: boolean; totalRemoved: number; message: string }> {
+        console.log('🗑️ [Setup] Starting bulk purge of all demo data...');
+        try {
+            const listNames = ['Operations_Tasks', 'Assets', 'Asset_Maintenance', 'Asset_Invoices'];
+            let totalRemoved = 0;
+
+            const lists = await this.client.api(`/sites/${this.siteId}/lists`).select('id,displayName').get();
+
+            for (const name of listNames) {
+                const list = lists.value.find((l: any) => l.displayName === name);
+                if (!list) {
+                    console.warn(`   ⚠️ List '${name}' not found, skipping purge.`);
+                    continue;
+                }
+
+                // Fetch items where IsMockData is true
+                const items = await this.client.api(`/sites/${this.siteId}/lists/${list.id}/items`)
+                    .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                    .filter("fields/IsMockData eq true")
+                    .select('id')
+                    .top(999)
+                    .get();
+
+                if (items.value && items.value.length > 0) {
+                    console.log(`   Found ${items.value.length} mock items in '${name}', deleting...`);
+                    
+                    // Batch delete
+                    const batchSize = 10;
+                    for (let i = 0; i < items.value.length; i += batchSize) {
+                        const batch = items.value.slice(i, i + batchSize);
+                        await Promise.all(batch.map(item =>
+                            this.client.api(`/sites/${this.siteId}/lists/${list.id}/items/${item.id}`).delete()
+                                .catch(e => console.warn(`      Failed to delete item ${item.id} from ${name}:`, e.message))
+                        ));
+                    }
+                    totalRemoved += items.value.length;
+                }
+            }
+
+            return { 
+                success: true, 
+                totalRemoved, 
+                message: `Successfully purged ${totalRemoved} demo items across all modules.` 
+            };
+        } catch (error: any) {
+            console.error('❌ [Setup] Bulk purge failed:', error);
+            throw error;
+        }
+    }
 }
+
+
 
 // ==========================================
 // DATA CONSTANTS

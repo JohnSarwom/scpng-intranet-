@@ -1,33 +1,15 @@
-
 import React from 'react';
 import { TableRow, TableCell } from "@/components/ui/table";
 import { TooltipWrapper } from "@/components/ui/tooltip-wrapper";
 import { TableActions } from './TableActions';
-
-interface DecommissionedAsset {
-  id: string;
-  name: string;
-  asset_id: string;
-  type: string;
-  condition: string;
-  reason: string;
-  decommission_date: string;
-  assigned_to: string;
-  email: string;
-  unit: string;
-  division: string;
-  description: string;
-  assigned_date: string;
-  purchased_date: string;
-  last_updated: string;
-}
+import { Asset } from '@/services/assetsSharePointService';
 
 interface DecommissionedAssetTableRowProps {
-  asset: DecommissionedAsset;
-  onView: (asset: any) => void;
-  onEdit: (asset: any) => void;
-  onDelete: (asset: any) => void;
-  formatDate: (date: string) => string;
+  asset: Asset & { reason?: string; decommission_date?: string };
+  onView: (asset: Asset) => void;
+  onEdit: (asset: Asset) => void;
+  onDelete: (asset: Asset) => void;
+  formatDate: (date: string | undefined) => string;
 }
 
 export const DecommissionedAssetTableRow: React.FC<DecommissionedAssetTableRowProps> = ({
@@ -37,16 +19,26 @@ export const DecommissionedAssetTableRow: React.FC<DecommissionedAssetTableRowPr
   onDelete,
   formatDate
 }) => {
+  const handleViewClick = () => {
+    if (onView) {
+      onView(asset);
+    }
+  };
+
   return (
     <TableRow>
-      <TableCell className="whitespace-nowrap">
+      <TableCell 
+        className="whitespace-nowrap hover:bg-muted/50 transition-colors"
+        style={{ cursor: onView ? 'pointer' : 'default' }}
+        onClick={handleViewClick}
+      >
         <TooltipWrapper content={`Asset name: ${asset.name}`}>
           {asset.name}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={`Asset ID: ${asset.asset_id}`}>
-          {asset.asset_id}
+        <TooltipWrapper content={`Asset ID: ${asset.id}`}>
+          {asset.id}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
@@ -55,51 +47,51 @@ export const DecommissionedAssetTableRow: React.FC<DecommissionedAssetTableRowPr
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={`Reason for decommissioning: ${asset.reason}`}>
-          {asset.reason}
+        <TooltipWrapper content={`Reason for decommissioning: ${asset.reason || asset.condition || 'Decommissioned'}`}>
+          {asset.reason || asset.condition || 'Decommissioned'}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={`Last assigned to: ${asset.assigned_to}`}>
+        <TooltipWrapper content={`Last assigned to: ${asset.assigned_to || 'N/A'}`}>
           {asset.assigned_to}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={asset.email}>
-          {asset.email}
+        <TooltipWrapper content={asset.assigned_to_email || 'N/A'}>
+          {asset.assigned_to_email}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={asset.unit}>
+        <TooltipWrapper content={asset.unit || 'N/A'}>
           {asset.unit}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={asset.division}>
+        <TooltipWrapper content={asset.division || 'N/A'}>
           {asset.division}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={`Decommissioned on: ${formatDate(asset.decommission_date)}`}>
-          {formatDate(asset.decommission_date)}
+        <TooltipWrapper content={`Decommissioned on: ${formatDate(asset.decommission_date || asset.deleted_at || asset.last_updated)}`}>
+          {formatDate(asset.decommission_date || asset.deleted_at || asset.last_updated)}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="whitespace-nowrap">
-        <TooltipWrapper content={`Purchased on: ${formatDate(asset.purchased_date)}`}>
-          {formatDate(asset.purchased_date)}
+        <TooltipWrapper content={`Purchased on: ${formatDate(asset.purchase_date)}`}>
+          {formatDate(asset.purchase_date)}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="max-w-[200px] truncate">
-        <TooltipWrapper content={asset.description}>
+        <TooltipWrapper content={asset.description || 'N/A'}>
           {asset.description}
         </TooltipWrapper>
       </TableCell>
       <TableCell className="text-right sticky right-0 bg-white z-10">
         <TableActions 
-          asset={asset as any}
-          onView={onView}
-          onEdit={onEdit}
-          onDelete={onDelete}
+          asset={asset as Asset}
+          onView={onView as any}
+          onEdit={onEdit as any}
+          onDelete={onDelete as any}
         />
       </TableCell>
     </TableRow>

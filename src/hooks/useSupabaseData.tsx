@@ -426,8 +426,7 @@ export function useSupabaseData<T extends Identifiable>(
     return { data, loading, error, add, update, remove, refresh };
 }
 
-import { Task } from '@/components/unit-tabs/TasksTab';
-import { Project, Risk, UserAsset, Kra, Kpi, Objective } from '@/types';
+import { Project, Risk, Kra, Kpi, Objective, Task } from '@/types';
 
 export function useTasksData(initialData: Task[] = []) {
     return useSupabaseData<Task>('tasks', initialData);
@@ -439,10 +438,6 @@ export function useProjectsData(initialData: Project[] = []) {
 
 export function useRisksData(initialData: Risk[] = []) {
     return useSupabaseData<Risk>('risks', initialData);
-}
-
-export function useAssetsData(initialData: UserAsset[] = []) {
-    return useSupabaseData<UserAsset>('assets', initialData);
 }
 
 export function useKRAsData(initialData: Kra[] = []) {

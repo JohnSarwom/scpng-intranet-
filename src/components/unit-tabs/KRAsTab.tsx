@@ -920,8 +920,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       startDate: newObjectiveData.startDate,
       endDate: newObjectiveData.endDate,
       goalType: newObjectiveData.goalType,
-      division: newObjectiveData.division,
-      unit: newObjectiveData.unit,
+      division: newObjectiveData.division || userContext?.division || '',
+      unit: newObjectiveData.unit || userContext?.unit || '',
       owner: newObjectiveData.owner,
       parentGoalId: newObjectiveData.parentGoalId || null,
       linkedDeliverable: newObjectiveData.linkedDeliverable || null
@@ -941,13 +941,13 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   };
 
   const handleDeleteObjective = (objectiveId: string | number) => {
-    if (window.confirm("Are you sure you want to delete this objective? This might affect linked KRAs.")) {
+    if (window.confirm("Are you sure you want to delete this initiative? This might affect linked KRAs.")) {
       onDeleteObjective(objectiveId);
     }
   };
 
   // Use activeTab prop here
-  const addButtonLabel = activeTab === 'objectives' ? 'Add Objective' : 'Add KRA';
+  const addButtonLabel = activeTab === 'objectives' ? 'Add Initiative' : 'Add KRA';
   const handleAddButtonClick = activeTab === 'objectives' ? handleOpenAddObjectiveModal : handleOpenAddKraModal;
 
   // --- START: Add KPI Timeline Items ---
@@ -994,9 +994,9 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
         <Card className={cn("mt-0", isFullScreen ? "border-0 shadow-none h-full bg-gray-950" : "dark:bg-gray-900 dark:border-white/10")}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b dark:border-white/10 bg-white/50 dark:bg-gray-800/20 backdrop-blur-sm">
             <div className="space-y-1">
-              <CardTitle className="text-2xl font-bold dark:text-gray-100">{isStaff ? 'KRAs / KPIs' : 'KRAs / KPIs / Objectives'}</CardTitle>
+              <CardTitle className="text-2xl font-bold dark:text-gray-100">{isStaff ? 'KRAs / KPIs' : 'KRAs / KPIs / Initiatives'}</CardTitle>
               <CardDescription className="dark:text-gray-400">
-                {isStaff ? 'Track performance and view timelines.' : 'Track performance, manage objectives, and view timelines.'}
+                {isStaff ? 'Track performance and view timelines.' : 'Track performance, manage initiatives, and view timelines.'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
@@ -1016,7 +1016,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
               <div className="flex justify-between items-center px-6 py-4 border-b dark:border-white/10 bg-gray-50/30 dark:bg-gray-800/10">
                 <TabsList className="dark:bg-gray-800/50 dark:border-white/10 border p-1">
                   <TabsTrigger value="kpis" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">KRA/KPIs</TabsTrigger>
-                  {!isStaff && <TabsTrigger value="objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Objectives</TabsTrigger>}
+                  {!isStaff && <TabsTrigger value="objectives" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Initiatives</TabsTrigger>}
                   <TabsTrigger value="timeline" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Timeline</TabsTrigger>
                   <TabsTrigger value="insights" className="dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-white transition-all">Insights</TabsTrigger>
                 </TabsList>
@@ -1054,8 +1054,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
               <TabsContent value="kpis" className="px-6 pb-6 pt-6 mt-0">
                 <PremiumTable containerClassName="h-[calc(100vh-220px)] relative border dark:border-white/10">
                     <PremiumTableHeader>
-                      <PremiumTableRow className="border-b dark:border-white/10 hover:bg-transparent">
-                        <PremiumTableHead sticky="left" className="w-[150px] min-w-[150px] z-[60]">Objective</PremiumTableHead>
+                      <PremiumTableRow className="hover:bg-transparent">
+                        <PremiumTableHead sticky="left" className="w-[150px] min-w-[150px] z-[60]">Initiative</PremiumTableHead>
                         <PremiumTableHead sticky="left" className="w-[180px] min-w-[180px] left-[150px] z-[60]">KRA</PremiumTableHead>
                         <PremiumTableHead sticky="left" className="w-[100px] min-w-[100px] left-[330px] z-[60]">Status</PremiumTableHead>
                         <PremiumTableHead className="w-[20%] min-w-[200px]">KPI Deliverables</PremiumTableHead>
@@ -1257,24 +1257,24 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 </TabsContent>
 
                 <TabsContent value="objectives" className="px-6 pb-6 pt-6 mt-0">
-                <PremiumTable containerClassName="max-h-[600px] border dark:border-white/10 rounded-xl overflow-hidden relative">
+                <PremiumTable>
                     <PremiumTableHeader>
                       <PremiumTableRow>
-                        <PremiumTableHead className="w-[20%]">Objective Name</PremiumTableHead>
-                        <PremiumTableHead className="w-[20%]">Strategic Alignment</PremiumTableHead>
-                        <PremiumTableHead className="w-[20%]">Key Deliverable</PremiumTableHead>
-                        <PremiumTableHead className="w-[10%]">Goal Type</PremiumTableHead>
-                        <PremiumTableHead>Description</PremiumTableHead>
-                        <PremiumTableHead className="w-[10%]">Status</PremiumTableHead>
-                        <PremiumTableHead className="w-[10%] text-center">Progress</PremiumTableHead>
-                        <PremiumTableHead sticky="right" className="text-right w-[10%]">Actions</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[180px]">Initiative Name</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[180px]">Strategic Goal</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[180px]">Key Deliverable</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[120px]">Goal Type</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[200px]">Description</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[120px]">Status</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[120px] text-center">Progress</PremiumTableHead>
+                        <PremiumTableHead sticky="right" className="text-right min-w-[100px]">Actions</PremiumTableHead>
                       </PremiumTableRow>
                     </PremiumTableHeader>
                     <PremiumTableBody>
                       {objectivesData.length === 0 ? (
                         <PremiumTableRow>
                           <PremiumTableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
-                            No Objectives defined yet. Use the "Add Objective" button.
+                            No Initiatives defined yet. Use the "Add Initiative" button.
                           </PremiumTableCell>
                         </PremiumTableRow>
                       ) : (
@@ -1393,17 +1393,17 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
         />
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
-          <DialogContent className="sm:max-w-3xl dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
-            <DialogHeader>
-              <DialogTitle className="dark:text-gray-100">{editingObjective ? 'Edit Objective' : 'Add New Objective'}</DialogTitle>
+          <DialogContent className="sm:max-w-3xl dark:bg-gray-950 dark:border-white/10 p-0" container={isFullScreen ? containerRef.current : null}>
+            <DialogHeader className="px-6 pt-6 pb-4">
+              <DialogTitle className="dark:text-gray-100">{editingObjective ? 'Edit Initiative' : 'Add New Initiative'}</DialogTitle>
               <DialogDescription className="dark:text-gray-400">
-                {editingObjective ? 'Update the objective details.' : 'Define a new objective for KRAs.'}
+                {editingObjective ? 'Update the initiative details.' : 'Define a new initiative for KRAs.'}
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-6 py-4 max-h-[70vh] overflow-y-auto px-2 kanban-scrollbar">
+            <div className="grid gap-6 py-2 max-h-[60vh] overflow-y-auto px-6 kanban-scrollbar">
               {/* Strategic Alignment */}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right whitespace-nowrap dark:text-gray-300">Strategic Alignment</Label>
+                <Label className="text-right whitespace-nowrap dark:text-gray-300">Strategic Goals</Label>
                 <div className="col-span-3">
                   <Select
                     value={newObjectiveData.parentGoalId?.toString() || 'none'}
@@ -1411,10 +1411,10 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                     disabled={isSavingObjective}
                   >
                     <SelectTrigger className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
-                      <SelectValue placeholder="Align with Strategic Objective..." />
+                      <SelectValue placeholder="Select a Strategic Goal..." />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-gray-950 dark:border-white/10">
-                      <SelectItem value="none">Standalone (No Alignment)</SelectItem>
+                      <SelectItem value="none">No Strategic Goal</SelectItem>
                       {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
                         .map(obj => (
                           <SelectItem key={obj.id} value={obj.id.toString()}>
@@ -1425,7 +1425,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                     </SelectContent>
                   </Select>
                   <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-1">
-                    Link this unit objective to a high-level Board/Strategic objective.
+                    Link this unit initiative to a high-level Strategic Goal.
                   </p>
                 </div>
               </div>
@@ -1433,15 +1433,14 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
               {/* Key Deliverables (Executions) Radio Group */}
               <div className="grid grid-cols-4 items-start gap-4">
                 <Label className="text-right whitespace-nowrap pt-2 dark:text-gray-300">
-                  Key Deliverable<br />
-                  <span className="text-[10px] text-muted-foreground dark:text-gray-500 font-normal">(Execution)</span>
+                  Organizational KRAs
                 </Label>
                 <div className="col-span-3">
                   {(() => {
                     if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
                       return (
                         <div className="p-3 rounded-md border border-dashed dark:border-white/20 text-sm text-muted-foreground dark:text-gray-500 bg-muted/30 dark:bg-gray-900/50">
-                          Please select a <strong>Strategic Alignment</strong> above to see linked Executions/Deliverables.
+                          Please select a <strong>Strategic Goal</strong> above to see linked Organizational KRAs.
                         </div>
                       );
                     }
@@ -1450,7 +1449,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                     const deliverables = parentParams?.deliverables || [];
 
                     if (deliverables.length === 0) {
-                      return <p className="text-sm text-red-500 pt-2 font-medium">No key result areas (KRAs) found for the selected objective.</p>;
+                      return <p className="text-sm text-red-500 pt-2 font-medium">No Organizational KRAs found for the selected Strategic Goal.</p>;
                     }
 
                     return (
@@ -1472,7 +1471,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                     );
                   })()}
                   <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-2">
-                    Select the specific Execution/Deliverable this unit objective contributes to.
+                    Select the Organizational KRA this unit initiative contributes to.
                   </p>
                 </div>
               </div>
@@ -1643,13 +1642,13 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 />
               </div>
             </div>
-            <DialogFooter className="dark:border-t dark:border-white/10 pt-4">
+            <DialogFooter className="dark:border-t dark:border-white/10 px-6 py-5">
               <DialogClose asChild>
                 <Button type="button" variant="outline" className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" disabled={isSavingObjective}>Cancel</Button>
               </DialogClose>
               <Button type="button" onClick={handleSaveObjective} disabled={isSavingObjective} className="flex items-center gap-1 bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">
                 {isSavingObjective ? <Loader2 size={16} className="animate-spin" /> : null}
-                <span>{isSavingObjective ? 'Saving...' : 'Save Objective'}</span>
+                <span>{isSavingObjective ? 'Saving...' : 'Save Initiative'}</span>
               </Button>
             </DialogFooter>
           </DialogContent>

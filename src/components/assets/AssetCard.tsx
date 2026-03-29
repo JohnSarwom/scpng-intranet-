@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Briefcase, Building, CalendarDays, CheckCircle, ShieldAlert, Clock, MoreVertical, Info } from 'lucide-react';
-import { UserAsset } from '@/types';
+import { Asset } from '@/services/assetsSharePointService';
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/utils';
 import { TooltipWrapper } from '@/components/ui/tooltip-wrapper';
@@ -16,15 +16,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 interface AssetCardProps {
-  asset: UserAsset;
-  onEdit: (asset: UserAsset) => void;
-  onDelete: (asset: UserAsset) => void;
-  onClick?: (asset: UserAsset) => void;
+  asset: Asset;
+  onEdit: (asset: Asset) => void;
+  onDelete: (asset: Asset) => void;
+  onClick?: (asset: Asset) => void;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({ asset, onEdit, onDelete, onClick }) => {
   // Handler to prevent click propagation from buttons
-  const handleActionClick = (e: React.MouseEvent, action: (asset: UserAsset) => void) => {
+  const handleActionClick = (e: React.MouseEvent, action: (asset: Asset) => void) => {
     e.stopPropagation(); // Prevent card click when clicking action buttons
     action(asset);
   };
@@ -44,7 +44,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, onEdit, onDelete, onClick 
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 transition-colors duration-300 group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
             <span className="text-5xl font-semibold text-gray-400 dark:text-gray-500">
-              {asset.name?.substring(0, 2).toUpperCase() || 'A'}
+              {String(asset.name || '').substring(0, 2).toUpperCase() || 'A'}
             </span>
           </div>
         )}
@@ -82,7 +82,7 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, onEdit, onDelete, onClick 
             {asset.name || 'Unnamed Asset'}
           </CardTitle>
           <span className="text-xs text-muted-foreground whitespace-nowrap bg-muted px-2 py-0.5 rounded-full" title="Asset ID">
-            {asset.id?.substring(0, 8) || 'N/A'}
+            {String(asset.id || '').substring(0, 8) || 'N/A'}
           </span>
         </div>
 

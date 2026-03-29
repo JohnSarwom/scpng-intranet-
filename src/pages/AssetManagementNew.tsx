@@ -15,14 +15,10 @@ import {
   Maximize2, Minimize2
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
-import { logger } from '@/lib/supabaseClient'; // Keep logger if used elsewhere
-import { supabase } from '@/lib/supabaseClient'; // Add import for supabase client
-import { useAssetsData } from '@/hooks/useSupabaseData';
 import { useAssetsSharePoint } from '@/hooks/useAssetsSharePoint';
 import { Asset } from '@/services/assetsSharePointService';
 import { useMsal } from '@azure/msal-react'; // <--- Import useMsal from msal-react
 import { InteractionStatus } from '@azure/msal-browser'; // Import InteractionStatus if needed for loading
-import { UserAsset } from '@/types';
 import { divisions } from '@/data/divisions'; // Import divisions data
 import { units } from '@/data/units'; // Import units data
 import { useStaffMembers } from '@/hooks/useStaffMembers'; // Import staff members hook
@@ -39,6 +35,10 @@ import AssetCard from '@/components/assets/AssetCard';
 import HighlightMatch from '@/components/ui/HighlightMatch';
 import AssetInfoModal from '@/components/assets/AssetInfoModal';
 import { TooltipWrapper } from '@/components/ui/tooltip-wrapper';
+import { SharePointListSetupService } from '@/services/sharePointListSetupService';
+import { getGraphClient } from '@/services/graphService';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+
 
 // --- Add dropdown components ---
 import {
@@ -74,16 +74,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   const { isComponentVisible } = useComponentVisibility();
   const canAddAsset = isComponentVisible('Assets', 'Add Asset Button');
 
-  // Feature flag for SharePoint migration
-  const USE_SHAREPOINT_ASSETS = import.meta.env.VITE_USE_SHAREPOINT_ASSETS === 'true';
-
-  // Use SharePoint hook
-  const sharePointHook = useAssetsSharePoint();
-
-  // Use Supabase hook
-  const supabaseHook = useAssetsData();
-
-  // Select the active hook based on feature flag
+  // Use SharePoint hook exclusively
   const {
     assets,
     loading: assetsLoading,
@@ -92,15 +83,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     update: editAsset,
     remove: deleteAsset,
     refresh: refreshAssets,
-  } = USE_SHAREPOINT_ASSETS ? sharePointHook : {
-    assets: supabaseHook.data,
-    loading: supabaseHook.loading,
-    error: supabaseHook.error,
-    add: supabaseHook.add,
-    update: supabaseHook.update,
-    remove: supabaseHook.remove,
-    refresh: supabaseHook.refresh,
-  };
+  } = useAssetsSharePoint();
 
   // Use the staff members hook to get data from database
   // NOTE: This now uses the online 'staff_members' table instead of static data
@@ -112,7 +95,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   // --- Unified modal state — only one modal open at a time ---
   type ModalType = 'add' | 'edit' | 'delete' | 'info' | null;
-  const [activeModal, setActiveModal] = useState<{ type: ModalType; asset: UserAsset | null }>({ type: null, asset: null });
+  const [activeModal, setActiveModal] = useState<{ type: ModalType; asset: Asset | null }>({ type: null, asset: null });
 
   const [viewMode, setViewMode] = useState<'table' | 'card' | 'detailed-list'>('table');
   const [filterText, setFilterText] = useState('');
@@ -133,7 +116,16 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   // --- Fullscreen State ---
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const logger = {
+    info: (msg: string, ...args: any[]) => console.log(`[INFO] ${msg}`, ...args),
+    warn: (msg: string, ...args: any[]) => console.warn(`[WARN] ${msg}`, ...args),
+    error: (msg: string, ...args: any[]) => console.error(`[ERROR] ${msg}`, ...args),
+  };
+  const { user: roleUser } = useRoleBasedAuth();
+  const isAdmin = roleUser?.roles?.includes('Admin') || roleUser?.roles?.includes('SuperAdmin');
+
   // --- End Fullscreen State ---
 
   // Debounce search text by 300ms to avoid filtering on every keystroke
@@ -192,16 +184,16 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
       // Text search check
       const textMatch = !searchTerm || (
-        (asset.name && asset.name.toLowerCase().includes(searchTerm)) ||
-        (asset.id && asset.id.toLowerCase().includes(searchTerm)) ||
-        (asset.type && asset.type.toLowerCase().includes(searchTerm)) ||
-        (asset.condition && asset.condition.toLowerCase().includes(searchTerm)) ||
-        (asset.vendor && asset.vendor.toLowerCase().includes(searchTerm)) ||
-        (asset.unit && asset.unit.toLowerCase().includes(searchTerm)) ||
-        (asset.division && asset.division.toLowerCase().includes(searchTerm)) ||
-        (asset.assigned_to && asset.assigned_to.toLowerCase().includes(searchTerm)) ||
-        (asset.notes && asset.notes.toLowerCase().includes(searchTerm)) ||
-        (asset.description && asset.description.toLowerCase().includes(searchTerm))
+        (asset.name && String(asset.name).toLowerCase().includes(searchTerm)) ||
+        (asset.id && String(asset.id).toLowerCase().includes(searchTerm)) ||
+        (asset.type && String(asset.type).toLowerCase().includes(searchTerm)) ||
+        (asset.condition && String(asset.condition).toLowerCase().includes(searchTerm)) ||
+        (asset.vendor && String(asset.vendor).toLowerCase().includes(searchTerm)) ||
+        (asset.unit && String(asset.unit).toLowerCase().includes(searchTerm)) ||
+        (asset.division && String(asset.division).toLowerCase().includes(searchTerm)) ||
+        (asset.assigned_to && String(asset.assigned_to).toLowerCase().includes(searchTerm)) ||
+        (asset.notes && String(asset.notes).toLowerCase().includes(searchTerm)) ||
+        (asset.description && String(asset.description).toLowerCase().includes(searchTerm))
       );
 
       // Dropdown filter checks
@@ -280,9 +272,9 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   // --- Modal Handlers ---
 
-  const handleEditClick = (asset: UserAsset) => setActiveModal({ type: 'edit', asset });
-  const handleDeleteClick = (asset: UserAsset) => setActiveModal({ type: 'delete', asset });
-  const handleInfoClick = (asset: UserAsset) => setActiveModal({ type: 'info', asset });
+  const handleEditClick = (asset: Asset) => setActiveModal({ type: 'edit', asset });
+  const handleDeleteClick = (asset: Asset) => setActiveModal({ type: 'delete', asset });
+  const handleInfoClick = (asset: Asset) => setActiveModal({ type: 'info', asset });
   const handleCloseModals = () => setActiveModal({ type: null, asset: null });
 
   // [Cursor] Handler to reset all filters
@@ -311,16 +303,16 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   // --- Data Operation Handlers ---
 
-  const handleSaveAdd = async (newAssetData: Partial<Omit<UserAsset, 'id' | 'created_at' | 'last_updated'>>) => {
+  const handleSaveAdd = async (newAssetData: Partial<Asset>) => {
     const today = new Date().toISOString().split('T')[0];
 
     // Use assignee details from modal if provided, otherwise default (though validation should prevent this)
     const completeAssetData = {
       ...newAssetData,
-      assigned_to: newAssetData.assigned_to || userNameForFiltering, // Use name from modal
-      assigned_to_email: newAssetData.assigned_to_email || loggedInUserEmail, // Use email from modal
-      assigned_date: newAssetData.assigned_date || today, // Keep defaulting assigned_date
-    } as Omit<UserAsset, 'id' | 'created_at' | 'last_updated'>;
+      assigned_to: newAssetData.assigned_to || userNameForFiltering || '', 
+      assigned_to_email: newAssetData.assigned_to_email || loggedInUserEmail || '',
+      assigned_date: newAssetData.assigned_date || today, 
+    } as Asset;
 
     // Validation should now happen inside the modal, but keep a basic check here
     if (!completeAssetData.name || !completeAssetData.assigned_to) {
@@ -344,7 +336,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     }
   };
 
-  const handleSaveEdit = async (updatedAssetData: Partial<UserAsset>) => {
+  const handleSaveEdit = async (updatedAssetData: Partial<Asset>) => {
     if (!activeModal.asset) return;
     try {
       const dataToSave = loggedInUserEmail ? { ...updatedAssetData, last_updated_by: loggedInUserEmail } : updatedAssetData;
@@ -368,6 +360,45 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
       toast({ title: "Error Deleting Asset", description: err instanceof Error ? err.message : "Could not delete asset.", variant: "destructive" });
     }
   };
+
+  const handleSeedDemoAssets = async () => {
+    if (isSeeding) return;
+    setIsSeeding(true);
+    try {
+      toast({
+        title: "🚀 Seeding Demo Assets",
+        description: "Provisioning 10 assets for each staff member...",
+      });
+
+      const graphClient = await getGraphClient(msalInstance);
+      if (!graphClient) throw new Error('Graph client not initialized');
+
+      const site = await graphClient
+        .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+        .get();
+
+      const setupService = new SharePointListSetupService(graphClient, site.id);
+      const result = await setupService.seedTenDemoAssetsForEachUser();
+
+      toast({
+        title: "✅ Success!",
+        description: result.message,
+      });
+
+      // Reload window to see new data (simplest way to refresh SharePoint cache/hooks)
+      setTimeout(() => window.location.reload(), 2000);
+    } catch (err: any) {
+      logger.error("Error seeding assets:", err);
+      toast({
+        title: "❌ Seeding Failed",
+        description: err.message,
+        variant: "destructive"
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
 
   // Use authLoading derived from useMsal
   if (authLoading) {
@@ -463,6 +494,25 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                     {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                   </Button>
                 </TooltipWrapper>
+
+                {/* Seed Demo Assets (Admin Only) */}
+                {isAdmin && (
+                  <TooltipWrapper content="Seed 10 Demo Assets per User">
+                    <Button 
+                      variant="outline" 
+                      onClick={handleSeedDemoAssets} 
+                      disabled={isSeeding}
+                      className="h-9 gap-2 border-intranet-primary text-intranet-primary hover:bg-intranet-primary/5 transition-all duration-300"
+                    >
+                      {isSeeding ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Database className="h-4 w-4" />
+                      )}
+                      <span>Seed Demo</span>
+                    </Button>
+                  </TooltipWrapper>
+                )}
 
                 {/* Add Asset Button — visibility controlled via Admin > View Settings */}
                 {canAddAsset && (
@@ -1134,8 +1184,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                 <td className="p-4 align-middle w-[50px] sticky left-0 z-10 bg-white group-hover:bg-gray-50 dark:bg-gray-800 dark:group-hover:bg-gray-800/50 cursor-pointer transition-colors" onClick={() => handleInfoClick(asset)}>
                                   <TooltipWrapper content={`${asset.name || 'Unknown Asset'} - Click to view full details`}>
                                     <Avatar className="h-8 w-8">
-                                      <AvatarImage src={asset.image_url || undefined} alt={asset.name} />
-                                      <AvatarFallback>{asset.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                                      <AvatarImage src={asset.image_url || undefined} alt={String(asset.name || 'Asset')} />
+                                      <AvatarFallback>{String(asset.name || 'A').charAt(0).toUpperCase()}</AvatarFallback>
                                     </Avatar>
                                   </TooltipWrapper>
                                 </td>
