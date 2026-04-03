@@ -1,7 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Rocket, Loader2 } from 'lucide-react';
+import { Rocket, Loader2, AlertTriangle } from 'lucide-react';
 import { useCountdown } from '@/hooks/useCountdown';
+
+// ─── Site status override ─────────────────────────────────────────────────────
+// Set to true to display the maintenance warning instead of the countdown.
+// Flip back to false once the domain issue is resolved.
+const SHOW_MAINTENANCE_WARNING = true;
 
 function pad(n: number) {
     return String(Math.floor(n)).padStart(2, '0');
@@ -85,10 +90,43 @@ const LaunchedBanner: React.FC = () => (
     </motion.div>
 );
 
+// ─── Maintenance / domain warning banner ─────────────────────────────────────
+
+const MaintenanceBanner: React.FC = () => (
+    <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="h-full w-full flex flex-col items-center justify-center text-center px-3 bg-white/10 rounded-xl border border-amber-400/40 p-3"
+    >
+        <motion.div
+            animate={{ opacity: [1, 0.6, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex items-center gap-1.5 mb-2"
+        >
+            <AlertTriangle className="h-4 w-4 text-amber-300 shrink-0" />
+            <span className="text-amber-300 text-[10px] font-bold uppercase tracking-widest">
+                Technical Notice
+            </span>
+        </motion.div>
+
+        <p className="text-white font-semibold text-xs leading-snug mb-1">
+            Website temporarily unavailable
+        </p>
+        <p className="text-white/60 text-[10px] leading-snug">
+            We are experiencing a domain name issue. Our team is working to resolve this as quickly as possible.
+        </p>
+    </motion.div>
+);
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const LaunchCountdown: React.FC = () => {
     const { timeLeft, isExpired, loading } = useCountdown();
+
+    if (SHOW_MAINTENANCE_WARNING) {
+        return <MaintenanceBanner />;
+    }
 
     if (loading) {
         return (
