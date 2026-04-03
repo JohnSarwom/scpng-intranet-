@@ -4238,7 +4238,8 @@ export class SharePointListSetupService {
                 { name: 'Status', choice: { choices: ['Draft', 'Shared', 'Finalized'] } },
                 // Use allowMultipleLines for URLs to avoid the 255 char limit of single-line text
                 { name: 'DocumentUrl', text: { allowMultipleLines: true } },
-                { name: 'AttendeesJSON', text: { allowMultipleLines: true } }
+                { name: 'AttendeesJSON', text: { allowMultipleLines: true } },
+                { name: 'MeetingDataJSON', text: { allowMultipleLines: true } }
             ]
         );
     }

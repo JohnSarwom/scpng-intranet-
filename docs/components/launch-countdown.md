@@ -2,6 +2,8 @@
 
 Component that displays a live 48-hour countdown on the Welcome Banner, leading up to the SCPNG Intranet website launch. When the countdown expires it switches to a bold, pulsating "Website Officially Launched!" message.
 
+A maintenance override flag allows the banner to be replaced with a technical warning at any time without touching the countdown logic.
+
 ---
 
 ## Files
@@ -9,8 +11,30 @@ Component that displays a live 48-hour countdown on the Welcome Banner, leading 
 | File | Purpose |
 |------|---------|
 | `src/hooks/useCountdown.ts` | Fetches real server time, computes remaining ms, ticks every second |
-| `src/components/dashboard/LaunchCountdown.tsx` | UI — countdown timer or launched banner |
+| `src/components/dashboard/LaunchCountdown.tsx` | UI — maintenance warning, countdown timer, or launched banner |
 | `src/components/dashboard/WelcomeBanner.tsx` | Renders `<LaunchCountdown />` in the right column of the banner |
+
+---
+
+## Maintenance override (domain / technical issues)
+
+A single constant at the top of `LaunchCountdown.tsx` controls whether the maintenance warning is shown instead of the countdown:
+
+```ts
+// src/components/dashboard/LaunchCountdown.tsx  ~line 9
+const SHOW_MAINTENANCE_WARNING = true;   // shows warning
+const SHOW_MAINTENANCE_WARNING = false;  // shows countdown (normal)
+```
+
+**To restore the countdown after the issue is resolved:** set the flag to `false` and redeploy.
+
+### What the maintenance banner shows
+
+- Amber pulsating `AlertTriangle` icon + "Technical Notice" label
+- "Website temporarily unavailable" heading
+- "We are experiencing a domain name issue. Our team is working to resolve this as quickly as possible."
+
+The banner sits inside the same Welcome Banner slot as the countdown so no layout changes are needed.
 
 ---
 
@@ -50,11 +74,14 @@ setTimeLeft(remaining)
 
 ## States
 
-| State | Condition | What renders |
-|-------|-----------|--------------|
-| Loading | `loading === true` | Spinner (`Loader2`) |
-| Active | `timeLeft > 0` | HH : MM : SS countdown with Rocket label |
-| Expired | `timeLeft === 0` | Pulsating launch message (see below) |
+The component resolves to one of four states in priority order:
+
+| Priority | State | Condition | What renders |
+|----------|-------|-----------|--------------|
+| 1 | Maintenance | `SHOW_MAINTENANCE_WARNING === true` | Amber warning banner |
+| 2 | Loading | `loading === true` | Spinner (`Loader2`) |
+| 3 | Active | `timeLeft > 0` | HH : MM : SS countdown with Rocket label |
+| 4 | Expired | `timeLeft === 0` | Pulsating launch message |
 
 ---
 
@@ -82,8 +109,19 @@ To move the launch date, update `TARGET_ISO` and redeploy.
 
 ---
 
+## Quick-reference: common actions
+
+| Action | What to change |
+|--------|---------------|
+| Show maintenance warning | `SHOW_MAINTENANCE_WARNING = true` in `LaunchCountdown.tsx` |
+| Restore countdown | `SHOW_MAINTENANCE_WARNING = false` in `LaunchCountdown.tsx` |
+| Change launch deadline | `TARGET_ISO` in `useCountdown.ts` |
+| Change warning message text | `MaintenanceBanner` component in `LaunchCountdown.tsx` |
+
+---
+
 ## Dependencies
 
 - `framer-motion` — animations
-- `lucide-react` — `Rocket`, `Loader2` icons
+- `lucide-react` — `Rocket`, `Loader2`, `AlertTriangle` icons
 - WorldTimeAPI — free, no API key required

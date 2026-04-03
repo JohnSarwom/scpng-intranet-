@@ -5,6 +5,9 @@ import {
 } from 'lucide-react';
 import MeetingMinutesForm, { MeetingData, MeetingHistoryEntry } from '@/components/meeting/MeetingMinutesForm';
 import { toast } from 'sonner';
+import { useMsal } from '@azure/msal-react';
+import { getGraphClient } from '@/services/graphService';
+import { useOpsService } from '@/hooks/useSharePointOps';
 
 const HISTORY_KEY = 'scpng_mtg_history';
 const DRAFT_KEY = 'scpng_mtg_draft';
@@ -29,9 +32,30 @@ const freshMeetingData = (): MeetingData => ({
   remarks: ''
 });
 
+const buildPartialMeetingData = (fields: any): MeetingData => ({
+  particulars: {
+    name: fields.Title || '',
+    meetingId: fields.MeetingID || '',
+    date: fields.MeetingDate ? fields.MeetingDate.split('T')[0] : '',
+    startTime: '09:00',
+    endTime: '10:00',
+    facilitator: fields.Facilitator || '',
+    venue: fields.Venue || '',
+    minutesBy: '',
+    objective: '',
+    order: ''
+  },
+  attendance: (() => { try { return JSON.parse(fields.AttendeesJSON || '[]'); } catch { return [{ name: '', position: '', email: '' }]; } })(),
+  discussion: [{ topic: '', points: '' }],
+  actionItems: [{ area: '', action: '', owner: '' }],
+  remarks: ''
+});
+
 const MeetingMinutes = () => {
   const [meetingData, setMeetingData] = useState<MeetingData>(freshMeetingData);
   const [history, setHistory] = useState<MeetingHistoryEntry[]>([]);
+  const { instance: msalInstance } = useMsal();
+  const getOpsService = useOpsService();
 
   // Load draft + history from localStorage
   useEffect(() => {
@@ -43,6 +67,67 @@ const MeetingMinutes = () => {
     if (savedHistory) {
       try { setHistory(JSON.parse(savedHistory)); } catch (e) { /* ignore */ }
     }
+  }, []);
+
+  // Fetch history from SharePoint for the current user
+  useEffect(() => {
+    const fetchSpHistory = async () => {
+      try {
+        const account = msalInstance.getActiveAccount();
+        if (!account) return;
+        const currentEmail = account.username;
+
+        const opsService = await getOpsService();
+        const graphClient = await getGraphClient(msalInstance);
+        if (!graphClient || !opsService.siteId) return;
+
+        const lists = await graphClient.api(`/sites/${opsService.siteId}/lists`).get();
+        const list = lists.value.find((l: any) => l.displayName === 'Meeting_Minutes_Registry');
+        if (!list) return;
+
+        const itemsResp = await graphClient
+          .api(`/sites/${opsService.siteId}/lists/${list.id}/items`)
+          .expand('fields')
+          .get();
+
+        const myItems = (itemsResp.value as any[]).filter(item =>
+          item.createdBy?.user?.email === currentEmail
+        );
+
+        const spEntries: MeetingHistoryEntry[] = myItems.map(item => {
+          const fields = item.fields || {};
+          let data: MeetingData;
+          if (fields.MeetingDataJSON) {
+            try { data = JSON.parse(fields.MeetingDataJSON); } catch { data = buildPartialMeetingData(fields); }
+          } else {
+            data = buildPartialMeetingData(fields);
+          }
+          return {
+            id: `sp-${item.id}`,
+            savedAt: item.createdDateTime,
+            meetingName: fields.Title || 'Untitled Meeting',
+            meetingId: fields.MeetingID || fields.MeetingId || '',
+            data,
+          };
+        });
+
+        if (spEntries.length === 0) return;
+
+        setHistory(prev => {
+          // Merge localStorage + SP entries, dedup by id, sort by date
+          const localIds = new Set(prev.map(e => e.id));
+          const newEntries = spEntries.filter(e => !localIds.has(e.id));
+          return [...prev, ...newEntries].sort(
+            (a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime()
+          );
+        });
+      } catch (e) {
+        console.error('Failed to load SP meeting history:', e);
+      }
+    };
+
+    fetchSpHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save draft

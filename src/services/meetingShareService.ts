@@ -67,7 +67,7 @@ export class MeetingShareService {
    */
   async registerMetadata(data: MeetingData, documentUrl: string): Promise<void> {
     const listId = await this.getListIdByName('Meeting_Minutes_Registry');
-    
+
     const payload = {
       fields: {
         Title: data.particulars.name || 'Untitled Meeting',
@@ -76,7 +76,8 @@ export class MeetingShareService {
         Venue: data.particulars.venue,
         AttendeesJSON: JSON.stringify(data.attendance),
         DocumentUrl: documentUrl,
-        Status: 'Draft'
+        Status: 'Draft',
+        MeetingDataJSON: JSON.stringify(data),
       }
     };
 
@@ -143,7 +144,7 @@ export class MeetingShareService {
     try {
       // 1. Upload file
       const { id: driveItemId, webUrl, driveId } = await this.uploadDraft(data, blob);
-      
+
       // 2. Register metadata
       await this.registerMetadata(data, webUrl);
       
