@@ -14,11 +14,12 @@ import { useOpsService } from '@/hooks/useSharePointOps';
 import { useMsal } from '@azure/msal-react';
 import { getGraphClient } from '@/services/graphService';
 import { toast } from 'sonner';
-import { 
-  Plus, Trash2, Users, FileText, ListChecks, 
+import {
+  Plus, Trash2, Users, FileText, ListChecks,
   MessageSquare, ClipboardList, CheckCircle2,
-  Clock, MapPin, User, ChevronRight, Share2, 
-  Download, Settings, Loader2, FileCheck
+  Clock, MapPin, User, ChevronRight, Share2,
+  Download, Settings, Loader2, FileCheck,
+  History, RotateCcw, ChevronDown, ChevronUp
 } from 'lucide-react';
 
 export interface AttendanceRecord {
@@ -36,6 +37,14 @@ export interface ActionItemRecord {
   area: string;
   action: string;
   owner: string;
+}
+
+export interface MeetingHistoryEntry {
+  id: string;
+  savedAt: string;
+  meetingName: string;
+  meetingId: string;
+  data: MeetingData;
 }
 
 export interface MeetingData {
@@ -62,9 +71,13 @@ function cn(...inputs: any[]) {
     return inputs.filter(Boolean).join(' ');
 }
 
-const MeetingMinutesForm = ({ data, onChange }: { 
-  data: MeetingData, 
-  onChange: (newData: MeetingData) => void
+const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHistory }: {
+  data: MeetingData,
+  onChange: (newData: MeetingData) => void,
+  onClear: () => void,
+  onSave: () => void,
+  history: MeetingHistoryEntry[],
+  onLoadHistory: (entry: MeetingHistoryEntry) => void,
 }) => {
   const sectionRefs = {
     particulars: useRef<HTMLDivElement>(null),
@@ -81,6 +94,7 @@ const MeetingMinutesForm = ({ data, onChange }: {
   const [activeSection, setActiveSection] = useState<string>('particulars');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isInitializingSP, setIsInitializingSP] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Track active section on scroll
   useEffect(() => {
@@ -274,6 +288,50 @@ const MeetingMinutesForm = ({ data, onChange }: {
              </div>
              <p className="text-[9px] text-gray-400 font-medium">Auto-syncing data for export</p>
           </div>
+        </div>
+
+        {/* History Panel */}
+        <div className="mt-3 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-gray-400" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">History</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {history.length > 0 && (
+                <Badge variant="outline" className="text-[10px] bg-gray-100 border-0 px-1.5 py-0 h-4">
+                  {history.length}
+                </Badge>
+              )}
+              {showHistory ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
+            </div>
+          </button>
+          {showHistory && (
+            <div className="border-t border-gray-100 max-h-64 overflow-y-auto">
+              {history.length === 0 ? (
+                <p className="text-[11px] text-gray-400 text-center py-6 px-4">No saved minutes yet</p>
+              ) : (
+                [...history].reverse().map((entry) => (
+                  <button
+                    key={entry.id}
+                    onClick={() => {
+                      if (window.confirm(`Load "${entry.meetingName || 'Untitled Meeting'}"? This will replace your current form.`)) {
+                        onLoadHistory(entry);
+                        setShowHistory(false);
+                      }
+                    }}
+                    className="w-full px-4 py-3 text-left border-b border-gray-50 hover:bg-gray-50 last:border-0 transition-colors"
+                  >
+                    <p className="text-xs font-semibold text-gray-700 truncate">{entry.meetingName || 'Untitled Meeting'}</p>
+                    <p className="text-[10px] text-gray-400 mt-0.5">{new Date(entry.savedAt).toLocaleDateString()} · {entry.meetingId}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -658,8 +716,8 @@ const MeetingMinutesForm = ({ data, onChange }: {
                 <div className="flex flex-wrap items-center gap-3">
                     {/* Admin Setup Button */}
                     {isAdmin && (
-                        <Button 
-                            variant="ghost" 
+                        <Button
+                            variant="ghost"
                             size="sm"
                             onClick={handleInitializeSP}
                             disabled={isInitializingSP}
@@ -670,8 +728,20 @@ const MeetingMinutesForm = ({ data, onChange }: {
                         </Button>
                     )}
 
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            if (window.confirm('Clear the entire form? This cannot be undone.')) {
+                                onClear();
+                            }
+                        }}
+                        className="border-red-200 text-red-500 h-11 px-6 rounded-xl hover:bg-red-50 hover:border-red-300 font-semibold"
+                    >
+                        <RotateCcw className="w-4 h-4 mr-2" /> Clear
+                    </Button>
+
+                    <Button
+                        variant="outline"
                         onClick={handleDownloadDocx}
                         className="border-gray-300 text-gray-700 h-11 px-6 rounded-xl hover:bg-gray-50 font-semibold"
                     >
@@ -679,8 +749,8 @@ const MeetingMinutesForm = ({ data, onChange }: {
                     </Button>
 
                     {isAdmin && (
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={handleDownloadPDF}
                             className="border-[#83002A]/20 text-[#83002A] h-11 px-6 rounded-xl hover:bg-[#83002A]/5 hover:border-[#83002A] font-semibold"
                         >
@@ -688,11 +758,11 @@ const MeetingMinutesForm = ({ data, onChange }: {
                         </Button>
                     )}
 
-                    <Button 
-                        onClick={() => setIsShareModalOpen(true)}
+                    <Button
+                        onClick={() => { onSave(); setIsShareModalOpen(true); }}
                         className="bg-[#83002A] hover:bg-[#6a0022] text-white h-11 px-8 rounded-xl shadow-lg shadow-[#83002A]/20 font-bold transition-all transform hover:scale-[1.02]"
                     >
-                        <Share2 className="w-4 h-4 mr-2" /> Share with Attendees
+                        <Share2 className="w-4 h-4 mr-2" /> Save & Share
                     </Button>
                 </div>
             </div>

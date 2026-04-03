@@ -1,52 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
-import { 
-    History, FilePlus 
+import {
+    History, FilePlus
 } from 'lucide-react';
-import MeetingMinutesForm, { MeetingData } from '@/components/meeting/MeetingMinutesForm';
+import MeetingMinutesForm, { MeetingData, MeetingHistoryEntry } from '@/components/meeting/MeetingMinutesForm';
+import { toast } from 'sonner';
+
+const HISTORY_KEY = 'scpng_mtg_history';
+const DRAFT_KEY = 'scpng_mtg_draft';
+const MAX_HISTORY = 20;
+
+const freshMeetingData = (): MeetingData => ({
+  particulars: {
+    name: '',
+    meetingId: `SC-MTG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    date: new Date().toISOString().split('T')[0],
+    startTime: '09:00',
+    endTime: '10:00',
+    facilitator: '',
+    venue: 'SCPNG Main Board Room',
+    minutesBy: '',
+    objective: '',
+    order: ''
+  },
+  attendance: [{ name: '', position: '', email: '' }],
+  discussion: [{ topic: '', points: '' }],
+  actionItems: [{ area: '', action: '', owner: '' }],
+  remarks: ''
+});
 
 const MeetingMinutes = () => {
-  const [meetingData, setMeetingData] = useState<MeetingData>({
-    particulars: {
-      name: '',
-      meetingId: `SC-MTG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      date: new Date().toISOString().split('T')[0],
-      startTime: '09:00',
-      endTime: '10:00',
-      facilitator: '',
-      venue: 'SCPNG Main Board Room',
-      minutesBy: '',
-      objective: '',
-      order: ''
-    },
-    attendance: [
-        { name: '', position: '', email: '' }
-    ],
-    discussion: [
-        { topic: '', points: '' }
-    ],
-    actionItems: [
-        { area: '', action: '', owner: '' }
-    ],
-    remarks: ''
-  });
+  const [meetingData, setMeetingData] = useState<MeetingData>(freshMeetingData);
+  const [history, setHistory] = useState<MeetingHistoryEntry[]>([]);
 
-  // Load from local storage if exists (draft saving)
+  // Load draft + history from localStorage
   useEffect(() => {
-    const saved = localStorage.getItem('scpng_mtg_draft');
-    if (saved) {
-      try {
-        setMeetingData(JSON.parse(saved));
-      } catch (e) {
-        console.error("Failed to load draft", e);
-      }
+    const savedDraft = localStorage.getItem(DRAFT_KEY);
+    if (savedDraft) {
+      try { setMeetingData(JSON.parse(savedDraft)); } catch (e) { /* ignore */ }
+    }
+    const savedHistory = localStorage.getItem(HISTORY_KEY);
+    if (savedHistory) {
+      try { setHistory(JSON.parse(savedHistory)); } catch (e) { /* ignore */ }
     }
   }, []);
 
   // Auto-save draft
   useEffect(() => {
-    localStorage.setItem('scpng_mtg_draft', JSON.stringify(meetingData));
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(meetingData));
   }, [meetingData]);
+
+  const handleClear = () => {
+    const fresh = freshMeetingData();
+    setMeetingData(fresh);
+    localStorage.removeItem(DRAFT_KEY);
+    toast.success('Form cleared');
+  };
+
+  const handleSaveToHistory = () => {
+    const entry: MeetingHistoryEntry = {
+      id: `${Date.now()}`,
+      savedAt: new Date().toISOString(),
+      meetingName: meetingData.particulars.name || 'Untitled Meeting',
+      meetingId: meetingData.particulars.meetingId,
+      data: meetingData,
+    };
+    setHistory(prev => {
+      const updated = [...prev, entry].slice(-MAX_HISTORY);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    toast.success('Meeting saved to history');
+  };
+
+  const handleLoadHistory = (entry: MeetingHistoryEntry) => {
+    setMeetingData(entry.data);
+    toast.success(`Loaded: ${entry.meetingName}`);
+  };
 
   return (
     <PageLayout>
@@ -72,9 +102,13 @@ const MeetingMinutes = () => {
 
         {/* Main Content Vertical Form */}
         <div className="max-w-6xl mx-auto py-8">
-            <MeetingMinutesForm 
-                data={meetingData} 
-                onChange={setMeetingData} 
+            <MeetingMinutesForm
+                data={meetingData}
+                onChange={setMeetingData}
+                onClear={handleClear}
+                onSave={handleSaveToHistory}
+                history={history}
+                onLoadHistory={handleLoadHistory}
             />
         </div>
       </div>

@@ -15,10 +15,22 @@ export interface FlowConnection {
     status: string;
 }
 
+export interface FlowConnections {
+    sharepoint: string;
+    office365: string;
+    googlesheets: string;
+}
+
 export interface DeployResult {
     success: boolean;
     flowId?: string;
     flowName?: string;
     message: string;
     error?: any;
+}
+
+export interface DeployAllResult {
+    dispatch: DeployResult;
+    send: DeployResult;
+    overallSuccess: boolean;
 }

@@ -150,8 +150,8 @@ export const microsoft365Apps: AppLink[] = [
 export const customApps: AppLink[] = [
   {
     id: 'meeting-minutes',
-    name: 'Meeting Minutes',
-    description: 'Official SCPNG collaborative meeting minutes generator and registry.',
+    name: 'SCPNG Meeting Minutes (Pilot)',
+    description: 'The official organizational framework for collaborative meeting documentation and registry management. This application is currently in its Pilot Phase for internal review and feedback.',
     icon: '📄',
     url: '/meeting-minutes',
     category: 'SCPNG Apps',

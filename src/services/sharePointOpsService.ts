@@ -2939,4 +2939,76 @@ export class SharePointOpsService {
         await Promise.allSettled(promises);
         console.log(`🔔 [SP Ops] Comment notifications sent to ${recipientEmails.size} recipient(s)`);
     }
+
+    // --- Launch Countdown Methods ---
+    // Stores the countdown initiation timestamp in System_View_Settings
+    // ComponentName = "website_launch_countdown", Description = ISO timestamp string (or empty to clear)
+
+    async getCountdownStartTime(): Promise<string | null> {
+        if (!this.listIds['SETTINGS']) return null;
+        try {
+            const response = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items`)
+                .expand('fields')
+                .filter(`fields/ComponentName eq 'website_launch_countdown'`)
+                .get();
+
+            const items = response.value || [];
+            if (items.length === 0) return null;
+            const value = items[0].fields.Description;
+            return value && value.trim() !== '' ? value : null;
+        } catch (error) {
+            console.error('Failed to get countdown start time', error);
+            return null;
+        }
+    }
+
+    async setCountdownStartTime(isoTimestamp: string): Promise<void> {
+        if (!this.listIds['SETTINGS']) throw new Error('Settings list not found');
+
+        // Check if a countdown item already exists
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items`)
+            .expand('fields')
+            .filter(`fields/ComponentName eq 'website_launch_countdown'`)
+            .get();
+
+        const items = response.value || [];
+        if (items.length > 0) {
+            // Update existing
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items/${items[0].id}`)
+                .patch({ fields: { Description: isoTimestamp } });
+        } else {
+            // Create new
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items`)
+                .post({
+                    fields: {
+                        Title: 'website_launch_countdown',
+                        PageName: 'home',
+                        ComponentName: 'website_launch_countdown',
+                        VisibilityScope: 'all',
+                        Description: isoTimestamp
+                    }
+                });
+        }
+    }
+
+    async clearCountdown(): Promise<void> {
+        if (!this.listIds['SETTINGS']) throw new Error('Settings list not found');
+
+        const response = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items`)
+            .expand('fields')
+            .filter(`fields/ComponentName eq 'website_launch_countdown'`)
+            .get();
+
+        const items = response.value || [];
+        if (items.length > 0) {
+            await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['SETTINGS']}/items/${items[0].id}`)
+                .patch({ fields: { Description: '' } });
+        }
+    }
 }

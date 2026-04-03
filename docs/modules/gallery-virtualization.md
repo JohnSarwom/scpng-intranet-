@@ -121,3 +121,10 @@ const VirtualizedEventGrid = ({
     </div>
   ))}
 </TabsContent>
+```
+
+---
+
+## Related Documentation
+
+- [GalleryLightbox Component](../components/gallery-lightbox.md) — The fullscreen carousel lightbox used when a photo is clicked. Documents the pixel-based track algorithm, animation constants, and SCPNG design token usage.

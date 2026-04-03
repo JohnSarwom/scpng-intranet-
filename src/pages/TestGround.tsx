@@ -1505,17 +1505,18 @@ const TestGround = () => {
             const paService = new PowerAutomateService(msalInstance);
             const result = await paService.deployReportSchedulerFlow();
 
-            setFlowDeployResult({ success: result.success, message: result.message });
+            const msg = `Dispatch: ${result.dispatch.message} | Send: ${result.send.message}`;
+            setFlowDeployResult({ success: result.overallSuccess, message: msg });
 
-            if (result.success) {
+            if (result.overallSuccess) {
                 toast({
-                    title: "Success!",
-                    description: result.message,
+                    title: "Both Flows Deployed!",
+                    description: "Report Dispatch and Report Send flows are live.",
                 });
             } else {
                 toast({
-                    title: "Deployment Failed",
-                    description: result.message,
+                    title: "Deployment Partially Failed",
+                    description: msg,
                     variant: "destructive"
                 });
             }
@@ -1604,30 +1605,35 @@ const TestGround = () => {
 
         try {
             const paService = new PowerAutomateService(msalInstance);
-            const existing = await paService.findExistingReportFlow();
+            const flows = await paService.listFlows();
+            const toDelete = flows.filter(f =>
+                f.displayName === 'SCPNG Intranet — Report Dispatch' ||
+                f.displayName === 'SCPNG Intranet — Report Send' ||
+                f.displayName === 'SCPNG Intranet — Scheduled Report Dispatcher'
+            );
 
-            if (!existing) {
-                setFlowDeployResult({ success: false, message: 'No existing Report Scheduler flow found to delete.' });
-                toast({
-                    title: "No Flow Found",
-                    description: "No existing Report Scheduler flow found.",
-                    variant: "destructive"
-                });
+            if (toDelete.length === 0) {
+                setFlowDeployResult({ success: false, message: 'No Report Scheduler flows found to delete.' });
+                toast({ title: "No Flows Found", description: "No existing report flows found.", variant: "destructive" });
                 return;
             }
 
-            await paService.deleteFlow(existing.name);
-            setFlowDeployResult({ success: true, message: `Flow "${existing.displayName}" deleted successfully. You can now redeploy.` });
+            for (const flow of toDelete) {
+                await paService.deleteFlow(flow.name);
+            }
+
+            const names = toDelete.map(f => f.displayName).join(', ');
+            setFlowDeployResult({ success: true, message: `Deleted: ${names}. You can now redeploy.` });
             toast({
-                title: "Flow Deleted",
-                description: `"${existing.displayName}" has been removed. You can now redeploy the updated version.`,
+                title: "Flows Deleted",
+                description: `${toDelete.length} flow(s) removed. Ready to redeploy.`,
             });
         } catch (error: any) {
             console.error('[TestGround] Flow deletion failed:', error);
             setFlowDeployResult({ success: false, message: error.message });
             toast({
                 title: "Deletion Failed",
-                description: error.message || "Failed to delete flow",
+                description: error.message || "Failed to delete flows",
                 variant: "destructive"
             });
         } finally {
@@ -3858,28 +3864,42 @@ const TestGround = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Zap className="h-5 w-5 text-violet-600" />
-                            Power Automate — Report Scheduler Flow
+                            Power Automate — Report Scheduler (2 Flows)
                         </CardTitle>
                         <CardDescription>
-                            Deploy the master recurring report flow to automation@scpng.gov.pg's Power Automate.
-                            This single flow checks the Report_Schedules list daily and sends reports to users whose schedules are due.
+                            Deploys two flows to automation@scpng.gov.pg. Flow 1 (Dispatch) reads due schedules and writes metrics to Google Sheets every 30 min. Google Apps Script calls Gemini AI and marks rows READY. Flow 2 (Send) picks up READY rows, builds the HTML email, and sends via Office 365 — no premium connectors required.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2 text-sm">
                             <div className="font-medium flex items-center gap-2">
                                 <ListTree className="h-4 w-4 text-violet-500" />
-                                Flow Actions:
+                                Flow 1 — Dispatch (every 30 min, SharePoint + Google Sheets):
+                            </div>
+                            <ul className="ml-6 space-y-1 text-muted-foreground text-xs mb-3">
+                                <li>1. Read active schedules from SharePoint where NextSendAt &lt;= now</li>
+                                <li>2. For each due user: fetch Tasks, KRAs, KPIs, Objectives</li>
+                                <li>3. Compute metrics + period label</li>
+                                <li>4. Insert PENDING row into Google Sheets AI_Queue</li>
+                            </ul>
+                            <div className="font-medium flex items-center gap-2">
+                                <ListTree className="h-4 w-4 text-violet-500" />
+                                Google Apps Script (every 5 min, free):
+                            </div>
+                            <ul className="ml-6 space-y-1 text-muted-foreground text-xs mb-3">
+                                <li>5. Read PENDING rows from AI_Queue</li>
+                                <li>6. Call Gemini API for AI summary</li>
+                                <li>7. Write AISummary + mark row READY</li>
+                            </ul>
+                            <div className="font-medium flex items-center gap-2">
+                                <ListTree className="h-4 w-4 text-violet-500" />
+                                Flow 2 — Send (every 15 min, Google Sheets + Office 365):
                             </div>
                             <ul className="ml-6 space-y-1 text-muted-foreground text-xs">
-                                <li>1. Recurrence trigger — daily at 7:00 AM PGT</li>
-                                <li>2. Get active schedules + fetch Gemini API key (parallel)</li>
-                                <li>3. Filter for schedules where NextSendAt &lt;= now</li>
-                                <li>4. For each due user: query Tasks, KRAs, KPIs, Objectives</li>
-                                <li>5. Compute metrics, call Gemini AI for strategic insights</li>
-                                <li>6. Build HTML email with metrics + AI analysis</li>
-                                <li>7. Send email from automation@scpng.gov.pg</li>
-                                <li>8. Update LastSentAt and NextSendAt</li>
+                                <li>8. Read READY rows from AI_Queue</li>
+                                <li>9. Build HTML email with metrics + embedded AI summary</li>
+                                <li>10. Send via Office 365 from automation@scpng.gov.pg</li>
+                                <li>11. Update NextSendAt in SharePoint + mark row SENT</li>
                             </ul>
                         </div>
 
@@ -3951,7 +3971,7 @@ const TestGround = () => {
                             ) : (
                                 <>
                                     <Zap className="mr-2 h-4 w-4" />
-                                    Deploy Report Scheduler Flow
+                                    Deploy Both Flows (Dispatch + Send)
                                 </>
                             )}
                         </Button>

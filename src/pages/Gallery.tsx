@@ -18,6 +18,7 @@ import {
 import { ChevronLeft, ChevronRight, X, Plus, Image as ImageIcon, Loader2, Trash2, Pencil, CheckSquare, XSquare } from 'lucide-react';
 import AddPhotoModal from '@/components/gallery/AddPhotoModal';
 import EditPhotoModal from '@/components/gallery/EditPhotoModal';
+import GalleryLightbox from '@/components/gallery/GalleryLightbox';
 import GalleryDebug from '@/components/gallery/GalleryDebug';
 import { galleryService, type GalleryEventWithPhotos, type GalleryData, type GalleryPhoto } from '@/integrations/supabase/galleryService';
 import { toast } from 'sonner';
@@ -677,82 +678,30 @@ const Gallery = () => {
         ))}
       </Tabs>
 
-      {/* Fullscreen Image Dialog */}
-      <Dialog open={selectedImage !== null} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-5xl p-0 bg-background/95 dark:bg-gray-900/95 backdrop-blur-sm dark:border-white/10">
-          <div className="relative h-full flex flex-col">
-            <DialogHeader className="p-4 absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/50 to-transparent">
-              <DialogTitle className="text-white">{currentEvent?.title}</DialogTitle>
-              <DialogDescription className="text-white/80">{selectedImage?.caption}</DialogDescription>
-            </DialogHeader>
-
-            <div className="flex-1 flex items-center justify-center p-4 pt-16">
-              <img
-                src={selectedImage?.url}
-                alt={selectedImage?.caption}
-                className="max-h-[70vh] max-w-full object-contain"
-              />
-            </div>
-
-            <div className="p-4 flex justify-between items-center border-t dark:border-white/10">
-              <div className="text-sm text-muted-foreground">
-                {currentEvent && currentEvent.images.length > 0
-                  ? `${imageIndex + 1} of ${currentEvent.images.length}`
-                  : 'No images'}
-              </div>
-
-              <div className="flex gap-2">
-                {isAdmin && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={(e) => {
-                        const fullPhoto = currentEvent?.images.find(p => p.id === selectedImage?.id);
-                        if (fullPhoto) openEditModal(fullPhoto, e);
-                      }}
-                      disabled={!selectedImage}
-                    >
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={(e) => selectedImage && openDeleteConfirm(selectedImage, e)}
-                      disabled={!selectedImage}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateImage('prev')}
-                  disabled={!currentEvent || currentEvent.images.length <= 1}
-                >
-                  <ChevronLeft size={18} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => navigateImage('next')}
-                  disabled={!currentEvent || currentEvent.images.length <= 1}
-                >
-                  <ChevronRight size={18} />
-                </Button>
-                <DialogClose asChild>
-                  <Button variant="outline" size="icon">
-                    <X size={18} />
-                  </Button>
-                </DialogClose>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* High-End Gallery Lightbox */}
+      <GalleryLightbox
+        isOpen={selectedImage !== null}
+        onClose={() => setSelectedImage(null)}
+        photos={currentEvent?.images.map(photo => ({
+          ...photo,
+          // Mapping for UI metadata display
+          author: 'SCPNG Office',
+          initials: 'SC',
+          date: photo.created_at || currentEvent.date,
+          location: 'Port Moresby'
+        })) || []}
+        initialIndex={imageIndex}
+        eventTitle={currentEvent?.title}
+        isAdmin={isAdmin}
+        onEdit={(photo) => {
+          const fullPhoto = currentEvent?.images.find(p => p.id === photo.id);
+          if (fullPhoto) openEditModal(fullPhoto, { stopPropagation: () => {} } as React.MouseEvent);
+        }}
+        onDelete={(photo) => {
+          const galleryImg = { id: photo.id, url: photo.image_url, caption: photo.caption || '' };
+          openDeleteConfirm(galleryImg, { stopPropagation: () => {} } as React.MouseEvent);
+        }}
+      />
 
       {/* Confirmation Dialog for Deleting Photo */}
       <Dialog open={isConfirmDeleteDialogOpen} onOpenChange={setIsConfirmDeleteDialogOpen}>

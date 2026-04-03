@@ -23,6 +23,9 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
   const { user: roleUser, isAdmin } = useRoleBasedAuth();
   const currentUser = accounts[0];
   const userEmail = currentUser?.username || currentUser?.email;
+  const isManager = roleUser?.role_name === 'manager';
+  const divisionName = roleUser?.division_name;
+  const unitName = roleUser?.unit_name;
 
   /**
    * Initialize the SharePoint service
@@ -72,14 +75,14 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     error,
     refetch: refreshAssets
   } = useQuery({
-    queryKey: ['assets', userEmail, isAdmin, includeDeleted],
+    queryKey: ['assets', userEmail, isAdmin, isManager, divisionName, unitName, includeDeleted],
     queryFn: async () => {
       console.log(`📥 [useAssetsSharePoint] Fetching assets (includeDeleted: ${includeDeleted}) via React Query...`);
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
       }
-      return currentService.getAssets(userEmail, isAdmin, includeDeleted);
+      return currentService.getAssets(userEmail, isAdmin, includeDeleted, isManager, divisionName, unitName);
     },
     // Only fetch when we have user info. Service will be init'd on demand if needed.
     enabled: !!userEmail && (!!roleUser || !isAdmin),

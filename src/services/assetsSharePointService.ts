@@ -309,13 +309,22 @@ export class AssetsSharePointService {
   /**
    * Get all assets (with optional user filtering and soft-delete inclusion)
    */
-  async getAssets(userEmail?: string, isAdmin: boolean = false, includeDeleted: boolean = false): Promise<Asset[]> {
+  async getAssets(
+    userEmail?: string,
+    isAdmin: boolean = false,
+    includeDeleted: boolean = false,
+    isManager: boolean = false,
+    divisionName?: string,
+    unitName?: string,
+  ): Promise<Asset[]> {
     if (!this.siteId || !this.listId) await this.initialize();
 
     try {
       console.log('\n📊 [GET ASSETS] Fetching assets from SharePoint...');
       console.log(`   User Email: ${userEmail || 'N/A'}`);
       console.log(`   Is Admin: ${isAdmin}`);
+      console.log(`   Is Manager: ${isManager}`);
+      console.log(`   Division: ${divisionName || 'N/A'} | Unit: ${unitName || 'N/A'}`);
       console.log(`   Include Deleted: ${includeDeleted}`);
 
       const response = await this.client
@@ -336,14 +345,23 @@ export class AssetsSharePointService {
         console.log(`   Including deleted assets: ${assets.length}`);
       }
 
-      // Apply user-level filtering (client-side)
-      if (!isAdmin && userEmail) {
+      // Apply role-based filtering (client-side)
+      if (isAdmin) {
+        console.log(`   👑 Admin user - showing all assets (no filtering)`);
+      } else if (isManager && (divisionName || unitName)) {
+        assets = assets.filter((asset: Asset) => {
+          const assetDivision = asset.division?.trim().toLowerCase();
+          const assetUnit = asset.unit?.trim().toLowerCase();
+          const matchesDivision = divisionName && assetDivision === divisionName.trim().toLowerCase();
+          const matchesUnit = unitName && assetUnit === unitName.trim().toLowerCase();
+          return matchesDivision || matchesUnit;
+        });
+        console.log(`   🏢 Manager - filtered to division/unit assets: ${assets.length}`);
+      } else if (userEmail) {
         assets = assets.filter((asset: Asset) =>
           asset.assigned_to_email?.toLowerCase() === userEmail.toLowerCase()
         );
-        console.log(`   ✂️ Filtered to user's assets: ${assets.length}`);
-      } else if (isAdmin) {
-        console.log(`   👑 Admin user - showing all assets (no filtering)`);
+        console.log(`   ✂️ Filtered to user's assigned assets: ${assets.length}`);
       }
 
       console.log(`✅ [GET ASSETS] Returning ${assets.length} assets to frontend\n`);
