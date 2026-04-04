@@ -260,6 +260,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   const [editingKra, setEditingKra] = useState<Kra | undefined>(undefined);
   const [editingKpiDetails, setEditingKpiDetails] = useState<{ kraId: string; kpi: Kpi } | undefined>(undefined);
   const [kraToDelete, setKraToDelete] = useState<Kra | null>(null);
+  const [objectiveToDelete, setObjectiveToDelete] = useState<string | number | null>(null);
   const [filters, setFilters] = useState<KraFiltersState>({
     department: 'all',
     status: 'all',
@@ -941,9 +942,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   };
 
   const handleDeleteObjective = (objectiveId: string | number) => {
-    if (window.confirm("Are you sure you want to delete this initiative? This might affect linked KRAs.")) {
-      onDeleteObjective(objectiveId);
-    }
+    setObjectiveToDelete(objectiveId);
   };
 
   // Use activeTab prop here
@@ -1653,6 +1652,26 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={objectiveToDelete !== null} onOpenChange={(open) => !open && setObjectiveToDelete(null)}>
+          <AlertDialogContent className="dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="dark:text-gray-100">Delete Initiative?</AlertDialogTitle>
+              <AlertDialogDescription className="dark:text-gray-400">
+                This action cannot be undone. This will permanently delete this initiative and may affect linked KRAs.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="dark:border-t dark:border-white/10 pt-4 mt-2">
+              <AlertDialogCancel className="dark:bg-transparent dark:border-white/20 dark:text-gray-300 dark:hover:bg-gray-900" onClick={() => setObjectiveToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => { onDeleteObjective(objectiveToDelete!); setObjectiveToDelete(null); }}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <AlertDialog open={kraToDelete !== null} onOpenChange={(open) => !open && setKraToDelete(null)}>
           <AlertDialogContent className="dark:bg-gray-950 dark:border-white/10" container={isFullScreen ? containerRef.current : null}>

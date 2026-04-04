@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useMsal } from '@azure/msal-react';
 import { getGraphClient } from '@/services/graphService';
 import { useOpsService } from '@/hooks/useSharePointOps';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 const HISTORY_KEY = 'scpng_mtg_history';
 const DRAFT_KEY = 'scpng_mtg_draft';
@@ -16,7 +17,7 @@ const MAX_HISTORY = 20;
 const freshMeetingData = (): MeetingData => ({
   particulars: {
     name: '',
-    meetingId: `SC-MTG-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    meetingId: '',
     date: new Date().toISOString().split('T')[0],
     startTime: '09:00',
     endTime: '10:00',
@@ -31,6 +32,34 @@ const freshMeetingData = (): MeetingData => ({
   actionItems: [{ area: '', action: '', owner: '' }],
   remarks: ''
 });
+
+/**
+ * Converts a unit name to a short uppercase code using initials.
+ * e.g. "Information Technology" → "IT", "Human Resources" → "HR"
+ */
+const getUnitCode = (unitName: string): string => {
+  return unitName
+    .split(/\s+/)
+    .filter(w => w.length > 0)
+    .map(w => w[0].toUpperCase())
+    .join('');
+};
+
+/**
+ * Finds the next sequential meeting ID for the given unit code.
+ * Format: SCPNGMID{UNITCODE}{NNN}
+ */
+const generateNextMeetingId = (unitCode: string, existingIds: string[]): string => {
+  const prefix = `SCPNGMID${unitCode}`;
+  let maxNum = 0;
+  for (const id of existingIds) {
+    if (id.startsWith(prefix)) {
+      const num = parseInt(id.slice(prefix.length), 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
+  }
+  return `${prefix}${String(maxNum + 1).padStart(3, '0')}`;
+};
 
 const buildPartialMeetingData = (fields: any): MeetingData => ({
   particulars: {
@@ -54,8 +83,11 @@ const buildPartialMeetingData = (fields: any): MeetingData => ({
 const MeetingMinutes = () => {
   const [meetingData, setMeetingData] = useState<MeetingData>(freshMeetingData);
   const [history, setHistory] = useState<MeetingHistoryEntry[]>([]);
+  const [existingMeetingIds, setExistingMeetingIds] = useState<string[]>([]);
+  const [spLoaded, setSpLoaded] = useState(false);
   const { instance: msalInstance } = useMsal();
   const getOpsService = useOpsService();
+  const { user: roleUser } = useRoleBasedAuth();
 
   // Load draft + history from localStorage
   useEffect(() => {
@@ -69,7 +101,7 @@ const MeetingMinutes = () => {
     }
   }, []);
 
-  // Fetch history from SharePoint for the current user
+  // Fetch history + all Meeting IDs from SharePoint
   useEffect(() => {
     const fetchSpHistory = async () => {
       try {
@@ -90,7 +122,16 @@ const MeetingMinutes = () => {
           .expand('fields')
           .get();
 
-        const myItems = (itemsResp.value as any[]).filter(item =>
+        const allItems: any[] = itemsResp.value;
+
+        // Collect all stored Meeting IDs (for sequence generation across all users in unit)
+        const allIds = allItems
+          .map(item => item.fields?.MeetingID as string)
+          .filter(Boolean);
+        setExistingMeetingIds(allIds);
+
+        // Filter to current user's items for history display
+        const myItems = allItems.filter(item =>
           item.createdBy?.user?.email === currentEmail
         );
 
@@ -106,29 +147,45 @@ const MeetingMinutes = () => {
             id: `sp-${item.id}`,
             savedAt: item.createdDateTime,
             meetingName: fields.Title || 'Untitled Meeting',
-            meetingId: fields.MeetingID || fields.MeetingId || '',
+            meetingId: fields.MeetingID || '',
             data,
           };
         });
 
-        if (spEntries.length === 0) return;
-
-        setHistory(prev => {
-          // Merge localStorage + SP entries, dedup by id, sort by date
-          const localIds = new Set(prev.map(e => e.id));
-          const newEntries = spEntries.filter(e => !localIds.has(e.id));
-          return [...prev, ...newEntries].sort(
-            (a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime()
-          );
-        });
+        if (spEntries.length > 0) {
+          setHistory(prev => {
+            const localIds = new Set(prev.map(e => e.id));
+            const newEntries = spEntries.filter(e => !localIds.has(e.id));
+            return [...prev, ...newEntries].sort(
+              (a, b) => new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime()
+            );
+          });
+        }
       } catch (e) {
         console.error('Failed to load SP meeting history:', e);
+      } finally {
+        setSpLoaded(true);
       }
     };
 
     fetchSpHistory();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Generate unit-based Meeting ID once SP data is loaded (roleUser may still be loading)
+  useEffect(() => {
+    if (!spLoaded) return;
+    // Use unit_name → division_name → 'GEN' as fallback so ID always generates
+    const unitName = roleUser?.unit_name || roleUser?.division_name || 'GEN';
+    const unitCode = getUnitCode(unitName);
+    setMeetingData(prev => {
+      // Only auto-generate if the ID is empty or still in the old SC-MTG format
+      if (prev.particulars.meetingId && !prev.particulars.meetingId.startsWith('SC-MTG-')) return prev;
+      const nextId = generateNextMeetingId(unitCode, existingMeetingIds);
+      return { ...prev, particulars: { ...prev.particulars, meetingId: nextId } };
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spLoaded, roleUser?.unit_name, roleUser?.division_name]);
 
   // Auto-save draft
   useEffect(() => {
@@ -137,6 +194,10 @@ const MeetingMinutes = () => {
 
   const handleClear = () => {
     const fresh = freshMeetingData();
+    // Regenerate a new sequential ID for the unit on clear
+    const unitName = roleUser?.unit_name || roleUser?.division_name || 'GEN';
+    const unitCode = getUnitCode(unitName);
+    fresh.particulars.meetingId = generateNextMeetingId(unitCode, existingMeetingIds);
     setMeetingData(fresh);
     localStorage.removeItem(DRAFT_KEY);
     toast.success('Form cleared');

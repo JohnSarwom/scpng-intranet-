@@ -68,20 +68,30 @@ export class MeetingShareService {
   async registerMetadata(data: MeetingData, documentUrl: string): Promise<void> {
     const listId = await this.getListIdByName('Meeting_Minutes_Registry');
 
-    const payload = {
-      fields: {
-        Title: data.particulars.name || 'Untitled Meeting',
-        MeetingDate: data.particulars.date ? new Date(data.particulars.date).toISOString() : null,
-        Facilitator: data.particulars.facilitator,
-        Venue: data.particulars.venue,
-        AttendeesJSON: JSON.stringify(data.attendance),
-        DocumentUrl: documentUrl,
-        Status: 'Draft',
-        MeetingDataJSON: JSON.stringify(data),
-      }
+    const baseFields = {
+      Title: data.particulars.name || 'Untitled Meeting',
+      MeetingDate: data.particulars.date ? new Date(data.particulars.date).toISOString() : null,
+      Facilitator: data.particulars.facilitator,
+      Venue: data.particulars.venue,
+      AttendeesJSON: JSON.stringify(data.attendance),
+      DocumentUrl: documentUrl,
+      Status: 'Draft',
     };
 
-    await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post(payload);
+    // Try with the extended fields first; fall back to base fields if columns don't exist yet
+    try {
+      await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post({
+        fields: { ...baseFields, MeetingID: data.particulars.meetingId || '', MeetingDataJSON: JSON.stringify(data) }
+      });
+    } catch (err: any) {
+      const msg: string = err?.message || '';
+      if (msg.includes('not recognized') || msg.includes('MeetingDataJSON') || msg.includes('MeetingID')) {
+        // One or both extended columns don't exist — save with base fields only
+        await this.client.api(`/sites/${this.siteId}/lists/${listId}/items`).post({ fields: baseFields });
+      } else {
+        throw err;
+      }
+    }
   }
 
   /**

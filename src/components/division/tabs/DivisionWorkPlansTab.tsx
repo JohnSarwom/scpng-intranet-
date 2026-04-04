@@ -1,4 +1,9 @@
 import React, { useState, useMemo } from 'react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -373,6 +378,7 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
   }, [workPlans, data.objectives, data.combinedKras]);
 
   const [selectedPlan, setSelectedPlan] = useState<WorkPlan | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<WorkPlan | null>(null);
 
   const filteredPlans = enrichedPlans;
 
@@ -431,16 +437,35 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
               canEdit={canEdit}
               onView={() => setSelectedPlan(plan)}
               onEdit={() => goToEdit(plan)}
-              onDelete={() => {
-                if (window.confirm(`Delete "${plan.title}"?`)) {
-                  deleteWorkPlan(plan.id);
-                  if (selectedPlan?.id === plan.id) setSelectedPlan(null);
-                }
-              }}
+              onDelete={() => setPlanToDelete(plan)}
             />
           ))}
         </div>
       )}
+
+      <AlertDialog open={planToDelete !== null} onOpenChange={(open) => !open && setPlanToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Work Plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete <strong>"{planToDelete?.title}"</strong>? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPlanToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={() => {
+                deleteWorkPlan(planToDelete!.id);
+                if (selectedPlan?.id === planToDelete!.id) setSelectedPlan(null);
+                setPlanToDelete(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

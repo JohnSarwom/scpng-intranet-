@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlobalAssigneeSelector, Employee } from '@/components/common/GlobalAssigneeSelector';
 import { ShareMeetingModal } from './ShareMeetingModal';
@@ -95,6 +105,40 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isInitializingSP, setIsInitializingSP] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Real-time form completion percentage
+  const formProgress = React.useMemo(() => {
+    const p = data.particulars;
+    // Particulars: name, date, venue (3 fields)
+    const particularsScore =
+      (p.name.trim() ? 1 : 0) +
+      (p.date ? 1 : 0) +
+      (p.venue.trim() ? 1 : 0);
+    const particularsMax = 3;
+
+    // Attendance: at least one row with a name
+    const attendanceScore = data.attendance.some(a => a.name.trim()) ? 1 : 0;
+    const attendanceMax = 1;
+
+    // Discussion: at least one row with a topic
+    const discussionScore = data.discussion.some(d => d.topic.trim()) ? 1 : 0;
+    const discussionMax = 1;
+
+    // Action items: at least one row with an action
+    const actionsScore = data.actionItems.some(ai => ai.action.trim()) ? 1 : 0;
+    const actionsMax = 1;
+
+    // Remarks
+    const remarksScore = data.remarks.trim() ? 1 : 0;
+    const remarksMax = 1;
+
+    const total = particularsScore + attendanceScore + discussionScore + actionsScore + remarksScore;
+    const max = particularsMax + attendanceMax + discussionMax + actionsMax + remarksMax;
+    return Math.round((total / max) * 100);
+  }, [data]);
+  const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; title: string; description: string; onConfirm: () => void }>({
+    open: false, title: '', description: '', onConfirm: () => {}
+  });
 
   // Track active section on scroll
   useEffect(() => {
@@ -264,6 +308,24 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
   };
 
   return (
+    <>
+    <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog(d => ({ ...d, open }))}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{confirmDialog.title}</AlertDialogTitle>
+          <AlertDialogDescription>{confirmDialog.description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-[#83002A] hover:bg-[#6a0022] text-white"
+            onClick={() => { confirmDialog.onConfirm(); setConfirmDialog(d => ({ ...d, open: false })); }}
+          >
+            Confirm
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     <div className="flex flex-col lg:flex-row gap-10 items-start">
       {/* Sidebar Navigation - Light Clean Theme */}
       <div className="w-full lg:w-64 sticky top-32 z-10">
@@ -282,9 +344,15 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
           <div className="p-4 mt-6 bg-gray-50 border-t border-gray-100">
              <div className="flex items-center gap-2 mb-2">
                  <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="bg-green-600 h-full rounded-full" style={{ width: '85%' }} />
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${formProgress}%`,
+                        backgroundColor: formProgress === 100 ? '#16a34a' : formProgress >= 60 ? '#83002A' : '#d97706'
+                      }}
+                    />
                  </div>
-                 <span className="text-[10px] font-bold text-gray-600">85%</span>
+                 <span className="text-[10px] font-bold text-gray-600">{formProgress}%</span>
              </div>
              <p className="text-[9px] text-gray-400 font-medium">Auto-syncing data for export</p>
           </div>
@@ -318,10 +386,12 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                   <button
                     key={entry.id}
                     onClick={() => {
-                      if (window.confirm(`Load "${entry.meetingName || 'Untitled Meeting'}"? This will replace your current form.`)) {
-                        onLoadHistory(entry);
-                        setShowHistory(false);
-                      }
+                      setConfirmDialog({
+                        open: true,
+                        title: 'Load Meeting Minutes',
+                        description: `Load "${entry.meetingName || 'Untitled Meeting'}"? This will replace your current form.`,
+                        onConfirm: () => { onLoadHistory(entry); setShowHistory(false); }
+                      });
                     }}
                     className="w-full px-4 py-3 text-left border-b border-gray-50 hover:bg-gray-50 last:border-0 transition-colors"
                   >
@@ -731,9 +801,12 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                     <Button
                         variant="outline"
                         onClick={() => {
-                            if (window.confirm('Clear the entire form? This cannot be undone.')) {
-                                onClear();
-                            }
+                            setConfirmDialog({
+                                open: true,
+                                title: 'Clear Form',
+                                description: 'Clear the entire form? This cannot be undone.',
+                                onConfirm: onClear,
+                            });
                         }}
                         className="border-red-200 text-red-500 h-11 px-6 rounded-xl hover:bg-red-50 hover:border-red-300 font-semibold"
                     >
@@ -775,6 +848,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
         />
       </div>
     </div>
+    </>
   );
 };
 
