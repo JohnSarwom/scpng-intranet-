@@ -5,6 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -26,7 +33,7 @@ import { getGraphClient } from '@/services/graphService';
 import { toast } from 'sonner';
 import {
   Plus, Trash2, Users, FileText, ListChecks,
-  MessageSquare, ClipboardList, CheckCircle2,
+  MessageSquare, CheckCircle2,
   Clock, MapPin, User, ChevronRight, Share2,
   Download, Settings, Loader2, FileCheck,
   History, RotateCcw, ChevronDown, ChevronUp
@@ -101,6 +108,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
   const { instance: msalInstance } = useMsal();
   const getOpsService = useOpsService();
 
+  const [isOtherSelected, setIsOtherSelected] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('particulars');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isInitializingSP, setIsInitializingSP] = useState(false);
@@ -462,14 +470,45 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                       />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-2">Venue / Location</label>
-                  <Input 
-                      value={data.particulars.venue} 
-                      onChange={(e) => updateParticulars('venue', e.target.value)}
-                      placeholder="e.g. SCPNG Main Board Room"
-                      className="border-gray-300 h-11 rounded-lg"
-                  />
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-2">Venue / Location</label>
+                    <Select 
+                        value={["CEOs Office - Board room", "SCPNG Main Board Room"].includes(data.particulars.venue) 
+                            ? data.particulars.venue 
+                            : ( (data.particulars.venue || isOtherSelected) ? "Others - Specify" : "" )} 
+                        onValueChange={(value) => {
+                          if (value === "Others - Specify") {
+                            setIsOtherSelected(true);
+                            updateParticulars('venue', ''); 
+                          } else {
+                            setIsOtherSelected(false);
+                            updateParticulars('venue', value);
+                          }
+                        }}
+                    >
+                      <SelectTrigger className="border-gray-300 h-11 rounded-lg bg-white">
+                        <SelectValue placeholder="Select Venue..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CEOs Office - Board room">CEOs Office - Board room</SelectItem>
+                        <SelectItem value="SCPNG Main Board Room">SCPNG Main Board Room</SelectItem>
+                        <SelectItem value="Others - Specify">Others - Specify</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {(!["CEOs Office - Board room", "SCPNG Main Board Room"].includes(data.particulars.venue) && (data.particulars.venue !== "" || isOtherSelected)) && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase">Specify Other Location</label>
+                      <Input 
+                          value={data.particulars.venue} 
+                          onChange={(e) => updateParticulars('venue', e.target.value)}
+                          placeholder="e.g. Training Room A"
+                          className="border-gray-300 h-11 rounded-lg"
+                      />
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-700 uppercase">Facilitator</label>
@@ -748,29 +787,6 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                       />
                   </div>
                   
-                  <div className="p-6 rounded-xl bg-slate-50 border border-gray-100">
-                      <h4 className="flex items-center gap-2 text-sm font-bold text-gray-900 mb-4">
-                          <ClipboardList className="w-4 h-4 text-[#83002A]" />
-                          Module Summary
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="p-4 bg-white rounded-lg border border-gray-200">
-                              <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Attendees</p>
-                              <p className="text-2xl font-bold text-gray-900">{data.attendance.length}</p>
-                          </div>
-                          <div className="p-4 bg-white rounded-lg border border-gray-200">
-                              <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Topics</p>
-                              <p className="text-2xl font-bold text-gray-900">{data.discussion.length}</p>
-                          </div>
-                          <div className="p-4 bg-white rounded-lg border border-gray-200">
-                              <p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Directives</p>
-                              <p className="text-2xl font-bold text-gray-900">{data.actionItems.length}</p>
-                          </div>
-                          <div className="p-4 bg-white rounded-lg border border-gray-200 flex items-center justify-center">
-                              <Badge className="bg-green-600 text-white font-bold text-[10px] border-0 py-1 px-3">READY</Badge>
-                          </div>
-                      </div>
-                  </div>
               </CardContent>
           </Card>
         </section>

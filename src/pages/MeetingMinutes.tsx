@@ -227,14 +227,14 @@ const MeetingMinutes = () => {
   return (
     <PageLayout>
       <div className="min-h-screen bg-slate-50/50 -mx-4 px-4">
-        {/* Simplified Sticky Header - Navigation & Title only */}
-        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 -mx-4 px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-200 -mx-4 px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-4">
             <div className="p-2.5 bg-[#83002A]/5 rounded-xl border border-[#83002A]/10">
                 <FilePlus className="w-5 h-5 text-[#83002A]" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900">
                 Meeting Minutes Generator
               </h1>
               <div className="flex items-center gap-3 text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-0.5">
@@ -242,6 +242,25 @@ const MeetingMinutes = () => {
                 <span className="text-gray-300">•</span>
                 <span className="text-[#83002A]">Dynamic Template v2.4</span>
               </div>
+            </div>
+          </div>
+
+          {/* Module Summary */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Attendees</span>
+              <span className="text-sm font-bold text-gray-900 ml-1">{meetingData.attendance.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Topics</span>
+              <span className="text-sm font-bold text-gray-900 ml-1">{meetingData.discussion.length}</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 tracking-widest">Directives</span>
+              <span className="text-sm font-bold text-gray-900 ml-1">{meetingData.actionItems.length}</span>
+            </div>
+            <div className="px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-green-700 tracking-widest">Ready</span>
             </div>
           </div>
         </div>
