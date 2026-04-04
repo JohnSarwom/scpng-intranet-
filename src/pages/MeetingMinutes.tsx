@@ -29,7 +29,7 @@ const freshMeetingData = (): MeetingData => ({
   },
   attendance: [{ name: '', position: '', email: '' }],
   discussion: [{ topic: '', points: '' }],
-  actionItems: [{ area: '', action: '', owner: '' }],
+  actionItems: [{ area: '', action: '', owners: [] }],
   remarks: ''
 });
 
@@ -76,7 +76,7 @@ const buildPartialMeetingData = (fields: any): MeetingData => ({
   },
   attendance: (() => { try { return JSON.parse(fields.AttendeesJSON || '[]'); } catch { return [{ name: '', position: '', email: '' }]; } })(),
   discussion: [{ topic: '', points: '' }],
-  actionItems: [{ area: '', action: '', owner: '' }],
+  actionItems: [{ area: '', action: '', owners: [] }],
   remarks: ''
 });
 
@@ -224,6 +224,15 @@ const MeetingMinutes = () => {
     toast.success(`Loaded: ${entry.meetingName}`);
   };
 
+  const handleDeleteHistory = (id: string) => {
+    setHistory(prev => {
+      const updated = prev.filter(e => e.id !== id);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+      return updated;
+    });
+    toast.success('Entry removed from history');
+  };
+
   return (
     <PageLayout>
       <div className="min-h-screen bg-slate-50/50 -mx-4 px-4">
@@ -274,6 +283,7 @@ const MeetingMinutes = () => {
                 onSave={handleSaveToHistory}
                 history={history}
                 onLoadHistory={handleLoadHistory}
+                onDeleteHistory={handleDeleteHistory}
             />
         </div>
       </div>

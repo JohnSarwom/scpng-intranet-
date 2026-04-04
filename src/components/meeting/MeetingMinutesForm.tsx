@@ -53,7 +53,7 @@ export interface DiscussionRecord {
 export interface ActionItemRecord {
   area: string;
   action: string;
-  owner: string;
+  owners: string[];
 }
 
 export interface MeetingHistoryEntry {
@@ -88,13 +88,14 @@ function cn(...inputs: any[]) {
     return inputs.filter(Boolean).join(' ');
 }
 
-const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHistory }: {
+const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHistory, onDeleteHistory }: {
   data: MeetingData,
   onChange: (newData: MeetingData) => void,
   onClear: () => void,
   onSave: () => void,
   history: MeetingHistoryEntry[],
   onLoadHistory: (entry: MeetingHistoryEntry) => void,
+  onDeleteHistory: (id: string) => void,
 }) => {
   const sectionRefs = {
     particulars: useRef<HTMLDivElement>(null),
@@ -218,7 +219,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
   const addActionItem = () => {
     onChange({
       ...data,
-      actionItems: [...data.actionItems, { area: '', action: '', owner: '' }]
+      actionItems: [...data.actionItems, { area: '', action: '', owners: [] }]
     });
   };
 
@@ -228,9 +229,15 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
     onChange({ ...data, actionItems: newActions });
   };
 
-  const updateActionItem = (index: number, field: keyof ActionItemRecord, value: string) => {
+  const updateActionItem = (index: number, field: 'area' | 'action', value: string) => {
     const newActions = [...data.actionItems];
     newActions[index] = { ...newActions[index], [field]: value };
+    onChange({ ...data, actionItems: newActions });
+  };
+
+  const updateActionItemOwners = (index: number, owners: string[]) => {
+    const newActions = [...data.actionItems];
+    newActions[index] = { ...newActions[index], owners };
     onChange({ ...data, actionItems: newActions });
   };
 
@@ -391,21 +398,39 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                 <p className="text-[11px] text-gray-400 text-center py-6 px-4">No saved minutes yet</p>
               ) : (
                 [...history].reverse().map((entry) => (
-                  <button
+                  <div
                     key={entry.id}
-                    onClick={() => {
-                      setConfirmDialog({
-                        open: true,
-                        title: 'Load Meeting Minutes',
-                        description: `Load "${entry.meetingName || 'Untitled Meeting'}"? This will replace your current form.`,
-                        onConfirm: () => { onLoadHistory(entry); setShowHistory(false); }
-                      });
-                    }}
-                    className="w-full px-4 py-3 text-left border-b border-gray-50 hover:bg-gray-50 last:border-0 transition-colors"
+                    className="group relative flex items-center border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors"
                   >
-                    <p className="text-xs font-semibold text-gray-700 truncate">{entry.meetingName || 'Untitled Meeting'}</p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">{new Date(entry.savedAt).toLocaleDateString()} · {entry.meetingId}</p>
-                  </button>
+                    <button
+                      onClick={() => {
+                        setConfirmDialog({
+                          open: true,
+                          title: 'Load Meeting Minutes',
+                          description: `Load "${entry.meetingName || 'Untitled Meeting'}"? This will replace your current form.`,
+                          onConfirm: () => { onLoadHistory(entry); setShowHistory(false); }
+                        });
+                      }}
+                      className="flex-1 px-4 py-3 text-left"
+                    >
+                      <p className="text-xs font-semibold text-gray-700 truncate pr-6">{entry.meetingName || 'Untitled Meeting'}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{new Date(entry.savedAt).toLocaleDateString()} · {entry.meetingId}</p>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmDialog({
+                          open: true,
+                          title: 'Delete Entry',
+                          description: `Delete "${entry.meetingName || 'Untitled Meeting'}" from history? This cannot be undone.`,
+                          onConfirm: () => onDeleteHistory(entry.id),
+                        });
+                      }}
+                      className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-md hover:bg-red-50 text-gray-300 hover:text-red-500"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -740,15 +765,10 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                                 </div>
                                 <div className="md:col-span-2">
                                     <GlobalAssigneeSelector
-                                        selected={item.owner ? [{ id: `owner-${idx}`, displayName: item.owner }] as Employee[] : []}
-                                        onChange={(employees) => {
-                                            if (employees.length > 0) {
-                                                updateActionItem(idx, 'owner', employees[0].displayName);
-                                            } else {
-                                                updateActionItem(idx, 'owner', '');
-                                            }
-                                        }}
-                                        placeholder="Owner"
+                                        mode="multiple"
+                                        selected={(item.owners ?? []).map((name, i) => ({ id: `owner-${idx}-${i}`, displayName: name }) as Employee)}
+                                        onChange={(employees) => updateActionItemOwners(idx, employees.map(e => e.displayName))}
+                                        placeholder="Assign owners..."
                                         className="bg-white border-gray-300 h-10 text-xs font-medium"
                                     />
                                 </div>
