@@ -17,7 +17,8 @@ import {
     LayoutDashboard,
     Building2,
     MessageSquareText,
-    Package
+    Package,
+    FileText
 } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
 import RoleManagement from '@/components/admin/RoleManagement';
@@ -28,6 +29,7 @@ import { ViewSettingsTab } from '@/components/admin/ViewSettingsTab';
 import OrgStructureManagement from '@/components/admin/OrgStructureManagement';
 import { UATFeedbackTab } from '@/components/admin/UATFeedbackTab';
 import AssetPermissionsTab from '@/components/admin/AssetPermissionsTab';
+import DocumentPermissionsTab from '@/components/admin/DocumentPermissionsTab';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -159,7 +161,7 @@ const Admin = () => {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8 h-auto">
+                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 h-auto">
                         <TabsTrigger value="users" className="py-2">
                             <Users className="mr-2 h-4 w-4" />
                             Users
@@ -188,6 +190,10 @@ const Admin = () => {
                         <TabsTrigger value="asset-permissions" className="py-2">
                             <Package className="mr-2 h-4 w-4" />
                             Asset Permissions
+                        </TabsTrigger>
+                        <TabsTrigger value="doc-permissions" className="py-2">
+                            <FileText className="mr-2 h-4 w-4" />
+                            Doc Permissions
                         </TabsTrigger>
                         <TabsTrigger value="uat-feedback" className="py-2">
                             <MessageSquareText className="mr-2 h-4 w-4" />
@@ -237,6 +243,13 @@ const Admin = () => {
 
                     <TabsContent value="asset-permissions" className="space-y-4">
                         <AssetPermissionsTab />
+                    </TabsContent>
+
+                    <TabsContent value="doc-permissions" className="space-y-4">
+                        <DocumentPermissionsTab
+                            users={users}
+                            onUpdateUser={handleUpdateUser}
+                        />
                     </TabsContent>
 
                     <TabsContent value="uat-feedback" className="space-y-4">

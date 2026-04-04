@@ -1,0 +1,109 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>Standard Operating Procedure</title>
+<style>
+body { font-family: "Calibri", sans-serif; line-height: 1.5; color: #333; }
+table { border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; }
+th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+th { background-color: #e2eaf0; }
+h1 { color: #1f4e79; border-bottom: 2px solid #1f4e79; padding-bottom: 5px; }
+h2 { color: #2e74b5; margin-top: 24px; }
+h3 { color: #4472c4; }
+.alert { background-color: #fce4e4; border-left: 4px solid #c9302c; padding: 10px; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Standard Operating Procedure (SOP)</h1>
+<p><strong>Scope:</strong> Regulatory Intelligence System Report Handling<br>
+<strong>Date:</strong> April 2026<br>
+<strong>Audience:</strong> Compliance Officers, Division Managers, Unit Investigating Officers</p>
+
+<div class="alert">
+<strong>IMPORTANT:</strong> This SOP covers the lifecycle of all Scam, Whistleblower, Compliance, and Enquiry reports ingested from the WordPress portal into the SCPNG Intranet. It guarantees strict adherence to confidentiality, particularly for Whistleblower cases.
+</div>
+
+<h2>1. Purpose</h2>
+<p>The purpose of this procedure is to establish a standardized, transparent, and secure methodology for handling regulatory intelligence reports. This ensures cases are immediately identified, triaged, routed to one or multiple relevant Division/Units, investigated collaboratively, and successfully closed, with full automated notification trails.</p>
+
+<h2>2. Roles &amp; Responsibilities</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Role</th>
+            <th>Responsibility</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Compliance Officer (Triage)</strong></td>
+            <td>Monitors the Intranet dashboard daily. Responsible for classifying incoming cases and assigning them to primary and supplementary units.</td>
+        </tr>
+        <tr>
+            <td><strong>Division / Unit Manager</strong></td>
+            <td>Receives grouped notifications for their Division and assigns an Investigating Officer. Engages in cross-functional co-investigation when tagged.</td>
+        </tr>
+        <tr>
+            <td><strong>Investigating Officer</strong></td>
+            <td>Executes the investigation, reads attachments via the Case Card, re-assigns cases if out-of-scope, and logs outcomes.</td>
+        </tr>
+        <tr>
+            <td><strong>System Administrator (IT)</strong></td>
+            <td>Manages RBAC roles, ensuring Whistleblower anonymity locks and MS Graph App Registrations remain secure.</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>3. Operating Procedure</h2>
+
+<h3>Phase 1: Intake and Triage</h3>
+<p><em>SLA: All reports must be triaged within 24 hours of receipt.</em></p>
+<ol>
+    <li><strong>Monitor the Dashboard:</strong> The Compliance Officer logs into the SCPNG Intranet and navigates to the <strong>Regulatory</strong> dashboard.</li>
+    <li><strong>Review RECEIVED Cases:</strong> A global In-App and Email notification alerts the Compliance unit of a newly ingested WordPress case.</li>
+    <li><strong>Assess Risk Level:</strong> Check if the system automatically mapped a high risk severity.</li>
+</ol>
+
+<h3>Phase 2: Action &amp; Multi-Assignment</h3>
+<p>Many cases overlap domains (e.g., Financial reporting fraud executed via a Cyber Phishing attack).</p>
+<ol>
+    <li><strong>Allocate Primary Unit:</strong> In the Case Edit Modal, the Compliance Officer selects the Lead investigating unit.</li>
+    <li><strong>Allocate Co-Monitoring Units:</strong> In the multi-select assignment tool, tag secondary units so they have visibility and can contribute.</li>
+    <li><strong>Notification Genesis:</strong> Upon saving, the system fires an In-App alert (badge notification) and Email Notification (via Power Automate) detailing the new case ID to the respective Unit Managers.</li>
+</ol>
+
+<h3>Phase 3: Investigation &amp; Card Interactions</h3>
+<p>The Investigating Officer(s) command the case from the interactive Intranet Dashboard.</p>
+<ol>
+    <li><strong>Status Update:</strong> The officer changes the status to INVESTIGATING. This triggers an In-App alert to co-assigned units but skips the email alert.</li>
+    <li><strong>Reviewing Evidence (Attachments):</strong> Officers click the "Attachments" list directly inside the Case Details Card. The system intercepts the MS Graph DriveItem ID and securely opens a browser-native web viewer.</li>
+    <li><strong>Re-Assignment and Handoffs:</strong> If an officer uncovers a case actually belongs to another unit entirely, they edit the assigned Unit. The relinquishing unit and the newly receiving unit both receive a formal Handoff Email and In-App notification.</li>
+    <li><strong>Data Entry &amp; Collaboration:</strong> Officers actively update the Intranet case Summary field with ongoing findings so co-monitoring units stay aligned.</li>
+</ol>
+
+<h3>Phase 4: Resolution &amp; Closure</h3>
+<ol>
+    <li><strong>Propose Resolution:</strong> Once facts are gathered, the primary Investigating Officer sets the status to RESOLVED and writes a conclusive summary detailing the outcome.</li>
+    <li><strong>Compliance Sign-off:</strong> The Compliance Officer reviews the final details.</li>
+    <li><strong>Close Case:</strong> The Compliance Officer alters the status to CLOSED. A final automated Closure Email wraps up the case and notifies all historically tagged Units that the matter is legally sealed.</li>
+</ol>
+
+<h2>4. Special Handling: Whistleblower Reports</h2>
+<div class="alert">
+<strong>CAUTION:</strong> The highest level of organizational confidentiality applies to whistleblower reports.
+</div>
+<ol>
+    <li><strong>Anonymity Lock:</strong> If a case is marked as Whistleblower with the anonymous flag TRUE, the Intranet restricts all identifiable contact information unconditionally.</li>
+    <li><strong>Non-Disclosure Restrictions:</strong> Investigating Officers tagged in a multi-unit whistleblower cases are strictly forbidden from sharing details external to the assigned group or attempting to reverse-engineer the source.</li>
+</ol>
+
+<h2>5. Escalation &amp; Condition Matrix</h2>
+<p>If during any investigation a case reveals an immediate existential threat to the organization:</p>
+<ul>
+    <li><strong>Action:</strong> The Investigating Officer instantly changes the Risk level inside the modal to CRITICAL or status to ESCALATED.</li>
+    <li><strong>System Trigger:</strong> An urgent Banner/In-App Alert is broadcast to Compliance Heads, and a "High-Priority" flagged email is historically routed to Executive branch channels.</li>
+</ul>
+
+</body>
+</html>

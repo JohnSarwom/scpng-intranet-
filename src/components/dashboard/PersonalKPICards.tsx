@@ -8,6 +8,7 @@ import { useGraphProfile } from '@/hooks/useGraphProfile';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment';
 import { PersonalKPICardsSkeleton } from './skeletons/PersonalKPICardsSkeleton';
+import { Skeleton } from 'boneyard-js/react';
 
 const PersonalKPICards: React.FC = () => {
   // 1. Context & User Setup (Copied/Adapted from Unit.tsx)
@@ -253,16 +254,14 @@ const PersonalKPICards: React.FC = () => {
     }
   ];
 
-  if (isLoading) {
-    return <PersonalKPICardsSkeleton />;
-  }
-
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      {personalKPIs.map((kpi, index) => (
-        <MetricCard key={index} {...kpi} />
-      ))}
-    </div>
+    <Skeleton name="personal-kpi-cards" loading={isLoading} animate={true}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        {(!isLoading ? personalKPIs : Array(3).fill(personalKPIs[0])).map((kpi, index) => (
+          <MetricCard key={index} {...kpi} />
+        ))}
+      </div>
+    </Skeleton>
   );
 };
 

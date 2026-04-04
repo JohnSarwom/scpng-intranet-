@@ -1,17 +1,19 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useMsal } from "@azure/msal-react";
 import { useMicrosoftGraph, Document } from '@/hooks/useMicrosoftGraph.tsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import {
   FileText, FileSpreadsheet, Presentation, FileImage,
   File, FileArchive, FileCode, Video, Music,
-  Folder, ArrowLeft, RefreshCw,
+  Folder, ArrowLeft, RefreshCw, LayoutGrid, LayoutList, Info,
   PlusCircle, User, Users, Building, ChevronDown, ChevronRight, Globe,
-  FolderOpen, FolderPlus, Calendar, Clock, Download, Pencil, Trash2
+  FolderOpen, FolderPlus, Calendar, Clock, Download, Pencil, Trash2,
+  Upload, ExternalLink, AlertTriangle, X, Check
 } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import AddDocumentModal from '@/components/custom/AddDocumentModal';
@@ -20,7 +22,7 @@ import EditCategoryDialog from '@/components/documents/EditCategoryDialog';
 import { supabase } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { fetchSharedDocuments, uploadSharedDocument, addExternalLink, SharedDocument } from '@/services/sharedDocumentsService';
+import { fetchSharedDocuments, uploadSharedDocument, addExternalLink, deleteSharedDocument, SharedDocument } from '@/services/sharedDocumentsService';
 import { fetchDocumentCategories, createDocumentCategory, updateDocumentCategory, deleteDocumentCategory, DocumentCategory } from '@/services/documentCategoriesService';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { getGraphClient } from '@/services/graphService';
@@ -282,13 +284,13 @@ const getRandomSharedUsers = (count: number = 2): UserAvatar[] => {
 const createMockDocument = (name: string, extension: string, sizeInMB: number, daysAgo: number, description?: string, tags?: string[]): MockDocument => {
   const getFileIcon = (ext: string) => {
     switch (ext) {
-      case 'docx': case 'doc': return <FileText className="h-8 w-8 text-blue-500" />;
-      case 'xlsx': case 'xls': return <FileSpreadsheet className="h-8 w-8 text-green-500" />;
-      case 'pptx': case 'ppt': return <Presentation className="h-8 w-8 text-red-500" />;
-      case 'pdf': return <File className="h-8 w-8 text-red-600" />;
-      case 'png': case 'jpg': case 'jpeg': return <FileImage className="h-8 w-8 text-purple-500" />;
-      case 'zip': case 'rar': return <FileArchive className="h-8 w-8 text-yellow-500" />;
-      default: return <FileText className="h-8 w-8 text-gray-500" />;
+      case 'docx': case 'doc': return <FileText className="h-12 w-12 text-blue-500" />;
+      case 'xlsx': case 'xls': return <FileSpreadsheet className="h-12 w-12 text-green-500" />;
+      case 'pptx': case 'ppt': return <Presentation className="h-12 w-12 text-red-500" />;
+      case 'pdf': return <File className="h-12 w-12 text-red-600" />;
+      case 'png': case 'jpg': case 'jpeg': return <FileImage className="h-12 w-12 text-purple-500" />;
+      case 'zip': case 'rar': return <FileArchive className="h-12 w-12 text-yellow-500" />;
+      default: return <FileText className="h-12 w-12 text-gray-500" />;
     }
   };
 
@@ -508,18 +510,8 @@ const getFileTypeIcon = (typeName: string) => {
 };
 
 // Helper function to get category icons
-const getCategoryIcon = (categoryId: string) => {
-  const iconMap: Record<string, React.ReactNode> = {
-    'governance-legal-parent': <Folder className="h-12 w-12 text-primary" />,
-    'strategy-management-parent': <Folder className="h-12 w-12 text-primary" />,
-    'comms-branding-parent': <Folder className="h-12 w-12 text-primary" />,
-    'training-hr-parent': <Folder className="h-12 w-12 text-primary" />,
-    'it-systems-parent': <Folder className="h-12 w-12 text-primary" />,
-    'policies-procedures-manuals': <Folder className="h-12 w-12 text-primary" />,
-    'records-archives-parent': <Folder className="h-12 w-12 text-primary" />
-  };
-
-  return iconMap[categoryId] || <Folder className="h-12 w-12 text-gray-500" />;
+const getCategoryIcon = (_categoryId: string) => {
+  return <FolderOpen className="h-12 w-12 text-blue-500" />;
 };
 
 // Helper function to get file icon based on document
@@ -646,7 +638,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
         fileCount: Math.floor(Math.random() * 30) + 15,
         totalSize: Math.floor(Math.random() * 200) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
-        icon: <Folder className="h-12 w-12 text-primary" />,
+        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
         category: 'unit-category',
         isFolder: true,
         sharedWith: getRandomSharedUsers(5) // Show more users for unit documents
@@ -658,7 +650,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
         fileCount: Math.floor(Math.random() * 20) + 8,
         totalSize: Math.floor(Math.random() * 150) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString(),
-        icon: <Folder className="h-12 w-12 text-primary" />,
+        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
         category: 'team-category',
         isFolder: true,
         sharedWith: getRandomSharedUsers(4)
@@ -670,7 +662,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
         fileCount: Math.floor(Math.random() * 25) + 12,
         totalSize: Math.floor(Math.random() * 100) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toISOString(),
-        icon: <Folder className="h-12 w-12 text-primary" />,
+        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
         category: 'department-category',
         isFolder: true,
         sharedWith: getRandomSharedUsers(6) // Show more sharing for department level
@@ -682,7 +674,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
         fileCount: 0,
         totalSize: 0,
         lastModified: new Date('2026-01-12').toISOString(),
-        icon: <Folder className="h-12 w-12 text-primary" />,
+        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
         category: 'company-category',
         isFolder: true,
         sharedWith: []
@@ -711,12 +703,23 @@ export default function Documents() {
     getFolderContents,
     isLoading: isOneDriveLoading,
     handleLogin,
-    uploadBinaryFileToSharePoint
+    uploadBinaryFileToSharePoint,
+    uploadToOneDrive,
+    createOneDriveFolder,
+    renameOneDriveItem,
+    deleteOneDriveItem,
   } = useMicrosoftGraph();
   const { instance } = useMsal();
   const { user } = useSupabaseAuth();
-  const { isAdmin, isSuperAdmin } = useRoleBasedAuth();
+  const { isAdmin, isSuperAdmin, hasPermission } = useRoleBasedAuth();
   const canAddDocument = isAdmin;
+
+  // Document section CRUD permissions (admins always allowed; non-admins need explicit grant)
+  const canUploadOrg    = isAdmin || hasPermission('documents_org', 'upload');
+  const canDeleteOrg    = isAdmin || hasPermission('documents_org', 'delete');
+  const canUploadExt    = isAdmin || hasPermission('documents_external', 'upload');
+  const canDeleteExt    = isAdmin || hasPermission('documents_external', 'delete');
+  const canManageOrgCategories = isAdmin || isSuperAdmin;
 
   const [documents, setDocuments] = useState<DisplayableDocument[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<DisplayableDocument[]>([]);
@@ -738,6 +741,28 @@ export default function Documents() {
   const [isLoading, setIsLoading] = useState(false);
   const [dynamicCategories, setDynamicCategories] = useState<DocumentCategory[]>([]);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
+  // OneDrive CRUD state
+  const [isDriveUploading, setIsDriveUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Rename dialog
+  const [renameTarget, setRenameTarget] = useState<DisplayableDocument | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+
+  // Delete confirm dialog (OneDrive)
+  const [deleteTarget, setDeleteTarget] = useState<DisplayableDocument | null>(null);
+
+  // Delete confirm dialog (Org/External SharePoint shared docs)
+  const [sharedDocDeleteTarget, setSharedDocDeleteTarget] = useState<MockDocument | null>(null);
+  const [isDeletingSharedDoc, setIsDeletingSharedDoc] = useState(false);
+
+  // New folder dialog
+  const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
 
   // Navigation state for drill-down functionality
   const [navigationState, setNavigationState] = useState<NavigationState>({
@@ -947,7 +972,7 @@ export default function Documents() {
         url: item.url || item.webUrl, // Use .url as useMicrosoftGraph returns .url, fallback to webUrl just in case
         lastModified: item.lastModifiedDateTime || item.lastModified,
         size: item.size,
-        isFolder: !!item.folder,
+        isFolder: item.isFolder ?? false,
         source: 'OneDrive',
         originalFileName: item.name,
       }));
@@ -1437,43 +1462,54 @@ export default function Documents() {
 
 
   // New component for visual document/folder cards
-  const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions }: {
+  const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions }: {
     folder: DocumentFolder;
     onClick: (folder: DocumentFolder) => void;
     onEdit?: (folder: DocumentFolder) => void;
     onDelete?: (folder: DocumentFolder) => void;
     showAdminActions?: boolean;
+    onRename?: (folder: DocumentFolder) => void;
+    onDriveDelete?: (folder: DocumentFolder) => void;
+    showDriveActions?: boolean;
   }) => (
     <Card
       className="group relative overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 shadow-sm"
       onClick={() => onClick(folder)}
     >
       {/* Hover action buttons - top right */}
+      {showDriveActions && (
+        <div className="absolute top-3 right-3 flex items-center gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onRename && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRename(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all"
+              title="Rename">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDriveDelete && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDriveDelete(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all"
+              title="Delete">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       {showAdminActions && folder.category === 'company-category' && (
         <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
           {onEdit && (
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onEdit(folder);
-              }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(folder); }}
               className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white dark:hover:bg-primary transition-all opacity-0 group-hover:opacity-100"
-              title="Edit category"
-            >
+              title="Edit category">
               <Pencil className="h-3.5 w-3.5" />
             </button>
           )}
           {onDelete && (
             <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onDelete(folder);
-              }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(folder); }}
               className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white dark:hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100"
-              title="Delete category"
-            >
+              title="Delete category">
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
@@ -1554,6 +1590,111 @@ export default function Documents() {
   );
 
 
+  // List-view row for folders
+  const DocumentFolderRow = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions }: {
+    folder: DocumentFolder;
+    onClick: (folder: DocumentFolder) => void;
+    onEdit?: (folder: DocumentFolder) => void;
+    onDelete?: (folder: DocumentFolder) => void;
+    showAdminActions?: boolean;
+    onRename?: (folder: DocumentFolder) => void;
+    onDriveDelete?: (folder: DocumentFolder) => void;
+    showDriveActions?: boolean;
+  }) => (
+    <div
+      className="group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+      onClick={() => onClick(folder)}
+    >
+      <div className="flex-shrink-0">
+        <FolderOpen className="h-8 w-8 text-blue-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-gray-900 dark:text-gray-100 truncate" title={folder.name}>{folder.name}</p>
+        {folder.description && folder.description !== 'Folder' && (
+          <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{folder.description}</p>
+        )}
+      </div>
+      <div className="hidden sm:flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400 flex-shrink-0">
+        {folder.fileCount > 0 && (
+          <span className="flex items-center gap-1.5">
+            <File className="h-4 w-4" />
+            {folder.fileCount} {folder.fileCount === 1 ? 'file' : 'files'}
+          </span>
+        )}
+        {folder.totalSize > 0 && (
+          <span className="flex items-center gap-1.5">
+            <Download className="h-4 w-4" />
+            {formatFileSize(folder.totalSize)}
+          </span>
+        )}
+        <span className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4" />
+          {formatDate(folder.lastModified)}
+        </span>
+        {folder.category === 'company-category' && (
+          <span className="flex items-center gap-1.5 text-xs text-gray-400">
+            <Building className="h-3.5 w-3.5" />
+            Org Wide
+          </span>
+        )}
+        {folder.sharedWith && folder.sharedWith.length > 0 && (
+          <div className="flex -space-x-2">
+            {folder.sharedWith.slice(0, 3).map((user, index) => (
+              <div
+                key={user.id}
+                className={`w-6 h-6 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800`}
+                title={user.name}
+              >
+                {user.initials}
+              </div>
+            ))}
+            {folder.sharedWith.length > 3 && (
+              <div className="w-6 h-6 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800">
+                +{folder.sharedWith.length - 3}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      {showDriveActions && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          {onRename && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRename(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all"
+              title="Rename">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDriveDelete && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDriveDelete(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all"
+              title="Delete">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+      {showAdminActions && folder.category === 'company-category' && (
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+          {onEdit && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all"
+              title="Edit category">
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+          {onDelete && (
+            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(folder); }}
+              className="p-1.5 rounded-md bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all"
+              title="Delete category">
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
   const handleFolderClick = (folder: DocumentFolder) => {
     if (activePrimaryTab === 'my-documents' && folder.isFolder) {
       // Handle OneDrive folder navigation (existing functionality)
@@ -1604,6 +1745,140 @@ export default function Documents() {
       console.error('File missing URL:', file);
     }
   };
+
+  // ── OneDrive CRUD helpers ──────────────────────────────────────────────────
+
+  /** Returns the OneDrive parent item ID for the current location */
+  const currentOneDriveParentId = (): string | 'root' => {
+    if (currentPath.length === 0) return 'root';
+    return currentPath[currentPath.length - 1].id;
+  };
+
+  /** Refresh the current OneDrive folder view after a mutation */
+  const refreshCurrentFolder = async () => {
+    const parentId = currentOneDriveParentId();
+    if (parentId === 'root') {
+      await fetchPersonalDocumentsRoot();
+    } else {
+      const items = await getFolderContents(parentId);
+      const mapped: DisplayableDocument[] = (items || []).map((item: any) => ({
+        id: item.id, name: item.name, url: item.webUrl,
+        lastModified: item.lastModifiedDateTime, size: item.size,
+        isFolder: !!item.folder, source: 'OneDrive', originalFileName: item.name,
+      }));
+      mapped.sort((a, b) => {
+        if (a.isFolder && !b.isFolder) return -1;
+        if (!a.isFolder && b.isFolder) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      setDocuments(mapped);
+    }
+  };
+
+  /** Handle file input change (upload button) */
+  const handleFileInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    setIsDriveUploading(true);
+    for (const file of files) {
+      setUploadProgress(`Uploading ${file.name}…`);
+      const result = await uploadToOneDrive(file, currentOneDriveParentId());
+      if (result) {
+        toast.success(`"${file.name}" uploaded successfully`);
+      }
+    }
+    setUploadProgress(null);
+    setIsDriveUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    await refreshCurrentFolder();
+  };
+
+  /** Handle drag-and-drop upload */
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (activePrimaryTab !== 'my-documents') return;
+    const files = Array.from(e.dataTransfer.files);
+    if (!files.length) return;
+    setIsDriveUploading(true);
+    for (const file of files) {
+      setUploadProgress(`Uploading ${file.name}…`);
+      const result = await uploadToOneDrive(file, currentOneDriveParentId());
+      if (result) toast.success(`"${file.name}" uploaded successfully`);
+    }
+    setUploadProgress(null);
+    setIsDriveUploading(false);
+    await refreshCurrentFolder();
+  };
+
+  /** Create a new folder */
+  const handleCreateFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name) return;
+    setIsDriveUploading(true);
+    const result = await createOneDriveFolder(name, currentOneDriveParentId());
+    if (result) toast.success(`Folder "${name}" created`);
+    setIsNewFolderOpen(false);
+    setNewFolderName('');
+    setIsDriveUploading(false);
+    await refreshCurrentFolder();
+  };
+
+  /** Confirm rename */
+  const handleRenameConfirm = async () => {
+    if (!renameTarget || !renameValue.trim()) return;
+    setIsDriveUploading(true);
+    const ok = await renameOneDriveItem(renameTarget.id, renameValue.trim());
+    if (ok) toast.success(`Renamed to "${renameValue.trim()}"`);
+    setRenameTarget(null);
+    setRenameValue('');
+    setIsDriveUploading(false);
+    await refreshCurrentFolder();
+  };
+
+  /** Confirm delete */
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setIsDriveUploading(true);
+    const ok = await deleteOneDriveItem(deleteTarget.id);
+    if (ok) toast.success(`"${deleteTarget.name}" moved to recycle bin`);
+    setDeleteTarget(null);
+    setIsDriveUploading(false);
+    await refreshCurrentFolder();
+  };
+
+  /** Delete a document from the Org/External SharePoint shared documents list */
+  const handleSharedDocDeleteConfirm = async () => {
+    if (!sharedDocDeleteTarget) return;
+    setIsDeletingSharedDoc(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Failed to initialize Graph client');
+      await deleteSharedDocument(client, sharedDocDeleteTarget.id);
+      toast.success(`"${sharedDocDeleteTarget.name}" deleted successfully`);
+      setSharedDocDeleteTarget(null);
+      // Refresh the documents list
+      setIsLoading(true);
+      try {
+        const sharedDocs = await fetchSharedDocuments(client);
+        const mapped: DisplayableDocument[] = sharedDocs.map(d => ({
+          id: d.id, name: d.name, url: d.webUrl, lastModified: d.createdDateTime,
+          size: d.size, isFolder: false, source: 'SharePoint' as const,
+          description: d.description, tags: d.tags,
+          ...(d as any)
+        }));
+        setDocuments(mapped);
+      } finally {
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      toast.error(`Failed to delete: ${err.message}`);
+    } finally {
+      setIsDeletingSharedDoc(false);
+    }
+  };
+
+  // ── End OneDrive CRUD helpers ──────────────────────────────────────────────
 
   // Generate folder representation of current data
   const documentFolders = useMemo(() => {
@@ -1694,9 +1969,159 @@ export default function Documents() {
           <h1 className="text-2xl font-bold mb-2 dark:text-gray-100">Document Management System</h1>
           <p className="text-gray-500 dark:text-gray-400">Access and manage organisational and personal documents</p>
         </div>
-        <Button onClick={loadData} variant="outline" disabled={isUploading || isLoading} className="dark:border-white/10 dark:hover:bg-gray-800">
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <button 
+                className="p-2 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 hover:text-primary hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                title="System Information"
+                aria-label="System Information"
+              >
+                <Info className="h-4 w-4" />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto w-full md:w-[600px] border border-gray-200 dark:border-white/10 p-0 shadow-2xl">
+              <div className="p-6">
+                <DialogHeader>
+                  <DialogTitle className="text-xl">Document Management System</DialogTitle>
+                  <DialogDescription className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800">
+                    Store, browse, and manage your personal OneDrive files, organisational shared documents, team/unit resources, and external shared links — all in one place.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="py-2 space-y-6 mt-4">
+                  {/* Tabs key */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <LayoutGrid className="h-4 w-4 text-primary" /> Sections
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { icon: <User className="h-4 w-4 text-blue-500" />, label: 'My Documents', desc: 'Your personal OneDrive files & folders' },
+                        { icon: <Building className="h-4 w-4 text-green-500" />, label: 'Organisational', desc: 'Company-wide shared documents' },
+                        { icon: <Users className="h-4 w-4 text-purple-500" />, label: 'Team / Unit', desc: 'Documents shared within your team' },
+                        { icon: <Globe className="h-4 w-4 text-orange-500" />, label: 'External', desc: 'Documents shared with external parties' },
+                      ].map(item => (
+                        <div key={item.label} className="flex items-start gap-3 p-3 rounded-lg border border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <span className="mt-0.5 flex-shrink-0 bg-white dark:bg-gray-900 p-1.5 rounded-md shadow-sm border border-gray-100 dark:border-gray-800">{item.icon}</span>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 leading-none mb-1">{item.label}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{item.desc}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                  
+                  {/* File type icon key */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-primary" /> Supported File Types
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { icon: <FolderOpen className="h-4 w-4 text-blue-500" />, label: 'Folder' },
+                        { icon: <FileText className="h-4 w-4 text-blue-500" />, label: 'Word Doc' },
+                        { icon: <FileSpreadsheet className="h-4 w-4 text-green-500" />, label: 'Spreadsheet' },
+                        { icon: <Presentation className="h-4 w-4 text-red-500" />, label: 'Presentation' },
+                        { icon: <File className="h-4 w-4 text-red-600" />, label: 'PDF' },
+                        { icon: <FileImage className="h-4 w-4 text-purple-500" />, label: 'Image' },
+                        { icon: <FileArchive className="h-4 w-4 text-yellow-500" />, label: 'Archive / ZIP' },
+                        { icon: <FileCode className="h-4 w-4 text-indigo-500" />, label: 'Code File' },
+                        { icon: <Video className="h-4 w-4 text-pink-500" />, label: 'Video' },
+                        { icon: <Music className="h-4 w-4 text-teal-500" />, label: 'Audio' },
+                        { icon: <FileText className="h-4 w-4 text-gray-400" />, label: 'Other/Text' },
+                      ].map(item => (
+                        <div key={item.label} className="flex items-center gap-2.5 p-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <div className="bg-white dark:bg-gray-900 p-1.5 rounded-md border border-gray-100 dark:border-gray-800 shadow-sm">
+                            {item.icon}
+                          </div>
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+
+                  {/* Key Risks & Considerations */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-500" /> Key Risks &amp; Considerations
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                      These apply to <span className="font-medium text-gray-700 dark:text-gray-300">My Documents</span> (OneDrive) upload, rename, and delete operations.
+                    </p>
+                    <div className="space-y-2">
+                      {[
+                        {
+                          risk: 'Files over 4 MB',
+                          mitigation: 'Automatically switches to a chunked upload session — no action needed from you.',
+                          color: 'text-blue-600 dark:text-blue-400',
+                          bg: 'bg-blue-50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-900/30',
+                        },
+                        {
+                          risk: 'Deleting a folder with contents',
+                          mitigation: 'The entire folder and all its files move to your OneDrive recycle bin — recoverable for 30 days.',
+                          color: 'text-red-600 dark:text-red-400',
+                          bg: 'bg-red-50 dark:bg-red-900/10 border-red-100 dark:border-red-900/30',
+                        },
+                        {
+                          risk: 'Renaming and changing the file extension',
+                          mitigation: 'The file is renamed as typed. If you remove or change the extension (e.g. .docx → .txt) the file may become unreadable — double-check before confirming.',
+                          color: 'text-amber-600 dark:text-amber-400',
+                          bg: 'bg-amber-50 dark:bg-amber-900/10 border-amber-100 dark:border-amber-900/30',
+                        },
+                        {
+                          risk: 'Auth token expiry during large uploads',
+                          mitigation: 'The app silently re-authenticates in the background. If that fails you will see a pop-up to sign in again — the upload will resume after.',
+                          color: 'text-purple-600 dark:text-purple-400',
+                          bg: 'bg-purple-50 dark:bg-purple-900/10 border-purple-100 dark:border-purple-900/30',
+                        },
+                        {
+                          risk: 'Rate limiting on bulk operations',
+                          mitigation: 'Not a concern for single-item actions. If you upload many large files in rapid succession, briefly pause between uploads.',
+                          color: 'text-gray-600 dark:text-gray-400',
+                          bg: 'bg-gray-50 dark:bg-gray-800/50 border-gray-100 dark:border-gray-800',
+                        },
+                      ].map(item => (
+                        <div key={item.risk} className={`flex items-start gap-3 p-3 rounded-lg border ${item.bg}`}>
+                          <AlertTriangle className={`h-3.5 w-3.5 flex-shrink-0 mt-0.5 ${item.color}`} />
+                          <div className="min-w-0">
+                            <p className={`text-xs font-semibold leading-none mb-1 ${item.color}`}>{item.risk}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 leading-snug">{item.mitigation}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          {/* View toggle */}
+          <div className="flex items-center border border-gray-200 dark:border-white/10 rounded-md overflow-hidden">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              title="Grid view"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-primary text-white' : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+              title="List view"
+            >
+              <LayoutList className="h-4 w-4" />
+            </button>
+          </div>
+          <Button onClick={loadData} variant="outline" disabled={isUploading || isLoading} className="dark:border-white/10 dark:hover:bg-gray-800">
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
+        </div>
       </div>
 
 
@@ -1811,94 +2236,214 @@ export default function Documents() {
                               {activePrimaryTab === 'team-unit' && 'Shared team and division documents'}
                               {activePrimaryTab === 'external-shared' && 'Documents shared with external parties'}
                             </p>
-
                           </div>
-                          {activePrimaryTab !== 'my-documents' && canAddDocument && (
+
+                          {/* My Documents toolbar */}
+                          {activePrimaryTab === 'my-documents' && (
                             <div className="flex items-center gap-2">
-                              {activePrimaryTab === 'company-wide' && (isAdmin || isSuperAdmin) && (
-                                <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" disabled={isUploading || isLoading}>
-                                  <FolderPlus className="h-4 w-4 mr-2" /> Add Category
-                                </Button>
-                              )}
-                              <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
-                                <PlusCircle className="h-4 w-4 mr-2" /> {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
+                              {/* Hidden file input */}
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                multiple
+                                className="hidden"
+                                onChange={handleFileInputChange}
+                              />
+                              <Button
+                                variant="outline"
+                                disabled={isDriveUploading || isLoading}
+                                onClick={() => fileInputRef.current?.click()}
+                                className="dark:border-white/10"
+                              >
+                                <Upload className="h-4 w-4 mr-2" /> Upload File
+                              </Button>
+                              <Button
+                                variant="outline"
+                                disabled={isDriveUploading || isLoading}
+                                onClick={() => { setNewFolderName(''); setIsNewFolderOpen(true); }}
+                                className="dark:border-white/10"
+                              >
+                                <FolderPlus className="h-4 w-4 mr-2" /> New Folder
                               </Button>
                             </div>
                           )}
+
+                          {activePrimaryTab !== 'my-documents' && (
+                            (() => {
+                              const canUpload = activePrimaryTab === 'external-shared' ? canUploadExt : canUploadOrg;
+                              if (!canUpload) return null;
+                              return (
+                                <div className="flex items-center gap-2">
+                                  {activePrimaryTab === 'company-wide' && canManageOrgCategories && (
+                                    <Button onClick={() => setIsAddCategoryDialogOpen(true)} variant="outline" disabled={isUploading || isLoading}>
+                                      <FolderPlus className="h-4 w-4 mr-2" /> Add Category
+                                    </Button>
+                                  )}
+                                  <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
+                                    <PlusCircle className="h-4 w-4 mr-2" />
+                                    {activePrimaryTab === 'external-shared' ? 'Add External Doc/Link' : 'Add Document'}
+                                  </Button>
+                                </div>
+                              );
+                            })()
+                          )}
                         </div>
 
+                        {/* Upload progress banner */}
+                        {isDriveUploading && uploadProgress && (
+                          <div className="mb-4 flex items-center gap-3 px-4 py-2.5 bg-primary/10 border border-primary/20 rounded-lg text-sm text-primary">
+                            <RefreshCw className="h-4 w-4 animate-spin flex-shrink-0" />
+                            {uploadProgress}
+                          </div>
+                        )}
+
                         {activePrimaryTab === 'my-documents' ? (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredDocuments.length > 0 ? (
-                              filteredDocuments.map((doc) => {
-                                if (doc.isFolder) {
-                                  const folderData: DocumentFolder = {
-                                    id: doc.id,
-                                    name: doc.name,
-                                    description: 'Folder',
-                                    fileCount: 0, // Not available in simple view
-                                    totalSize: doc.size || 0,
-                                    lastModified: doc.lastModified,
-                                    icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
-                                    category: 'folder',
-                                    isFolder: true,
-                                    sharedWith: []
-                                  };
-                                  return (
-                                    <DocumentFolderCard
-                                      key={doc.id}
-                                      folder={folderData}
-                                      onClick={handleFolderClick}
-                                    />
-                                  );
-                                } else {
-                                  // Map DisplayableDocument to MockDocument for FileCard
-                                  const fileData: MockDocument = {
-                                    id: doc.id,
-                                    name: doc.name,
-                                    size: formatFileSize(doc.size),
-                                    lastModified: formatDate(doc.lastModified),
-                                    fileType: doc.name.split('.').pop()?.toUpperCase() || 'FILE',
-                                    extension: doc.name.split('.').pop() || '',
-                                    icon: getFileIconForDocument(doc),
-                                    sharedWith: [], // Personal files usually not shared in this view context or data not avail
-                                    description: doc.description,
-                                    tags: doc.tags ? doc.tags.split(',') : []
-                                  };
-                                  return (
-                                    <FileCard
-                                      key={doc.id}
-                                      file={fileData}
-                                      onClick={() => handleFileClick(doc)} // Use original doc for onClick to get URL
-                                    />
-                                  );
-                                }
-                              })
-                            ) : (
-                              <div className="col-span-full text-center py-10 text-gray-500">
-                                <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
-                                <p className="text-sm">You have no documents in this OneDrive folder.</p>
+                          /* Drag-and-drop zone wrapper */
+                          <div
+                            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                            onDragLeave={() => setIsDragOver(false)}
+                            onDrop={handleDrop}
+                            className={`rounded-lg transition-colors ${isDragOver ? 'bg-primary/5 border-2 border-dashed border-primary p-4' : ''}`}
+                          >
+                            {isDragOver && (
+                              <div className="flex flex-col items-center justify-center py-8 pointer-events-none">
+                                <Upload className="h-10 w-10 text-primary mb-2" />
+                                <p className="text-sm font-medium text-primary">Drop files to upload</p>
                               </div>
                             )}
+                            {!isDragOver && (filteredDocuments.length > 0 ? (
+                              viewMode === 'grid' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                  {filteredDocuments.map((doc) => {
+                                    if (doc.isFolder) {
+                                      const folderData: DocumentFolder = {
+                                        id: doc.id, name: doc.name, description: 'Folder',
+                                        fileCount: 0, totalSize: doc.size || 0, lastModified: doc.lastModified,
+                                        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
+                                        category: 'folder', isFolder: true, sharedWith: []
+                                      };
+                                      return (
+                                        <DocumentFolderCard
+                                          key={doc.id} folder={folderData} onClick={handleFolderClick}
+                                          showDriveActions
+                                          onRename={(f) => { setRenameTarget(doc); setRenameValue(doc.name); }}
+                                          onDriveDelete={(f) => setDeleteTarget(doc)}
+                                        />
+                                      );
+                                    } else {
+                                      return (
+                                        <div key={doc.id} className="group relative">
+                                          <FileCard
+                                            file={{
+                                              id: doc.id, name: doc.name, size: formatFileSize(doc.size),
+                                              lastModified: formatDate(doc.lastModified),
+                                              fileType: doc.name.split('.').pop()?.toUpperCase() || 'FILE',
+                                              extension: doc.name.split('.').pop() || '',
+                                              icon: getFileIconForDocument(doc), sharedWith: [],
+                                              description: doc.description, tags: doc.tags ? doc.tags.split(',') : []
+                                            }}
+                                            onClick={() => handleFileClick(doc)}
+                                          />
+                                          {/* Per-file actions overlay */}
+                                          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); window.open(doc.url, '_blank'); }}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                              title="Open"
+                                            ><ExternalLink className="h-3.5 w-3.5" /></button>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setRenameTarget(doc); setRenameValue(doc.name); }}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                              title="Rename"
+                                            ><Pencil className="h-3.5 w-3.5" /></button>
+                                            <button
+                                              onClick={(e) => { e.stopPropagation(); setDeleteTarget(doc); }}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                              title="Delete"
+                                            ><Trash2 className="h-3.5 w-3.5" /></button>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-2">
+                                  {filteredDocuments.map((doc) => {
+                                    if (doc.isFolder) {
+                                      const folderData: DocumentFolder = {
+                                        id: doc.id, name: doc.name, description: '',
+                                        fileCount: 0, totalSize: doc.size || 0, lastModified: doc.lastModified,
+                                        icon: <FolderOpen className="h-8 w-8 text-blue-500" />,
+                                        category: 'folder', isFolder: true, sharedWith: []
+                                      };
+                                      return (
+                                        <DocumentFolderRow
+                                          key={doc.id} folder={folderData} onClick={handleFolderClick}
+                                          showDriveActions
+                                          onRename={(f) => { setRenameTarget(doc); setRenameValue(doc.name); }}
+                                          onDriveDelete={(f) => setDeleteTarget(doc)}
+                                        />
+                                      );
+                                    } else {
+                                      return (
+                                        <div key={doc.id} className="group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 rounded-lg">
+                                          <div className="flex-shrink-0">{getFileIconForDocument(doc)}</div>
+                                          <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleFileClick(doc)}>
+                                            <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.name}</p>
+                                            <p className="text-xs text-gray-400">{formatFileSize(doc.size)} · {formatDate(doc.lastModified)}</p>
+                                          </div>
+                                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                                            <button onClick={() => window.open(doc.url, '_blank')}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all"
+                                              title="Open"><ExternalLink className="h-3.5 w-3.5" /></button>
+                                            <button onClick={() => { setRenameTarget(doc); setRenameValue(doc.name); }}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all"
+                                              title="Rename"><Pencil className="h-3.5 w-3.5" /></button>
+                                            <button onClick={() => setDeleteTarget(doc)}
+                                              className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all"
+                                              title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                  })}
+                                </div>
+                              )
+                            ) : (
+                              <div className="text-center py-10 text-gray-500">
+                                <p className="text-lg mb-2">{searchQuery ? 'No documents match your search.' : 'No documents found.'}</p>
+                                <p className="text-sm">Drop files here or use Upload File to add documents.</p>
+                              </div>
+                            ))}
                           </div>
                         ) : (
                           <>
                             {documentFolders.length > 0 ? (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                                {documentFolders.map((folder) => (
-                                  <DocumentFolderCard
-                                    key={folder.id}
-                                    folder={folder}
-                                    onClick={handleFolderClick}
-                                    onEdit={handleEditCategoryClick}
-                                    onDelete={handleDeleteCategoryClick}
-                                    showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
-                                  />
-                                ))}
-                              </div>
+                              viewMode === 'grid' ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                  {documentFolders.map((folder) => (
+                                    <DocumentFolderCard
+                                      key={folder.id} folder={folder} onClick={handleFolderClick}
+                                      onEdit={handleEditCategoryClick} onDelete={handleDeleteCategoryClick}
+                                      showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
+                                    />
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-2">
+                                  {documentFolders.map((folder) => (
+                                    <DocumentFolderRow
+                                      key={folder.id} folder={folder} onClick={handleFolderClick}
+                                      onEdit={handleEditCategoryClick} onDelete={handleDeleteCategoryClick}
+                                      showAdminActions={(isAdmin || isSuperAdmin) && categoriesLoaded}
+                                    />
+                                  ))}
+                                </div>
+                              )
                             ) : (
-                              <div className="col-span-full text-center py-10 text-gray-500">
-                                <p className="text-lg mb-2"> {searchQuery ? 'No documents match your search.' : 'No documents found.'} </p>
+                              <div className="text-center py-10 text-gray-500">
+                                <p className="text-lg mb-2">{searchQuery ? 'No documents match your search.' : 'No documents found.'}</p>
                                 <p className="text-sm">
                                   {searchQuery ? 'Try a different search term.' :
                                     (activePrimaryTab === 'company-wide' ? 'No organisational documents found in this category.' :
@@ -1928,13 +2473,30 @@ export default function Documents() {
                           </div>
 
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {section.files.map((file) => (
-                              <FileCard
-                                key={file.id}
-                                file={file}
-                                onClick={handleFileClick}
-                              />
-                            ))}
+                            {section.files.map((file) => {
+                              const canDeleteFile = activePrimaryTab === 'external-shared' ? canDeleteExt : canDeleteOrg;
+                              return (
+                                <div key={file.id} className="group relative">
+                                  <FileCard file={file} onClick={handleFileClick} />
+                                  {canDeleteFile && (
+                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                      {file.url && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}
+                                          className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                          title="Open"
+                                        ><ExternalLink className="h-3.5 w-3.5" /></button>
+                                      )}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); setSharedDocDeleteTarget(file); }}
+                                        className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                        title="Delete"
+                                      ><Trash2 className="h-3.5 w-3.5" /></button>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -1979,6 +2541,124 @@ export default function Documents() {
           sortOrder: editingCategory.sortOrder,
         } : null}
       />
+
+      {/* ── OneDrive CRUD Dialogs ─────────────────────────────────────────── */}
+
+      {/* New Folder dialog */}
+      {isNewFolderOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">New Folder</h3>
+              <button onClick={() => setIsNewFolderOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setIsNewFolderOpen(false); }}
+              placeholder="Folder name"
+              className="w-full px-3 py-2 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsNewFolderOpen(false)} className="dark:border-white/10">Cancel</Button>
+              <Button onClick={handleCreateFolder} disabled={!newFolderName.trim() || isDriveUploading}>
+                {isDriveUploading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <FolderPlus className="h-4 w-4 mr-2" />}
+                Create
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename dialog */}
+      {renameTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Rename</h3>
+              <button onClick={() => setRenameTarget(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameConfirm(); if (e.key === 'Escape') setRenameTarget(null); }}
+              className="w-full px-3 py-2 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setRenameTarget(null)} className="dark:border-white/10">Cancel</Button>
+              <Button onClick={handleRenameConfirm} disabled={!renameValue.trim() || isDriveUploading}>
+                {isDriveUploading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                Rename
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirm dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Delete "{deleteTarget.name}"?</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {deleteTarget.isFolder
+                    ? 'This folder and all its contents will be moved to your OneDrive recycle bin.'
+                    : 'This file will be moved to your OneDrive recycle bin.'}
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} className="dark:border-white/10">Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDriveUploading}>
+                {isDriveUploading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete confirm dialog — Shared (Org / External) documents */}
+      {sharedDocDeleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                  Delete "{sharedDocDeleteTarget.name}"?
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  This document will be permanently removed from the shared library.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSharedDocDeleteTarget(null)} className="dark:border-white/10">
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleSharedDocDeleteConfirm} disabled={isDeletingSharedDoc}>
+                {isDeletingSharedDoc ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageLayout>
   );
 }

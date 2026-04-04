@@ -320,7 +320,7 @@ export class UserSharePointService {
             if (updates.role_name) fields.Role = updates.role_name;
             if (updates.division_name !== undefined) fields.Division = updates.division_name;
             if (updates.unit_name !== undefined) fields.Unit = updates.unit_name;
-            // Permissions column removed in favor of Group-based permissions
+            if (updates.permissions !== undefined) fields.Permissions = JSON.stringify(updates.permissions);
             if (updates.is_admin !== undefined) fields.IsAdmin = updates.is_admin ? 'Yes' : 'No';
             if (updates.user_name) fields.Name = updates.user_name;
             if (updates.groups !== undefined) fields.Groups = updates.groups.join(', ');

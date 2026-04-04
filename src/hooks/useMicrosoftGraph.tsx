@@ -78,6 +78,29 @@ export const useMicrosoftGraph = () => {
     }
   }, [checkMsalAuth, msalInstance, setIsLoading, setLastError, toast]);
 
+  const handleLogin = useCallback(async () => {
+    if (!msalInstance) return;
+    try {
+      await msalInstance.loginPopup();
+    } catch (error: any) {
+      console.error('Login failed:', error);
+    }
+  }, [msalInstance]);
+
+  const getFolderContents = useCallback(async (folderId: string): Promise<any[] | null> => {
+    if (!checkMsalAuth() || !msalInstance) return null;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return null;
+      const response = await client.api(`/me/drive/items/${folderId}/children`)
+        .select('id,name,webUrl,lastModifiedDateTime,size,folder,parentReference')
+        .get();
+      return response.value;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to get folder contents');
+    }
+  }, [checkMsalAuth, msalInstance]);
+
   /**
    * Uploads a file to the SharePoint Asset Images folder
    * @param file The file to upload
@@ -199,6 +222,145 @@ export const useMicrosoftGraph = () => {
   const getClient = useCallback(async () => {
     if (!checkMsalAuth() || !msalInstance) return null;
     return await getGraphClient(msalInstance);
+  }, [checkMsalAuth, msalInstance]);
+
+  /**
+   * Uploads a file to the current user's OneDrive at the specified parent folder.
+   * Uses simple PUT for files under 4 MB, upload session for larger files.
+   * @param file The file to upload
+   * @param parentId The OneDrive item ID of the destination folder, or 'root'
+   * @returns The uploaded item's metadata, or null on failure
+   */
+  const uploadToOneDrive = useCallback(async (
+    file: File,
+    parentId: string | 'root'
+  ): Promise<{ id: string; name: string; webUrl: string; lastModifiedDateTime: string; size: number; folder?: object } | null> => {
+    if (!checkMsalAuth() || !msalInstance) return null;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return null;
+
+      const parentPath = parentId === 'root'
+        ? '/me/drive/root'
+        : `/me/drive/items/${parentId}`;
+
+      const encodedName = encodeURIComponent(file.name);
+
+      if (file.size <= 4 * 1024 * 1024) {
+        // Simple PUT for small files
+        const result = await client
+          .api(`${parentPath}:/${file.name}:/content?@microsoft.graph.conflictBehavior=rename`)
+          .put(file);
+        return result;
+      } else {
+        // Upload session for large files (chunked)
+        const sessionResponse = await client
+          .api(`${parentPath}:/${file.name}:/createUploadSession`)
+          .post({
+            item: {
+              '@microsoft.graph.conflictBehavior': 'rename',
+              name: file.name,
+            },
+          });
+
+        const uploadUrl = sessionResponse.uploadUrl;
+        const chunkSize = 5 * 1024 * 1024; // 5 MB chunks
+        let start = 0;
+        let result: any = null;
+
+        while (start < file.size) {
+          const end = Math.min(start + chunkSize - 1, file.size - 1);
+          const chunk = file.slice(start, end + 1);
+          const response = await fetch(uploadUrl, {
+            method: 'PUT',
+            headers: {
+              'Content-Range': `bytes ${start}-${end}/${file.size}`,
+              'Content-Length': `${end - start + 1}`,
+            },
+            body: chunk,
+          });
+          if (response.status === 201 || response.status === 200) {
+            result = await response.json();
+          }
+          start = end + 1;
+        }
+        return result;
+      }
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message}`);
+      return null;
+    }
+  }, [checkMsalAuth, msalInstance]);
+
+  /**
+   * Creates a new folder in the user's OneDrive at the specified parent.
+   * @param name Folder name
+   * @param parentId The OneDrive item ID of the parent folder, or 'root'
+   * @returns The created folder's metadata, or null on failure
+   */
+  const createOneDriveFolder = useCallback(async (
+    name: string,
+    parentId: string | 'root'
+  ): Promise<{ id: string; name: string; webUrl: string; lastModifiedDateTime: string; size: number; folder: object } | null> => {
+    if (!checkMsalAuth() || !msalInstance) return null;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return null;
+
+      const endpoint = parentId === 'root'
+        ? '/me/drive/root/children'
+        : `/me/drive/items/${parentId}/children`;
+
+      const result = await client.api(endpoint).post({
+        name,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'rename',
+      });
+      return result;
+    } catch (error: any) {
+      toast.error(`Failed to create folder: ${error.message}`);
+      return null;
+    }
+  }, [checkMsalAuth, msalInstance]);
+
+  /**
+   * Renames a file or folder in the user's OneDrive.
+   * @param itemId The OneDrive item ID to rename
+   * @param newName The new name (including extension for files)
+   * @returns true on success, false on failure
+   */
+  const renameOneDriveItem = useCallback(async (
+    itemId: string,
+    newName: string
+  ): Promise<boolean> => {
+    if (!checkMsalAuth() || !msalInstance) return false;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return false;
+      await client.api(`/me/drive/items/${itemId}`).patch({ name: newName });
+      return true;
+    } catch (error: any) {
+      toast.error(`Rename failed: ${error.message}`);
+      return false;
+    }
+  }, [checkMsalAuth, msalInstance]);
+
+  /**
+   * Deletes a file or folder from the user's OneDrive (moves to recycle bin).
+   * @param itemId The OneDrive item ID to delete
+   * @returns true on success, false on failure
+   */
+  const deleteOneDriveItem = useCallback(async (itemId: string): Promise<boolean> => {
+    if (!checkMsalAuth() || !msalInstance) return false;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return false;
+      await client.api(`/me/drive/items/${itemId}`).delete();
+      return true;
+    } catch (error: any) {
+      toast.error(`Delete failed: ${error.message}`);
+      return false;
+    }
   }, [checkMsalAuth, msalInstance]);
 
   /**
@@ -332,22 +494,35 @@ export const useMicrosoftGraph = () => {
     isLoading,
     lastError,
     getOneDriveDocuments: getOneDriveRootDocuments,
+    getFolderContents,
+    handleLogin,
     uploadFileToSharePointLibrary,
     uploadBinaryFileToSharePoint,
     graphClient: client,
-    client, // Add direct client access
-    isAuthenticated, // Add authentication status
+    client,
+    isAuthenticated,
     getClient,
     getAppSetting,
+    // OneDrive CRUD
+    uploadToOneDrive,
+    createOneDriveFolder,
+    renameOneDriveItem,
+    deleteOneDriveItem,
   }), [
     isLoading,
     lastError,
     getOneDriveRootDocuments,
+    getFolderContents,
+    handleLogin,
     uploadFileToSharePointLibrary,
     uploadBinaryFileToSharePoint,
     client,
     isAuthenticated,
     getClient,
-    getAppSetting
+    getAppSetting,
+    uploadToOneDrive,
+    createOneDriveFolder,
+    renameOneDriveItem,
+    deleteOneDriveItem,
   ]);
 };

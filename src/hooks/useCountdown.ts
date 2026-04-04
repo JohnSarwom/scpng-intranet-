@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
-// Countdown target: 48 hours from April 2 2026 12:00 PM PNG time (UTC+10)
-// = April 4 2026 12:00:00 PM PNG time
-const TARGET_ISO = '2026-04-04T12:00:00+10:00';
+// Countdown target: April 5 2026 12:00:00 PM PNG time (UTC+10)
+const TARGET_ISO = '2026-04-05T12:00:00+10:00';
 const TARGET_MS = new Date(TARGET_ISO).getTime();
 
 const WORLDTIME_API = 'https://worldtimeapi.org/api/timezone/Pacific/Port_Moresby';

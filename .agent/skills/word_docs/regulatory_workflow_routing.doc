@@ -1,0 +1,132 @@
+<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset="utf-8">
+<title>Architecture &amp; Workflow Routing</title>
+<style>
+body { font-family: "Calibri", sans-serif; line-height: 1.5; color: #333; }
+table { border-collapse: collapse; width: 100%; margin-top: 15px; margin-bottom: 15px; }
+th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+th { background-color: #e2eaf0; }
+h1 { color: #1f4e79; border-bottom: 2px solid #1f4e79; padding-bottom: 5px; }
+h2 { color: #2e74b5; margin-top: 24px; }
+h3 { color: #4472c4; }
+.highlight { background-color: #f8f9fa; padding: 10px; border-left: 4px solid #2e74b5; margin-bottom: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Regulatory Intelligence System: Architecture &amp; Workflow Routing</h1>
+<p>This document outlines the high-level architecture and workflow logic for the SCPNG Regulatory Intelligence System, detailing how reports originating from the external WordPress form are securely ingested and intelligently routed to, and managed by, multiple Divisions and Units concurrently.</p>
+
+<h2>1. High-Level Architectural Context</h2>
+<p>The production architecture leverages a direct <strong>WordPress to Microsoft Graph API</strong> integration.</p>
+
+<div class="highlight">
+<strong>Workflow Pipeline:</strong><br>
+1. <b>Public Audience / Whistleblowers</b> Submits Report &rarr; WordPress Public Site<br>
+2. <b>WordPress</b> sends REST Payload &rarr; WP MS Graph Integration Plugin<br>
+3. <b>MS Graph API</b> inserts secure data &rarr; SharePoint Backend (Regulatory_Intelligence_Cases)<br>
+4. <b>SharePoint</b> triggers Webhooks/Alerts &rarr; Compliance Officer Triage<br>
+5. <b>Intranet</b> pulls Data Feed &rarr; SCPNG Intranet UI (Next.js Dashboard)<br>
+6. <b>Compliance Officer</b> Assigns via Multi-Select UI &rarr; Multiple Assigned Divisions/Units<br>
+7. <b>Assignment</b> triggers Conditions &rarr; Email & In-App Notifications
+</div>
+
+<h2>2. Multi-Unit Routing &amp; Collaborative Assignment</h2>
+<p>Unlike traditional single-assignee systems, the <em>Regulatory Dashboard</em> allows for <strong>multi-unit visibility and assignment</strong>. Complex investigations often require cross-functional collaboration.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Case Type / Category</th>
+            <th>Primary Division (Lead)</th>
+            <th>Secondary Division (Monitoring/Support)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Financial Fraud (Cyber)</strong></td>
+            <td><strong>Finance Division</strong> (Internal Audit)</td>
+            <td><strong>IT Division</strong> (Cybersecurity Unit)</td>
+        </tr>
+        <tr>
+            <td><strong>Whistleblower (Exec Misconduct)</strong></td>
+            <td><strong>Board / Compliance</strong></td>
+            <td><strong>HR Division</strong> (Employee Relations)</td>
+        </tr>
+        <tr>
+            <td><strong>Regulatory Breach (Procurement)</strong></td>
+            <td><strong>Legal &amp; Compliance Division</strong></td>
+            <td><strong>Operations / Procurement</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>The Assignment &amp; Re-Assignment Mechanism</h3>
+<ul>
+    <li><strong>Initial Triage:</strong> A Compliance Officer uses the Case Edit Modal to select multiple units from the assignedUnits multi-select dropdown.</li>
+    <li><strong>Re-Assignment:</strong> During an active investigation, the Lead Investigator can transfer primary ownership or tag supplementary units into the case. The system automatically recalculates permissions.</li>
+    <li><strong>Dashboard Filtering:</strong> If a case is tagged to both Finance and IT, it will simultaneously appear in the primary dashboard queue for Managers of both divisions.</li>
+</ul>
+
+<h2>3. Comprehensive Interaction Workflow (Cards &amp; Attachments)</h2>
+<p>When users interact with a case on the Intranet, the workflow triggers a suite of micro-interactions centered around the <strong>Case Detail Card</strong>.</p>
+
+<div class="highlight">
+<strong>Attachment Resolution Engine:</strong> No physical files are downloaded to the SCPNG intranet server. The system parses Microsoft Graph <em>DriveItem</em> Object IDs (e.g. b!...) attached during the WordPress ingestion. 
+<br><br>
+When an Investigating Officer clicks "View Attachment" in the Case Card:
+<ol>
+    <li>The Intranet makes a secure Graph API call (/drives/{drive-id}/items/{item-id}).</li>
+    <li>Returns a temporary, authenticated @microsoft.graph.downloadUrl or webUrl.</li>
+    <li>Opens the document securely in the browser, leaving zero footprint on local machines.</li>
+</ol>
+</div>
+
+<h2>4. Notification &amp; Communication Matrix</h2>
+<p>The system employs a dual-channel notification architecture based on conditional triggers happening inside the Case Cards.</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Action Trigger</th>
+            <th>In-App Notification (UI)</th>
+            <th>Email Notification (Power Automate)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>New Report Received</strong></td>
+            <td>Yes (Global Alert to Compliance)</td>
+            <td>Yes (To Compliance Teams email)</td>
+        </tr>
+        <tr>
+            <td><strong>Unit Assigned / Tagged</strong></td>
+            <td>Yes (Alerts Unit Managers)</td>
+            <td>Yes (Direct to Unit Manager Inbox)</td>
+        </tr>
+        <tr>
+            <td><strong>Case Re-Assigned</strong></td>
+            <td>Yes (To relinquishing &amp; receiving Units)</td>
+            <td>Yes (Formal handoff email record)</td>
+        </tr>
+        <tr>
+            <td><strong>Risk Escalated to CRITICAL</strong></td>
+            <td>Yes (Banner Alert to Execs)</td>
+            <td>Yes (High-Priority Flagged Email)</td>
+        </tr>
+        <tr>
+            <td><strong>Status Changed</strong></td>
+            <td>Yes (To anyone tagged in the case)</td>
+            <td>No (Prevents email spam)</td>
+        </tr>
+        <tr>
+            <td><strong>Case Closed</strong></td>
+            <td>Yes (To original assigned Unit)</td>
+            <td>Yes (Final closure summary email)</td>
+        </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

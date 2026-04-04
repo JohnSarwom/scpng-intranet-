@@ -334,6 +334,137 @@ After:
 
 ---
 
+## 2026-04-04 — Session 3: SharePoint History, Smart Meeting IDs, UX Improvements
+
+---
+
+### Phase 18 — SharePoint History in Sidebar
+
+**Problem:** The history sidebar showed "No saved minutes yet" even though records existed in the `Meeting_Minutes_Registry` SharePoint list. History was stored only in `localStorage`, so any meeting shared via the modal never appeared in the sidebar.
+
+**Solution:**
+- On page mount, `MeetingMinutes.tsx` fetches all items from `Meeting_Minutes_Registry` via Graph API
+- Items are filtered using `item.createdBy.user.email` (built-in SharePoint `Created By` field — no extra column needed)
+- If `MeetingDataJSON` is present the full form is restored; otherwise fields are reconstructed from available metadata (Title, MeetingDate, Facilitator, Venue, AttendeesJSON)
+- SP entries are merged with localStorage entries, deduped by `id`, sorted by date
+
+**New SP list columns added (`sharePointListSetupService.ts`):**
+- `MeetingID` — Single line of text (saves the generated meeting ID)
+- `MeetingDataJSON` — Multiple lines of text (full JSON serialization of `MeetingData` for complete restoration)
+
+**`meetingShareService.ts` updated:**
+- `registerMetadata()` now saves `MeetingID` and `MeetingDataJSON`
+- Graceful fallback: if either column doesn't exist on the live list yet, the save retries with base fields only (no crash)
+
+---
+
+### Phase 19 — Unit-Based Sequential Meeting ID
+
+**Problem:** Meeting IDs were random (`SC-MTG-2026-XXXX`) with no relation to the user's unit, and no sequential numbering.
+
+**Format:** `SCPNGMID{UNITCODE}{NNN}`
+
+Examples:
+| Unit name | Code | Example ID |
+|---|---|---|
+| Information Technology | `IT` | `SCPNGMIDIT001` |
+| Human Resources | `HR` | `SCPNGMIDHR001` |
+| Finance & Accounting | `FA` | `SCPNGMIDFA003` |
+
+**Implementation (`MeetingMinutes.tsx`):**
+- `getUnitCode(unitName)` — derives initials from each word in `unit_name` from the user's SharePoint role
+- `generateNextMeetingId(unitCode, existingIds)` — scans all `MeetingID` values fetched from SP, finds the highest number for the unit prefix, returns `prefix + (max + 1)` zero-padded to 3 digits
+- Sequence is global across all users in the unit (e.g. IT001 → IT002 regardless of who creates next)
+- Fallback chain: `unit_name` → `division_name` → `'GEN'` — ID always generates even if role is partially set
+- Auto-generates on mount once SP fetch completes; does not overwrite IDs already manually set by the user
+- Regenerates a fresh ID on form Clear
+
+---
+
+### Phase 20 — Replace All Browser Native Dialogs
+
+**Problem:** `window.confirm()` popup boxes appeared in 4 places across the app, breaking the app's visual theme.
+
+**Files fixed:**
+
+| File | Replaced |
+|---|---|
+| `MeetingMinutesForm.tsx` | Load history entry confirm, Clear form confirm |
+| `KRAsTab.tsx` | Delete initiative confirm |
+| `DivisionWorkPlansTab.tsx` | Delete work plan confirm |
+
+**Approach:** All replaced with Shadcn/UI `AlertDialog` component. `MeetingMinutesForm` uses a single shared `confirmDialog` state (`{ open, title, description, onConfirm }`) to avoid multiple dialog instances. `KRAsTab` adds `objectiveToDelete` state matching the existing `kraToDelete` pattern. `DivisionWorkPlansTab` adds `planToDelete` state with its own `AlertDialog`.
+
+---
+
+### Phase 21 — Live Form Progress Bar
+
+**Problem:** The sidebar progress bar was hardcoded at 85%.
+
+**Solution:** `formProgress` computed via `React.useMemo` on every `data` change — 7 checkpoints:
+
+| Section | Checkpoint | Points |
+|---|---|---|
+| Particulars | Meeting Name filled | 1 |
+| Particulars | Date selected | 1 |
+| Particulars | Venue filled | 1 |
+| Attendance | At least one attendee name | 1 |
+| Discussions | At least one topic | 1 |
+| Action Items | At least one action | 1 |
+| Final Remarks | Remarks filled | 1 |
+
+Bar color: amber (0–59%) → maroon (60–99%) → green (100%). Animates with `transition-all duration-500`.
+
+---
+
+### Phase 22 — Module Summary Moved to Sticky Header
+
+**Problem:** The Module Summary card (Attendees / Topics / Directives / Ready) sat at the bottom of the Final Remarks section — only visible after scrolling to the end.
+
+**Fix:** Removed from `MeetingMinutesForm.tsx` and added to the sticky header in `MeetingMinutes.tsx`. Since the header has direct access to `meetingData` state, counts update in real time as the user fills the form. Displayed as compact pill badges on the right side of the header bar.
+
+---
+
+### Phase 23 — Multi-Select Action Item Owners
+
+**Problem:** Each action item could only have one owner (single `owner: string` field).
+
+**Changes:**
+- `ActionItemRecord.owner: string` → `ActionItemRecord.owners: string[]`
+- `updateActionItem()` restricted to `'area' | 'action'` fields only
+- New `updateActionItemOwners(index, owners[])` handler added
+- `GlobalAssigneeSelector` switched to `mode="multiple"` — stays open for multiple picks, shows selected names as removable badges
+- All initializations updated: `{ area: '', action: '', owners: [] }`
+
+---
+
+### Phase 24 — History Entry Delete on Hover
+
+**Problem:** No way to remove entries from the history sidebar.
+
+**Implementation:**
+- Each history row converted from `<button>` to `<div class="group relative">` with two children: the load button (flex-1) and a trash icon button (`opacity-0 group-hover:opacity-100`)
+- Clicking trash opens the themed `AlertDialog` confirm before calling `onDeleteHistory(id)`
+- `onDeleteHistory` prop added to `MeetingMinutesForm`; implemented in `MeetingMinutes.tsx` — filters the entry from state and updates `localStorage`
+- SharePoint-sourced entries (`sp-` prefix) are removed from the local list only; they are not deleted from the SP list
+
+---
+
+## Status at End of Session 3: 2026-04-04
+
+| Feature | Status |
+|---|---|
+| SharePoint history fetch (by creator) | Complete |
+| `MeetingDataJSON` + `MeetingID` SP columns | Complete — with graceful fallback if columns missing |
+| Unit-based sequential Meeting ID | Complete |
+| Browser dialogs replaced with `AlertDialog` | Complete — all 4 instances across 3 files |
+| Live progress bar (7 checkpoints) | Complete |
+| Module Summary in sticky header | Complete |
+| Multi-select action item owners | Complete |
+| History delete on hover | Complete |
+
+---
+
 ## Status at End of Session 2: 2026-03-29
 
 | Component | Status |

@@ -130,6 +130,8 @@ const RegulatoryAIChat: React.FC<RegulatoryAIChatProps> = ({ cases, stats }) => 
             if (c.description) context += `Description: ${c.description}\n`;
             if (c.summary) context += `Summary: ${c.summary}\n`;
             if (c.anonymous !== undefined) context += `Anonymous: ${c.anonymous ? 'Yes' : 'No'}\n`;
+            if (c.reporterName) context += `Reporter Name: ${c.reporterName}\n`;
+            if (c.reporterContact) context += `Reporter Contact: ${c.reporterContact}\n`;
             if (c.source) context += `Source: ${c.source}\n`;
             context += `---\n`;
         });

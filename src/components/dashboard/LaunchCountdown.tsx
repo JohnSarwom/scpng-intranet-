@@ -6,7 +6,7 @@ import { useCountdown } from '@/hooks/useCountdown';
 // ─── Site status override ─────────────────────────────────────────────────────
 // Set to true to display the maintenance warning instead of the countdown.
 // Flip back to false once the domain issue is resolved.
-const SHOW_MAINTENANCE_WARNING = true;
+const SHOW_MAINTENANCE_WARNING = false;
 
 function pad(n: number) {
     return String(Math.floor(n)).padStart(2, '0');

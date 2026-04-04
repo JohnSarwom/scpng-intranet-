@@ -1,7 +1,7 @@
 # Meeting Minutes Module — Overview
 
 > **Created:** 2026-03-29
-> **Last Updated:** 2026-03-29
+> **Last Updated:** 2026-04-04
 > **Author:** John Sarwom (Senior IT Officer)
 > **Status:** Active / Production Ready
 
@@ -30,6 +30,14 @@ The module eliminates the multi-stage "wizard" flow in favor of a fast, "Form-at
 | `docxtemplater` + `pizzip` | Client-side Word generation that preserves complex templating and loop logic. |
 | **PDF via Print Pipeline** | Uses the browser's native print engine for pixel-perfect PDF conversion of the rendered Word template. |
 | **Auto-save to `localStorage`** | Prevents data loss during long meeting sessions. |
+| **SharePoint History** | Saved meetings fetched from `Meeting_Minutes_Registry` on mount, filtered by `createdBy.user.email` (built-in SP field — no extra column needed). |
+| **Unit-Based Meeting ID** | Sequential IDs generated from the logged-in user's unit (e.g. `SCPNGMIDIT001`). Sequence derived by scanning all existing `MeetingID` values in SP. |
+| **`MeetingDataJSON` column** | Full form data serialized to SP for complete restoration when loading from history. |
+| **Themed Confirm Dialogs** | All `window.confirm` / `window.alert` calls replaced with Shadcn `AlertDialog` to maintain app theme consistency. |
+| **Live Progress Bar** | 7-checkpoint formula drives the sidebar progress bar in real time as fields are filled. |
+| **Module Summary in Header** | Attendees / Topics / Directives counts moved to the sticky header so they're always visible. |
+| **Multi-select Action Item Owners** | `owner: string` replaced with `owners: string[]` — uses `GlobalAssigneeSelector` in `multiple` mode. |
+| **History Delete on Hover** | Trash icon revealed on hover per history entry, with confirm dialog before removal. |
 
 ---
 
@@ -38,13 +46,18 @@ The module eliminates the multi-stage "wizard" flow in favor of a fast, "Form-at
 ```
 src/
 ├── pages/
-│   └── MeetingMinutes.tsx          # Page shell, sticky header with Export actions
+│   └── MeetingMinutes.tsx          # Page shell, sticky header, SP history fetch, ID generation
 ├── components/meeting/
-│   └── MeetingMinutesForm.tsx      # Vertical scrolling form with sticky sidebar nav
+│   ├── MeetingMinutesForm.tsx      # Vertical form, sidebar nav, live progress bar, history panel
+│   └── ShareMeetingModal.tsx       # Collaborative sharing flow (upload, register, email)
 ├── services/
-│   └── meetingDocxService.ts       # Docxtemplater payload builder + download trigger
+│   ├── meetingDocxService.ts       # Docxtemplater payload builder + download trigger
+│   ├── meetingShareService.ts      # Graph API: upload draft, register metadata, send notifications
+│   └── sharePointListSetupService.ts  # List schema incl. MeetingDataJSON + MeetingID columns
+├── components/common/
+│   └── GlobalAssigneeSelector.tsx  # Reusable staff picker (single/multiple mode)
 │
-├── components/meeting/             # [DEPRECATED] 
+├── components/meeting/             # [DEPRECATED]
 │   └── MeetingPreview.tsx          # (Removed in March 2026 Overhaul)
 ```
 
