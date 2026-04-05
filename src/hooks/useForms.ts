@@ -3,7 +3,7 @@
  * Manages fetching and updating forms and groups from SharePoint
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
 import { FormsSharePointService, FormGroup, FormRegistration } from '@/services/formsSharePointService';
 import { Logger } from '@/utils/logger';
@@ -15,11 +15,30 @@ export function useForms() {
     const [registrations, setRegistrations] = useState<FormRegistration[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const provisionedRef = useRef(false);
 
     useEffect(() => {
         if (client) {
             setService(new FormsSharePointService(client));
         }
+    }, [client]);
+
+    // Auto-provision Website Feedback SharePoint resources on first load
+    useEffect(() => {
+        if (!client || provisionedRef.current) return;
+        provisionedRef.current = true;
+
+        (async () => {
+            try {
+                const { SharePointListSetupService } = await import('@/services/sharePointListSetupService');
+                const site = await client.api('/sites/scpng1.sharepoint.com:/sites/scpngintranet').get();
+                const setup = new SharePointListSetupService(client, site.id);
+                await setup.setupWebsiteFeedbackResources();
+                Logger.info('✅ [useForms] Website Feedback resources provisioned');
+            } catch (e) {
+                Logger.error('⚠️ [useForms] Website Feedback provisioning silently failed', e);
+            }
+        })();
     }, [client]);
 
     const fetchData = useCallback(async () => {

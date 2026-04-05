@@ -4243,6 +4243,47 @@ export class SharePointListSetupService {
             ]
         );
     }
+
+    /**
+     * Auto-provision SharePoint resources for the Website Upgrade Feedback form.
+     * Creates the submission list and screenshot document library if they don't already exist.
+     * Safe to call on every page load — the createList helper skips creation if already present.
+     */
+    async setupWebsiteFeedbackResources(): Promise<{ success: boolean; message: string }> {
+        try {
+            // 1. Submission list
+            await this.createList(
+                'Website_Feedback',
+                'Submissions for the New Website Upgrade Feedback form',
+                [
+                    { name: 'SubmitterName', text: {} },
+                    { name: 'SubmitterEmail', text: {} },
+                    { name: 'Department', text: {} },
+                    { name: 'Rating', number: { decimalPlaces: 'none' } },
+                    { name: 'FeedbackCategory', choice: { choices: ['General', 'Navigation', 'Performance', 'Design', 'Features', 'Bug Report', 'Other'] } },
+                    { name: 'OverallExperience', text: { allowMultipleLines: true } },
+                    { name: 'WhatWorksWell', text: { allowMultipleLines: true } },
+                    { name: 'WhatNeedsImprovement', text: { allowMultipleLines: true } },
+                    { name: 'ScreenshotsJSON', text: { allowMultipleLines: true } },
+                    { name: 'SubmissionDate', dateTime: {} },
+                    { name: 'Status', choice: { choices: ['New', 'Under Review', 'Resolved'] } },
+                ]
+            );
+
+            // 2. Screenshot document library
+            await this.createList(
+                'Website_Feedback_Screenshots',
+                'Screenshots uploaded with Website Upgrade Feedback submissions',
+                [],
+                'documentLibrary'
+            );
+
+            return { success: true, message: 'Website Feedback resources ready.' };
+        } catch (error: any) {
+            console.error('❌ [Setup] setupWebsiteFeedbackResources failed:', error);
+            return { success: false, message: error.message };
+        }
+    }
 }
 
 

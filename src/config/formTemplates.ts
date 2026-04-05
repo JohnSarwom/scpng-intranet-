@@ -617,12 +617,77 @@ export const itRequestTemplate: FormTemplate = {
   },
 };
 
+// Website Upgrade Feedback Form Template
+export const websiteFeedbackTemplate: FormTemplate = {
+  id: 'website-upgrade-feedback',
+  title: 'New Website Upgrade — Feedback Form',
+  description: 'Share your experience and suggestions on the newly launched website upgrade',
+  version: '1.0',
+  divisionId: 'corporate-services-division',
+  category: 'it',
+  estimatedTime: '5-10 minutes',
+  status: 'active',
+  lastUpdated: '2026-04-05',
+
+  sections: [
+    {
+      id: 'submitter_info',
+      title: 'Your Information',
+      fields: [
+        createTextField('submitterName', 'Full Name', true),
+        createEmailField('submitterEmail', 'Email Address', true),
+        createTextField('department', 'Department / Unit', false),
+      ]
+    },
+    {
+      id: 'feedback',
+      title: 'Website Feedback',
+      fields: [
+        createRadioGroupField('rating', 'Overall Rating', [
+          { value: '5', label: '5 — Excellent' },
+          { value: '4', label: '4 — Good' },
+          { value: '3', label: '3 — Average' },
+          { value: '2', label: '2 — Poor' },
+          { value: '1', label: '1 — Very Poor' },
+        ], true),
+        createSelectField('feedbackCategory', 'Feedback Category', [
+          { value: 'General', label: 'General' },
+          { value: 'Navigation', label: 'Navigation & Menus' },
+          { value: 'Performance', label: 'Performance & Speed' },
+          { value: 'Design', label: 'Design & Layout' },
+          { value: 'Features', label: 'Features & Functionality' },
+          { value: 'Bug Report', label: 'Bug Report' },
+          { value: 'Other', label: 'Other' },
+        ], true),
+        createTextareaField('overallExperience', 'Overall Experience', true, 4),
+        createTextareaField('whatWorksWell', 'What Works Well?', false, 3),
+        createTextareaField('whatNeedsImprovement', 'What Needs Improvement?', false, 3),
+      ]
+    }
+  ],
+
+  workflowEnabled: false,
+  approvalSteps: [],
+
+  createdBy: 'system',
+  createdAt: '2026-04-05',
+  tags: ['it', 'website', 'feedback'],
+
+  permissions: {
+    view: ['all_employees'],
+    fill: ['all_employees'],
+    approve: ['it_admin', 'system_admin'],
+    admin: ['it_admin', 'system_admin'],
+  },
+};
+
 // Export all templates
 export const defaultFormTemplates = {
   leave_application: leaveApplicationTemplate,
   asset_request: assetRequestTemplate,
   training_request: trainingRequestTemplate,
   it_equipment_access_request: itRequestTemplate,
+  website_upgrade_feedback: websiteFeedbackTemplate,
 };
 
 // Form categories configuration
@@ -641,7 +706,7 @@ export const formCategories = [
     description: 'IT services and equipment requests',
     icon: 'Computer',
     color: '#3B82F6',
-    templates: ['it-equipment-access-request']
+    templates: ['it-equipment-access-request', 'website-upgrade-feedback']
   },
   {
     id: 'procurement',

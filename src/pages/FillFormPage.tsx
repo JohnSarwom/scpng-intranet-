@@ -2,12 +2,12 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { FormRenderer } from '@/components/forms/FormRenderer';
-import { defaultFormTemplates, leaveApplicationTemplate, assetRequestTemplate, trainingRequestTemplate, itRequestTemplate } from '@/config/formTemplates';
+import { defaultFormTemplates, leaveApplicationTemplate, assetRequestTemplate, trainingRequestTemplate, itRequestTemplate, websiteFeedbackTemplate } from '@/config/formTemplates';
 import LeaveApplicationPage from '@/components/forms/LeaveApplicationPage';
 import ITRequestPage from '@/components/forms/ITRequestPage';
 import AssetRequestPage from '@/components/forms/AssetRequestPage';
-
 import TrainingRequestPage from '@/components/forms/TrainingRequestPage';
+import WebsiteFeedbackPage from '@/components/forms/WebsiteFeedbackPage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const formTemplates = [
@@ -50,6 +50,8 @@ const FillFormPage: React.FC = () => {
           <AssetRequestPage />
         ) : template.id === 'training-request' ? (
           <TrainingRequestPage />
+        ) : template.id === 'website-upgrade-feedback' ? (
+          <WebsiteFeedbackPage />
         ) : (
           <FormRenderer
             template={template}

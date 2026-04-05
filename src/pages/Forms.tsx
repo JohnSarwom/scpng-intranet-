@@ -34,7 +34,8 @@ import {
   leaveApplicationTemplate,
   assetRequestTemplate,
   trainingRequestTemplate,
-  itRequestTemplate
+  itRequestTemplate,
+  websiteFeedbackTemplate
 } from '@/config/formTemplates';
 
 // Form categories based on organizational divisions
@@ -68,7 +69,7 @@ const formCategories: FormCategory[] = [
     icon: Computer,
     divisionId: 'corporate-services-division',
     forms: mockFormTemplates.filter(form =>
-      ['it-equipment-access-request'].includes(form.id)
+      ['it-equipment-access-request', 'website-upgrade-feedback'].includes(form.id)
     )
   },
   {
@@ -153,7 +154,8 @@ const Forms: React.FC = () => {
     leaveApplicationTemplate,
     assetRequestTemplate,
     trainingRequestTemplate,
-    itRequestTemplate
+    itRequestTemplate,
+    websiteFeedbackTemplate
   ];
 
   // Filter forms based on division access and search
