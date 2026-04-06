@@ -84,7 +84,7 @@ const LaunchedBanner: React.FC = () => (
                     textTransform: 'uppercase',
                 }}
             >
-                SCPNG Intranet is LIVE
+                New updates are now live
             </span>
         </motion.div>
     </motion.div>
