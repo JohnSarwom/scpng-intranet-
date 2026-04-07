@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Shield, Plus, Trash2, Check, Lock, Pencil, Loader2 } from 'lucide-react';
+import { Shield, Plus, Trash2, Check, Lock, Pencil, Loader2, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
@@ -104,6 +104,38 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
       } finally {
         setIsProcessing(false);
       }
+    }
+  };
+
+  const handleDuplicateGroup = async (group: PermissionGroup) => {
+    setIsProcessing(true);
+    try {
+      let baseName = group.title;
+      const copyMatch = baseName.match(/ \(Copy( \d+)?\)$/);
+      if (copyMatch) {
+         baseName = baseName.replace(/ \(Copy( \d+)?\)$/, '');
+      }
+
+      let newTitle = `${baseName} (Copy)`;
+      let counter = 1;
+      while (groups.some(g => g.title === newTitle)) {
+        counter++;
+        newTitle = `${baseName} (Copy ${counter})`;
+      }
+
+      const duplicatedGroup: PermissionGroup = {
+        title: newTitle,
+        description: group.description ? `${group.description} (Copy)` : undefined,
+        permissions: { ...group.permissions },
+      };
+
+      await onCreateGroup(duplicatedGroup);
+      toast.success('Group duplicated successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to duplicate group');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -235,6 +267,10 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                 </div>
               </div>
               <div className="flex justify-end gap-2 mt-4 pt-2 border-t">
+                <Button size="sm" variant="ghost" onClick={() => handleDuplicateGroup(group)} disabled={isProcessing}>
+                  <Copy className="h-4 w-4 mr-1" />
+                  <span className="text-xs">Duplicate</span>
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => handleEditGroup(group)} disabled={isProcessing}>
                   <Pencil className="h-4 w-4 mr-1" />
                   <span className="text-xs">Edit</span>

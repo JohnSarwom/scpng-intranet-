@@ -1,5 +1,6 @@
 import React from 'react';
-import LaunchCountdown from './LaunchCountdown';
+import GallerySlideshow from './GallerySlideshow';
+import { useSlideshow } from '@/contexts/SlideshowContext';
 
 interface WelcomeBannerProps {
   imageUrl?: string;
@@ -16,6 +17,8 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
   greeting,
   location
 }) => {
+  const { isSlideshowVisible } = useSlideshow();
+
   return (
     <div className="relative w-full h-36 sm:h-48 lg:h-60 rounded-xl overflow-hidden mb-6 animate-fade-in shadow-md">
       <img
@@ -33,7 +36,7 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           </div>
 
           <div className="hidden md:block h-full w-full max-w-sm ml-auto z-10 p-2">
-            <LaunchCountdown />
+            {isSlideshowVisible && <GallerySlideshow />}
           </div>
         </div>
       </div>

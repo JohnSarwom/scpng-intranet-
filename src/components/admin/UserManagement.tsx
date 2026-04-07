@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Pencil, Trash, UserPlus, Save, X, Bell, Settings as SettingsIcon, Check
 import { toast } from 'sonner';
 import { UserRole, PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
@@ -79,8 +78,9 @@ const UserManagement: React.FC<UserManagementProps> = ({
   onGeneratePassword,
   onConfigureEmail
 }) => {
-  const [editingUser, setEditingUser] = useState<UserRole | null>(null);
-  const [newUser, setNewUser] = useState<Partial<UserRole> | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<UserRole>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedProgress, setSeedProgress] = useState({ current: 0, total: 0 });
@@ -111,7 +111,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
           role_name: 'staff_member',
           division_name: seedUser.division_name,
           unit_name: seedUser.unit_name,
-          groups: ['IT Group'],
+          groups: availableGroups.length > 0 ? [availableGroups[0].title] : [],
         });
         added++;
       } catch (error) {
@@ -129,51 +129,62 @@ const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
-  // Helper to toggle groups in edit/add mode
-  const toggleGroup = (groupTitle: string, isEditing: boolean) => {
-    if (isEditing && editingUser) {
-      const currentGroups = editingUser.groups || [];
-      let newGroups;
-      if (currentGroups.includes(groupTitle)) {
-        newGroups = currentGroups.filter(g => g !== groupTitle);
-      } else {
-        newGroups = [...currentGroups, groupTitle];
-      }
-      setEditingUser({ ...editingUser, groups: newGroups });
-    } else if (!isEditing && newUser) {
-      const currentGroups = newUser.groups || [];
-      let newGroups;
-      if (currentGroups.includes(groupTitle)) {
-        newGroups = currentGroups.filter(g => g !== groupTitle);
-      } else {
-        newGroups = [...currentGroups, groupTitle];
-      }
-      setNewUser({ ...newUser, groups: newGroups });
+  const toggleGroup = (groupTitle: string) => {
+    const currentGroups = formData.groups || [];
+    let newGroups;
+    if (currentGroups.includes(groupTitle)) {
+      newGroups = currentGroups.filter(g => g !== groupTitle);
+    } else {
+      newGroups = [...currentGroups, groupTitle];
     }
+    setFormData({ ...formData, groups: newGroups });
   };
 
   const handleEditUser = (user: UserRole) => {
-    setEditingUser({ ...user });
+    setIsEditing(true);
+    const validGroupTitles = availableGroups.map(g => g.title);
+    const cleanedGroups = (user.groups || []).filter(g => validGroupTitles.includes(g));
+    setFormData({ ...user, groups: cleanedGroups });
+    setIsModalOpen(true);
   };
 
-  const saveUserChanges = async () => {
-    if (editingUser) {
-      setIsProcessing(true);
-      try {
-        await onUpdateUser(editingUser.user_email, {
-          user_name: editingUser.user_name,
-          role_name: editingUser.role_name,
-          division_name: editingUser.division_name,
-          unit_name: editingUser.unit_name,
-          groups: editingUser.groups
+  const startAddingUser = () => {
+    setIsEditing(false);
+    setFormData({
+      user_email: '',
+      user_name: '',
+      role_name: 'staff_member',
+      groups: []
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formData.user_email || !formData.user_name) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      if (isEditing) {
+        await onUpdateUser(formData.user_email!, {
+          user_name: formData.user_name,
+          role_name: formData.role_name,
+          division_name: formData.division_name,
+          unit_name: formData.unit_name,
+          groups: formData.groups
         });
-        setEditingUser(null);
         toast.success('User updated successfully');
-      } catch (error) {
-        toast.error('Failed to update user');
-      } finally {
-        setIsProcessing(false);
+      } else {
+        await onAddUser(formData as UserRole);
+        toast.success('User added successfully');
       }
+      setIsModalOpen(false);
+    } catch (error) {
+      toast.error(`Failed to ${isEditing ? 'update' : 'add'} user`);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -189,37 +200,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
         setIsProcessing(false);
       }
     }
-  };
-
-  const startAddingUser = () => {
-    setNewUser({
-      user_email: '',
-      user_name: '',
-      role_name: 'staff_member',
-      groups: []
-    });
-  };
-
-  const saveNewUser = async () => {
-    if (newUser?.user_email && newUser.user_name) {
-      setIsProcessing(true);
-      try {
-        await onAddUser(newUser);
-        setNewUser(null);
-        toast.success('User added successfully');
-      } catch (error) {
-        toast.error('Failed to add user');
-      } finally {
-        setIsProcessing(false);
-      }
-    } else {
-      toast.error('Please fill all required fields');
-    }
-  };
-
-  const cancelEdit = () => {
-    setEditingUser(null);
-    setNewUser(null);
   };
 
   return (
@@ -258,105 +238,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {newUser && (
-          <div className="mb-6 p-4 border rounded-lg bg-gray-50 dark:bg-gray-800">
-            <h3 className="text-lg font-medium mb-3">Add New User</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Name</label>
-                <Input
-                  value={newUser.user_name}
-                  onChange={e => setNewUser({ ...newUser, user_name: e.target.value })}
-                  placeholder="Full Name"
-                  disabled={isProcessing}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Email</label>
-                <Input
-                  value={newUser.user_email}
-                  onChange={e => setNewUser({ ...newUser, user_email: e.target.value })}
-                  placeholder="email@scpng.gov.pg"
-                  disabled={isProcessing}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Role</label>
-                <select
-                  value={newUser.role_name}
-                  onChange={e => setNewUser({ ...newUser, role_name: e.target.value })}
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                  disabled={isProcessing}
-                >
-                  <option value="staff_member">Staff Member</option>
-                  <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
-                  <option value="super_admin">Super Admin</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Division</label>
-                <select
-                  value={newUser.division_name || ''}
-                  onChange={e => {
-                    setNewUser({ ...newUser, division_name: e.target.value, unit_name: '' });
-                  }}
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                  disabled={isProcessing}
-                >
-                  <option value="">Select Division</option>
-                  {divisionsList.map(div => (
-                    <option key={div} value={div}>{div}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Unit</label>
-                <select
-                  value={newUser.unit_name || ''}
-                  onChange={e => {
-                    setNewUser({ ...newUser, unit_name: e.target.value });
-                  }}
-                  className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                  disabled={isProcessing || !newUser.division_name}
-                >
-                  <option value="">Select Unit</option>
-                  {(newUser.division_name && divisionsAndUnits[newUser.division_name] || []).map(unit => (
-                    <option key={unit} value={unit}>{unit}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">Security Groups</label>
-                <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-white dark:bg-gray-900">
-                  {availableGroups.map(group => (
-                    <div key={group.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`new-grp-${group.id}`}
-                        checked={(newUser.groups || []).includes(group.title)}
-                        onCheckedChange={() => toggleGroup(group.title, false)}
-                        disabled={isProcessing}
-                      />
-                      <Label htmlFor={`new-grp-${group.id}`}>{group.title}</Label>
-                    </div>
-                  ))}
-                  {availableGroups.length === 0 && <span className="text-sm text-gray-500">No groups available. Create one in 'Roles & Groups'.</span>}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={cancelEdit} className="flex items-center gap-1" disabled={isProcessing}>
-                <X size={16} />
-                <span>Cancel</span>
-              </Button>
-              <Button onClick={saveNewUser} disabled={isProcessing} className="flex items-center gap-1">
-                {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                <span>{isProcessing ? 'Saving...' : 'Save'}</span>
-              </Button>
-            </div>
-          </div>
-        )}
-
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-800">
@@ -372,150 +253,179 @@ const UserManagement: React.FC<UserManagementProps> = ({
             <tbody className="bg-white divide-y divide-gray-200 dark:bg-gray-900 dark:divide-gray-700">
               {users.map(user => (
                 <tr key={user.id || user.user_email}>
-                  {editingUser && editingUser.id === user.id ? (
-                    <>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Input
-                          value={editingUser.user_name}
-                          onChange={e => setEditingUser({ ...editingUser, user_name: e.target.value })}
-                          disabled={isProcessing}
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Input
-                          value={editingUser.user_email}
-                          disabled // Email usually shouldn't be changed as it's the key
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          value={editingUser.role_name}
-                          onChange={e => setEditingUser({ ...editingUser, role_name: e.target.value })}
-                          className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                          disabled={isProcessing}
-                        >
-                          <option value="staff_member">Staff Member</option>
-                          <option value="manager">Manager</option>
-                          <option value="admin">Admin</option>
-                          <option value="super_admin">Super Admin</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="space-y-2">
-                          <select
-                            value={editingUser.division_name || ''}
-                            onChange={e => setEditingUser({ ...editingUser, division_name: e.target.value, unit_name: '' })}
-                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-sm"
-                            disabled={isProcessing}
-                          >
-                            <option value="">Select Division</option>
-                            {divisionsList.map(div => (
-                              <option key={div} value={div}>{div}</option>
-                            ))}
-                          </select>
-                          <select
-                            value={editingUser.unit_name || ''}
-                            onChange={e => setEditingUser({ ...editingUser, unit_name: e.target.value })}
-                            className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 text-sm"
-                            disabled={isProcessing || !editingUser.division_name}
-                          >
-                            <option value="">Select Unit</option>
-                            {(editingUser.division_name && divisionsAndUnits[editingUser.division_name] || []).map(unit => (
-                              <option key={unit} value={unit}>{unit}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm" disabled={isProcessing}>
-                              {editingUser.groups?.length ? `${editingUser.groups.length} Groups` : 'Select Groups'}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-60">
-                            <div className="space-y-2">
-                              {availableGroups.map(group => (
-                                <div key={group.id} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    id={`edit-grp-${user.id}-${group.id}`}
-                                    checked={(editingUser.groups || []).includes(group.title)}
-                                    onCheckedChange={() => toggleGroup(group.title, true)}
-                                    disabled={isProcessing}
-                                  />
-                                  <Label htmlFor={`edit-grp-${user.id}-${group.id}`}>{group.title}</Label>
-                                </div>
-                              ))}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <Button onClick={saveUserChanges} disabled={isProcessing} size="sm" variant="ghost" className="text-green-600 dark:text-green-400 mr-2">
-                          {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  <td className="px-6 py-4 whitespace-nowrap">{user.user_name || user.user_email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.user_email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge variant="outline" className={`
+                      ${user.role_name === 'super_admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
+                        user.role_name === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                          user.role_name === 'manager' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                            'bg-green-100 text-green-800 border-green-200'}`}>
+                      {user.role_name}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      {user.division_name && <div className="text-sm font-medium">{user.division_name}</div>}
+                      <div className="text-sm text-gray-500">{user.unit_name || '-'}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-wrap gap-1">
+                      {user.groups && user.groups.length > 0 ? (
+                        user.groups.map(g => {
+                          const isOrphaned = !availableGroups.some(ag => ag.title === g);
+                          return (
+                            <Badge key={g} variant={isOrphaned ? 'destructive' : 'secondary'} className="text-xs">
+                              {g} {isOrphaned && '(Invalid)'}
+                            </Badge>
+                          );
+                        })
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-2">
+                      <Button onClick={() => handleEditUser(user)} size="sm" variant="ghost" disabled={isProcessing} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
+                        <Pencil size={16} />
+                      </Button>
+                      {onGeneratePassword && (
+                        <Button onClick={() => onGeneratePassword(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300">
+                          <SettingsIcon size={16} />
                         </Button>
-                        <Button onClick={cancelEdit} size="sm" disabled={isProcessing} variant="ghost" className="text-gray-600 dark:text-gray-400">
-                          <X size={16} />
+                      )}
+                      {onConfigureEmail && (
+                        <Button onClick={() => onConfigureEmail(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
+                          <Bell size={16} />
                         </Button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-6 py-4 whitespace-nowrap">{user.user_name || user.user_email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">{user.user_email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="outline" className={`
-                          ${user.role_name === 'super_admin' ? 'bg-purple-100 text-purple-800 border-purple-200' :
-                            user.role_name === 'admin' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                              user.role_name === 'manager' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                                'bg-green-100 text-green-800 border-green-200'}`}>
-                          {user.role_name}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          {user.division_name && <div className="text-sm font-medium">{user.division_name}</div>}
-                          <div className="text-sm text-gray-500">{user.unit_name || '-'}</div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
-                          {user.groups && user.groups.length > 0 ? (
-                            user.groups.map(g => (
-                              <Badge key={g} variant="secondary" className="text-xs">{g}</Badge>
-                            ))
-                          ) : (
-                            <span className="text-xs text-gray-400">-</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end space-x-2">
-                          <Button onClick={() => handleEditUser(user)} size="sm" variant="ghost" disabled={isProcessing} className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300">
-                            <Pencil size={16} />
-                          </Button>
-                          {onGeneratePassword && (
-                            <Button onClick={() => onGeneratePassword(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-amber-600 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-300">
-                              <SettingsIcon size={16} />
-                            </Button>
-                          )}
-                          {onConfigureEmail && (
-                            <Button onClick={() => onConfigureEmail(user)} size="sm" disabled={isProcessing} variant="ghost" className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
-                              <Bell size={16} />
-                            </Button>
-                          )}
-                          <Button onClick={() => handleDeleteUser(user.user_email)} size="sm" disabled={isProcessing} variant="ghost" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
-                            <Trash size={16} />
-                          </Button>
-                        </div>
-                      </td>
-                    </>
-                  )}
+                      )}
+                      <Button onClick={() => handleDeleteUser(user.user_email)} size="sm" disabled={isProcessing} variant="ghost" className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                        <Trash size={16} />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{isEditing ? 'Edit User' : 'Add New User'}</DialogTitle>
+              <DialogDescription>
+                {isEditing ? 'Update the details and permissions for this user.' : 'Create a new user by assigning a role and divisions.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input
+                    value={formData.user_name || ''}
+                    onChange={e => setFormData({ ...formData, user_name: e.target.value })}
+                    placeholder="Full Name"
+                    disabled={isProcessing}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input
+                    value={formData.user_email || ''}
+                    onChange={e => setFormData({ ...formData, user_email: e.target.value })}
+                    placeholder="email@scpng.gov.pg"
+                    disabled={isProcessing || isEditing}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <select
+                    value={formData.role_name || 'staff_member'}
+                    onChange={e => setFormData({ ...formData, role_name: e.target.value as any })}
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                    disabled={isProcessing}
+                  >
+                    <option value="staff_member">Staff Member</option>
+                    <option value="manager">Manager</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Division</Label>
+                  <select
+                    value={formData.division_name || ''}
+                    onChange={e => {
+                      setFormData({ ...formData, division_name: e.target.value, unit_name: '' });
+                    }}
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                    disabled={isProcessing}
+                  >
+                    <option value="">Select Division</option>
+                    {divisionsList.map(div => (
+                      <option key={div} value={div}>{div}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Unit</Label>
+                  <select
+                    value={formData.unit_name || ''}
+                    onChange={e => {
+                      setFormData({ ...formData, unit_name: e.target.value });
+                    }}
+                    className="w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                    disabled={isProcessing || !formData.division_name}
+                  >
+                    <option value="">Select Unit</option>
+                    {(formData.division_name && divisionsAndUnits[formData.division_name] || []).map(unit => (
+                      <option key={unit} value={unit}>{unit}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Security Groups</Label>
+                <div className="flex flex-wrap gap-2 p-4 border rounded-md bg-gray-50 dark:bg-gray-900/50">
+                  {availableGroups.map(group => (
+                    <div key={group.id} className="flex items-center space-x-2 bg-white dark:bg-gray-800 p-2 rounded-md border shadow-sm">
+                      <Checkbox
+                        id={`modal-grp-${group.id}`}
+                        checked={(formData.groups || []).includes(group.title)}
+                        onCheckedChange={() => toggleGroup(group.title)}
+                        disabled={isProcessing}
+                      />
+                      <Label htmlFor={`modal-grp-${group.id}`} className="cursor-pointer font-medium text-sm">
+                        {group.title}
+                      </Label>
+                    </div>
+                  ))}
+                  {availableGroups.length === 0 && (
+                    <span className="text-sm text-gray-500 italic">No permission groups available. Create one in 'Roles & Groups'.</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isProcessing}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={isProcessing}>
+                {isProcessing && <Loader2 size={16} className="animate-spin mr-2" />}
+                {isProcessing ? 'Saving...' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

@@ -14,6 +14,7 @@ The source of truth for the application's core systems, tech stack, and data flo
 
 ### 📦 [Modules](modules/)
 Feature-specific documentation and business logic.
+- **[Admin Dashboard](modules/admin-dashboard.md)**: User, role, and permission management.
 - **[Task Registry](modules/task-registry/overview.md)**: Managing daily tasks and operational workflows.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.
 - **[Performance](modules/performance/)**: KRAs, KPIs, and Initiatives.

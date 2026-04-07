@@ -800,7 +800,10 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       const opsService = new SharePointOpsService(graphClient);
       await opsService.initialize();
       const schedules = await opsService.getAllReportSchedules();
-      setAllSchedules(schedules);
+      const mySchedules = schedules.filter((s: any) =>
+        s.UserEmail?.toLowerCase() === userContext?.email?.toLowerCase()
+      );
+      setAllSchedules(mySchedules);
     } catch (e: any) {
       console.error('Failed to load schedules:', e);
       toast.error('Failed to load schedules');

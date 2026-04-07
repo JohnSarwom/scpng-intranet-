@@ -46,7 +46,14 @@ export class FlowClient {
         if (!response.ok) {
             const errorBody = await response.text();
             console.error(`[PowerAutomate] ${response.status} ${response.statusText}:`, errorBody);
-            throw new Error(`Flow API error ${response.status}: ${response.statusText}`);
+            let detail = '';
+            try {
+                const parsed = JSON.parse(errorBody);
+                detail = parsed?.error?.message || parsed?.message || errorBody.slice(0, 300);
+            } catch {
+                detail = errorBody.slice(0, 300);
+            }
+            throw new Error(`Flow API error ${response.status}: ${detail}`);
         }
 
         const text = await response.text();

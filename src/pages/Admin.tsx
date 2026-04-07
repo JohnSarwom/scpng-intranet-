@@ -119,14 +119,36 @@ const Admin = () => {
 
     const handleUpdateGroup = async (group: PermissionGroup) => {
         const service = await getService();
+        const oldGroup = groups.find(g => g.id === group.id);
+        
         await service.updateGroup(group);
         setGroups(prev => prev.map(g => g.id === group.id ? group : g));
+
+        // Sync old group name to new group name for users
+        if (oldGroup && oldGroup.title !== group.title) {
+            const usersToUpdate = users.filter(u => (u.groups || []).includes(oldGroup.title));
+            for (const u of usersToUpdate) {
+                const newGroups = u.groups!.map(g => g === oldGroup.title ? group.title : g);
+                await handleUpdateUser(u.user_email, { groups: newGroups });
+            }
+        }
     };
 
     const handleDeleteGroup = async (groupId: string) => {
         const service = await getService();
+        const deletedGroup = groups.find(g => g.id === groupId);
+        
         await service.deleteGroup(groupId);
         setGroups(prev => prev.filter(g => g.id !== groupId));
+
+        // Unassign deleted group from users
+        if (deletedGroup) {
+            const usersToUpdate = users.filter(u => (u.groups || []).includes(deletedGroup.title));
+            for (const u of usersToUpdate) {
+                const newGroups = u.groups!.filter(g => g !== deletedGroup.title);
+                await handleUpdateUser(u.user_email, { groups: newGroups });
+            }
+        }
     };
 
 
