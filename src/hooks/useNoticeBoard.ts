@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnnouncementsSharePointService } from "@/services/announcementsSharePointService";
 import { getGraphClient } from "@/services/graphService";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 export function useNoticeBoard() {
   const { instance: msalInstance } = useMsal();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [service, setService] = useState<AnnouncementsSharePointService | null>(null);
 
   const initializeService = useCallback(async () => {
@@ -58,10 +59,36 @@ export function useNoticeBoard() {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (itemId: string) => {
+      let currentService = service;
+      if (!currentService) {
+        currentService = await initializeService();
+      }
+      return currentService.deleteAnnouncement(itemId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      toast({
+        title: "Success",
+        description: "Announcement deleted successfully",
+      });
+    },
+    onError: (err: any) => {
+      console.error("Failed to delete announcement:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete announcement",
+        variant: "destructive",
+      });
+    }
+  });
+
   return {
     announcements,
     loading,
     error: error as Error | null,
     refresh: refreshAnnouncements,
+    deleteNotice: deleteMutation.mutateAsync,
   };
 }

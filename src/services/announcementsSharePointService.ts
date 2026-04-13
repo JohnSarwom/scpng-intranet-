@@ -148,6 +148,21 @@ export class AnnouncementsSharePointService {
       throw error;
     }
   }
+
+  async deleteAnnouncement(itemId: string): Promise<void> {
+    try {
+      if (!this.siteId || !this.listId) {
+        await this.initialize();
+      }
+
+      await this.client
+        .api(`/sites/${this.siteId}/lists/${this.listId}/items/${itemId}`)
+        .delete();
+    } catch (error) {
+      console.error("Error deleting announcement from SharePoint:", error);
+      throw error;
+    }
+  }
 }
 
 export async function getAnnouncements(client: Client): Promise<IAnnouncement[]> {

@@ -1173,7 +1173,8 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
         try {
           await editTask(activeId, dragUpdatePayload, { suppressToast: true });
 
-          // Success confirmed by backend
+          // Success confirmed by backend — clear optimistic cache
+          optimisticUpdates.current.delete(activeId);
           const taskTitle = taskToMove?.title || 'Task';
           const destColumn = activeBuckets.find(b => b.id === destinationColumnId);
           const destTitle = destColumn?.title || 'new column';
@@ -1182,7 +1183,10 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             title: "Task Moved",
             description: `Moved "${taskTitle}" to ${destTitle}`,
             action: (
-              <ToastAction altText="Undo" onClick={() => editTask(activeId, dragUndoPayload, { suppressToast: false })}>
+              <ToastAction altText="Undo" onClick={() => {
+                optimisticUpdates.current.delete(activeId);
+                editTask(activeId, dragUndoPayload, { suppressToast: false });
+              }}>
                 Undo
               </ToastAction>
             ),
@@ -1472,11 +1476,16 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
           }
         }
 
+        if (!currentUserEmail) {
+          toast({ title: "Error", description: "Cannot create group — user identity not loaded yet. Please wait a moment and try again.", variant: "destructive" });
+          return;
+        }
+
         const newGroup = await addCustomGroup({
           name: trimmedName,
           status: 'in-progress',
           order: order,
-          ownerEmail: currentUserEmail?.toLowerCase() || '',
+          ownerEmail: currentUserEmail.toLowerCase(),
         });
 
         // Trigger validation/scroll using the fresh ID directly from backend

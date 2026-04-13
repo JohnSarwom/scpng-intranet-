@@ -25,7 +25,7 @@ const WebsiteFeedbackPage: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const form = useForm({ defaultValues: {} });
+  const form = useForm<any>({ defaultValues: {} });
 
   const currentUser = contacts.find(
     (c) => c.mail?.toLowerCase() === user?.email?.toLowerCase()
@@ -215,6 +215,8 @@ const WebsiteFeedbackPage: React.FC = () => {
       <FormLayoutWrapper
         title="New Website Upgrade — Feedback"
         template={websiteFeedbackTemplate}
+        showPaperTab={false}
+        showTrackingTab={false}
         digitalContent={
           <div>
             <FormRenderer
@@ -223,7 +225,6 @@ const WebsiteFeedbackPage: React.FC = () => {
               onSubmit={handleFormSubmit}
               onSave={handleFormSave}
               onCancel={() => window.history.back()}
-              disabled={isSubmitting || isUploading}
             />
             {screenshotUploadSection}
           </div>

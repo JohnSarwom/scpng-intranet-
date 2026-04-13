@@ -197,6 +197,10 @@ export class SharePointOpsService {
         }
     }
 
+    private escapeHtml(text: string): string {
+        return text.replace(/[<>&"']/g, ch => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[ch] || ch));
+    }
+
     private async ensureOwnerEmailColumn(): Promise<void> {
         const listId = this.listIds['TASK_GROUPS'];
         if (!listId) return;
@@ -1680,8 +1684,8 @@ export class SharePointOpsService {
             // Normalize to yyyy-MM-dd so <input type="date"> works correctly
             dueDate: f.DueDate ? f.DueDate.split('T')[0] : '',
             startDate: f.StartDate ? new Date(f.StartDate) : undefined,
-            subtasks: f.SubtasksJSON ? JSON.parse(f.SubtasksJSON) : [],
-            comments: f.CommentsJSON ? JSON.parse(f.CommentsJSON) : [],
+            subtasks: (() => { try { return f.SubtasksJSON ? JSON.parse(f.SubtasksJSON) : []; } catch { console.warn('[SP Ops] Corrupted SubtasksJSON for task', item.id); return []; } })(),
+            comments: (() => { try { return f.CommentsJSON ? JSON.parse(f.CommentsJSON) : []; } catch { console.warn('[SP Ops] Corrupted CommentsJSON for task', item.id); return []; } })(),
             tags: tags,
             projectId: projectId, // Use our resolved ID
             groupId: groupId,
@@ -2191,11 +2195,8 @@ export class SharePointOpsService {
             Status: group.status === 'in-progress' ? 'In Progress' : (group.status === 'completed' ? 'Completed' : 'Planned'),
             Department: group.department || '',
             Order: group.order || 0,
+            OwnerEmail: group.ownerEmail || '',
         };
-        // Only include OwnerEmail when it has a value (avoids errors if column doesn't exist yet)
-        if (group.ownerEmail) {
-            fields.OwnerEmail = group.ownerEmail;
-        }
         const payload = { fields };
 
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`).post(payload);
@@ -2210,6 +2211,7 @@ export class SharePointOpsService {
         if (updates.status !== undefined) fields.Status = updates.status === 'in-progress' ? 'In Progress' : (updates.status === 'completed' ? 'Completed' : 'Planned');
         if (updates.department !== undefined) fields.Department = updates.department;
         if (updates.order !== undefined) fields.Order = updates.order;
+        if (updates.ownerEmail !== undefined) fields.OwnerEmail = updates.ownerEmail;
 
         const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items/${id}`).patch({ fields });
         return this.mapTaskGroup(response);
@@ -2806,6 +2808,10 @@ export class SharePointOpsService {
         assignees: { email?: string; name?: string }[];
     }): Promise<void> {
         const { taskId, taskTitle, assignerName, assignerEmail, assignees } = params;
+        if (!assignerEmail) {
+            console.warn('[SP Ops] notifyAssignment skipped: assignerEmail is empty');
+            return;
+        }
         const normalizedAssigner = assignerEmail.toLowerCase();
 
         // Collect unique recipient emails, excluding self-assignment
@@ -2818,6 +2824,8 @@ export class SharePointOpsService {
         if (recipientEmails.size === 0) return;
 
         const actionUrl = `/unit?tab=tasks&taskId=${taskId}`;
+        const safeTaskTitle = this.escapeHtml(taskTitle);
+        const safeAssignerName = this.escapeHtml(assignerName);
 
         const emailBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -2826,9 +2834,9 @@ export class SharePointOpsService {
                 </div>
                 <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
                     <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Task:</p>
-                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${taskTitle}</p>
+                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${safeTaskTitle}</p>
                     <p style="margin: 0 0 16px; font-size: 14px; color: #374151;">
-                        ${assignerName} has assigned this task to you.
+                        ${safeAssignerName} has assigned this task to you.
                     </p>
                     <a href="${typeof window !== 'undefined' ? window.location.origin : ''}${actionUrl}"
                        style="display: inline-block; background: #8B0000; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px;">
@@ -2874,6 +2882,10 @@ export class SharePointOpsService {
         creatorEmail?: string;
     }): Promise<void> {
         const { taskId, taskTitle, commenterName, commenterEmail, commentText, assignees, creatorEmail } = params;
+        if (!commenterEmail) {
+            console.warn('[SP Ops] notifyComment skipped: commenterEmail is empty');
+            return;
+        }
         const normalizedCommenter = commenterEmail.toLowerCase();
 
         // Collect unique recipient emails (assignees + creator, minus commenter)
@@ -2890,6 +2902,9 @@ export class SharePointOpsService {
 
         const actionUrl = `/unit?tab=tasks&taskId=${taskId}`;
         const truncatedComment = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+        const safeTaskTitle = this.escapeHtml(taskTitle);
+        const safeCommenterName = this.escapeHtml(commenterName);
+        const safeCommentText = this.escapeHtml(commentText);
 
         const emailBody = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -2898,10 +2913,10 @@ export class SharePointOpsService {
                 </div>
                 <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
                     <p style="margin: 0 0 8px; color: #6b7280; font-size: 14px;">Task:</p>
-                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${taskTitle}</p>
+                    <p style="margin: 0 0 16px; font-weight: 600; font-size: 16px;">${safeTaskTitle}</p>
                     <div style="background: #f9fafb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
-                        <p style="margin: 0 0 4px; font-weight: 600; font-size: 14px;">${commenterName}</p>
-                        <p style="margin: 0; font-size: 14px; color: #374151;">${commentText}</p>
+                        <p style="margin: 0 0 4px; font-weight: 600; font-size: 14px;">${safeCommenterName}</p>
+                        <p style="margin: 0; font-size: 14px; color: #374151;">${safeCommentText}</p>
                     </div>
                     <a href="${typeof window !== 'undefined' ? window.location.origin : ''}${actionUrl}"
                        style="display: inline-block; background: #8B0000; color: white; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-size: 14px;">

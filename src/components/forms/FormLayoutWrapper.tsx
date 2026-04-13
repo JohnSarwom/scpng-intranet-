@@ -16,6 +16,8 @@ export interface FormLayoutWrapperProps {
     digitalContent: React.ReactNode;
     paperContent: React.ReactNode;
     trackingContent: React.ReactNode;
+    showPaperTab?: boolean;
+    showTrackingTab?: boolean;
 }
 
 export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
@@ -25,6 +27,8 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
     digitalContent,
     paperContent,
     trackingContent,
+    showPaperTab = true,
+    showTrackingTab = true,
 }) => {
     const [viewMode, setViewMode] = useState<'digital' | 'paper' | 'tracking'>('digital');
     const navigate = useNavigate();
@@ -67,11 +71,13 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
                                 Debug Schema
                             </Button>
                         )}
-                        <TabsList className="dark:bg-gray-800 dark:border-white/10 p-1">
-                            <TabsTrigger value="digital" className="dark:data-[state=active]:bg-gray-700">Digital Form</TabsTrigger>
-                            <TabsTrigger value="paper" className="dark:data-[state=active]:bg-gray-700">Paper Form</TabsTrigger>
-                            <TabsTrigger value="tracking" className="dark:data-[state=active]:bg-gray-700">My Applications</TabsTrigger>
-                        </TabsList>
+                        {(showPaperTab || showTrackingTab) && (
+                            <TabsList className="dark:bg-gray-800 dark:border-white/10 p-1">
+                                <TabsTrigger value="digital" className="dark:data-[state=active]:bg-gray-700">Digital Form</TabsTrigger>
+                                {showPaperTab && <TabsTrigger value="paper" className="dark:data-[state=active]:bg-gray-700">Paper Form</TabsTrigger>}
+                                {showTrackingTab && <TabsTrigger value="tracking" className="dark:data-[state=active]:bg-gray-700">My Applications</TabsTrigger>}
+                            </TabsList>
+                        )}
                     </div>
                 </div>
 

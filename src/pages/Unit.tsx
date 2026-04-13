@@ -602,15 +602,12 @@ const Unit = () => {
 
     // 1. Get task groups — show only groups owned by the current user
     // Groups with ownerEmail show only to their owner (includes ATM + user-created groups)
-    // Legacy groups without ownerEmail remain visible to everyone (backward compat)
+    // Groups without ownerEmail are hidden (orphaned/legacy — fix by setting OwnerEmail in SharePoint)
     const normalizedEmail = userContext.email?.toLowerCase() || '';
     const customGroups: Bucket[] = taskGroupState.data
       .filter(p => {
-        if (p.ownerEmail) {
-          return p.ownerEmail.toLowerCase() === normalizedEmail;
-        }
-        // Legacy groups without ownerEmail: visible to everyone
-        return true;
+        if (!p.ownerEmail) return false;
+        return p.ownerEmail.toLowerCase() === normalizedEmail;
       })
       .map(p => {
         // ATM groups are identified by order 999999 (auto-created for assignees)

@@ -19,7 +19,7 @@ A dedicated list to store column/bucket definitions for the Tasks Board.
 - **Status (Choice):** `Planned`, `In Progress`, `Completed`, `On Hold`.
 - **Department (Text):** The unit/department this group belongs to.
 - **Order (Number):** For controlling the display index of the bucket column. `-1` = "Assigned to Me" groups (pinned leftmost).
-- **OwnerEmail (Text):** Empty = shared group visible to all. Non-empty = private "Assigned to Me" bucket for that email address. Set once at creation, immutable thereafter.
+- **OwnerEmail (Text):** Required. The email of the user who created the group. Groups are only visible to their owner. "Assigned to Me" (ATM) groups also use this field. Groups with empty OwnerEmail are hidden (orphaned). See Bug Fix #4 below.
 
 ### Modified List: `Operations_Tasks`
 Tasks now link directly to their corresponding group using a native Lookup Column.
@@ -118,3 +118,51 @@ For reference, the complete column set required on `Operations_Tasks`:
 | RelatedKRA | Lookup | Points to Performance_KRAs |
 | RelatedKPI | Lookup | Points to Performance_KPIs |
 | RelatedTaskGroup | Lookup | Points to Operations_TaskGroups |
+
+## 7. Bug Fixes & Security Audit — April 13, 2026
+
+### Bug Fix #4: Task Groups Visible to All Users (OwnerEmail Leak)
+**Symptom:** Groups created by the admin (e.g., "RTRY", "GROUP 3", "NEW CATEGORIZED GROUP") appeared on every user's Task Board, not just the creator's.
+
+**Root Cause (two-part):**
+1. **`addTaskGroup()` conditionally skipped `OwnerEmail`:** The service had `if (group.ownerEmail) { fields.OwnerEmail = group.ownerEmail; }`. If `currentUserEmail` was empty or undefined at creation time, the `OwnerEmail` field was never written to SharePoint, resulting in an empty value.
+2. **Backward-compat filter showed ownerless groups to everyone:** `Unit.tsx` had `if (!p.ownerEmail) return true;` — any group without an `OwnerEmail` was visible to all users.
+
+**Fix:**
+- `addTaskGroup()` now always writes `OwnerEmail` (removed the conditional guard). The field is included in the standard fields object.
+- `TasksTab.tsx` now validates `currentUserEmail` is present before allowing group creation. If empty, a toast error is shown: "Cannot create group — user identity not loaded yet."
+- `Unit.tsx` filter changed: groups without `OwnerEmail` are now hidden (`return false`) instead of shown to everyone. Only groups matching the current user's email are displayed.
+- `updateTaskGroup()` now preserves `OwnerEmail` during updates (was previously missing, causing ownership loss on rename/reorder).
+
+**Data fix required:** Existing orphaned groups in SharePoint `Operations_TaskGroups` must have their `OwnerEmail` column manually set to the creator's email.
+
+### Bug Fix #5: Unhandled JSON.parse Crashes Task List
+**Symptom:** If any task in SharePoint has corrupted data in `SubtasksJSON` or `CommentsJSON` columns, the entire task list fails to load.
+
+**Root Cause:** `JSON.parse()` was called without try-catch on `SubtasksJSON` and `CommentsJSON` in `mapTask()`. A single corrupted value would throw and crash the mapping of all tasks.
+
+**Fix:** Wrapped both `JSON.parse()` calls in try-catch with `console.warn()` logging. Corrupted values now gracefully fall back to empty arrays `[]`. (Note: `AssigneeViewMap` and `AttachmentsJSON` already had try-catch from earlier.)
+
+### Bug Fix #6: XSS in Email Notifications
+**Symptom:** User-supplied text (task titles, comment text, commenter names) was interpolated directly into HTML email templates without escaping. A malicious comment like `<img src=x onerror="alert('xss')">` would execute in the recipient's email client.
+
+**Root Cause:** Template literals in `notifyAssignment()` and `notifyComment()` used raw `${taskTitle}`, `${commentText}`, etc.
+
+**Fix:** Added `escapeHtml()` private method to `SharePointOpsService` that escapes `<`, `>`, `&`, `"`, and `'`. All user-supplied strings in both email templates now use escaped versions (`safeTaskTitle`, `safeCommentText`, `safeCommenterName`, `safeAssignerName`).
+
+### Bug Fix #7: Empty Email Guards on Notifications
+**Symptom:** If `assignerEmail` or `commenterEmail` was empty (e.g., user identity not yet resolved), notification functions would proceed with `''` as the sender, producing malformed notifications.
+
+**Fix:** Added early-return guards at the top of both `notifyAssignment()` and `notifyComment()`. If the sender email is empty, the function logs a warning and returns immediately.
+
+### Bug Fix #8: Drag-and-Drop Optimistic Cache Not Cleared
+**Symptom:** After a successful drag-and-drop move, the optimistic cache entry persisted. If the task was later updated via a different path (e.g., editing the task dialog), the stale optimistic data could override the fresh server data.
+
+**Fix:** `optimisticUpdates.current.delete(activeId)` is now called on successful API response. The undo toast action also clears the cache before reverting.
+
+### Bug Fix #9: Comment Save Failures Silent
+**Symptom:** When a comment failed to save to SharePoint, the UI reverted the comment but showed no feedback to the user. Notification failures could also mask successful saves.
+
+**Fix:**
+- Comment save failures now show a destructive toast: "Failed to save comment. Please try again."
+- Comment notifications are now `await`ed inside a separate try-catch, so a notification failure doesn't interfere with the save confirmation flow.

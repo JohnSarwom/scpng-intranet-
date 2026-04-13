@@ -446,18 +446,23 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       setIsSavingComment(true);
       try {
         await onSaveComment(initialData.id, updatedComments);
-        // Fire-and-forget: notify assignees & creator
-        onNotifyComment?.({
-          taskId: initialData.id,
-          taskTitle: initialData.title || '',
-          commenterName: userName,
-          commenterEmail: authUser?.user_email || '',
-          commentText: newCommentText.trim() || newComment.text,
-          assignees: initialData.assignees,
-          creatorEmail: initialData.createdByEmail || initialData.authorEmail,
-        });
+        // Notify assignees & creator (non-blocking but with error logging)
+        try {
+          await onNotifyComment?.({
+            taskId: initialData.id,
+            taskTitle: initialData.title || '',
+            commenterName: userName,
+            commenterEmail: authUser?.user_email || '',
+            commentText: newCommentText.trim() || newComment.text,
+            assignees: initialData.assignees,
+            creatorEmail: initialData.createdByEmail || initialData.authorEmail,
+          });
+        } catch (notifyErr) {
+          console.warn('Comment notification failed (comment was saved)', notifyErr);
+        }
       } catch (err) {
         console.error('Failed to save comment', err);
+        toast({ title: "Error", description: "Failed to save comment. Please try again.", variant: "destructive" });
         // Revert on failure
         setComments(comments);
       } finally {

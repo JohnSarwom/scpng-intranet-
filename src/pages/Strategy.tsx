@@ -429,7 +429,7 @@ const Strategy = () => {
     };
 
     const effectiveMission = localMission || (organization.mission.includes("efficient and transparent") ? "To promote and maintain a secure capital market that is fair for and accessible to all stakeholders while supporting capital formation through innovative market development." : organization.mission);
-    const effectiveVision = localVision || (organization.vision.includes("leading public service") ? "To ensure Port Moresby becomes the Financial Capital of the Blue Pacific by 2040." : organization.vision);
+    const effectiveVision = localVision || (organization.vision.includes("leading public service") ? "Papua New Guinea's capital market will be secure, inclusive, and growing -built on fairness, integrity, and accessibility-supporting investor trust and national prosperity by 2050." : organization.vision);
 
     // Pillars (The 4 core commitents)
     const effectivePillars = localPillars || (pillars.length > 0 ? pillars : [

@@ -74,7 +74,7 @@ export interface StrategyData {
 export const mockStrategyData: StrategyData = {
     organization: {
         mission: "To promote and maintain a secure capital market that is fair for and accessible to all stakeholders while supporting capital formation through innovative market development.",
-        vision: "To ensure Port Moresby becomes the Financial Capital of the Blue Pacific by 2040.",
+        vision: "Papua New Guinea's capital market will be secure, inclusive, and growing -built on fairness, integrity, and accessibility-supporting investor trust and national prosperity by 2050.",
         executiveSummary: "The SCPNG Strategy Hub 2025–2030 outlines our path to modernizing PNG's capital markets through regulation, development, and international cooperation.",
         values: [
             { name: "Protect", description: "Safeguarding investors from scams and market manipulation.", icon: "Shield" },

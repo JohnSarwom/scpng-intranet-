@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Bell, Calendar, ExternalLink, Pin, Loader2, AlertTriangle } from 'lucide-react';
+import { Bell, Calendar, ExternalLink, Pin, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { useNoticeBoard } from '@/hooks/useNoticeBoard';
 import { IAnnouncement } from '@/types';
 import DOMPurify from 'dompurify';
 import { NoticeBoardSkeleton } from './skeletons/NoticeBoardSkeleton';
+import { useAuth } from '@/hooks/useAuth';
 
 const NewsCarousel: React.FC = () => {
   const newsImages = [
@@ -44,7 +45,8 @@ const NewsCarousel: React.FC = () => {
 };
 
 const NoticeBoard = () => {
-  const { announcements, loading, error } = useNoticeBoard();
+  const { announcements, loading, error, deleteNotice } = useNoticeBoard();
+  const { isAdmin } = useAuth();
   const [selectedNotice, setSelectedNotice] = React.useState<IAnnouncement | null>(null);
 
   // Get category badge color and icon
@@ -143,9 +145,21 @@ const NoticeBoard = () => {
               <div
                 key={notice.id}
                 onClick={() => setSelectedNotice(notice)}
-                className={`p-2.5 rounded-lg border border-border dark:border-white/10 hover:border-intranet-primary/50 dark:hover:bg-white/5 transition-colors duration-300 cursor-pointer
+                className={`group relative p-2.5 rounded-lg border border-border dark:border-white/10 hover:border-intranet-primary/50 dark:hover:bg-white/5 transition-colors duration-300 cursor-pointer
                   ${notice.isPinned ? 'border-intranet-primary/50 bg-intranet-primary/5 dark:bg-intranet-primary/10' : ''}`}
               >
+                {isAdmin && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (deleteNotice) deleteNotice(notice.id);
+                    }}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 shadow-sm z-10"
+                    title="Delete Notice"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium text-sm flex items-center gap-1">
                     {notice.isPinned && <Pin size={12} className="text-intranet-primary animate-pulse" />}
