@@ -2121,55 +2121,54 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               )}
             </div>
           </DndContext>
-        </div>
-      </main>
 
-      <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
-        <AlertDialogContent container={isFullScreen ? containerRef.current : null}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {itemToDelete?.type === 'task' ? 'Delete Task?' : 'Delete Group?'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {itemToDelete?.type === 'task'
-                ? <>This will permanently delete the task <strong>"{itemToDelete?.name}"</strong>.</>
-                : <>This will permanently delete the group <strong>"{itemToDelete?.name}"</strong> and all its tasks.</>}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setItemToDelete(null)} disabled={isDeletingItem}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteItem} className={buttonVariants({ variant: "destructive" })} disabled={isDeletingItem}>
-              {isDeletingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isDeletingItem ? "Deleting..." : "Yes, Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      {/* GroupTemplateDialog removed */}
-      <TaskDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        initialData={editingTask || undefined}
-        buckets={activeBuckets}
-        defaultGroup={preselectedGroup || (activeBuckets.length > 0 ? activeBuckets[0].id : null)}
-        staffMembers={staffMembers}
-        container={isFullScreen ? containerRef.current : null}
-        kras={kras}
-        kpis={kpis}
-        currentDivision={currentDivision}
-        currentUnit={currentUnit}
-        onSaveComment={async (taskId, comments) => {
-          await editTask(taskId, { comments }, { suppressToast: true });
-        }}
-        onNotifyComment={async (params) => {
-          try {
-            const service = await getService();
-            await service.notifyComment(params);
-          } catch (err) {
-            console.error('Failed to send comment notifications', err);
-          }
-        }}
-        onSubmit={async (taskData) => {
+          {/* Dialogs placed inside containerRef so they're part of the fullscreen element's DOM tree */}
+          <AlertDialog open={!!itemToDelete} onOpenChange={() => setItemToDelete(null)}>
+            <AlertDialogContent container={isFullScreen ? containerRef.current : null}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {itemToDelete?.type === 'task' ? 'Delete Task?' : 'Delete Group?'}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {itemToDelete?.type === 'task'
+                    ? <>This will permanently delete the task <strong>"{itemToDelete?.name}"</strong>.</>
+                    : <>This will permanently delete the group <strong>"{itemToDelete?.name}"</strong> and all its tasks.</>}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setItemToDelete(null)} disabled={isDeletingItem}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmDeleteItem} className={buttonVariants({ variant: "destructive" })} disabled={isDeletingItem}>
+                  {isDeletingItem ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {isDeletingItem ? "Deleting..." : "Yes, Delete"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <TaskDialog
+            isOpen={isDialogOpen}
+            onClose={() => setIsDialogOpen(false)}
+            initialData={editingTask || undefined}
+            buckets={activeBuckets}
+            defaultGroup={preselectedGroup || (activeBuckets.length > 0 ? activeBuckets[0].id : null)}
+            staffMembers={staffMembers}
+            container={isFullScreen ? containerRef.current : null}
+            kras={kras}
+            kpis={kpis}
+            currentDivision={currentDivision}
+            currentUnit={currentUnit}
+            onSaveComment={async (taskId, comments) => {
+              await editTask(taskId, { comments }, { suppressToast: true });
+            }}
+            onNotifyComment={async (params) => {
+              try {
+                const service = await getService();
+                await service.notifyComment(params);
+              } catch (err) {
+                console.error('Failed to send comment notifications', err);
+              }
+            }}
+            onSubmit={async (taskData) => {
           console.log(`[Metrics] TaskDialog onSubmit triggered in TasksTab at ${performance.now().toFixed(2)}ms`);
           console.time('TaskSubmit-Processing');
           if (editingTask) {
@@ -2356,8 +2355,10 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               toast({ title: "Failed to Create Task", description: "Could not save the task. Please try again.", variant: "destructive" });
             }
           }
-        }}
-      />
+            }}
+          />
+        </div>
+      </main>
     </div >
   );
 };
