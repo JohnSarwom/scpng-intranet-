@@ -4,7 +4,10 @@
       "Read(//c/Users/IT_UNIT/.gemini/antigravity/brain/**)",
       "Bash(xargs grep -l \"Strategic.*Division.*Unit\")",
       "Bash(python3 -c \"import uuid; print\\(uuid.uuid4\\(\\)\\)\")",
-      "Bash(node -e \"const { randomUUID } = require\\(''crypto''\\); console.log\\(randomUUID\\(\\)\\)\")"
+      "Bash(node -e \"const { randomUUID } = require\\(''crypto''\\); console.log\\(randomUUID\\(\\)\\)\")",
+      "Bash(python -c ':*)",
+      "Bash(graphify query:*)",
+      "Bash(python _inject_semantic_edges.py)"
     ]
   },
   "hooks": {

@@ -1,0 +1,17 @@
+---
+source_file: "src\components\ChecklistSection.tsx"
+type: "code"
+community: "Module 91"
+location: "L45"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Module_91
+---
+
+# handleDeleteItem()
+
+## Connections
+- [[ChecklistSection.tsx]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Module_91

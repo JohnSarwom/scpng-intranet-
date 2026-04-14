@@ -18,7 +18,8 @@
       "Bash(grep -r \"group\\\\|Group\\\\|role\\\\|Role\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
       "Bash(xargs grep -l \"group\\\\|Group\\\\|role\\\\|Role\")",
       "Bash(grep -r \"division\\\\|Division\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
-      "Bash(grep -r \"division_memberships\\\\|user_roles\\\\|group_access\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)"
+      "Bash(grep -r \"division_memberships\\\\|user_roles\\\\|group_access\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
+      "Bash(python -c ':*)"
     ],
     "deny": [],
     "ask": []

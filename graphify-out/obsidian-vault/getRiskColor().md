@@ -1,0 +1,17 @@
+---
+source_file: "src\modules\regulatory\components\CaseDetailsModal.tsx"
+type: "code"
+community: "Module 203"
+location: "L37"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Module_203
+---
+
+# getRiskColor()
+
+## Connections
+- [[CaseDetailsModal.tsx]] - `contains` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Module_203

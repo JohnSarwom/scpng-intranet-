@@ -9,7 +9,7 @@ import { useNoticeBoard } from '@/hooks/useNoticeBoard';
 import { IAnnouncement } from '@/types';
 import DOMPurify from 'dompurify';
 import { NoticeBoardSkeleton } from './skeletons/NoticeBoardSkeleton';
-import { useAuth } from '@/hooks/useAuth';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 const NewsCarousel: React.FC = () => {
   const newsImages = [
@@ -46,7 +46,7 @@ const NewsCarousel: React.FC = () => {
 
 const NoticeBoard = () => {
   const { announcements, loading, error, deleteNotice } = useNoticeBoard();
-  const { isAdmin } = useAuth();
+  const { isAdmin } = useRoleBasedAuth();
   const [selectedNotice, setSelectedNotice] = React.useState<IAnnouncement | null>(null);
 
   // Get category badge color and icon

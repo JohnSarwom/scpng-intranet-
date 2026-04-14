@@ -209,7 +209,7 @@ const BoardLane = ({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" container={container}>
-          <DropdownMenuItem onClick={() => onEdit(id)} className="text-xs font-medium">
+          <DropdownMenuItem onClick={handleDoubleClick} className="text-xs font-medium">
             Rename Group
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onInsertAfter(id)} className="text-xs font-medium">
@@ -242,7 +242,22 @@ const BoardLane = ({
   return (
     <PremiumKanbanColumn
       id={dropId}
-      title={title}
+      title={
+        isEditing ? (
+          <Input
+            ref={inputRef}
+            value={tempTitle}
+            onChange={(e) => setTempTitle(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="h-7 text-xs px-2 font-medium"
+          />
+        ) : (
+          <span onDoubleClick={handleDoubleClick} className="cursor-text w-full block" title="Double click to rename">
+            {title}
+          </span>
+        )
+      }
       count={tasks.length}
       headerActions={headerActions}
       isOver={isActuallyOver}

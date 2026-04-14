@@ -1,0 +1,18 @@
+---
+source_file: "src\pages\TestGround.tsx"
+type: "code"
+community: "TestGround Admin"
+location: "L1064"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/TestGround_Admin
+---
+
+# handleITRequestSubmit()
+
+## Connections
+- [[TestGround.tsx]] - `contains` [EXTRACTED]
+- [[loadRecentITRequests()]] - `calls` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/TestGround_Admin

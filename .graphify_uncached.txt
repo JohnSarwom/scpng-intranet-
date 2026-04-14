@@ -1,0 +1,4 @@
+src\prompts\scpngDocAnalystPrompt.txt
+src\prompts\scpngLawyerAiPrompt.txt
+src\prompts\strategyCalculationLogic.txt
+src\utils\OneDriveFileUploader.md

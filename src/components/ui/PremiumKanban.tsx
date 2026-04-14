@@ -26,7 +26,7 @@ PremiumKanbanBoard.displayName = "PremiumKanbanBoard"
 const PremiumKanbanColumn = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & { 
-    title: string; 
+    title: React.ReactNode; 
     count?: number; 
     headerActions?: React.ReactNode;
     isOver?: boolean;
@@ -51,7 +51,7 @@ const PremiumKanbanColumn = React.forwardRef<
       "bg-white/50 dark:bg-black/20 backdrop-blur-md border-gray-200 dark:border-white/10"
     )}>
       <div className="flex items-center gap-2">
-        <h3 className="text-sm tracking-tight text-gray-900 dark:text-gray-100 uppercase font-medium opacity-70">{title}</h3>
+        <div className="text-sm tracking-tight text-gray-900 dark:text-gray-100 uppercase font-medium opacity-70">{title}</div>
         {count !== undefined && (
           <span className="px-2 py-0.5 text-[10px] font-bold bg-intranet-primary/10 text-intranet-primary dark:bg-intranet-primary/20 dark:text-intranet-primary rounded-full">
             {count}

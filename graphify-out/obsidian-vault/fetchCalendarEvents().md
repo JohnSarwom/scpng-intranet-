@@ -1,0 +1,20 @@
+---
+source_file: "src\services\calendarService.ts"
+type: "code"
+community: "Module 67"
+location: "L81"
+tags:
+  - graphify/code
+  - graphify/EXTRACTED
+  - community/Module_67
+---
+
+# fetchCalendarEvents()
+
+## Connections
+- [[calendarService.ts]] - `contains` [EXTRACTED]
+- [[fetchSharedCalendarEvents()]] - `calls` [EXTRACTED]
+- [[getTodaysEvents()]] - `calls` [EXTRACTED]
+- [[getUpcomingEvents()]] - `calls` [EXTRACTED]
+
+#graphify/code #graphify/EXTRACTED #community/Module_67

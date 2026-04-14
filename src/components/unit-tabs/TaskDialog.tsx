@@ -496,7 +496,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden dark:bg-gray-950 dark:border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
+      <DialogContent container={container} className="sm:max-w-xl p-0 overflow-hidden dark:bg-gray-950 dark:border-white/10 shadow-2xl flex flex-col max-h-[90vh]">
         <DialogHeader className="p-6 pb-4 border-b border-gray-200 dark:border-white/10 bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-md">
           <div className="flex justify-between items-start">
             <div>
