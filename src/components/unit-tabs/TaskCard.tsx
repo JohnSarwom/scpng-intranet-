@@ -559,29 +559,25 @@ const TaskCard: React.FC<TaskCardProps> = ({
     </div>
   );
 
-  // Mark as complete button
-  const completeButton = onComplete ? (
+  // Mark as complete button (idle / bursting states)
+  const markCompleteButton = onComplete && !isCompletedOptimistic ? (
     <button
       onClick={handleToggleComplete}
-      disabled={completionPhase !== "idle" && !isCompletedOptimistic}
+      disabled={completionPhase !== "idle"}
       onPointerDown={(e) => e.stopPropagation()}
       draggable="false"
       className={cn(
         "flex items-center gap-1.5 w-full justify-center mt-2 py-1.5 px-3 rounded-md border text-xs font-medium transition-all duration-200 font-sans",
         isCompleting
           ? "bg-[#1D9E75] text-white border-[#1D9E75] cursor-default"
-          : isCompletedOptimistic
-            ? "bg-green-50 text-green-700 border-green-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800"
-            : "bg-transparent text-muted-foreground border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
+          : "bg-transparent text-muted-foreground border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
       )}
     >
       <span className={cn(
         "w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-200",
         isCompleting
           ? "bg-white border-white text-[#1D9E75]"
-          : isCompletedOptimistic
-            ? "bg-green-600 border-green-600 text-white"
-            : "border-current"
+          : "border-current"
       )}>
         <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
           <path
@@ -593,15 +589,36 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         </svg>
       </span>
-      {isCompleting ? "Done!" : isCompletedOptimistic ? "Completed" : "Mark as complete"}
+      {isCompleting ? "Done!" : "Mark as complete"}
     </button>
+  ) : null;
+
+  // Unmark complete button (completed / ghost state)
+  const unmarkCompleteButton = onComplete && isCompletedOptimistic && !isCompleting ? (
+    <div className="flex items-center w-full mt-2 pt-2.5 border-t border-gray-100 dark:border-white/5">
+      <button
+        onClick={handleToggleComplete}
+        onPointerDown={(e) => e.stopPropagation()}
+        draggable="false"
+        className="flex items-center gap-1.5 w-full justify-center py-1.5 px-3 rounded-md border border-[rgba(122,21,48,0.25)] bg-[rgba(122,21,48,0.04)] text-[#7a1530] text-[11px] font-medium cursor-pointer transition-all duration-150 hover:bg-[rgba(122,21,48,0.08)] hover:border-[rgba(122,21,48,0.4)] font-sans dark:border-[rgba(122,21,48,0.35)] dark:bg-[rgba(122,21,48,0.1)] dark:hover:bg-[rgba(122,21,48,0.15)]"
+      >
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" className="flex-shrink-0">
+          <path d="M3 8a5 5 0 1 0 1.5-3.5L2 3" stroke="currentColor" strokeWidth="1.6"
+            strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M2 3v4h4" stroke="currentColor" strokeWidth="1.6"
+            strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Unmark complete
+      </button>
+    </div>
   ) : null;
 
   // Combined footer with button
   const combinedFooter = (
     <div className="w-full">
       {footerContent}
-      {completeButton}
+      {markCompleteButton}
+      {unmarkCompleteButton}
     </div>
   );
 
