@@ -964,29 +964,35 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
       const effectiveProjectId = getEffectiveGroupId(task, currentUserEmail || '');
 
       // Place task in the resolved bucket
+      // Helper: check if the current user created this task
+      const normalizedCurrentEmail = (currentUserEmail || '').toLowerCase();
+      const isTaskCreator =
+        task.createdByEmail?.toLowerCase() === normalizedCurrentEmail ||
+        task.authorEmail?.toLowerCase() === normalizedCurrentEmail;
+
       if (effectiveProjectId) {
         const targetBucket = activeBuckets.find(b => b.id === effectiveProjectId);
         if (targetBucket && newBoardData[targetBucket.id]) {
           newBoardData[targetBucket.id].push(task);
           return;
         } else {
-          // Orphaned: bucket not found in active buckets
-          if (!newBoardData['uncategorized-virtual']) {
-            newBoardData['uncategorized-virtual'] = [];
+          // Orphaned: bucket not found in active buckets — only show if current user created it
+          if (isTaskCreator) {
+            if (!newBoardData['uncategorized-virtual']) {
+              newBoardData['uncategorized-virtual'] = [];
+            }
+            newBoardData['uncategorized-virtual'].push(task);
           }
-          newBoardData['uncategorized-virtual'].push(task);
           return;
         }
       }
 
-      // Fallback: no group assignment
-      if (newBoardData['uncategorized-virtual']) {
-        newBoardData['uncategorized-virtual'].push(task);
-      } else {
-        const firstBucketId = activeBuckets[0]?.id;
-        if (firstBucketId && newBoardData[firstBucketId]) {
-          newBoardData[firstBucketId].push(task);
+      // Fallback: no group assignment — only show in uncategorized if current user created it
+      if (isTaskCreator) {
+        if (!newBoardData['uncategorized-virtual']) {
+          newBoardData['uncategorized-virtual'] = [];
         }
+        newBoardData['uncategorized-virtual'].push(task);
       }
     });
 
