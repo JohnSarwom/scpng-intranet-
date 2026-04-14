@@ -1424,41 +1424,42 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                     {/* End Detailed List View */}
                   </> /* Closing Fragment for !loading && !error */
                 )}
-                {/* Pagination Controls (Now directly inside CardContent, after the conditional content) */}
-                {!assetsLoading && !assetsError && totalPages > 1 && (
-                  <div className="sticky bottom-0 bg-background flex items-center justify-between border-t p-4 flex-shrink-0 z-40"> {/* Made pagination sticky */}
-                    <span className="text-sm text-muted-foreground">
-                      Showing {paginatedAssets.length} of {sortedAssets.length} assets
-                      {sortColumn && (
-                        <span className="ml-2 text-blue-600 dark:text-blue-400">
-                          (sorted by {sortColumn} {sortDirection === 'asc' ? '↑' : '↓'})
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <span className="text-sm font-medium">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </div> {/* Close scroll container */}
+              
+              {/* Pagination Controls (Now outside the scroll container) */}
+              {!assetsLoading && !assetsError && totalPages > 1 && (
+                <div className="bg-background flex items-center justify-between border-t p-4 flex-shrink-0 z-40">
+                  <span className="text-sm text-muted-foreground">
+                    Showing {paginatedAssets.length} of {sortedAssets.length} assets
+                    {sortColumn && (
+                      <span className="ml-2 text-blue-600 dark:text-blue-400">
+                        (sorted by {sortColumn} {sortDirection === 'asc' ? '↑' : '↓'})
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
