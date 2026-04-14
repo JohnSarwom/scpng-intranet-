@@ -17,8 +17,8 @@ import {
 
 interface AssetCardProps {
   asset: Asset;
-  onEdit: (asset: Asset) => void;
-  onDelete: (asset: Asset) => void;
+  onEdit?: (asset: Asset) => void;
+  onDelete?: (asset: Asset) => void;
   onClick?: (asset: Asset) => void;
 }
 
@@ -63,14 +63,18 @@ const AssetCard: React.FC<AssetCardProps> = ({ asset, onEdit, onDelete, onClick 
                 <Info className="mr-2 h-4 w-4" />
                 View Details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(asset); }}>
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(asset); }} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
+              {onEdit && (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(asset); }}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+              )}
+              {onDelete && (
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(asset); }} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

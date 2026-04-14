@@ -125,6 +125,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   };
   const { user: roleUser } = useRoleBasedAuth();
   const isAdmin = roleUser?.roles?.includes('Admin') || roleUser?.roles?.includes('SuperAdmin');
+  const isITOrAdmin = isAdmin || roleUser?.unit_name?.toLowerCase() === 'it';
 
   // --- End Fullscreen State ---
 
@@ -856,14 +857,18 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                         <Info className="mr-2 h-4 w-4" />
                                         View Details
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleEditClick(asset)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                      </DropdownMenuItem>
+                                      {isITOrAdmin && (
+                                        <DropdownMenuItem onClick={() => handleEditClick(asset)}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                      )}
+                                      {isITOrAdmin && (
+                                        <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </td>
@@ -892,8 +897,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               key={asset.id}
                               asset={asset}
                               onClick={() => handleInfoClick(asset)}
-                              onEdit={() => handleEditClick(asset)}
-                              onDelete={() => handleDeleteClick(asset)}
+                              onEdit={isITOrAdmin ? () => handleEditClick(asset) : undefined}
+                              onDelete={isITOrAdmin ? () => handleDeleteClick(asset) : undefined}
                             />
                           ))
                         ) : (
@@ -1395,14 +1400,18 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                         <Info className="mr-2 h-4 w-4" />
                                         View Details
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleEditClick(asset)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete
-                                      </DropdownMenuItem>
+                                      {isITOrAdmin && (
+                                        <DropdownMenuItem onClick={() => handleEditClick(asset)}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Edit
+                                        </DropdownMenuItem>
+                                      )}
+                                      {isITOrAdmin && (
+                                        <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                        </DropdownMenuItem>
+                                      )}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </td>
