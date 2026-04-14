@@ -4,12 +4,18 @@
 
 ## Key Concepts
 
-- **useStrategySharePoint.ts** (1 connections) — `src\hooks\useStrategySharePoint.ts`
-- **useStrategySharePoint()** (1 connections) — `src\hooks\useStrategySharePoint.ts`
+- **useStrategySharePoint()** (6 connections) — `src\hooks\useStrategySharePoint.ts`
+- **useStrategySharePoint.ts** (4 connections) — `src\hooks\useStrategySharePoint.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 394]] (2 shared connections)
+- [[Strategy Service]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 82]] (1 shared connections)
+- [[Module 129]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (40%)
+- INFERRED: 6 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

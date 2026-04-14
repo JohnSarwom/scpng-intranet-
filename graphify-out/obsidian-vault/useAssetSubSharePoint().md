@@ -5,13 +5,16 @@ community: "Module 293"
 location: "L8"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_293
 ---
 
 # useAssetSubSharePoint()
 
 ## Connections
+- [[AssetDashboard.tsx]] - `calls` [INFERRED]
+- [[InvoicesPage.tsx]] - `calls` [INFERRED]
+- [[MaintenancePage.tsx]] - `calls` [INFERRED]
 - [[useAssetSubSharePoint.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_293
+#graphify/code #graphify/INFERRED #community/Module_293

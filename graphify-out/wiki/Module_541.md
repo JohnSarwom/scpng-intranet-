@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **types.ts** (0 connections) — `src\services\powerAutomate\types.ts`
+- **types.ts** (23 connections) — `src\services\powerAutomate\types.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 361]] (1 shared connections)
+- [[Module 393]] (1 shared connections)
+- [[Module 394]] (1 shared connections)
+- [[Module 405]] (1 shared connections)
+- [[Module 406]] (1 shared connections)
+- [[Module 426]] (1 shared connections)
+- [[Module 427]] (1 shared connections)
+- [[Module 431]] (1 shared connections)
+- [[Module 432]] (1 shared connections)
+- [[Module 492]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
+- [[Module 495]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 23 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

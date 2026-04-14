@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **scroll-area.tsx** (0 connections) — `src\components\ui\scroll-area.tsx`
+- **scroll-area.tsx** (4 connections) — `src\components\ui\scroll-area.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 107]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
+- [[Module 499]] (1 shared connections)
+- [[AI Hub Chat]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

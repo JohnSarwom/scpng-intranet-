@@ -12,6 +12,7 @@ tags:
 # HRDataImporter.tsx
 
 ## Connections
+- [[HRProfiles.tsx]] - `references` [INFERRED]
 - [[handleImport()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_263

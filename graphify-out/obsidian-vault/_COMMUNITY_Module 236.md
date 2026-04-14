@@ -19,3 +19,10 @@ members: 2
 TABLE source_file, type FROM #community/Module_236
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 538]]
+- 1 edge to [[_COMMUNITY_Module 136]]
+
+## Top bridge nodes
+- [[TradingViewTicker.tsx]] - degree 3, connects to 2 communities

@@ -5,10 +5,13 @@ community: "Module 443"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_443
 ---
 
 # strategyQuestions.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_443
+## Connections
+- [[StrategyAIChat.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_443

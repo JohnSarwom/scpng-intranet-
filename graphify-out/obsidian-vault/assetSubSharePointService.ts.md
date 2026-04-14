@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[AssetSubSharePointService]] - `contains` [EXTRACTED]
+- [[useAssetSubSharePoint.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_46

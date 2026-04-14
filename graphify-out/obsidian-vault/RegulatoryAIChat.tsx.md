@@ -20,8 +20,10 @@ tags:
 - [[handleScroll()_5]] - `contains` [EXTRACTED]
 - [[handleSend()_3]] - `contains` [EXTRACTED]
 - [[handleStopGeneration()_3]] - `contains` [EXTRACTED]
+- [[regulatoryQuestions.ts]] - `references` [INFERRED]
 - [[scrollToBottom()_4]] - `contains` [EXTRACTED]
 - [[serializeRegulatoryContext()]] - `contains` [EXTRACTED]
 - [[typeNextChar()_3]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_34

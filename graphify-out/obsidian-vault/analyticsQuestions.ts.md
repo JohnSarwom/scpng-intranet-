@@ -5,10 +5,13 @@ community: "Module 371"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_371
 ---
 
 # analyticsQuestions.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_371
+## Connections
+- [[WebsiteAnalyticsAIChat.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_371

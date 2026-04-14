@@ -4,11 +4,21 @@
 
 ## Key Concepts
 
-- **PersonalKPIStats.tsx** (0 connections) — `src\components\dashboard\PersonalKPIStats.tsx`
+- **PersonalKPIStats.tsx** (13 connections) — `src\components\dashboard\PersonalKPIStats.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 39]] (2 shared connections)
+- [[Module 307]] (2 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 485]] (1 shared connections)
+- [[Module 197]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
+- [[Module 196]] (1 shared connections)
+- [[Module 463]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 251]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +27,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 13 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

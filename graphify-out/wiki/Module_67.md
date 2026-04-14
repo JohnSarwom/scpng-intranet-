@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **calendarService.ts** (7 connections) — `src\services\calendarService.ts`
+- **calendarService.ts** (8 connections) — `src\services\calendarService.ts`
 - **fetchCalendarEvents()** (4 connections) — `src\services\calendarService.ts`
 - **fetchSharedCalendarEvents()** (2 connections) — `src\services\calendarService.ts`
 - **getTodaysEvents()** (2 connections) — `src\services\calendarService.ts`
@@ -15,7 +15,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 384]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 20 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

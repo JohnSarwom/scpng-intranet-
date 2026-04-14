@@ -4,11 +4,20 @@
 
 ## Key Concepts
 
-- **OrganizationalOverview.tsx** (0 connections) — `src\components\dashboard\OrganizationalOverview.tsx`
+- **OrganizationalOverview.tsx** (11 connections) — `src\components\dashboard\OrganizationalOverview.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 328]] (2 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 475]] (1 shared connections)
+- [[Module 523]] (1 shared connections)
+- [[Module 244]] (1 shared connections)
+- [[Module 39]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
+- [[Module 58]] (1 shared connections)
+- [[Module 401]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +26,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 11 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

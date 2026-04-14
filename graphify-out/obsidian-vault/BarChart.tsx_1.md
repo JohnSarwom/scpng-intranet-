@@ -12,6 +12,7 @@ tags:
 # BarChart.tsx
 
 ## Connections
+- [[Strategy.tsx]] - `references` [INFERRED]
 - [[getBarColour()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_269

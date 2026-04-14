@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **news.ts** (0 connections) — `src\types\news.ts`
+- **news.ts** (3 connections) — `src\types\news.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 316]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
+- [[Module 548]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **CustomContactDialog.tsx** (0 connections) — `src\components\contacts\CustomContactDialog.tsx`
+- **CustomContactDialog.tsx** (5 connections) — `src\components\contacts\CustomContactDialog.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 463]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 161]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

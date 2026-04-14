@@ -12,6 +12,7 @@ tags:
 # KnowledgeUploadModal.tsx
 
 ## Connections
+- [[AIHub.tsx]] - `references` [INFERRED]
 - [[addLinkInput()]] - `contains` [EXTRACTED]
 - [[handleFileChange()_2]] - `contains` [EXTRACTED]
 - [[handleLinkChange()]] - `contains` [EXTRACTED]

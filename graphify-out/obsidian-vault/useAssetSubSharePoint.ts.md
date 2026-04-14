@@ -12,6 +12,9 @@ tags:
 # useAssetSubSharePoint.ts
 
 ## Connections
+- [[AssetDashboard.tsx]] - `imports_from` [INFERRED]
+- [[assetSubSharePointService.ts]] - `imports_from` [EXTRACTED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useAssetSubSharePoint()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_293

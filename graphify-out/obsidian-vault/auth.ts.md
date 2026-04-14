@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[PowerAutomateAuth]] - `contains` [EXTRACTED]
+- [[config.ts]] - `references` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_140

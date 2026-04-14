@@ -12,6 +12,7 @@ tags:
 # useDivisionMetrics.ts
 
 ## Connections
+- [[Division.tsx]] - `imports_from` [INFERRED]
 - [[useDivisionMetrics()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_300

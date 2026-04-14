@@ -4,12 +4,20 @@
 
 ## Key Concepts
 
-- **useAssetsSharePoint.ts** (1 connections) — `src\hooks\useAssetsSharePoint.ts`
-- **useAssetsSharePoint()** (1 connections) — `src\hooks\useAssetsSharePoint.ts`
+- **useAssetsSharePoint()** (8 connections) — `src\hooks\useAssetsSharePoint.ts`
+- **useAssetsSharePoint.ts** (5 connections) — `src\hooks\useAssetsSharePoint.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 372]] (2 shared connections)
+- [[Module 192]] (2 shared connections)
+- [[Assets Service]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 225]] (1 shared connections)
+- [[Module 226]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
+- [[Module 66]] (1 shared connections)
+- [[Module 348]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 5 (38%)
+- INFERRED: 8 (62%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **InquiryCard.tsx** (1 connections) — `src\components\ticketing\InquiryCard.tsx`
+- **InquiryCard.tsx** (3 connections) — `src\components\ticketing\InquiryCard.tsx`
 - **handleActionClick()** (1 connections) — `src\components\ticketing\InquiryCard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 447]] (1 shared connections)
+- [[Module 448]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

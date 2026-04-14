@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ReportsTab.tsx** (22 connections) — `src\components\unit-tabs\ReportsTab.tsx`
+- **ReportsTab.tsx** (23 connections) — `src\components\unit-tabs\ReportsTab.tsx`
 - **handleGenerate()** (3 connections) — `src\components\unit-tabs\ReportsTab.tsx`
 - **getDateRange()** (2 connections) — `src\components\unit-tabs\ReportsTab.tsx`
 - **buildTitle()** (2 connections) — `src\components\unit-tabs\ReportsTab.tsx`
@@ -30,7 +30,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -38,8 +38,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 50 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 50 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

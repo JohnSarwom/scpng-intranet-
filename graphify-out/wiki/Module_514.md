@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **unitManagementService.ts** (0 connections) — `src\integrations\supabase\unitManagementService.ts`
+- **unitManagementService.ts** (2 connections) — `src\integrations\supabase\unitManagementService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 515]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

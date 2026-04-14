@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **employeeData.ts** (0 connections) — `src\data\employeeData.ts`
+- **employeeData.ts** (1 connections) — `src\data\employeeData.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 508]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

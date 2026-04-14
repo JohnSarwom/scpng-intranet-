@@ -25,3 +25,9 @@ members: 8
 TABLE source_file, type FROM #community/Module_67
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 384]]
+
+## Top bridge nodes
+- [[calendarService.ts]] - degree 8, connects to 1 community

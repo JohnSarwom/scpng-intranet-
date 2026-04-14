@@ -4,11 +4,17 @@
 
 ## Key Concepts
 
-- **DivisionSettingsTab.tsx** (0 connections) — `src\components\division\tabs\DivisionSettingsTab.tsx`
+- **DivisionSettingsTab.tsx** (7 connections) — `src\components\division\tabs\DivisionSettingsTab.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 483]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 84]] (1 shared connections)
+- [[Module 545]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +23,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 7 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

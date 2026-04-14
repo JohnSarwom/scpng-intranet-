@@ -4,14 +4,14 @@
 
 ## Key Concepts
 
-- **useMarketNews.ts** (3 connections) — `src\hooks\useMarketNews.ts`
+- **useMarketNews.ts** (4 connections) — `src\hooks\useMarketNews.ts`
 - **useMarketNews()** (1 connections) — `src\hooks\useMarketNews.ts`
 - **useCompanyNews()** (1 connections) — `src\hooks\useMarketNews.ts`
 - **useHighPriorityNews()** (1 connections) — `src\hooks\useMarketNews.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 109]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

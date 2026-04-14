@@ -14,6 +14,7 @@ tags:
 ## Connections
 - [[KpiModal.tsx]] - `references` [EXTRACTED]
 - [[KraDialog.tsx]] - `references` [EXTRACTED]
+- [[Unit.tsx]] - `references` [INFERRED]
 - [[confirmDeleteKra()]] - `contains` [EXTRACTED]
 - [[formatCurrency()]] - `contains` [EXTRACTED]
 - [[formatDate()_2]] - `contains` [EXTRACTED]

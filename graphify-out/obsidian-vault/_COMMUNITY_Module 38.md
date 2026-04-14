@@ -28,3 +28,10 @@ members: 11
 TABLE source_file, type FROM #community/Module_38
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 443]]
+- 1 edge to [[_COMMUNITY_Module 316]]
+
+## Top bridge nodes
+- [[StrategyAIChat.tsx]] - degree 12, connects to 2 communities

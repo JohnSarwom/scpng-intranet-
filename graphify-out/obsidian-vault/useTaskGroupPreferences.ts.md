@@ -12,6 +12,8 @@ tags:
 # useTaskGroupPreferences.ts
 
 ## Connections
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[sharePointOpsService.ts]] - `imports_from` [EXTRACTED]
 - [[useTaskGroupPreferences()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_329

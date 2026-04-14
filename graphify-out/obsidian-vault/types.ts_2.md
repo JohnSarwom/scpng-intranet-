@@ -5,10 +5,13 @@ community: "Module 513"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_513
 ---
 
 # types.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_513
+## Connections
+- [[aiChatService.ts]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_513

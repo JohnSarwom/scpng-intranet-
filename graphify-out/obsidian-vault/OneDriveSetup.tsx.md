@@ -20,5 +20,6 @@ tags:
 - [[handleRenameFolder()]] - `contains` [EXTRACTED]
 - [[if()]] - `contains` [EXTRACTED]
 - [[renderCurrentPath()]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_50

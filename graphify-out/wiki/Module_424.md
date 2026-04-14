@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **DonutChart.tsx** (0 connections) — `src\components\organization\DonutChart.tsx`
+- **DonutChart.tsx** (4 connections) — `src\components\organization\DonutChart.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 188]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

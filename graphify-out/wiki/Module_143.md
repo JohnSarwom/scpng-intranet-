@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **dashboardUtils.ts** (4 connections) — `src\utils\dashboardUtils.ts`
+- **dashboardUtils.ts** (6 connections) — `src\utils\dashboardUtils.ts`
 - **calculateTaskTrends()** (3 connections) — `src\utils\dashboardUtils.ts`
 - **getMonthName()** (2 connections) — `src\utils\dashboardUtils.ts`
 - **getMonthKey()** (2 connections) — `src\utils\dashboardUtils.ts`
@@ -12,7 +12,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 406]] (1 shared connections)
+- [[Module 411]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (86%)
+- INFERRED: 2 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

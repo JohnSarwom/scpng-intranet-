@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **DatePicker.tsx** (0 connections) — `src\components\DatePicker.tsx`
+- **DatePicker.tsx** (5 connections) — `src\components\DatePicker.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 107]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 275]] (1 shared connections)
+- [[Module 473]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

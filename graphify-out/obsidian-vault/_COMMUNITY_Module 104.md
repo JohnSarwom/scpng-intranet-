@@ -23,3 +23,13 @@ members: 6
 TABLE source_file, type FROM #community/Module_104
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 301]]
+- 1 edge to [[_COMMUNITY_Module 304]]
+- 1 edge to [[_COMMUNITY_Module 319]]
+- 1 edge to [[_COMMUNITY_Module 333]]
+- 1 edge to [[_COMMUNITY_Module 138]]
+
+## Top bridge nodes
+- [[OrgChart.tsx]] - degree 10, connects to 5 communities

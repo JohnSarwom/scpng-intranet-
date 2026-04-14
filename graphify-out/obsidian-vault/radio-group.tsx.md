@@ -5,10 +5,13 @@ community: "Module 476"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_476
 ---
 
 # radio-group.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_476
+## Connections
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_476

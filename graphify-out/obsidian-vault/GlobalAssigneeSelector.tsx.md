@@ -12,6 +12,8 @@ tags:
 # GlobalAssigneeSelector.tsx
 
 ## Connections
+- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
+- [[EditTaskModal.tsx]] - `imports_from` [INFERRED]
 - [[KpiInputBlock.tsx]] - `references` [EXTRACTED]
 - [[KraFormSection.tsx]] - `references` [EXTRACTED]
 - [[handleRemove()_1]] - `contains` [EXTRACTED]

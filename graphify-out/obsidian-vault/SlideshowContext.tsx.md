@@ -12,6 +12,7 @@ tags:
 # SlideshowContext.tsx
 
 ## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
 - [[SlideshowProvider()]] - `contains` [EXTRACTED]
 - [[useSlideshow()]] - `contains` [EXTRACTED]
 

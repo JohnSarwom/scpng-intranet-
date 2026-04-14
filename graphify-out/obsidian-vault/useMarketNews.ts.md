@@ -12,6 +12,7 @@ tags:
 # useMarketNews.ts
 
 ## Connections
+- [[MarketData.tsx]] - `calls` [INFERRED]
 - [[useCompanyNews()]] - `contains` [EXTRACTED]
 - [[useHighPriorityNews()]] - `contains` [EXTRACTED]
 - [[useMarketNews()]] - `contains` [EXTRACTED]

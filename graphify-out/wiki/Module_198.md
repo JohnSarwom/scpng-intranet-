@@ -4,13 +4,15 @@
 
 ## Key Concepts
 
-- **useWorkPlans.ts** (2 connections) — `src\hooks\useWorkPlans.ts`
+- **useWorkPlans.ts** (5 connections) — `src\hooks\useWorkPlans.ts`
 - **WORKPLAN_STORAGE_KEY()** (1 connections) — `src\hooks\useWorkPlans.ts`
 - **useWorkPlans()** (1 connections) — `src\hooks\useWorkPlans.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 410]] (1 shared connections)
+- [[Module 150]] (1 shared connections)
+- [[Module 355]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (57%)
+- INFERRED: 3 (43%)
 - AMBIGUOUS: 0 (0%)
 
 ---

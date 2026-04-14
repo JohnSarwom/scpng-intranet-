@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[KpiInputBlock.tsx]] - `contains` [EXTRACTED]
+- [[calculateKpiProgress()]] - `calls` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_179

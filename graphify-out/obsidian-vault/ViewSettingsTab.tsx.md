@@ -12,6 +12,7 @@ tags:
 # ViewSettingsTab.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[getOpsService()]] - `contains` [EXTRACTED]
 - [[handleAddSubmit()]] - `contains` [EXTRACTED]
 - [[handleDelete()_3]] - `contains` [EXTRACTED]
@@ -20,5 +21,6 @@ tags:
 - [[handleScopeSelect()]] - `contains` [EXTRACTED]
 - [[handleToggle()_3]] - `contains` [EXTRACTED]
 - [[loadScopeSettings()]] - `contains` [EXTRACTED]
+- [[useComponentVisibilityAdmin()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_49

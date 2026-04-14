@@ -4,14 +4,15 @@
 
 ## Key Concepts
 
-- **sidebar.tsx** (3 connections) — `src\components\ui\sidebar.tsx`
+- **sidebar.tsx** (5 connections) — `src\components\ui\sidebar.tsx`
 - **useSidebar()** (1 connections) — `src\components\ui\sidebar.tsx`
 - **handleKeyDown()** (1 connections) — `src\components\ui\sidebar.tsx`
 - **cn()** (1 connections) — `src\components\ui\sidebar.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 459]] (1 shared connections)
+- [[Module 289]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (75%)
+- INFERRED: 2 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

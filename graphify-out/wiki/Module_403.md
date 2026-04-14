@@ -4,11 +4,16 @@
 
 ## Key Concepts
 
-- **DivisionHeader.tsx** (0 connections) — `src\components\division\DivisionHeader.tsx`
+- **DivisionHeader.tsx** (6 connections) — `src\components\division\DivisionHeader.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 454]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 463]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 545]] (1 shared connections)
+- [[Module 537]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +22,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 6 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

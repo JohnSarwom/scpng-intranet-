@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **OfficerProfileModal.tsx** (4 connections) — `src\components\strategy\OfficerProfileModal.tsx`
+- **OfficerProfileModal.tsx** (5 connections) — `src\components\strategy\OfficerProfileModal.tsx`
 - **ragLabel()** (1 connections) — `src\components\strategy\OfficerProfileModal.tsx`
 - **ragBadgeClass()** (1 connections) — `src\components\strategy\OfficerProfileModal.tsx`
 - **ragDotClass()** (1 connections) — `src\components\strategy\OfficerProfileModal.tsx`
@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -34,3 +34,9 @@ members: 17
 TABLE source_file, type FROM #community/Payments_Service
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 320]]
+
+## Top bridge nodes
+- [[paymentsSharePointService.ts]] - degree 2, connects to 1 community

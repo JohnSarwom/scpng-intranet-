@@ -12,6 +12,7 @@ tags:
 # useCsvSync.ts
 
 ## Connections
+- [[csv-sync.test.ts]] - `imports_from` [INFERRED]
 - [[useCsvSync()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_297

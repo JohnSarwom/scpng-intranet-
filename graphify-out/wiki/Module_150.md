@@ -4,14 +4,16 @@
 
 ## Key Concepts
 
-- **DivisionWorkPlansTab.tsx** (3 connections) — `src\components\division\tabs\DivisionWorkPlansTab.tsx`
+- **DivisionWorkPlansTab.tsx** (6 connections) — `src\components\division\tabs\DivisionWorkPlansTab.tsx`
 - **toggle()** (1 connections) — `src\components\division\tabs\DivisionWorkPlansTab.tsx`
 - **goToNew()** (1 connections) — `src\components\division\tabs\DivisionWorkPlansTab.tsx`
 - **goToEdit()** (1 connections) — `src\components\division\tabs\DivisionWorkPlansTab.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 537]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 198]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (67%)
+- INFERRED: 3 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

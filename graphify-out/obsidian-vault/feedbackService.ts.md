@@ -5,7 +5,7 @@ community: "Module 69"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_69
 ---
 
@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[FeedbackSharePointService]] - `contains` [EXTRACTED]
+- [[FeedbackWidget.tsx]] - `imports_from` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_69
+#graphify/code #graphify/INFERRED #community/Module_69

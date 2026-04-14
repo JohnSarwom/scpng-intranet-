@@ -4,13 +4,24 @@
 
 ## Key Concepts
 
-- **graphService.ts** (2 connections) — `src\services\graphService.ts`
+- **graphService.ts** (25 connections) — `src\services\graphService.ts`
 - **getAccessToken()** (1 connections) — `src\services\graphService.ts`
 - **getGraphClient()** (1 connections) — `src\services\graphService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 190]] (1 shared connections)
+- [[Module 291]] (1 shared connections)
+- [[Module 293]] (1 shared connections)
+- [[Module 131]] (1 shared connections)
+- [[Module 301]] (1 shared connections)
+- [[Module 304]] (1 shared connections)
+- [[Module 307]] (1 shared connections)
+- [[Module 308]] (1 shared connections)
+- [[Module 312]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 24 (89%)
+- INFERRED: 3 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

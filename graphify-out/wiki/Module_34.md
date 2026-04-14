@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **RegulatoryAIChat.tsx** (11 connections) — `src\modules\regulatory\components\RegulatoryAIChat.tsx`
+- **RegulatoryAIChat.tsx** (13 connections) — `src\modules\regulatory\components\RegulatoryAIChat.tsx`
 - **handleSend()** (5 connections) — `src\modules\regulatory\components\RegulatoryAIChat.tsx`
 - **getFilteredCases()** (2 connections) — `src\modules\regulatory\components\RegulatoryAIChat.tsx`
 - **serializeRegulatoryContext()** (2 connections) — `src\modules\regulatory\components\RegulatoryAIChat.tsx`
@@ -19,7 +19,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 316]] (1 shared connections)
+- [[Module 536]] (1 shared connections)
 
 ## Source Files
 
@@ -27,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 32 (94%)
+- INFERRED: 2 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

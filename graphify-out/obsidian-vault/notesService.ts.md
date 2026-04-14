@@ -5,10 +5,13 @@ community: "Module 512"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_512
 ---
 
 # notesService.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_512
+## Connections
+- [[supabaseClient.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_512

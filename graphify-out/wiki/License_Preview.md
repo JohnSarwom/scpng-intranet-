@@ -6,8 +6,8 @@
 
 - **HtmlLicensePreview.tsx** (14 connections) — `src\components\HtmlLicensePreview.tsx`
 - **getStyle()** (3 connections) — `src\components\HtmlLicensePreview.tsx`
+- **combineStyles()** (3 connections) — `src\components\HtmlLicensePreview.tsx`
 - **handleResizeHandleMouseDown()** (2 connections) — `src\components\HtmlLicensePreview.tsx`
-- **combineStyles()** (2 connections) — `src\components\HtmlLicensePreview.tsx`
 - **handleFormDataTextBlur()** (1 connections) — `src\components\HtmlLicensePreview.tsx`
 - **handleStaticTextBlur()** (1 connections) — `src\components\HtmlLicensePreview.tsx`
 - **handleElementClick()** (1 connections) — `src\components\HtmlLicensePreview.tsx`
@@ -22,7 +22,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 526]] (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +30,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 32 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

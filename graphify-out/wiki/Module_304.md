@@ -4,12 +4,19 @@
 
 ## Key Concepts
 
-- **useEmployeePhotos.ts** (1 connections) — `src\hooks\useEmployeePhotos.ts`
+- **useEmployeePhotos.ts** (9 connections) — `src\hooks\useEmployeePhotos.ts`
 - **useEmployeePhotos()** (1 connections) — `src\hooks\useEmployeePhotos.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 119]] (1 shared connections)
+- [[Module 97]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 104]] (1 shared connections)
+- [[Module 161]] (1 shared connections)
+- [[Module 137]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 30]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (40%)
+- INFERRED: 6 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -5,10 +5,15 @@ community: "Module 487"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_487
 ---
 
 # toaster.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_487
+## Connections
+- [[UILibrary.tsx]] - `references` [INFERRED]
+- [[toast.tsx]] - `imports_from` [INFERRED]
+- [[use-toast.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_487

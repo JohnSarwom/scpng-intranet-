@@ -49,3 +49,9 @@ members: 32
 TABLE source_file, type FROM #community/Ticket_Manager
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 351]]
+
+## Top bridge nodes
+- [[TicketManager.tsx]] - degree 32, connects to 1 community

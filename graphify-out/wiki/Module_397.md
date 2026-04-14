@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **ProgressChart.tsx** (0 connections) — `src\components\dashboard\ProgressChart.tsx`
+- **ProgressChart.tsx** (5 connections) — `src\components\dashboard\ProgressChart.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 475]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

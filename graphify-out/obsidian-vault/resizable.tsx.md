@@ -5,10 +5,13 @@ community: "Module 477"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_477
 ---
 
 # resizable.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_477
+## Connections
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_477

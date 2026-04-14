@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **toaster.tsx** (0 connections) — `src\components\ui\toaster.tsx`
+- **toaster.tsx** (3 connections) — `src\components\ui\toaster.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 486]] (1 shared connections)
+- [[Module 84]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

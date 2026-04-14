@@ -12,6 +12,13 @@ tags:
 # TestGround.tsx
 
 ## Connections
+- [[AssetCard.tsx]] - `references` [INFERRED]
+- [[DecommissionedAssetTableHeader.tsx]] - `references` [INFERRED]
+- [[FormRenderer.tsx]] - `references` [INFERRED]
+- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
+- [[PageLayout.tsx]] - `references` [INFERRED]
+- [[SharePointExplorer.tsx]] - `references` [INFERRED]
+- [[StatusBadge.tsx]] - `references` [INFERRED]
 - [[async()_3]] - `contains` [EXTRACTED]
 - [[handleClearMockData()]] - `contains` [EXTRACTED]
 - [[handleCopy()_5]] - `contains` [EXTRACTED]
@@ -64,6 +71,10 @@ tags:
 - [[handleSetupStrategyLists()]] - `contains` [EXTRACTED]
 - [[handleSetupTaskGroups()]] - `contains` [EXTRACTED]
 - [[handleUploadMockData()]] - `contains` [EXTRACTED]
+- [[input.tsx]] - `references` [INFERRED]
 - [[loadRecentITRequests()]] - `contains` [EXTRACTED]
+- [[separator.tsx]] - `references` [INFERRED]
+- [[use-toast.ts]] - `references` [INFERRED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/TestGround_Admin

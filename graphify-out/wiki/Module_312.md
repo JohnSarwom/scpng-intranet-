@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **useLeaveBalances.ts** (1 connections) — `src\hooks\useLeaveBalances.ts`
-- **useLeaveBalances()** (1 connections) — `src\hooks\useLeaveBalances.ts`
+- **useLeaveBalances.ts** (3 connections) — `src\hooks\useLeaveBalances.ts`
+- **useLeaveBalances()** (2 connections) — `src\hooks\useLeaveBalances.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 210]] (1 shared connections)
+- [[HR Service]] (1 shared connections)
+- [[Module 177]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

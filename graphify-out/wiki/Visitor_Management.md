@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **VisitorManagement.tsx** (20 connections) — `src\components\ticketing\VisitorManagement.tsx`
+- **VisitorManagement.tsx** (21 connections) — `src\components\ticketing\VisitorManagement.tsx`
 - **formatTime()** (1 connections) — `src\components\ticketing\VisitorManagement.tsx`
 - **formatDuration()** (1 connections) — `src\components\ticketing\VisitorManagement.tsx`
 - **getStatusLabel()** (1 connections) — `src\components\ticketing\VisitorManagement.tsx`
@@ -28,7 +28,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 351]] (1 shared connections)
 
 ## Source Files
 
@@ -36,8 +36,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 40 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 40 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

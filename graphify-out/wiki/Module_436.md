@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **index.ts** (0 connections) — `src\components\shared\ai-chat\index.ts`
+- **index.ts** (6 connections) — `src\components\shared\ai-chat\index.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 434]] (1 shared connections)
+- [[Module 435]] (1 shared connections)
+- [[Module 438]] (1 shared connections)
+- [[Module 437]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

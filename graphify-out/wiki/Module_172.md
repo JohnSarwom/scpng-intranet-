@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **ScpngNewsUploadForm.tsx** (2 connections) — `src\components\custom\ScpngNewsUploadForm.tsx`
+- **ScpngNewsUploadForm.tsx** (4 connections) — `src\components\custom\ScpngNewsUploadForm.tsx`
 - **handleImageFileChange()** (1 connections) — `src\components\custom\ScpngNewsUploadForm.tsx`
 - **handleSubmit()** (1 connections) — `src\components\custom\ScpngNewsUploadForm.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 316]] (1 shared connections)
+- [[Module 136]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -5,10 +5,14 @@ community: "Module 427"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_427
 ---
 
 # FolderListView.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_427
+## Connections
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[types.ts_5]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_427

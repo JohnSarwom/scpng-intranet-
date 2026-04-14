@@ -19,3 +19,16 @@ members: 2
 TABLE source_file, type FROM #community/Module_328
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 2 edges to [[_COMMUNITY_Module 394]]
+- 1 edge to [[_COMMUNITY_Module 82]]
+- 1 edge to [[_COMMUNITY_Module 129]]
+- 1 edge to [[_COMMUNITY_Strategy Service]]
+- 1 edge to [[_COMMUNITY_Module 210]]
+- 1 edge to [[_COMMUNITY_Module 138]]
+- 1 edge to [[_COMMUNITY_Module 56]]
+
+## Top bridge nodes
+- [[useStrategySharePoint()]] - degree 6, connects to 5 communities
+- [[useStrategySharePoint.ts]] - degree 4, connects to 3 communities

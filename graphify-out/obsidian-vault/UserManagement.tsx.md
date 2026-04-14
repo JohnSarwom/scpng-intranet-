@@ -12,6 +12,7 @@ tags:
 # UserManagement.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[handleDeleteUser()]] - `contains` [EXTRACTED]
 - [[handleEditUser()]] - `contains` [EXTRACTED]
 - [[handleSave()_3]] - `contains` [EXTRACTED]

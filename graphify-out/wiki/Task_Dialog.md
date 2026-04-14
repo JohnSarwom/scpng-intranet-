@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **TaskDialog.tsx** (12 connections) — `src\components\unit-tabs\TaskDialog.tsx`
+- **TaskDialog.tsx** (14 connections) — `src\components\unit-tabs\TaskDialog.tsx`
 - **uploadPendingFiles()** (3 connections) — `src\components\unit-tabs\TaskDialog.tsx`
 - **sanitizeFolderName()** (2 connections) — `src\components\unit-tabs\TaskDialog.tsx`
 - **handleSubmit()** (2 connections) — `src\components\unit-tabs\TaskDialog.tsx`
@@ -20,7 +20,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -28,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 28 (93%)
+- INFERRED: 2 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

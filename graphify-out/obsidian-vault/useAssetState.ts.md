@@ -12,6 +12,7 @@ tags:
 # useAssetState.ts
 
 ## Connections
+- [[assetsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useAssetState()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_292

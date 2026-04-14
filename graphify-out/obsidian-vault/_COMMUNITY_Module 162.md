@@ -21,3 +21,11 @@ members: 4
 TABLE source_file, type FROM #community/Module_162
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 316]]
+
+## Top bridge nodes
+- [[LicensingRegistry.tsx]] - degree 6, connects to 3 communities

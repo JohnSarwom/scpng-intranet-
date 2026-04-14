@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **MicrosoftAPIConfig.tsx** (5 connections) — `src\components\admin\database\MicrosoftAPIConfig.tsx`
+- **MicrosoftAPIConfig.tsx** (6 connections) — `src\components\admin\database\MicrosoftAPIConfig.tsx`
 - **loadConfig()** (1 connections) — `src\components\admin\database\MicrosoftAPIConfig.tsx`
 - **handleMicrosoftPermissionToggle()** (1 connections) — `src\components\admin\database\MicrosoftAPIConfig.tsx`
 - **handleSaveConfig()** (1 connections) — `src\components\admin\database\MicrosoftAPIConfig.tsx`
@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 365]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (91%)
+- INFERRED: 1 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

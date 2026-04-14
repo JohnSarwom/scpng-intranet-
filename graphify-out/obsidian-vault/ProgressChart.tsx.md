@@ -5,10 +5,17 @@ community: "Module 397"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_397
 ---
 
 # ProgressChart.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_397
+## Connections
+- [[Strategy.tsx]] - `references` [INFERRED]
+- [[UILibrary.tsx]] - `references` [INFERRED]
+- [[Unit.tsx]] - `references` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[progress.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_397

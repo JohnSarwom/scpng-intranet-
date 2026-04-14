@@ -5,10 +5,13 @@ community: "Module 437"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_437
 ---
 
 # StaticQuestionLibrarySidebar.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_437
+## Connections
+- [[index.ts_1]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_437

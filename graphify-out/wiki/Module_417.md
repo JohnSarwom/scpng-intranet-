@@ -4,11 +4,20 @@
 
 ## Key Concepts
 
-- **AddFormDialog.tsx** (0 connections) — `src\components\forms\AddFormDialog.tsx`
+- **AddFormDialog.tsx** (10 connections) — `src\components\forms\AddFormDialog.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 463]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 70]] (1 shared connections)
+- [[Module 43]] (1 shared connections)
+- [[Module 59]] (1 shared connections)
+- [[Module 135]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +26,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 10 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

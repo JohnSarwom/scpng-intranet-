@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **ArticleGridSkeleton.tsx** (0 connections) — `src\components\custom\ArticleGridSkeleton.tsx`
+- **ArticleGridSkeleton.tsx** (3 connections) — `src\components\custom\ArticleGridSkeleton.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 280]] (1 shared connections)
+- [[Module 136]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -26,3 +26,9 @@ members: 9
 TABLE source_file, type FROM #community/Module_57
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 317]]
+
+## Top bridge nodes
+- [[announcementsSharePointService.ts]] - degree 4, connects to 1 community

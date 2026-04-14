@@ -22,3 +22,26 @@ members: 5
 TABLE source_file, type FROM #community/Module_128
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 45]]
+- 1 edge to [[_COMMUNITY_Module 160]]
+- 1 edge to [[_COMMUNITY_AI Hub Chat]]
+- 1 edge to [[_COMMUNITY_Module 161]]
+- 1 edge to [[_COMMUNITY_Module 537]]
+- 1 edge to [[_COMMUNITY_Document Management]]
+- 1 edge to [[_COMMUNITY_Module 345]]
+- 1 edge to [[_COMMUNITY_Module 135]]
+- 1 edge to [[_COMMUNITY_Gallery Management]]
+- 1 edge to [[_COMMUNITY_Module 86]]
+- 1 edge to [[_COMMUNITY_Module 136]]
+- 1 edge to [[_COMMUNITY_Module 348]]
+- 1 edge to [[_COMMUNITY_Module 137]]
+- 1 edge to [[_COMMUNITY_Module 138]]
+- 1 edge to [[_COMMUNITY_Module 351]]
+- 1 edge to [[_COMMUNITY_Module 353]]
+- 1 edge to [[_COMMUNITY_Module 56]]
+- 1 edge to [[_COMMUNITY_Module 539]]
+
+## Top bridge nodes
+- [[AssetsTab.tsx]] - degree 22, connects to 18 communities

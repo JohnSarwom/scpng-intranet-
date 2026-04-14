@@ -12,6 +12,7 @@ tags:
 # useSharePointSetup()
 
 ## Connections
+- [[Contacts.tsx]] - `calls` [INFERRED]
 - [[useOpsService()]] - `calls` [EXTRACTED]
 - [[useSharePointOps.ts]] - `contains` [EXTRACTED]
 

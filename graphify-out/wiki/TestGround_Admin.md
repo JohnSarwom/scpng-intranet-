@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **TestGround.tsx** (53 connections) — `src\pages\TestGround.tsx`
+- **TestGround.tsx** (64 connections) — `src\pages\TestGround.tsx`
 - **loadRecentITRequests()** (2 connections) — `src\pages\TestGround.tsx`
 - **handleITRequestSubmit()** (2 connections) — `src\pages\TestGround.tsx`
 - **handleSeedTasks()** (1 connections) — `src\pages\TestGround.tsx`
@@ -33,7 +33,17 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[SharePoint Explorer UI]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 228]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 255]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
+- [[Module 491]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -41,8 +51,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 108 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 108 (91%)
+- INFERRED: 11 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

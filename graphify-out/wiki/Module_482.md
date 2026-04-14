@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **slider.tsx** (0 connections) — `src\components\ui\slider.tsx`
+- **slider.tsx** (2 connections) — `src\components\ui\slider.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 107]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

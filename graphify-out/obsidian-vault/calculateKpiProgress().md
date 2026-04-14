@@ -14,6 +14,7 @@ tags:
 ## Connections
 - [[.syncKPIChecklistFromTasks()]] - `semantically_similar_to` [INFERRED]
 - [[KPI Progress Calculation Logic (Status-Based)]] - `implements` [INFERRED]
+- [[KpiInputBlock()]] - `calls` [EXTRACTED]
 - [[KpiInputBlock.tsx]] - `calls` [EXTRACTED]
 - [[calculateKraProgress()]] - `calls` [EXTRACTED]
 - [[kpiUtils.ts]] - `contains` [EXTRACTED]

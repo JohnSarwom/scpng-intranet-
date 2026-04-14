@@ -18,3 +18,9 @@ members: 1
 TABLE source_file, type FROM #community/Module_438
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 436]]
+
+## Top bridge nodes
+- [[types.ts_1]] - degree 1, connects to 1 community

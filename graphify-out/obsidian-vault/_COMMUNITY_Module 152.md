@@ -21,3 +21,9 @@ members: 4
 TABLE source_file, type FROM #community/Module_152
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 138]]
+
+## Top bridge nodes
+- [[StrategySetupWizard.tsx]] - degree 4, connects to 1 community

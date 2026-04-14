@@ -22,3 +22,9 @@ members: 5
 TABLE source_file, type FROM #community/Module_134
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 513]]
+
+## Top bridge nodes
+- [[aiChatService.ts]] - degree 2, connects to 1 community

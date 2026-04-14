@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ContactDetailsModal.tsx** (4 connections) — `src\components\contacts\ContactDetailsModal.tsx`
+- **ContactDetailsModal.tsx** (6 connections) — `src\components\contacts\ContactDetailsModal.tsx`
 - **handlePhotoUpload()** (1 connections) — `src\components\contacts\ContactDetailsModal.tsx`
 - **handleCopy()** (1 connections) — `src\components\contacts\ContactDetailsModal.tsx`
 - **getInitials()** (1 connections) — `src\components\contacts\ContactDetailsModal.tsx`
@@ -12,7 +12,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 304]] (1 shared connections)
+- [[Module 161]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (80%)
+- INFERRED: 2 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

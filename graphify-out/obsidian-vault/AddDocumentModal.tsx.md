@@ -5,10 +5,19 @@ community: "Module 381"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_381
 ---
 
 # AddDocumentModal.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_381
+## Connections
+- [[Documents.tsx]] - `references` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[dialog.tsx]] - `imports_from` [INFERRED]
+- [[input.tsx]] - `imports_from` [INFERRED]
+- [[label.tsx]] - `imports_from` [INFERRED]
+- [[select.tsx]] - `imports_from` [INFERRED]
+- [[textarea.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_381

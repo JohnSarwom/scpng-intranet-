@@ -12,6 +12,7 @@ tags:
 # calendarService.ts
 
 ## Connections
+- [[AddEventModal.tsx]] - `imports_from` [INFERRED]
 - [[createCalendarEvent()]] - `contains` [EXTRACTED]
 - [[deleteCalendarEvent()]] - `contains` [EXTRACTED]
 - [[fetchCalendarEvents()]] - `contains` [EXTRACTED]

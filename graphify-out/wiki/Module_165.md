@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **App.tsx** (2 connections) — `src\App.tsx`
+- **App.tsx** (3 connections) — `src\App.tsx`
+- **main.tsx** (2 connections) — `src\main.tsx`
 - **AssetsPageRoute()** (1 connections) — `src\App.tsx`
-- **main.tsx** (1 connections) — `src\main.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
+- [[Module 361]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

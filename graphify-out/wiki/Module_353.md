@@ -4,12 +4,23 @@
 
 ## Key Concepts
 
-- **UILibrary.tsx** (1 connections) — `src\pages\UILibrary.tsx`
+- **UILibrary.tsx** (16 connections) — `src\pages\UILibrary.tsx`
 - **toggleLoading()** (1 connections) — `src\pages\UILibrary.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 228]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 397]] (1 shared connections)
+- [[Module 247]] (1 shared connections)
+- [[Module 424]] (1 shared connections)
+- [[Module 450]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
+- [[Module 482]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (12%)
+- INFERRED: 15 (88%)
 - AMBIGUOUS: 0 (0%)
 
 ---

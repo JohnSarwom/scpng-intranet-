@@ -5,13 +5,13 @@
 ## Key Concepts
 
 - **useCalendarEvents.ts** (3 connections) — `src\hooks\useCalendarEvents.ts`
+- **useUpcomingCalendarEvents()** (2 connections) — `src\hooks\useCalendarEvents.ts`
 - **useCalendarEvents()** (1 connections) — `src\hooks\useCalendarEvents.ts`
 - **useTodaysCalendarEvents()** (1 connections) — `src\hooks\useCalendarEvents.ts`
-- **useUpcomingCalendarEvents()** (1 connections) — `src\hooks\useCalendarEvents.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 62]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

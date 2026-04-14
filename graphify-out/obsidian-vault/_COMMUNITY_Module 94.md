@@ -23,3 +23,9 @@ members: 6
 TABLE source_file, type FROM #community/Module_94
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_AI Hub Chat]]
+
+## Top bridge nodes
+- [[KnowledgeUploadModal.tsx]] - degree 6, connects to 1 community

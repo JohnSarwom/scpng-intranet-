@@ -4,12 +4,16 @@
 
 ## Key Concepts
 
-- **useAssetSubSharePoint.ts** (1 connections) — `src\hooks\useAssetSubSharePoint.ts`
-- **useAssetSubSharePoint()** (1 connections) — `src\hooks\useAssetSubSharePoint.ts`
+- **useAssetSubSharePoint.ts** (4 connections) — `src\hooks\useAssetSubSharePoint.ts`
+- **useAssetSubSharePoint()** (4 connections) — `src\hooks\useAssetSubSharePoint.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 372]] (2 shared connections)
+- [[Module 46]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 225]] (1 shared connections)
+- [[Module 226]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (50%)
+- INFERRED: 4 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

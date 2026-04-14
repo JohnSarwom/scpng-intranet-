@@ -18,3 +18,11 @@ members: 1
 TABLE source_file, type FROM #community/Module_430
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 457]]
+- 1 edge to [[_COMMUNITY_Module 456]]
+- 1 edge to [[_COMMUNITY_Module 451]]
+
+## Top bridge nodes
+- [[OneDriveErrorCard.tsx]] - degree 3, connects to 3 communities

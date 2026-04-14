@@ -8,10 +8,10 @@
 - **.getFullStrategy()** (11 connections) — `src\services\strategyService.ts`
 - **escapeFilter()** (4 connections) — `src\services\strategyService.ts`
 - **.updateFullStrategy()** (4 connections) — `src\services\strategyService.ts`
+- **strategyService.ts** (3 connections) — `src\services\strategyService.ts`
 - **.updateConfigItem()** (3 connections) — `src\services\strategyService.ts`
 - **.updatePillarsBulk()** (3 connections) — `src\services\strategyService.ts`
 - **.updateAlignmentsBulk()** (3 connections) — `src\services\strategyService.ts`
-- **strategyService.ts** (2 connections) — `src\services\strategyService.ts`
 - **.fetchConfig()** (2 connections) — `src\services\strategyService.ts`
 - **.fetchPillars()** (2 connections) — `src\services\strategyService.ts`
 - **.fetchObjectives()** (2 connections) — `src\services\strategyService.ts`
@@ -32,7 +32,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 328]] (1 shared connections)
 
 ## Source Files
 
@@ -40,7 +40,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 80 (100%)
+- EXTRACTED: 81 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -12,6 +12,8 @@ tags:
 # ScheduledEvents.tsx
 
 ## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
+- [[StatCircle.tsx]] - `references` [INFERRED]
 - [[StatRow()]] - `contains` [EXTRACTED]
 - [[formatEventDate()]] - `contains` [EXTRACTED]
 - [[formatEventTime()]] - `contains` [EXTRACTED]
@@ -19,5 +21,6 @@ tags:
 - [[handleEditEvent()]] - `contains` [EXTRACTED]
 - [[handleEventClick()]] - `contains` [EXTRACTED]
 - [[handleEventCreated()]] - `contains` [EXTRACTED]
+- [[useUpcomingCalendarEvents()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_62

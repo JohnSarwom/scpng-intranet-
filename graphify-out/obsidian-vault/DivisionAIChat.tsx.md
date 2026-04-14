@@ -12,6 +12,7 @@ tags:
 # DivisionAIChat.tsx
 
 ## Connections
+- [[divisionQuestions.ts]] - `references` [INFERRED]
 - [[fetchAiSettings()_1]] - `contains` [EXTRACTED]
 - [[handleClearChat()_1]] - `contains` [EXTRACTED]
 - [[handleCopy()_2]] - `contains` [EXTRACTED]
@@ -22,5 +23,7 @@ tags:
 - [[scrollToBottom()_1]] - `contains` [EXTRACTED]
 - [[serializeDivisionContext()]] - `contains` [EXTRACTED]
 - [[typeNextChar()_1]] - `contains` [EXTRACTED]
+- [[useDivisionData.ts]] - `calls` [INFERRED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_37

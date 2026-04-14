@@ -4,14 +4,14 @@
 
 ## Key Concepts
 
-- **QuickFormsAccess.tsx** (3 connections) — `src\components\dashboard\QuickFormsAccess.tsx`
+- **QuickFormsAccess.tsx** (4 connections) — `src\components\dashboard\QuickFormsAccess.tsx`
 - **QuickFormItem()** (1 connections) — `src\components\dashboard\QuickFormsAccess.tsx`
 - **handleFormClick()** (1 connections) — `src\components\dashboard\QuickFormsAccess.tsx`
 - **handleViewAllForms()** (1 connections) — `src\components\dashboard\QuickFormsAccess.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

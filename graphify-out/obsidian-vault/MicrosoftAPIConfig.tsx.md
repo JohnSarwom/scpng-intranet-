@@ -12,6 +12,7 @@ tags:
 # MicrosoftAPIConfig.tsx
 
 ## Connections
+- [[DatabaseIntegration.tsx]] - `imports_from` [INFERRED]
 - [[handleMicrosoftPermissionToggle()]] - `contains` [EXTRACTED]
 - [[handleQuickSetup()]] - `contains` [EXTRACTED]
 - [[handleSaveConfig()_1]] - `contains` [EXTRACTED]

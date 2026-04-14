@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **usePaymentsSharePoint.ts** (1 connections) — `src\hooks\usePaymentsSharePoint.ts`
+- **usePaymentsSharePoint.ts** (4 connections) — `src\hooks\usePaymentsSharePoint.ts`
 - **usePaymentsSharePoint()** (1 connections) — `src\hooks\usePaymentsSharePoint.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 348]] (1 shared connections)
+- [[Payments Service]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,12 +4,15 @@
 
 ## Key Concepts
 
-- **UATFeedbackPage.tsx** (1 connections) — `src\pages\UATFeedbackPage.tsx`
+- **UATFeedbackPage.tsx** (5 connections) — `src\pages\UATFeedbackPage.tsx`
 - **UATFeedbackPage()** (1 connections) — `src\pages\UATFeedbackPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 116]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (33%)
+- INFERRED: 4 (67%)
 - AMBIGUOUS: 0 (0%)
 
 ---

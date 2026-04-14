@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **SetupWizard.tsx** (2 connections) — `src\components\setup-wizard\SetupWizard.tsx`
+- **SetupWizard.tsx** (3 connections) — `src\components\setup-wizard\SetupWizard.tsx`
+- **convertToCsv()** (2 connections) — `src\components\setup-wizard\SetupWizard.tsx`
 - **uploadDirectToOneDrive()** (1 connections) — `src\components\setup-wizard\SetupWizard.tsx`
-- **convertToCsv()** (1 connections) — `src\components\setup-wizard\SetupWizard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 425]] (1 shared connections)
+- [[Module 428]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

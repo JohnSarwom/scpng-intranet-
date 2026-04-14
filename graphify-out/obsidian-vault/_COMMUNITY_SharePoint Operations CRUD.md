@@ -117,12 +117,15 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 8 edges to [[_COMMUNITY_Module 39]]
+- 10 edges to [[_COMMUNITY_Module 39]]
 - 3 edges to [[_COMMUNITY_Module 58]]
+- 1 edge to [[_COMMUNITY_Module 412]]
+- 1 edge to [[_COMMUNITY_Module 131]]
+- 1 edge to [[_COMMUNITY_Module 329]]
 
 ## Top bridge nodes
+- [[sharePointOpsService.ts]] - degree 7, connects to 4 communities
 - [[SharePointOpsService]] - degree 97, connects to 1 community
 - [[.syncKPIChecklistFromTasks()]] - degree 7, connects to 1 community
 - [[.syncKRAProgress()]] - degree 7, connects to 1 community
 - [[.addKPI()]] - degree 6, connects to 1 community
-- [[.addObjective()]] - degree 5, connects to 1 community

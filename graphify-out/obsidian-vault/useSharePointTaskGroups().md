@@ -12,6 +12,7 @@ tags:
 # useSharePointTaskGroups()
 
 ## Connections
+- [[Unit.tsx]] - `calls` [INFERRED]
 - [[useOpsService()]] - `calls` [EXTRACTED]
 - [[useSharePointOps.ts]] - `contains` [EXTRACTED]
 

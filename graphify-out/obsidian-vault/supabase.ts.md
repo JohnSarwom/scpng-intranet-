@@ -5,10 +5,13 @@ community: "Module 505"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_505
 ---
 
 # supabase.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_505
+## Connections
+- [[divisionService.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_505

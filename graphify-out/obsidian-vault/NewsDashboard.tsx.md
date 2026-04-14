@@ -12,6 +12,7 @@ tags:
 # NewsDashboard.tsx
 
 ## Connections
+- [[News.tsx]] - `references` [INFERRED]
 - [[nextSlide()]] - `contains` [EXTRACTED]
 - [[prevSlide()]] - `contains` [EXTRACTED]
 

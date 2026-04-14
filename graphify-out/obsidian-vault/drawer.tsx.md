@@ -5,10 +5,13 @@ community: "Module 464"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_464
 ---
 
 # drawer.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_464
+## Connections
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_464

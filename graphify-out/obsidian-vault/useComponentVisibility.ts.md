@@ -13,7 +13,9 @@ tags:
 
 ## Connections
 - [[getCachedSettings()]] - `contains` [EXTRACTED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[setCachedSettings()]] - `contains` [EXTRACTED]
+- [[sharePointOpsService.ts]] - `imports_from` [EXTRACTED]
 - [[useComponentVisibility()]] - `contains` [EXTRACTED]
 - [[useComponentVisibilityAdmin()]] - `contains` [EXTRACTED]
 

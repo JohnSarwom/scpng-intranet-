@@ -23,3 +23,9 @@ members: 6
 TABLE source_file, type FROM #community/Module_98
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Gallery Management]]
+
+## Top bridge nodes
+- [[GalleryLightbox.tsx]] - degree 6, connects to 1 community

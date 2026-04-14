@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **input-otp.tsx** (0 connections) — `src\components\ui\input-otp.tsx`
+- **input-otp.tsx** (1 connections) — `src\components\ui\input-otp.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 107]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

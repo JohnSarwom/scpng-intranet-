@@ -12,6 +12,10 @@ tags:
 # useUnitRoster.ts
 
 ## Connections
+- [[OverviewTab.tsx]] - `calls` [INFERRED]
+- [[Unit.tsx]] - `calls` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useUnitRoster()]] - `contains` [EXTRACTED]
+- [[userSharePointService.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_332

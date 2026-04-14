@@ -15,5 +15,6 @@ tags:
 - [[AnnouncementsSharePointService]] - `contains` [EXTRACTED]
 - [[getAnnouncements()]] - `contains` [EXTRACTED]
 - [[transformAnnouncement()]] - `contains` [EXTRACTED]
+- [[useNoticeBoard.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_57

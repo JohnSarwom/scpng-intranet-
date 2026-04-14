@@ -23,6 +23,7 @@ SORT file.name ASC
 ## Connections to other communities
 - 1 edge to [[_COMMUNITY_Module 171]]
 - 1 edge to [[_COMMUNITY_Module 99]]
+- 1 edge to [[_COMMUNITY_Module 196]]
 
 ## Top bridge nodes
-- [[KraFormSection.tsx]] - degree 3, connects to 2 communities
+- [[KraFormSection.tsx]] - degree 4, connects to 3 communities

@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **switch.tsx** (0 connections) — `src\components\ui\switch.tsx`
+- **switch.tsx** (8 connections) — `src\components\ui\switch.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 384]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 413]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[AI Hub Chat]] (1 shared connections)
+- [[Module 109]] (1 shared connections)
+- [[Module 137]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 8 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

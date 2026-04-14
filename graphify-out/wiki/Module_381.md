@@ -4,11 +4,17 @@
 
 ## Key Concepts
 
-- **AddDocumentModal.tsx** (0 connections) — `src\components\custom\AddDocumentModal.tsx`
+- **AddDocumentModal.tsx** (7 connections) — `src\components\custom\AddDocumentModal.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 463]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Document Management]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +23,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 7 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

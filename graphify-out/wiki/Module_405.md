@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **DivisionObjectivesAlignment.tsx** (0 connections) — `src\components\division\overview\DivisionObjectivesAlignment.tsx`
+- **DivisionObjectivesAlignment.tsx** (4 connections) — `src\components\division\overview\DivisionObjectivesAlignment.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 475]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

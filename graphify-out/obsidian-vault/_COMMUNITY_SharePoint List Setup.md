@@ -119,3 +119,14 @@ members: 102
 TABLE source_file, type FROM #community/SharePoint_List_Setup
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 39]]
+- 1 edge to [[_COMMUNITY_Module 516]]
+- 1 edge to [[_COMMUNITY_Module 517]]
+- 1 edge to [[_COMMUNITY_Module 520]]
+- 1 edge to [[_COMMUNITY_Module 521]]
+
+## Top bridge nodes
+- [[.setupWebsiteFeedbackResources()]] - degree 6, connects to 4 communities
+- [[sharePointListSetupService.ts]] - degree 2, connects to 1 community

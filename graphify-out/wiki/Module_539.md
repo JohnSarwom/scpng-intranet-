@@ -4,11 +4,19 @@
 
 ## Key Concepts
 
-- **WebsiteAnalytics.tsx** (0 connections) — `src\pages\WebsiteAnalytics.tsx`
+- **WebsiteAnalytics.tsx** (9 connections) — `src\pages\WebsiteAnalytics.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 36]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 485]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +25,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 9 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

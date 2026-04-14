@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **EmployeeProfileModal.tsx** (4 connections) — `src\components\hr\EmployeeProfileModal.tsx`
+- **EmployeeProfileModal.tsx** (5 connections) — `src\components\hr\EmployeeProfileModal.tsx`
 - **loadProfile()** (1 connections) — `src\components\hr\EmployeeProfileModal.tsx`
 - **handleEditClick()** (1 connections) — `src\components\hr\EmployeeProfileModal.tsx`
 - **getStatusBadgeColor()** (1 connections) — `src\components\hr\EmployeeProfileModal.tsx`
@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 86]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -7,6 +7,7 @@
 - **SharePointOpsService** (97 connections) — `src\services\sharePointOpsService.ts`
 - **.initialize()** (8 connections) — `src\services\sharePointOpsService.ts`
 - **.syncWorkPlanToSharePoint()** (8 connections) — `src\services\sharePointOpsService.ts`
+- **sharePointOpsService.ts** (7 connections) — `src\services\sharePointOpsService.ts`
 - **.syncKPIChecklistFromTasks()** (7 connections) — `src\services\sharePointOpsService.ts`
 - **.syncKRAProgress()** (7 connections) — `src\services\sharePointOpsService.ts`
 - **.addTask()** (6 connections) — `src\services\sharePointOpsService.ts`
@@ -28,13 +29,15 @@
 - **.updateObjective()** (3 connections) — `src\services\sharePointOpsService.ts`
 - **.mapStatusForSharePoint()** (3 connections) — `src\services\sharePointOpsService.ts`
 - **.mapPriorityForSharePoint()** (3 connections) — `src\services\sharePointOpsService.ts`
-- **.updateTagsWithBucketId()** (3 connections) — `src\services\sharePointOpsService.ts`
 - *... and 73 more nodes in this community*
 
 ## Relationships
 
-- [[Module 39]] (8 shared connections)
+- [[Module 39]] (10 shared connections)
 - [[Module 58]] (3 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 131]] (1 shared connections)
+- [[Module 329]] (1 shared connections)
 
 ## Source Files
 
@@ -42,8 +45,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 334 (98%)
-- INFERRED: 7 (2%)
+- EXTRACTED: 337 (97%)
+- INFERRED: 9 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

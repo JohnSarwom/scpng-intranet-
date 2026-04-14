@@ -4,11 +4,16 @@
 
 ## Key Concepts
 
-- **avatar.tsx** (0 connections) — `src\components\ui\avatar.tsx`
+- **avatar.tsx** (6 connections) — `src\components\ui\avatar.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 372]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 498]] (1 shared connections)
+- [[Module 499]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +22,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 6 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

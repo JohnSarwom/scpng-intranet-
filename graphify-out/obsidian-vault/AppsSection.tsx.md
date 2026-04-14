@@ -5,14 +5,17 @@ community: "Module 173"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_173
 ---
 
 # AppsSection.tsx
 
 ## Connections
+- [[Apps.tsx]] - `references` [INFERRED]
 - [[handleBulkDeploy()]] - `contains` [EXTRACTED]
 - [[handleCopyData()]] - `contains` [EXTRACTED]
+- [[useApps.ts]] - `calls` [INFERRED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_173
+#graphify/code #graphify/INFERRED #community/Module_173

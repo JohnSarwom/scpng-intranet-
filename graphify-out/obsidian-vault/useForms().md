@@ -12,6 +12,7 @@ tags:
 # useForms()
 
 ## Connections
+- [[forms.ts]] - `calls` [INFERRED]
 - [[useForms.ts]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_306

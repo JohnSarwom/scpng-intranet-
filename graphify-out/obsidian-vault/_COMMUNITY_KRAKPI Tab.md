@@ -45,9 +45,10 @@ SORT file.name ASC
 - 7 edges to [[_COMMUNITY_Module 39]]
 - 2 edges to [[_COMMUNITY_Module 99]]
 - 1 edge to [[_COMMUNITY_Module 284]]
+- 1 edge to [[_COMMUNITY_Module 56]]
 
 ## Top bridge nodes
-- [[KRAsTab.tsx]] - degree 27, connects to 3 communities
+- [[KRAsTab.tsx]] - degree 28, connects to 4 communities
 - [[handleKpiFormSubmit()]] - degree 6, connects to 2 communities
 - [[handleDeleteKra()]] - degree 2, connects to 1 community
 - [[handleConfirmDeleteKpi()]] - degree 2, connects to 1 community

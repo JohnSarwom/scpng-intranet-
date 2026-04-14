@@ -5,10 +5,17 @@ community: "Module 390"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_390
 ---
 
 # MSOffice365Slideshow.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_390
+## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
+- [[InfoSlideshow.tsx]] - `imports_from` [INFERRED]
+- [[useCapitalMarketNews()]] - `calls` [INFERRED]
+- [[useMSOffice365Tips()]] - `calls` [INFERRED]
+- [[useSlideshows.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_390

@@ -16,5 +16,6 @@ tags:
 - [[ragBarClass()]] - `contains` [EXTRACTED]
 - [[ragDotClass()]] - `contains` [EXTRACTED]
 - [[ragLabel()]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_126

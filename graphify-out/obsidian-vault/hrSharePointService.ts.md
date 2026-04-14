@@ -15,5 +15,8 @@ tags:
 - [[HRSharePointService]] - `contains` [EXTRACTED]
 - [[createHRService()]] - `contains` [EXTRACTED]
 - [[getHRServiceInstance()]] - `contains` [EXTRACTED]
+- [[useHRService.ts]] - `imports_from` [EXTRACTED]
+- [[useLeaveBalances.ts]] - `imports_from` [EXTRACTED]
+- [[useLeaveRequests.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/HR_Service

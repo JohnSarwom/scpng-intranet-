@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **formTemplates.ts** (9 connections) — `src\config\formTemplates.ts`
+- **formTemplates.ts** (10 connections) — `src\config\formTemplates.ts`
 - **createTextField()** (1 connections) — `src\config\formTemplates.ts`
 - **createTextareaField()** (1 connections) — `src\config\formTemplates.ts`
 - **createSelectField()** (1 connections) — `src\config\formTemplates.ts`
@@ -17,7 +17,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 417]] (1 shared connections)
 
 ## Source Files
 
@@ -25,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 18 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -31,3 +31,27 @@ members: 14
 TABLE source_file, type FROM #community/Asset_Management_UI
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 146]]
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 169]]
+- 1 edge to [[_COMMUNITY_Module 228]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 453]]
+- 1 edge to [[_COMMUNITY_Module 465]]
+- 1 edge to [[_COMMUNITY_Module 278]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 479]]
+- 1 edge to [[_COMMUNITY_Module 488]]
+- 1 edge to [[_COMMUNITY_Module 283]]
+- 1 edge to [[_COMMUNITY_Module 491]]
+- 1 edge to [[_COMMUNITY_Module 291]]
+- 1 edge to [[_COMMUNITY_Module 131]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+- 1 edge to [[_COMMUNITY_Module 327]]
+
+## Top bridge nodes
+- [[AssetManagementNew.tsx]] - degree 32, connects to 19 communities

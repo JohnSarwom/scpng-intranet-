@@ -5,10 +5,13 @@ community: "Module 504"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_504
 ---
 
 # navItems.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_504
+## Connections
+- [[handleScroll()_2]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_504

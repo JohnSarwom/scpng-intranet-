@@ -6,6 +6,7 @@
 
 - **AssetsSharePointService** (13 connections) — `src\services\assetsSharePointService.ts`
 - **.initialize()** (9 connections) — `src\services\assetsSharePointService.ts`
+- **assetsSharePointService.ts** (7 connections) — `src\services\assetsSharePointService.ts`
 - **.updateAsset()** (6 connections) — `src\services\assetsSharePointService.ts`
 - **.getAssetById()** (4 connections) — `src\services\assetsSharePointService.ts`
 - **.addAsset()** (4 connections) — `src\services\assetsSharePointService.ts`
@@ -16,12 +17,16 @@
 - **.getListColumns()** (2 connections) — `src\services\assetsSharePointService.ts`
 - **.getAssets()** (2 connections) — `src\services\assetsSharePointService.ts`
 - **.hardDeleteAsset()** (2 connections) — `src\services\assetsSharePointService.ts`
-- **assetsSharePointService.ts** (1 connections) — `src\services\assetsSharePointService.ts`
 - **.constructor()** (1 connections) — `src\services\assetsSharePointService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 373]] (1 shared connections)
+- [[Module 192]] (1 shared connections)
+- [[Module 509]] (1 shared connections)
+- [[Module 291]] (1 shared connections)
+- [[Module 292]] (1 shared connections)
+- [[Module 524]] (1 shared connections)
 
 ## Source Files
 
@@ -29,8 +34,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 56 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 59 (95%)
+- INFERRED: 3 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

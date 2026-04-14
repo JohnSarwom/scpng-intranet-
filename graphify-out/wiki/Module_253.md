@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **AssetRequestPage.tsx** (1 connections) — `src\components\forms\AssetRequestPage.tsx`
+- **AssetRequestPage.tsx** (2 connections) — `src\components\forms\AssetRequestPage.tsx`
 - **AssetRequestPage()** (1 connections) — `src\components\forms\AssetRequestPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 207]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

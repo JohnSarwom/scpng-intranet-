@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **utils.ts** (5 connections) — `src\lib\utils.ts`
+- **utils.ts** (53 connections) — `src\lib\utils.ts`
 - **cn()** (1 connections) — `src\lib\utils.ts`
 - **formatDate()** (1 connections) — `src\lib\utils.ts`
 - **formatCurrency()** (1 connections) — `src\lib\utils.ts`
@@ -13,7 +13,18 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 362]] (1 shared connections)
+- [[Module 372]] (1 shared connections)
+- [[Module 416]] (1 shared connections)
+- [[Module 431]] (1 shared connections)
+- [[Module 447]] (1 shared connections)
+- [[Module 449]] (1 shared connections)
+- [[Module 450]] (1 shared connections)
+- [[Module 451]] (1 shared connections)
+- [[Module 453]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 455]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +32,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (17%)
+- INFERRED: 48 (83%)
 - AMBIGUOUS: 0 (0%)
 
 ---

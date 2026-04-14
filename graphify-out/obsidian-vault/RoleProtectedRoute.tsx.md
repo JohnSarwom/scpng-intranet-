@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[AccessDeniedCard()]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_232

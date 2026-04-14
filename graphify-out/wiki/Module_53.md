@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **TasksTab.tsx** (8 connections) — `src\components\unit-tabs\TasksTab.tsx`
+- **TasksTab.tsx** (10 connections) — `src\components\unit-tabs\TasksTab.tsx`
 - **handleDoubleClick()** (1 connections) — `src\components\unit-tabs\TasksTab.tsx`
 - **handleBlur()** (1 connections) — `src\components\unit-tabs\TasksTab.tsx`
 - **handleKeyDown()** (1 connections) — `src\components\unit-tabs\TasksTab.tsx`
@@ -16,7 +16,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -24,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (89%)
+- INFERRED: 2 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

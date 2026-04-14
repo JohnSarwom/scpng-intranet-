@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **DivisionOverviewTab.tsx** (1 connections) — `src\components\division\tabs\DivisionOverviewTab.tsx`
+- **DivisionOverviewTab.tsx** (3 connections) — `src\components\division\tabs\DivisionOverviewTab.tsx`
 - **DivisionOverviewTab()** (1 connections) — `src\components\division\tabs\DivisionOverviewTab.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 537]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

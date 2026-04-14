@@ -4,11 +4,21 @@
 
 ## Key Concepts
 
-- **AddTaskModal.tsx** (0 connections) — `src\components\unit-tabs\modals\AddTaskModal.tsx`
+- **AddTaskModal.tsx** (11 connections) — `src\components\unit-tabs\modals\AddTaskModal.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 91]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 463]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
+- [[Module 84]] (1 shared connections)
+- [[Module 552]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +27,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 11 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

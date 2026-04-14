@@ -18,3 +18,12 @@ members: 1
 TABLE source_file, type FROM #community/Module_405
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 457]]
+- 1 edge to [[_COMMUNITY_Module 454]]
+- 1 edge to [[_COMMUNITY_Module 475]]
+- 1 edge to [[_COMMUNITY_Module 541]]
+
+## Top bridge nodes
+- [[DivisionObjectivesAlignment.tsx]] - degree 4, connects to 4 communities

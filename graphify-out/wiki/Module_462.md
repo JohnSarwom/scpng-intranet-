@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **DateRangePicker.tsx** (0 connections) — `src\components\ui\DateRangePicker.tsx`
+- **DateRangePicker.tsx** (4 connections) — `src\components\ui\DateRangePicker.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 456]] (1 shared connections)
+- [[Module 275]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 473]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

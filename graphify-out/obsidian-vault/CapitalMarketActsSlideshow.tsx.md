@@ -5,10 +5,17 @@ community: "Module 387"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_387
 ---
 
 # CapitalMarketActsSlideshow.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_387
+## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
+- [[InfoSlideshow.tsx]] - `imports_from` [INFERRED]
+- [[useCapitalMarketActs()]] - `calls` [INFERRED]
+- [[useCapitalMarketNews()]] - `calls` [INFERRED]
+- [[useSlideshows.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_387

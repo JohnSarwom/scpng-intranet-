@@ -18,3 +18,12 @@ members: 1
 TABLE source_file, type FROM #community/Module_473
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 362]]
+- 1 edge to [[_COMMUNITY_Module 462]]
+- 1 edge to [[_COMMUNITY_Module 107]]
+- 1 edge to [[_COMMUNITY_Module 497]]
+
+## Top bridge nodes
+- [[popover.tsx]] - degree 4, connects to 4 communities

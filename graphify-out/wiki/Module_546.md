@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **forms.ts** (0 connections) — `src\types\forms.ts`
+- **forms.ts** (5 connections) — `src\types\forms.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 419]] (1 shared connections)
+- [[Module 420]] (1 shared connections)
+- [[Module 306]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
+- [[Module 548]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

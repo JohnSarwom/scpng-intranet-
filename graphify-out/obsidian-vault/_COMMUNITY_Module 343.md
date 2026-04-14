@@ -19,3 +19,10 @@ members: 2
 TABLE source_file, type FROM #community/Module_343
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 322]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[RegulatoryDashboard.tsx]] - degree 3, connects to 2 communities

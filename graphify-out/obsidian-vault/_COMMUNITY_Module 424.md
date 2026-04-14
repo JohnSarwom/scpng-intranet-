@@ -18,3 +18,12 @@ members: 1
 TABLE source_file, type FROM #community/Module_424
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 457]]
+- 1 edge to [[_COMMUNITY_Module 188]]
+- 1 edge to [[_COMMUNITY_Module 138]]
+- 1 edge to [[_COMMUNITY_Module 353]]
+
+## Top bridge nodes
+- [[DonutChart.tsx]] - degree 4, connects to 4 communities

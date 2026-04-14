@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[App.tsx]] - `imports_from` [EXTRACTED]
+- [[registry.ts]] - `imports_from` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_165

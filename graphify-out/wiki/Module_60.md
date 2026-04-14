@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ApiManagement.tsx** (7 connections) — `src\components\admin\ApiManagement.tsx`
+- **ApiManagement.tsx** (8 connections) — `src\components\admin\ApiManagement.tsx`
 - **updateStatus()** (2 connections) — `src\components\admin\ApiManagement.tsx`
 - **testApi()** (2 connections) — `src\components\admin\ApiManagement.tsx`
 - **loadSettings()** (1 connections) — `src\components\admin\ApiManagement.tsx`
@@ -15,7 +15,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (94%)
+- INFERRED: 1 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **button.tsx** (0 connections) — `src\components\ui\button.tsx`
+- **button.tsx** (47 connections) — `src\components\ui\button.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 362]] (1 shared connections)
+- [[Module 363]] (1 shared connections)
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 368]] (1 shared connections)
+- [[Module 372]] (1 shared connections)
+- [[Module 373]] (1 shared connections)
+- [[Module 379]] (1 shared connections)
+- [[Module 380]] (1 shared connections)
+- [[Module 381]] (1 shared connections)
+- [[Module 383]] (1 shared connections)
+- [[Module 384]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 47 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

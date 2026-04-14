@@ -10,6 +10,7 @@
 - **.addApplication()** (3 connections) — `src\services\appsSharePointService.ts`
 - **.updateApplication()** (3 connections) — `src\services\appsSharePointService.ts`
 - **.mapSharePointItemToApp()** (3 connections) — `src\services\appsSharePointService.ts`
+- **appsSharePointService.ts** (2 connections) — `src\services\appsSharePointService.ts`
 - **.getApplicationsByCategory()** (2 connections) — `src\services\appsSharePointService.ts`
 - **.getCategories()** (2 connections) — `src\services\appsSharePointService.ts`
 - **.getApplicationById()** (2 connections) — `src\services\appsSharePointService.ts`
@@ -17,12 +18,11 @@
 - **.deleteApplication()** (2 connections) — `src\services\appsSharePointService.ts`
 - **.getListColumns()** (2 connections) — `src\services\appsSharePointService.ts`
 - **.getIconColumnDetails()** (2 connections) — `src\services\appsSharePointService.ts`
-- **appsSharePointService.ts** (1 connections) — `src\services\appsSharePointService.ts`
 - **.constructor()** (1 connections) — `src\services\appsSharePointService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 290]] (1 shared connections)
 
 ## Source Files
 
@@ -30,7 +30,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 52 (100%)
+- EXTRACTED: 53 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

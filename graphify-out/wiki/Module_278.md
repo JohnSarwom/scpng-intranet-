@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **HighlightMatch.tsx** (1 connections) — `src\components\ui\HighlightMatch.tsx`
+- **HighlightMatch.tsx** (2 connections) — `src\components\ui\HighlightMatch.tsx`
 - **HighlightMatch()** (1 connections) — `src\components\ui\HighlightMatch.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Asset Management UI]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

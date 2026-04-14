@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **staff.ts** (0 connections) — `src\types\staff.ts`
+- **staff.ts** (5 connections) — `src\types\staff.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 494]] (1 shared connections)
+- [[Module 495]] (1 shared connections)
+- [[Module 497]] (1 shared connections)
+- [[Module 498]] (1 shared connections)
+- [[Module 548]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

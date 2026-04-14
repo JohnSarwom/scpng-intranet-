@@ -5,10 +5,15 @@ community: "Module 382"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_382
 ---
 
 # ArticleGridSkeleton.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_382
+## Connections
+- [[News.tsx]] - `references` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[skeleton.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_382

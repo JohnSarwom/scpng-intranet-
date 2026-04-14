@@ -4,12 +4,21 @@
 
 ## Key Concepts
 
-- **useDivisionData.ts** (1 connections) — `src\hooks\useDivisionData.ts`
+- **useDivisionData.ts** (11 connections) — `src\hooks\useDivisionData.ts`
 - **useDivisionData()** (1 connections) — `src\hooks\useDivisionData.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 403]] (1 shared connections)
+- [[Module 37]] (1 shared connections)
+- [[Module 410]] (1 shared connections)
+- [[Module 411]] (1 shared connections)
+- [[Module 252]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 97]] (1 shared connections)
+- [[Module 150]] (1 shared connections)
+- [[Module 537]] (1 shared connections)
+- [[Module 355]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +26,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (17%)
+- INFERRED: 10 (83%)
 - AMBIGUOUS: 0 (0%)
 
 ---

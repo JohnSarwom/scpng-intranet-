@@ -14,5 +14,6 @@ tags:
 ## Connections
 - [[StrategyService]] - `contains` [EXTRACTED]
 - [[escapeFilter()_1]] - `contains` [EXTRACTED]
+- [[useStrategySharePoint.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Strategy_Service

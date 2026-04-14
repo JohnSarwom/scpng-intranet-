@@ -12,6 +12,7 @@ tags:
 # PaymentRecords.tsx
 
 ## Connections
+- [[PaymentsPage.tsx]] - `references` [INFERRED]
 - [[SortIcon()]] - `contains` [EXTRACTED]
 - [[handleSort()]] - `contains` [EXTRACTED]
 

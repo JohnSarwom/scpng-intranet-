@@ -12,6 +12,7 @@ tags:
 # ThemeCustomization.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[hexToRgb()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_218

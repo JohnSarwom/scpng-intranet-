@@ -5,10 +5,15 @@ community: "Module 528"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_528
 ---
 
 # index.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_528
+## Connections
+- [[FloatingActionButton.tsx]] - `contains` [INFERRED]
+- [[LicensingHeader.tsx]] - `contains` [INFERRED]
+- [[index.ts_2]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_528

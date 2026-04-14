@@ -4,13 +4,15 @@
 
 ## Key Concepts
 
-- **DailyMarketSummary.tsx** (2 connections) — `src\pages\DailyMarketSummary.tsx`
+- **DailyMarketSummary.tsx** (5 connections) — `src\pages\DailyMarketSummary.tsx`
 - **DailyMarketSummary()** (1 connections) — `src\pages\DailyMarketSummary.tsx`
 - **getLatestPoint()** (1 connections) — `src\pages\DailyMarketSummary.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (57%)
+- INFERRED: 3 (43%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -12,6 +12,10 @@ tags:
 # ChecklistSection.tsx
 
 ## Connections
+- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
+- [[AddTaskModal.tsx]] - `imports_from` [INFERRED]
+- [[EditRiskModal.tsx]] - `imports_from` [INFERRED]
+- [[EditTaskModal.tsx]] - `imports_from` [INFERRED]
 - [[calculateProgress()]] - `contains` [EXTRACTED]
 - [[handleAddItem()]] - `contains` [EXTRACTED]
 - [[handleDeleteItem()]] - `contains` [EXTRACTED]

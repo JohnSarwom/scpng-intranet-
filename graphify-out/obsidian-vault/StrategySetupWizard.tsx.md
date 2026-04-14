@@ -12,6 +12,7 @@ tags:
 # StrategySetupWizard.tsx
 
 ## Connections
+- [[Strategy.tsx]] - `references` [INFERRED]
 - [[handleBack()]] - `contains` [EXTRACTED]
 - [[handleNext()]] - `contains` [EXTRACTED]
 - [[handleSave()_7]] - `contains` [EXTRACTED]

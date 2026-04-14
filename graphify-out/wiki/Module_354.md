@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **Unauthorized.tsx** (1 connections) — `src\pages\Unauthorized.tsx`
+- **Unauthorized.tsx** (3 connections) — `src\pages\Unauthorized.tsx`
 - **handleRefresh()** (1 connections) — `src\pages\Unauthorized.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

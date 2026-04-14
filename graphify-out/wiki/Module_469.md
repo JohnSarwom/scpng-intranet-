@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **input.tsx** (0 connections) — `src\components\ui\input.tsx`
+- **input.tsx** (30 connections) — `src\components\ui\input.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 369]] (1 shared connections)
+- [[Module 379]] (1 shared connections)
+- [[Module 380]] (1 shared connections)
+- [[Module 381]] (1 shared connections)
+- [[Module 384]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 414]] (1 shared connections)
+- [[Module 417]] (1 shared connections)
+- [[Module 418]] (1 shared connections)
+- [[Module 432]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 30 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

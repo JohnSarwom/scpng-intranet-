@@ -12,6 +12,8 @@ tags:
 # useHRService.ts
 
 ## Connections
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[hrSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useHRService()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_308

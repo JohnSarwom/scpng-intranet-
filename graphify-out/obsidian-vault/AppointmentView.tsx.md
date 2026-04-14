@@ -12,6 +12,7 @@ tags:
 # AppointmentView.tsx
 
 ## Connections
+- [[Tickets.tsx]] - `references` [INFERRED]
 - [[generateTimeSlots()]] - `contains` [EXTRACTED]
 - [[getAppointmentsForSlot()]] - `contains` [EXTRACTED]
 - [[goToToday()]] - `contains` [EXTRACTED]

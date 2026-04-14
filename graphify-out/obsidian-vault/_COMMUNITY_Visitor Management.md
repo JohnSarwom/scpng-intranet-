@@ -38,3 +38,9 @@ members: 21
 TABLE source_file, type FROM #community/Visitor_Management
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 351]]
+
+## Top bridge nodes
+- [[VisitorManagement.tsx]] - degree 21, connects to 1 community

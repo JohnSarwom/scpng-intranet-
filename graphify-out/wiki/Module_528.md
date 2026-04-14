@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **index.ts** (0 connections) — `src\modules\licensing\components\index.ts`
+- **index.ts** (4 connections) — `src\modules\licensing\components\index.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 527]] (1 shared connections)
+- [[Module 529]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

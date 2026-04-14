@@ -12,8 +12,11 @@ tags:
 # DivisionWorkPlansTab.tsx
 
 ## Connections
+- [[Division.tsx]] - `imports_from` [INFERRED]
 - [[goToEdit()]] - `contains` [EXTRACTED]
 - [[goToNew()]] - `contains` [EXTRACTED]
 - [[toggle()]] - `contains` [EXTRACTED]
+- [[useDivisionData.ts]] - `calls` [INFERRED]
+- [[useWorkPlans.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_150

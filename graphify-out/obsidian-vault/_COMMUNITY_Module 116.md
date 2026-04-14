@@ -22,3 +22,10 @@ members: 5
 TABLE source_file, type FROM #community/Module_116
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 45]]
+- 1 edge to [[_COMMUNITY_Module 352]]
+
+## Top bridge nodes
+- [[UATFeedbackTab.tsx]] - degree 6, connects to 2 communities

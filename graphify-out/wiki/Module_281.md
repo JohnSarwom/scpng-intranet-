@@ -4,12 +4,16 @@
 
 ## Key Concepts
 
-- **sonner.tsx** (1 connections) — `src\components\ui\sonner.tsx`
+- **sonner.tsx** (6 connections) — `src\components\ui\sonner.tsx`
 - **Toaster()** (1 connections) — `src\components\ui\sonner.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 368]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (29%)
+- INFERRED: 5 (71%)
 - AMBIGUOUS: 0 (0%)
 
 ---

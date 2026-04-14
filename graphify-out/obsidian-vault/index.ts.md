@@ -5,10 +5,16 @@ community: "Module 376"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_376
 ---
 
 # index.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_376
+## Connections
+- [[AreaChart.tsx]] - `contains` [INFERRED]
+- [[LineChart.tsx]] - `contains` [INFERRED]
+- [[PieChart.tsx]] - `contains` [INFERRED]
+- [[index.ts]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_376

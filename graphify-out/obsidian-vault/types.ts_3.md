@@ -5,10 +5,14 @@ community: "Module 526"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_526
 ---
 
 # types.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_526
+## Connections
+- [[combineStyles()]] - `imports_from` [INFERRED]
+- [[useSetupWizard.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_526

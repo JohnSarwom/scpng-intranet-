@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **division.types.ts** (0 connections) — `src\types\division.types.ts`
+- **division.types.ts** (8 connections) — `src\types\division.types.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 403]] (1 shared connections)
+- [[Module 407]] (1 shared connections)
+- [[Module 408]] (1 shared connections)
+- [[Module 409]] (1 shared connections)
+- [[Module 411]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 413]] (1 shared connections)
+- [[Module 548]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 8 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

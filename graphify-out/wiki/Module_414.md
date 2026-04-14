@@ -4,11 +4,16 @@
 
 ## Key Concepts
 
-- **AddCategoryDialog.tsx** (0 connections) — `src\components\documents\AddCategoryDialog.tsx`
+- **AddCategoryDialog.tsx** (6 connections) — `src\components\documents\AddCategoryDialog.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 463]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Document Management]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +22,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 6 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

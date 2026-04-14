@@ -5,10 +5,13 @@ community: "Module 507"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_507
 ---
 
 # employeeData.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_507
+## Connections
+- [[hrImportData.ts]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_507

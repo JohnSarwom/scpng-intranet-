@@ -12,6 +12,7 @@ tags:
 # kpiUtils.ts
 
 ## Connections
+- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
 - [[calculateCorporateGoalProgress()]] - `contains` [EXTRACTED]
 - [[calculateCorporateKraProgress()]] - `contains` [EXTRACTED]
 - [[calculateGoalProgressFromChildren()]] - `contains` [EXTRACTED]

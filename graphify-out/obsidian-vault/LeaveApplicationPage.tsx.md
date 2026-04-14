@@ -5,14 +5,19 @@ community: "Module 177"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_177
 ---
 
 # LeaveApplicationPage.tsx
 
 ## Connections
+- [[FillFormPage.tsx]] - `references` [INFERRED]
 - [[handlePrintApplication()]] - `contains` [EXTRACTED]
 - [[onSubmit()]] - `contains` [EXTRACTED]
+- [[useGraphProfile()]] - `calls` [INFERRED]
+- [[useLeaveBalances()]] - `calls` [INFERRED]
+- [[useLeaveRequests.ts]] - `calls` [INFERRED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_177
+#graphify/code #graphify/INFERRED #community/Module_177

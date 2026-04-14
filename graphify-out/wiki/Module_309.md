@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **useInternalNews.ts** (1 connections) — `src\hooks\useInternalNews.ts`
+- **useInternalNews.ts** (3 connections) — `src\hooks\useInternalNews.ts`
 - **useInternalNews()** (1 connections) — `src\hooks\useInternalNews.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 238]] (1 shared connections)
+- [[Market News Service]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (75%)
+- INFERRED: 1 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

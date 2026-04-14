@@ -5,7 +5,7 @@ community: "Module 344"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_344
 ---
 
@@ -13,5 +13,7 @@ tags:
 
 ## Connections
 - [[Apps()]] - `contains` [EXTRACTED]
+- [[AppsSection.tsx]] - `references` [INFERRED]
+- [[PageLayout.tsx]] - `references` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_344
+#graphify/code #graphify/INFERRED #community/Module_344

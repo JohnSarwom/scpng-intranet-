@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **UATFeedbackTab.tsx** (4 connections) — `src\components\admin\UATFeedbackTab.tsx`
+- **UATFeedbackTab.tsx** (6 connections) — `src\components\admin\UATFeedbackTab.tsx`
 - **getService()** (4 connections) — `src\components\admin\UATFeedbackTab.tsx`
 - **load()** (2 connections) — `src\components\admin\UATFeedbackTab.tsx`
 - **handleStatusChange()** (2 connections) — `src\components\admin\UATFeedbackTab.tsx`
@@ -12,7 +12,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 45]] (1 shared connections)
+- [[Module 352]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 14 (88%)
+- INFERRED: 2 (12%)
 - AMBIGUOUS: 0 (0%)
 
 ---

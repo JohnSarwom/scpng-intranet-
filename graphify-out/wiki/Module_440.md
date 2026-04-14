@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **DivisionalComparison.tsx** (0 connections) — `src\components\strategy\analytics\DivisionalComparison.tsx`
+- **DivisionalComparison.tsx** (5 connections) — `src\components\strategy\analytics\DivisionalComparison.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 188]] (1 shared connections)
+- [[Module 89]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 463]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -12,6 +12,8 @@ tags:
 # formsSharePointService.ts
 
 ## Connections
+- [[AddFormDialog.tsx]] - `imports_from` [INFERRED]
 - [[FormsSharePointService]] - `contains` [EXTRACTED]
+- [[useForms.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_70

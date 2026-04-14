@@ -12,6 +12,7 @@ tags:
 # EmployeeProfileModal.tsx
 
 ## Connections
+- [[HRProfiles.tsx]] - `references` [INFERRED]
 - [[getLeaveStatusColor()]] - `contains` [EXTRACTED]
 - [[getStatusBadgeColor()]] - `contains` [EXTRACTED]
 - [[handleEditClick()_1]] - `contains` [EXTRACTED]

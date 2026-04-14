@@ -5,14 +5,14 @@
 ## Key Concepts
 
 - **KpiInputBlock.tsx** (5 connections) — `src\components\kpi\KpiInputBlock.tsx`
+- **KpiInputBlock()** (2 connections) — `src\components\kpi\KpiInputBlock.tsx`
 - **getQuarter()** (1 connections) — `src\components\kpi\KpiInputBlock.tsx`
-- **KpiInputBlock()** (1 connections) — `src\components\kpi\KpiInputBlock.tsx`
 
 ## Relationships
 
+- [[Module 58]] (2 shared connections)
 - [[Module 171]] (1 shared connections)
 - [[Module 99]] (1 shared connections)
-- [[Module 58]] (1 shared connections)
 
 ## Source Files
 
@@ -20,7 +20,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 7 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

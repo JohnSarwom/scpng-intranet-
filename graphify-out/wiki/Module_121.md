@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **LaunchCountdown.tsx** (4 connections) — `src\components\dashboard\LaunchCountdown.tsx`
+- **LaunchCountdown.tsx** (5 connections) — `src\components\dashboard\LaunchCountdown.tsx`
 - **pad()** (1 connections) — `src\components\dashboard\LaunchCountdown.tsx`
 - **formatTimeLeft()** (1 connections) — `src\components\dashboard\LaunchCountdown.tsx`
 - **TimeUnit()** (1 connections) — `src\components\dashboard\LaunchCountdown.tsx`
@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 295]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

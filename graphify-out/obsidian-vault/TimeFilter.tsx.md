@@ -5,10 +5,13 @@ community: "Module 444"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_444
 ---
 
 # TimeFilter.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_444
+## Connections
+- [[strategyAnalyticsUtils.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_444

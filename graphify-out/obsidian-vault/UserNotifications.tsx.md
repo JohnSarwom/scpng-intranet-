@@ -5,10 +5,13 @@ community: "Module 367"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_367
 ---
 
 # UserNotifications.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_367
+## Connections
+- [[card.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_367

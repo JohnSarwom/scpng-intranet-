@@ -12,6 +12,7 @@ tags:
 # EditCategoryDialog.tsx
 
 ## Connections
+- [[Documents.tsx]] - `references` [INFERRED]
 - [[handleDelete()_6]] - `contains` [EXTRACTED]
 - [[handleSubmit()_4]] - `contains` [EXTRACTED]
 

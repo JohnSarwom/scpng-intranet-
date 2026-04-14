@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **AppointmentView.tsx** (8 connections) — `src\components\ticketing\AppointmentView.tsx`
+- **AppointmentView.tsx** (9 connections) — `src\components\ticketing\AppointmentView.tsx`
 - **generateTimeSlots()** (1 connections) — `src\components\ticketing\AppointmentView.tsx`
 - **handleAppointmentFormChange()** (1 connections) — `src\components\ticketing\AppointmentView.tsx`
 - **handleAppointmentSelectChange()** (1 connections) — `src\components\ticketing\AppointmentView.tsx`
@@ -16,7 +16,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 351]] (1 shared connections)
 
 ## Source Files
 
@@ -24,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (94%)
+- INFERRED: 1 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -9,6 +9,7 @@
 - **.getPaymentById()** (4 connections) — `src\services\paymentsSharePointService.ts`
 - **.addPayment()** (3 connections) — `src\services\paymentsSharePointService.ts`
 - **.mapToSharePointFields()** (3 connections) — `src\services\paymentsSharePointService.ts`
+- **paymentsSharePointService.ts** (2 connections) — `src\services\paymentsSharePointService.ts`
 - **.initialize()** (2 connections) — `src\services\paymentsSharePointService.ts`
 - **.getListColumns()** (2 connections) — `src\services\paymentsSharePointService.ts`
 - **.getPayments()** (2 connections) — `src\services\paymentsSharePointService.ts`
@@ -19,12 +20,11 @@
 - **.markAsPaid()** (2 connections) — `src\services\paymentsSharePointService.ts`
 - **.mapFromSharePointFields()** (2 connections) — `src\services\paymentsSharePointService.ts`
 - **.filterPaymentsByRole()** (2 connections) — `src\services\paymentsSharePointService.ts`
-- **paymentsSharePointService.ts** (1 connections) — `src\services\paymentsSharePointService.ts`
 - **.constructor()** (1 connections) — `src\services\paymentsSharePointService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 320]] (1 shared connections)
 
 ## Source Files
 
@@ -32,7 +32,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 56 (100%)
+- EXTRACTED: 57 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

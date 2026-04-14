@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[convertToCsv()]] - `contains` [EXTRACTED]
+- [[types.ts]] - `references` [INFERRED]
 - [[uploadDirectToOneDrive()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_181

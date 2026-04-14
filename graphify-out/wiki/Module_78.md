@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **UserManagement.tsx** (6 connections) — `src\components\admin\UserManagement.tsx`
+- **UserManagement.tsx** (7 connections) — `src\components\admin\UserManagement.tsx`
 - **handleSeedUsers()** (1 connections) — `src\components\admin\UserManagement.tsx`
 - **toggleGroup()** (1 connections) — `src\components\admin\UserManagement.tsx`
 - **handleEditUser()** (1 connections) — `src\components\admin\UserManagement.tsx`
@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

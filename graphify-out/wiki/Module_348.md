@@ -4,12 +4,19 @@
 
 ## Key Concepts
 
-- **PaymentsPage.tsx** (1 connections) — `src\pages\PaymentsPage.tsx`
+- **PaymentsPage.tsx** (9 connections) — `src\pages\PaymentsPage.tsx`
 - **handleAddPayment()** (1 connections) — `src\pages\PaymentsPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 125]] (1 shared connections)
+- [[Module 180]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
+- [[Module 291]] (1 shared connections)
+- [[Module 320]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (20%)
+- INFERRED: 8 (80%)
 - AMBIGUOUS: 0 (0%)
 
 ---

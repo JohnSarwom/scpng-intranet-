@@ -12,6 +12,8 @@ tags:
 # useInternalNews.ts
 
 ## Connections
+- [[InternalNewsSlideshow.tsx]] - `calls` [INFERRED]
+- [[marketNewsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useInternalNews()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_309

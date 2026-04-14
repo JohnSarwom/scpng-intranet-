@@ -18,5 +18,6 @@ tags:
 - [[getNewsByCompany()]] - `contains` [EXTRACTED]
 - [[getTimeAgo()_1]] - `contains` [EXTRACTED]
 - [[transformNewsItem()]] - `contains` [EXTRACTED]
+- [[useInternalNews.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Market_News_Service

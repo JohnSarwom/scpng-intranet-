@@ -5,10 +5,16 @@ community: "Module 462"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_462
 ---
 
 # DateRangePicker.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_462
+## Connections
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[calendar.tsx]] - `imports_from` [INFERRED]
+- [[popover.tsx]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_462

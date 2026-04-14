@@ -5,10 +5,13 @@ community: "Module 399"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_399
 ---
 
 # StatCircle.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_399
+## Connections
+- [[ScheduledEvents.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_399

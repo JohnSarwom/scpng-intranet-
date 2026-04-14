@@ -6,16 +6,17 @@
 
 - **FormsSharePointService** (7 connections) — `src\services\formsSharePointService.ts`
 - **.initialize()** (5 connections) — `src\services\formsSharePointService.ts`
+- **formsSharePointService.ts** (3 connections) — `src\services\formsSharePointService.ts`
 - **.getGroups()** (2 connections) — `src\services\formsSharePointService.ts`
 - **.addGroup()** (2 connections) — `src\services\formsSharePointService.ts`
 - **.getRegistrations()** (2 connections) — `src\services\formsSharePointService.ts`
 - **.addRegistration()** (2 connections) — `src\services\formsSharePointService.ts`
-- **formsSharePointService.ts** (1 connections) — `src\services\formsSharePointService.ts`
 - **.constructor()** (1 connections) — `src\services\formsSharePointService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 417]] (1 shared connections)
+- [[Module 306]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 23 (96%)
+- INFERRED: 1 (4%)
 - AMBIGUOUS: 0 (0%)
 
 ---

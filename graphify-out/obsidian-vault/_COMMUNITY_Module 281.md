@@ -19,3 +19,13 @@ members: 2
 TABLE source_file, type FROM #community/Module_281
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 364]]
+- 1 edge to [[_COMMUNITY_Module 366]]
+- 1 edge to [[_COMMUNITY_Module 368]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 412]]
+
+## Top bridge nodes
+- [[sonner.tsx]] - degree 6, connects to 5 communities

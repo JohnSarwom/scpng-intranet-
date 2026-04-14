@@ -4,22 +4,29 @@
 
 ## Key Concepts
 
+- **useSharePointOps.ts** (16 connections) — `src\hooks\useSharePointOps.ts`
 - **useOpsService()** (11 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointOps.ts** (10 connections) — `src\hooks\useSharePointOps.ts`
 - **useSharePointKRAs()** (8 connections) — `src\hooks\useSharePointOps.ts`
 - **useSharePointKPIs()** (8 connections) — `src\hooks\useSharePointOps.ts`
+- **useSharePointTasks()** (6 connections) — `src\hooks\useSharePointOps.ts`
 - **useSharePointObjectives()** (4 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointProjects()** (2 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointTasks()** (2 connections) — `src\hooks\useSharePointOps.ts`
+- **useSharePointProjects()** (3 connections) — `src\hooks\useSharePointOps.ts`
+- **useSharePointTaskGroups()** (3 connections) — `src\hooks\useSharePointOps.ts`
+- **useSharePointCustomContacts()** (3 connections) — `src\hooks\useSharePointOps.ts`
+- **useSharePointSetup()** (3 connections) — `src\hooks\useSharePointOps.ts`
 - **useSharePointRisks()** (2 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointTaskGroups()** (2 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointCustomContacts()** (2 connections) — `src\hooks\useSharePointOps.ts`
-- **useSharePointSetup()** (2 connections) — `src\hooks\useSharePointOps.ts`
 
 ## Relationships
 
-- [[SharePoint Operations CRUD]] (8 shared connections)
+- [[SharePoint Operations CRUD]] (10 shared connections)
 - [[KRA/KPI Tab]] (7 shared connections)
+- [[Module 56]] (3 shared connections)
+- [[Module 395]] (2 shared connections)
+- [[Module 396]] (2 shared connections)
+- [[Module 161]] (2 shared connections)
+- [[Module 394]] (1 shared connections)
+- [[SharePoint List Setup]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -27,8 +34,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 49 (92%)
-- INFERRED: 4 (8%)
+- EXTRACTED: 52 (78%)
+- INFERRED: 15 (22%)
 - AMBIGUOUS: 0 (0%)
 
 ---

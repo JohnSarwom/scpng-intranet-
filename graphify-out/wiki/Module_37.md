@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DivisionAIChat.tsx** (10 connections) — `src\components\division\analytics\DivisionAIChat.tsx`
+- **DivisionAIChat.tsx** (13 connections) — `src\components\division\analytics\DivisionAIChat.tsx`
 - **handleSend()** (4 connections) — `src\components\division\analytics\DivisionAIChat.tsx`
 - **serializeDivisionContext()** (2 connections) — `src\components\division\analytics\DivisionAIChat.tsx`
 - **scrollToBottom()** (2 connections) — `src\components\division\analytics\DivisionAIChat.tsx`
@@ -18,7 +18,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 404]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -26,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 28 (90%)
+- INFERRED: 3 (10%)
 - AMBIGUOUS: 0 (0%)
 
 ---

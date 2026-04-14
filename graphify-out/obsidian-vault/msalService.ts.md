@@ -12,6 +12,7 @@ tags:
 # msalService.ts
 
 ## Connections
+- [[MicrosoftLoginButton.tsx]] - `imports_from` [INFERRED]
 - [[callMsGraphApi()]] - `contains` [EXTRACTED]
 - [[diagnoseMsalIssues()]] - `contains` [EXTRACTED]
 - [[getAccessToken()]] - `contains` [EXTRACTED]

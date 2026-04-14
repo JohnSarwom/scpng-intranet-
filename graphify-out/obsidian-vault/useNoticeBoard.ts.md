@@ -12,6 +12,9 @@ tags:
 # useNoticeBoard.ts
 
 ## Connections
+- [[NoticeBoard.tsx]] - `imports_from` [INFERRED]
+- [[announcementsSharePointService.ts]] - `imports_from` [EXTRACTED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useNoticeBoard()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_317

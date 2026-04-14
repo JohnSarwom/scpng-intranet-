@@ -12,6 +12,7 @@ tags:
 # AssetInfoModal.tsx
 
 ## Connections
+- [[AssetManagementNew.tsx]] - `references` [INFERRED]
 - [[InfoRow()]] - `contains` [EXTRACTED]
 - [[getConditionBadgeClass()]] - `contains` [EXTRACTED]
 

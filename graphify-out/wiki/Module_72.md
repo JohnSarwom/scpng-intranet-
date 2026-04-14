@@ -5,7 +5,7 @@
 ## Key Concepts
 
 - **NewsSharePointService** (5 connections) — `src\services\newsSharePointService.ts`
-- **newsSharePointService.ts** (3 connections) — `src\services\newsSharePointService.ts`
+- **newsSharePointService.ts** (4 connections) — `src\services\newsSharePointService.ts`
 - **.initialize()** (3 connections) — `src\services\newsSharePointService.ts`
 - **.createNewsItem()** (3 connections) — `src\services\newsSharePointService.ts`
 - **transformNewsItem()** (2 connections) — `src\services\newsSharePointService.ts`
@@ -15,7 +15,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 392]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 20 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

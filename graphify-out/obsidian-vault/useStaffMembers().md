@@ -12,6 +12,7 @@ tags:
 # useStaffMembers()
 
 ## Connections
+- [[AssetManagementNew.tsx]] - `calls` [INFERRED]
 - [[useStaffMembers.ts]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_327

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **TicketManager.tsx** (31 connections) — `src\components\ticketing\TicketManager.tsx`
+- **TicketManager.tsx** (32 connections) — `src\components\ticketing\TicketManager.tsx`
 - **findTicketAndColumn()** (6 connections) — `src\components\ticketing\TicketManager.tsx`
 - **handleRequestDelete()** (3 connections) — `src\components\ticketing\TicketManager.tsx`
 - **handleDeleteTicket()** (3 connections) — `src\components\ticketing\TicketManager.tsx`
@@ -33,7 +33,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 351]] (1 shared connections)
 
 ## Source Files
 
@@ -41,8 +41,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 78 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 78 (99%)
+- INFERRED: 1 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

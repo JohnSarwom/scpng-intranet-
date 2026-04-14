@@ -23,3 +23,17 @@ members: 6
 TABLE source_file, type FROM #community/Module_109
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 470]]
+- 1 edge to [[_COMMUNITY_Module 480]]
+- 1 edge to [[_COMMUNITY_Module 483]]
+- 1 edge to [[_COMMUNITY_Module 195]]
+- 1 edge to [[_COMMUNITY_Module 157]]
+
+## Top bridge nodes
+- [[MarketData.tsx]] - degree 14, connects to 9 communities

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **StrategyAIChat.tsx** (10 connections) — `src\components\strategy\analytics\StrategyAIChat.tsx`
+- **StrategyAIChat.tsx** (12 connections) — `src\components\strategy\analytics\StrategyAIChat.tsx`
 - **handleSend()** (4 connections) — `src\components\strategy\analytics\StrategyAIChat.tsx`
 - **getFilteredData()** (2 connections) — `src\components\strategy\analytics\StrategyAIChat.tsx`
 - **scrollToBottom()** (2 connections) — `src\components\strategy\analytics\StrategyAIChat.tsx`
@@ -18,7 +18,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 443]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -26,8 +27,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 28 (93%)
+- INFERRED: 2 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

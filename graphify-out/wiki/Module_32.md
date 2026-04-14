@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **msalService.ts** (11 connections) — `src\integrations\microsoft\msalService.ts`
+- **msalService.ts** (12 connections) — `src\integrations\microsoft\msalService.ts`
 - **getMsalInstance()** (7 connections) — `src\integrations\microsoft\msalService.ts`
 - **getAccessToken()** (6 connections) — `src\integrations\microsoft\msalService.ts`
 - **getAccount()** (4 connections) — `src\integrations\microsoft\msalService.ts`
@@ -19,7 +19,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
 
 ## Source Files
 
@@ -27,8 +27,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 46 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 46 (98%)
+- INFERRED: 1 (2%)
 - AMBIGUOUS: 0 (0%)
 
 ---

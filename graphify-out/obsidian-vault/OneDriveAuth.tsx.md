@@ -5,10 +5,14 @@ community: "Module 429"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_429
 ---
 
 # OneDriveAuth.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_429
+## Connections
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_429

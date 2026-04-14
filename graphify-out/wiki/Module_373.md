@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **TableActions.tsx** (0 connections) — `src\components\assets\table\TableActions.tsx`
+- **TableActions.tsx** (4 connections) — `src\components\assets\table\TableActions.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 456]] (1 shared connections)
+- [[Module 465]] (1 shared connections)
+- [[Module 283]] (1 shared connections)
+- [[Assets Service]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

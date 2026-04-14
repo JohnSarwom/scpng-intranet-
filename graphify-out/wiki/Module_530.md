@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **index.ts** (0 connections) — `src\modules\licensing\constants\index.ts`
+- **index.ts** (2 connections) — `src\modules\licensing\constants\index.ts`
 
 ## Relationships
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

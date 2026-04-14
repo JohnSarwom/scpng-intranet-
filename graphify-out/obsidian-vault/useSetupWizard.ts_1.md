@@ -12,6 +12,7 @@ tags:
 # useSetupWizard.ts
 
 ## Connections
+- [[types.ts_3]] - `imports_from` [INFERRED]
 - [[useSetupWizard()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_182

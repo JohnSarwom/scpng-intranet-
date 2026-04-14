@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **KRADataGridSkeleton.tsx** (0 connections) — `src\components\skeletons\KRADataGridSkeleton.tsx`
+- **KRADataGridSkeleton.tsx** (3 connections) — `src\components\skeletons\KRADataGridSkeleton.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 280]] (1 shared connections)
+- [[Module 484]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

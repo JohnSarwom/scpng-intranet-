@@ -4,11 +4,20 @@
 
 ## Key Concepts
 
-- **StaffDetailModal.tsx** (0 connections) — `src\components\unit-tabs\modals\StaffDetailModal.tsx`
+- **StaffDetailModal.tsx** (10 connections) — `src\components\unit-tabs\modals\StaffDetailModal.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 453]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 463]] (1 shared connections)
+- [[Module 475]] (1 shared connections)
+- [[Module 478]] (1 shared connections)
+- [[Module 485]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +26,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 10 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

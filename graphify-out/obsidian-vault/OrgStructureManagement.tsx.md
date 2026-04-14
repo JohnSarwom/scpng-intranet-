@@ -12,11 +12,13 @@ tags:
 # OrgStructureManagement.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[getService()]] - `contains` [EXTRACTED]
 - [[handleAdd()]] - `contains` [EXTRACTED]
 - [[handleDelete()_1]] - `contains` [EXTRACTED]
 - [[handleEdit()]] - `contains` [EXTRACTED]
 - [[handleSave()_2]] - `contains` [EXTRACTED]
 - [[updateField()]] - `contains` [EXTRACTED]
+- [[useOfficerProfiles.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_76

@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **index.ts** (0 connections) — `src\components\charts\index.ts`
+- **index.ts** (5 connections) — `src\components\charts\index.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 375]] (1 shared connections)
+- [[Module 377]] (1 shared connections)
+- [[Module 378]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

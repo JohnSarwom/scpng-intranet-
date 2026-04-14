@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[UnitService]] - `contains` [EXTRACTED]
+- [[useUnits.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_40

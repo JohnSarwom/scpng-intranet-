@@ -5,10 +5,15 @@ community: "Module 430"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_430
 ---
 
 # OneDriveErrorCard.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_430
+## Connections
+- [[alert.tsx]] - `imports_from` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_430

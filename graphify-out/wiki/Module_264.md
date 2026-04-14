@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **KraFormSection.tsx** (3 connections) — `src\components\kpi\KraFormSection.tsx`
+- **KraFormSection.tsx** (4 connections) — `src\components\kpi\KraFormSection.tsx`
 - **handleDateChange()** (1 connections) — `src\components\kpi\KraFormSection.tsx`
 
 ## Relationships
 
 - [[Module 171]] (1 shared connections)
 - [[Module 99]] (1 shared connections)
+- [[Module 196]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

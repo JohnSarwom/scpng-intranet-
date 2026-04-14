@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **AddAssetModal.tsx** (6 connections) — `src\components\unit-tabs\modals\AddAssetModal.tsx`
+- **AddAssetModal.tsx** (7 connections) — `src\components\unit-tabs\modals\AddAssetModal.tsx`
 - **formatDateForInput()** (3 connections) — `src\components\unit-tabs\modals\AddAssetModal.tsx`
 - **handleCloseAndReset()** (3 connections) — `src\components\unit-tabs\modals\AddAssetModal.tsx`
 - **handleAddAsset()** (2 connections) — `src\components\unit-tabs\modals\AddAssetModal.tsx`
@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 18 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

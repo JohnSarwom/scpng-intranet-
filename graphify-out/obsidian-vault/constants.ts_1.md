@@ -5,10 +5,14 @@ community: "Module 532"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_532
 ---
 
 # constants.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_532
+## Connections
+- [[types.ts_5]] - `imports_from` [INFERRED]
+- [[types.ts_4]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_532

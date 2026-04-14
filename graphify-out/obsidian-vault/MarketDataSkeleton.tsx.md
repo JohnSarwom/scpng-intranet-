@@ -5,10 +5,13 @@ community: "Module 423"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_423
 ---
 
 # MarketDataSkeleton.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_423
+## Connections
+- [[skeleton.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_423

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ProjectsTab.tsx** (9 connections) — `src\components\unit-tabs\ProjectsTab.tsx`
+- **ProjectsTab.tsx** (10 connections) — `src\components\unit-tabs\ProjectsTab.tsx`
 - **handleEdit()** (1 connections) — `src\components\unit-tabs\ProjectsTab.tsx`
 - **handleDeleteClick()** (1 connections) — `src\components\unit-tabs\ProjectsTab.tsx`
 - **handleConfirmDelete()** (1 connections) — `src\components\unit-tabs\ProjectsTab.tsx`
@@ -17,7 +17,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -25,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 18 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 18 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

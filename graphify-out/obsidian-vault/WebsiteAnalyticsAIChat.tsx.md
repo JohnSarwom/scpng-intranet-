@@ -12,6 +12,8 @@ tags:
 # WebsiteAnalyticsAIChat.tsx
 
 ## Connections
+- [[WebsiteAnalytics.tsx]] - `imports_from` [INFERRED]
+- [[analyticsQuestions.ts]] - `references` [INFERRED]
 - [[fetchAiSettings()]] - `contains` [EXTRACTED]
 - [[handleClearChat()]] - `contains` [EXTRACTED]
 - [[handleCopy()]] - `contains` [EXTRACTED]
@@ -22,5 +24,6 @@ tags:
 - [[scrollToBottom()]] - `contains` [EXTRACTED]
 - [[serializeAnalyticsContext()]] - `contains` [EXTRACTED]
 - [[typeNextChar()]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_36

@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **TaskCompletionDonut.tsx** (1 connections) — `src\components\dashboard\TaskCompletionDonut.tsx`
+- **TaskCompletionDonut.tsx** (4 connections) — `src\components\dashboard\TaskCompletionDonut.tsx`
 - **toggleSegment()** (1 connections) — `src\components\dashboard\TaskCompletionDonut.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 394]] (1 shared connections)
+- [[Module 442]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (40%)
+- INFERRED: 3 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

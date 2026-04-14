@@ -28,3 +28,11 @@ members: 11
 TABLE source_file, type FROM #community/Module_36
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 371]]
+- 1 edge to [[_COMMUNITY_Module 539]]
+- 1 edge to [[_COMMUNITY_Module 316]]
+
+## Top bridge nodes
+- [[WebsiteAnalyticsAIChat.tsx]] - degree 13, connects to 3 communities

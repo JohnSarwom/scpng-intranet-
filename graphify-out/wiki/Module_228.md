@@ -4,12 +4,18 @@
 
 ## Key Concepts
 
-- **DecommissionedAssetTableHeader.tsx** (1 connections) — `src\components\assets\table\DecommissionedAssetTableHeader.tsx`
+- **DecommissionedAssetTableHeader.tsx** (8 connections) — `src\components\assets\table\DecommissionedAssetTableHeader.tsx`
 - **DecommissionedAssetTableHeader()** (1 connections) — `src\components\assets\table\DecommissionedAssetTableHeader.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Asset Management UI]] (1 shared connections)
+- [[Module 66]] (1 shared connections)
+- [[Module 345]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
+- [[TestGround Admin]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (22%)
+- INFERRED: 7 (78%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **useSupabaseAuth.tsx** (2 connections) — `src\hooks\useSupabaseAuth.tsx`
+- **useSupabaseAuth.tsx** (4 connections) — `src\hooks\useSupabaseAuth.tsx`
 - **SupabaseAuthProvider()** (1 connections) — `src\hooks\useSupabaseAuth.tsx`
 - **useSupabaseAuth()** (1 connections) — `src\hooks\useSupabaseAuth.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 395]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

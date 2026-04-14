@@ -12,6 +12,7 @@ tags:
 # useStaffMembers.ts
 
 ## Connections
+- [[staffService.ts]] - `imports_from` [EXTRACTED]
 - [[useStaffMembers()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_327

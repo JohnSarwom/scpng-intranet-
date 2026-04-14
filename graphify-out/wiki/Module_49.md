@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ViewSettingsTab.tsx** (8 connections) — `src\components\admin\ViewSettingsTab.tsx`
+- **ViewSettingsTab.tsx** (10 connections) — `src\components\admin\ViewSettingsTab.tsx`
 - **loadScopeSettings()** (3 connections) — `src\components\admin\ViewSettingsTab.tsx`
 - **getOpsService()** (2 connections) — `src\components\admin\ViewSettingsTab.tsx`
 - **handleInitializeScopeList()** (2 connections) — `src\components\admin\ViewSettingsTab.tsx`
@@ -16,7 +16,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 131]] (1 shared connections)
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -24,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 20 (91%)
+- INFERRED: 2 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

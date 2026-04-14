@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **SharePointExplorer.tsx** (14 connections) — `src\components\admin\SharePointExplorer.tsx`
+- **SharePointExplorer.tsx** (15 connections) — `src\components\admin\SharePointExplorer.tsx`
 - **loadLists()** (3 connections) — `src\components\admin\SharePointExplorer.tsx`
 - **handleCreateList()** (2 connections) — `src\components\admin\SharePointExplorer.tsx`
 - **handleDeleteList()** (2 connections) — `src\components\admin\SharePointExplorer.tsx`
@@ -22,7 +22,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[TestGround Admin]] (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +30,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 32 (97%)
+- INFERRED: 1 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

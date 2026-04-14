@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **RoleManagement.tsx** (6 connections) — `src\components\admin\RoleManagement.tsx`
+- **RoleManagement.tsx** (7 connections) — `src\components\admin\RoleManagement.tsx`
 - **handleCreateGroup()** (1 connections) — `src\components\admin\RoleManagement.tsx`
 - **handleEditGroup()** (1 connections) — `src\components\admin\RoleManagement.tsx`
 - **saveNewGroup()** (1 connections) — `src\components\admin\RoleManagement.tsx`
@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

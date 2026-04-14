@@ -26,3 +26,10 @@ members: 9
 TABLE source_file, type FROM #community/Module_53
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 324]]
+- 1 edge to [[_COMMUNITY_Module 56]]
+
+## Top bridge nodes
+- [[TasksTab.tsx]] - degree 10, connects to 2 communities

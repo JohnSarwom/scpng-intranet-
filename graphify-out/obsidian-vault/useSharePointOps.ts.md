@@ -12,6 +12,12 @@ tags:
 # useSharePointOps.ts
 
 ## Connections
+- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
+- [[PersonalKPICards.tsx]] - `imports_from` [INFERRED]
+- [[PersonalKPIStats.tsx]] - `imports_from` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[sharePointListSetupService.ts]] - `imports_from` [EXTRACTED]
+- [[sharePointOpsService.ts]] - `imports_from` [EXTRACTED]
 - [[useOpsService()]] - `contains` [EXTRACTED]
 - [[useSharePointCustomContacts()]] - `contains` [EXTRACTED]
 - [[useSharePointKPIs()]] - `contains` [EXTRACTED]

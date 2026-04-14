@@ -12,6 +12,8 @@ tags:
 # divisions.ts
 
 ## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
+- [[divisionService.ts]] - `imports_from` [INFERRED]
 - [[getStaffMemberByEmail()]] - `contains` [EXTRACTED]
 - [[getStaffMembersByDivision()]] - `contains` [EXTRACTED]
 

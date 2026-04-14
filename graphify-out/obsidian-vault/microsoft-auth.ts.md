@@ -5,10 +5,14 @@ community: "Module 502"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_502
 ---
 
 # microsoft-auth.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_502
+## Connections
+- [[MicrosoftLoginButton.tsx]] - `imports_from` [INFERRED]
+- [[SimplifiedOneDriveSetup.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_502

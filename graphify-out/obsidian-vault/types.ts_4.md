@@ -5,10 +5,13 @@ community: "Module 533"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_533
 ---
 
 # types.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_533
+## Connections
+- [[constants.ts_1]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_533

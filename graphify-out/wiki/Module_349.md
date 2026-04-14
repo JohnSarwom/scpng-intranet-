@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **RegulatoryIntelligence.tsx** (1 connections) — `src\pages\RegulatoryIntelligence.tsx`
+- **RegulatoryIntelligence.tsx** (2 connections) — `src\pages\RegulatoryIntelligence.tsx`
 - **RegulatoryIntelligence()** (1 connections) — `src\pages\RegulatoryIntelligence.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 151]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

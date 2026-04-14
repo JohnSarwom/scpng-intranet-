@@ -22,3 +22,9 @@ members: 5
 TABLE source_file, type FROM #community/Module_123
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 86]]
+
+## Top bridge nodes
+- [[EmployeeProfileModal.tsx]] - degree 5, connects to 1 community

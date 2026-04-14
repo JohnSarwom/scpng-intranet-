@@ -9,6 +9,7 @@
 - **.getListId()** (13 connections) — `src\services\hrSharePointService.ts`
 - **.getItemsByEmployeeId()** (8 connections) — `src\services\hrSharePointService.ts`
 - **.getEmployeeProfile()** (8 connections) — `src\services\hrSharePointService.ts`
+- **hrSharePointService.ts** (6 connections) — `src\services\hrSharePointService.ts`
 - **.getEmployeeById()** (5 connections) — `src\services\hrSharePointService.ts`
 - **.createEmployee()** (5 connections) — `src\services\hrSharePointService.ts`
 - **.mapSharePointEmployee()** (5 connections) — `src\services\hrSharePointService.ts`
@@ -17,7 +18,6 @@
 - **.updateEmployee()** (4 connections) — `src\services\hrSharePointService.ts`
 - **.getLeaveRequests()** (4 connections) — `src\services\hrSharePointService.ts`
 - **.deleteAllData()** (4 connections) — `src\services\hrSharePointService.ts`
-- **hrSharePointService.ts** (3 connections) — `src\services\hrSharePointService.ts`
 - **.loadListIds()** (3 connections) — `src\services\hrSharePointService.ts`
 - **.inspectListColumns()** (3 connections) — `src\services\hrSharePointService.ts`
 - **.createLeaveBalance()** (3 connections) — `src\services\hrSharePointService.ts`
@@ -33,7 +33,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 308]] (1 shared connections)
+- [[Module 312]] (1 shared connections)
+- [[Module 313]] (1 shared connections)
 
 ## Source Files
 
@@ -41,7 +43,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 140 (100%)
+- EXTRACTED: 143 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

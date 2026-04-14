@@ -5,10 +5,16 @@ community: "Module 465"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_465
 ---
 
 # dropdown-menu.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_465
+## Connections
+- [[AssetManagementNew.tsx]] - `references` [INFERRED]
+- [[Forms.tsx]] - `references` [INFERRED]
+- [[TableActions.tsx]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_465

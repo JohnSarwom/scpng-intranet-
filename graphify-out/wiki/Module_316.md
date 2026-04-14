@@ -4,12 +4,23 @@
 
 ## Key Concepts
 
-- **useMicrosoftGraph.tsx** (1 connections) — `src\hooks\useMicrosoftGraph.tsx`
-- **useMicrosoftGraph()** (1 connections) — `src\hooks\useMicrosoftGraph.tsx`
+- **useMicrosoftGraph()** (14 connections) — `src\hooks\useMicrosoftGraph.tsx`
+- **useMicrosoftGraph.tsx** (3 connections) — `src\hooks\useMicrosoftGraph.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 392]] (2 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 36]] (1 shared connections)
+- [[Module 172]] (1 shared connections)
+- [[Module 37]] (1 shared connections)
+- [[Module 50]] (1 shared connections)
+- [[Module 38]] (1 shared connections)
+- [[Module 83]] (1 shared connections)
+- [[Module 34]] (1 shared connections)
+- [[AI Hub Chat]] (1 shared connections)
+- [[Module 206]] (1 shared connections)
+- [[Document Management]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (18%)
+- INFERRED: 14 (82%)
 - AMBIGUOUS: 0 (0%)
 
 ---

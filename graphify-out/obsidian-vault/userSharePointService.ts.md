@@ -12,7 +12,11 @@ tags:
 # userSharePointService.ts
 
 ## Connections
+- [[AddUserModal.tsx]] - `imports_from` [INFERRED]
+- [[EditUserModal.tsx]] - `imports_from` [INFERRED]
 - [[UserSharePointService]] - `contains` [EXTRACTED]
 - [[escapeFilter()_2]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `imports_from` [EXTRACTED]
+- [[useUnitRoster.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/User_Management_Service

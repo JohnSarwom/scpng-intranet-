@@ -14,6 +14,7 @@
 - **.createStrategicObjectivesList()** (6 connections) — `src\services\sharePointListSetupService.ts`
 - **.addSampleData()** (6 connections) — `src\services\sharePointListSetupService.ts`
 - **.resolveFieldName()** (6 connections) — `src\services\sharePointListSetupService.ts`
+- **.setupWebsiteFeedbackResources()** (6 connections) — `src\services\sharePointListSetupService.ts`
 - **.createStrategyUnitsList()** (5 connections) — `src\services\sharePointListSetupService.ts`
 - **.setupCorporatePlanLists()** (5 connections) — `src\services\sharePointListSetupService.ts`
 - **.createMarketDataLists()** (5 connections) — `src\services\sharePointListSetupService.ts`
@@ -28,12 +29,15 @@
 - **.uploadMockKRAs()** (4 connections) — `src\services\sharePointListSetupService.ts`
 - **.uploadMockKPIs()** (4 connections) — `src\services\sharePointListSetupService.ts`
 - **.createStrategyConfigList()** (3 connections) — `src\services\sharePointListSetupService.ts`
-- **.setupStrategyDivisionsAndUnitsLists()** (3 connections) — `src\services\sharePointListSetupService.ts`
 - *... and 77 more nodes in this community*
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 39]] (1 shared connections)
+- [[Module 516]] (1 shared connections)
+- [[Module 517]] (1 shared connections)
+- [[Module 520]] (1 shared connections)
+- [[Module 521]] (1 shared connections)
 
 ## Source Files
 
@@ -41,8 +45,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 408 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 409 (99%)
+- INFERRED: 4 (1%)
 - AMBIGUOUS: 0 (0%)
 
 ---

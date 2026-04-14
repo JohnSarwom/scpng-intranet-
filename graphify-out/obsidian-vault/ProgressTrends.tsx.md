@@ -5,10 +5,15 @@ community: "Module 441"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_441
 ---
 
 # ProgressTrends.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_441
+## Connections
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[chart.tsx]] - `imports_from` [INFERRED]
+- [[strategyAnalyticsUtils.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_441

@@ -5,7 +5,7 @@ community: "Module 247"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_247
 ---
 
@@ -13,5 +13,7 @@ tags:
 
 ## Connections
 - [[StatusIndicator()]] - `contains` [EXTRACTED]
+- [[TrafficLightDashboard.tsx]] - `imports_from` [INFERRED]
+- [[UILibrary.tsx]] - `references` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_247
+#graphify/code #graphify/INFERRED #community/Module_247

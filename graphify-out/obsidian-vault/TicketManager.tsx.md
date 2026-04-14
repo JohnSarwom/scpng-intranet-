@@ -12,6 +12,7 @@ tags:
 # TicketManager.tsx
 
 ## Connections
+- [[Tickets.tsx]] - `references` [INFERRED]
 - [[UserNav()]] - `contains` [EXTRACTED]
 - [[addBucket()]] - `contains` [EXTRACTED]
 - [[cancelDelete()]] - `contains` [EXTRACTED]

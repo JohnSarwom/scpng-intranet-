@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DocumentPermissionsTab.tsx** (4 connections) — `src\components\admin\DocumentPermissionsTab.tsx`
+- **DocumentPermissionsTab.tsx** (5 connections) — `src\components\admin\DocumentPermissionsTab.tsx`
 - **buildUpdatedPermissions()** (2 connections) — `src\components\admin\DocumentPermissionsTab.tsx`
 - **handleToggle()** (2 connections) — `src\components\admin\DocumentPermissionsTab.tsx`
 - **getRoleBadge()** (1 connections) — `src\components\admin\DocumentPermissionsTab.tsx`
@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (91%)
+- INFERRED: 1 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

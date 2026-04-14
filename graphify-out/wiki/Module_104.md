@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **OrgChart.tsx** (5 connections) — `src\components\strategy\OrgChart.tsx`
+- **OrgChart.tsx** (10 connections) — `src\components\strategy\OrgChart.tsx`
 - **OrgNode()** (1 connections) — `src\components\strategy\OrgChart.tsx`
 - **handleChange()** (1 connections) — `src\components\strategy\OrgChart.tsx`
 - **fetchPhotos()** (1 connections) — `src\components\strategy\OrgChart.tsx`
@@ -13,7 +13,11 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 301]] (1 shared connections)
+- [[Module 304]] (1 shared connections)
+- [[Module 319]] (1 shared connections)
+- [[Module 333]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (67%)
+- INFERRED: 5 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

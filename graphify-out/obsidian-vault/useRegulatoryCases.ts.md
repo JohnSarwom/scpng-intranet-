@@ -12,6 +12,7 @@ tags:
 # useRegulatoryCases.ts
 
 ## Connections
+- [[RegulatoryDashboard.tsx]] - `calls` [INFERRED]
 - [[useRegulatoryCases()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_322

@@ -24,3 +24,9 @@ members: 7
 TABLE source_file, type FROM #community/Module_77
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 45]]
+
+## Top bridge nodes
+- [[RoleManagement.tsx]] - degree 7, connects to 1 community

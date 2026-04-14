@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **InvoicesPage.tsx** (1 connections) — `src\components\assets\InvoicesPage.tsx`
+- **InvoicesPage.tsx** (4 connections) — `src\components\assets\InvoicesPage.tsx`
 - **InvoicesPage()** (1 connections) — `src\components\assets\InvoicesPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 291]] (1 shared connections)
+- [[Module 293]] (1 shared connections)
+- [[Module 160]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (40%)
+- INFERRED: 3 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

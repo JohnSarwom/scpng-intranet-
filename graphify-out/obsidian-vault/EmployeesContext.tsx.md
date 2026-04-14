@@ -12,6 +12,7 @@ tags:
 # EmployeesContext.tsx
 
 ## Connections
+- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
 - [[EmployeesProvider()]] - `contains` [EXTRACTED]
 - [[useEmployees()]] - `contains` [EXTRACTED]
 

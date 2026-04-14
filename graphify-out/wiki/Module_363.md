@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **TableErrorMessage.tsx** (0 connections) — `src\components\TableErrorMessage.tsx`
+- **TableErrorMessage.tsx** (2 connections) — `src\components\TableErrorMessage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 456]] (1 shared connections)
+- [[Module 451]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

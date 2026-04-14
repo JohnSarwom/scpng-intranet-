@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **assetChoices.ts** (1 connections) — `src\constants\assetChoices.ts`
+- **assetChoices.ts** (2 connections) — `src\constants\assetChoices.ts`
 - **getConditionBadgeClass()** (1 connections) — `src\constants\assetChoices.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 501]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

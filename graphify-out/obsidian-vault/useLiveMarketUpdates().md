@@ -12,6 +12,7 @@ tags:
 # useLiveMarketUpdates()
 
 ## Connections
+- [[MarketData.tsx]] - `calls` [INFERRED]
 - [[useMarketData.ts]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_195

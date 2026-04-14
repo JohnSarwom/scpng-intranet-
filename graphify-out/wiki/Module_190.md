@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **EmployeesContext.tsx** (2 connections) — `src\contexts\EmployeesContext.tsx`
+- **EmployeesContext.tsx** (3 connections) — `src\contexts\EmployeesContext.tsx`
+- **useEmployees()** (2 connections) — `src\contexts\EmployeesContext.tsx`
 - **EmployeesProvider()** (1 connections) — `src\contexts\EmployeesContext.tsx`
-- **useEmployees()** (1 connections) — `src\contexts\EmployeesContext.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 494]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 5 (83%)
+- INFERRED: 1 (17%)
 - AMBIGUOUS: 0 (0%)
 
 ---

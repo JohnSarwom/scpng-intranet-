@@ -32,3 +32,19 @@ members: 15
 TABLE source_file, type FROM #community/Gallery_Management
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 259]]
+- 1 edge to [[_COMMUNITY_Module 260]]
+- 1 edge to [[_COMMUNITY_Module 261]]
+- 1 edge to [[_COMMUNITY_Module 98]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 458]]
+- 1 edge to [[_COMMUNITY_Module 128]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[Gallery.tsx]] - degree 25, connects to 11 communities

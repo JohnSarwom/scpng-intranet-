@@ -5,13 +5,21 @@ community: "Module 304"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_304
 ---
 
 # useEmployeePhotos.ts
 
 ## Connections
+- [[ContactDetailsModal.tsx]] - `calls` [INFERRED]
+- [[Contacts.tsx]] - `calls` [INFERRED]
+- [[DivisionUnitsTab.tsx]] - `calls` [INFERRED]
+- [[OrgChart.tsx]] - `calls` [INFERRED]
+- [[PageLayout.tsx]] - `calls` [INFERRED]
+- [[Settings.tsx]] - `calls` [INFERRED]
+- [[employeePhotosService.ts]] - `imports_from` [EXTRACTED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useEmployeePhotos()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_304
+#graphify/code #graphify/INFERRED #community/Module_304

@@ -4,12 +4,23 @@
 
 ## Key Concepts
 
-- **useRoleBasedAuth.ts** (1 connections) — `src\hooks\useRoleBasedAuth.ts`
+- **useRoleBasedAuth.ts** (35 connections) — `src\hooks\useRoleBasedAuth.ts`
 - **useRoleBasedAuth()** (1 connections) — `src\hooks\useRoleBasedAuth.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 165]] (1 shared connections)
+- [[Module 232]] (1 shared connections)
+- [[Module 173]] (1 shared connections)
+- [[Module 393]] (1 shared connections)
+- [[Module 395]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 177]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Meeting Minutes Form]] (1 shared connections)
+- [[Module 81]] (1 shared connections)
+- [[Module 126]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (11%)
+- INFERRED: 32 (89%)
 - AMBIGUOUS: 0 (0%)
 
 ---

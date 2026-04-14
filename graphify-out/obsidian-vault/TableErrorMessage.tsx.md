@@ -5,10 +5,14 @@ community: "Module 363"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_363
 ---
 
 # TableErrorMessage.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_363
+## Connections
+- [[alert.tsx]] - `imports_from` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_363

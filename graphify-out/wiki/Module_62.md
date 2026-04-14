@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **ScheduledEvents.tsx** (7 connections) — `src\components\dashboard\ScheduledEvents.tsx`
+- **ScheduledEvents.tsx** (10 connections) — `src\components\dashboard\ScheduledEvents.tsx`
 - **StatRow()** (1 connections) — `src\components\dashboard\ScheduledEvents.tsx`
 - **handleEventClick()** (1 connections) — `src\components\dashboard\ScheduledEvents.tsx`
 - **handleEventCreated()** (1 connections) — `src\components\dashboard\ScheduledEvents.tsx`
@@ -15,7 +15,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 399]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
+- [[Module 156]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 14 (82%)
+- INFERRED: 3 (18%)
 - AMBIGUOUS: 0 (0%)
 
 ---

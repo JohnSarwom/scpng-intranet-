@@ -20,3 +20,9 @@ members: 3
 TABLE source_file, type FROM #community/Module_195
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 109]]
+
+## Top bridge nodes
+- [[useLiveMarketUpdates()]] - degree 2, connects to 1 community

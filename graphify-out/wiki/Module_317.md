@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **useNoticeBoard.ts** (1 connections) — `src\hooks\useNoticeBoard.ts`
+- **useNoticeBoard.ts** (4 connections) — `src\hooks\useNoticeBoard.ts`
 - **useNoticeBoard()** (1 connections) — `src\hooks\useNoticeBoard.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 393]] (1 shared connections)
+- [[Module 57]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

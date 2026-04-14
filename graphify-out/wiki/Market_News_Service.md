@@ -5,7 +5,7 @@
 ## Key Concepts
 
 - **MarketNewsSharePointService** (8 connections) — `src\services\marketNewsSharePointService.ts`
-- **marketNewsSharePointService.ts** (6 connections) — `src\services\marketNewsSharePointService.ts`
+- **marketNewsSharePointService.ts** (7 connections) — `src\services\marketNewsSharePointService.ts`
 - **.initialize()** (5 connections) — `src\services\marketNewsSharePointService.ts`
 - **.getAllNews()** (5 connections) — `src\services\marketNewsSharePointService.ts`
 - **transformNewsItem()** (3 connections) — `src\services\marketNewsSharePointService.ts`
@@ -21,7 +21,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 309]] (1 shared connections)
 
 ## Source Files
 
@@ -29,7 +29,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
+- EXTRACTED: 45 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

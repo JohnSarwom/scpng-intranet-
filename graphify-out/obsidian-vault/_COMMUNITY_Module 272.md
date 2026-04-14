@@ -22,6 +22,8 @@ SORT file.name ASC
 
 ## Connections to other communities
 - 2 edges to [[_COMMUNITY_Module 58]]
+- 1 edge to [[_COMMUNITY_Module 131]]
+- 1 edge to [[_COMMUNITY_Module 138]]
 
 ## Top bridge nodes
-- [[StrategyAnalytics.tsx]] - degree 3, connects to 1 community
+- [[StrategyAnalytics.tsx]] - degree 5, connects to 3 communities

@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[AppsSharePointService]] - `contains` [EXTRACTED]
+- [[useApps.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Applications_Service

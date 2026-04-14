@@ -42,3 +42,9 @@ members: 25
 TABLE source_file, type FROM #community/Strategy_Service
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 328]]
+
+## Top bridge nodes
+- [[strategyService.ts]] - degree 3, connects to 1 community

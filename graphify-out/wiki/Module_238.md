@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **InternalNewsSlideshow.tsx** (1 connections) — `src\components\dashboard\InternalNewsSlideshow.tsx`
+- **InternalNewsSlideshow.tsx** (3 connections) — `src\components\dashboard\InternalNewsSlideshow.tsx`
 - **handleReadMore()** (1 connections) — `src\components\dashboard\InternalNewsSlideshow.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 538]] (1 shared connections)
+- [[Module 309]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

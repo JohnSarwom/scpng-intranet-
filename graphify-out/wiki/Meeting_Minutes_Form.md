@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **MeetingMinutesForm.tsx** (17 connections) — `src\components\meeting\MeetingMinutesForm.tsx`
+- **MeetingMinutesForm.tsx** (19 connections) — `src\components\meeting\MeetingMinutesForm.tsx`
 - **cn()** (1 connections) — `src\components\meeting\MeetingMinutesForm.tsx`
 - **handleScroll()** (1 connections) — `src\components\meeting\MeetingMinutesForm.tsx`
 - **scrollToSection()** (1 connections) — `src\components\meeting\MeetingMinutesForm.tsx`
@@ -25,7 +25,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
+- [[Module 110]] (1 shared connections)
 
 ## Source Files
 
@@ -33,8 +34,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 34 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 34 (94%)
+- INFERRED: 2 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

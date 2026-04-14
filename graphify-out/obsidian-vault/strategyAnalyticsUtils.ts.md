@@ -12,6 +12,10 @@ tags:
 # strategyAnalyticsUtils.ts
 
 ## Connections
+- [[DivisionalComparison.tsx]] - `imports_from` [INFERRED]
+- [[ProgressTrends.tsx]] - `imports_from` [INFERRED]
+- [[StatusDistribution.tsx]] - `imports_from` [INFERRED]
+- [[TimeFilter.tsx]] - `imports_from` [INFERRED]
 - [[buildDivisionalComparisonData()]] - `contains` [EXTRACTED]
 - [[buildProgressTrendData()]] - `contains` [EXTRACTED]
 - [[buildStatusDistributionData()]] - `contains` [EXTRACTED]

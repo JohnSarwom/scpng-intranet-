@@ -18,3 +18,16 @@ members: 1
 TABLE source_file, type FROM #community/Module_485
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 365]]
+- 1 edge to [[_COMMUNITY_Module 389]]
+- 1 edge to [[_COMMUNITY_Module 396]]
+- 1 edge to [[_COMMUNITY_Module 107]]
+- 1 edge to [[_COMMUNITY_Module 492]]
+- 1 edge to [[_COMMUNITY_Module 499]]
+- 1 edge to [[_COMMUNITY_Module 537]]
+- 1 edge to [[_COMMUNITY_Module 539]]
+
+## Top bridge nodes
+- [[tabs.tsx]] - degree 8, connects to 8 communities

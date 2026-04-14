@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **NewsDashboard.tsx** (2 connections) — `src\components\dashboard\NewsDashboard.tsx`
+- **NewsDashboard.tsx** (3 connections) — `src\components\dashboard\NewsDashboard.tsx`
 - **nextSlide()** (1 connections) — `src\components\dashboard\NewsDashboard.tsx`
 - **prevSlide()** (1 connections) — `src\components\dashboard\NewsDashboard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 136]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

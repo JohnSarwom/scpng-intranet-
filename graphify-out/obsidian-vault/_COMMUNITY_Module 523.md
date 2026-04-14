@@ -18,3 +18,10 @@ members: 1
 TABLE source_file, type FROM #community/Module_523
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 394]]
+- 1 edge to [[_COMMUNITY_Module 492]]
+
+## Top bridge nodes
+- [[strategyData.ts]] - degree 2, connects to 2 communities

@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **useAssetState.ts** (1 connections) — `src\hooks\useAssetState.ts`
+- **useAssetState.ts** (2 connections) — `src\hooks\useAssetState.ts`
 - **useAssetState()** (1 connections) — `src\hooks\useAssetState.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Assets Service]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 3 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

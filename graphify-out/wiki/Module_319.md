@@ -4,12 +4,18 @@
 
 ## Key Concepts
 
-- **useOfficerProfiles.ts** (1 connections) — `src\hooks\useOfficerProfiles.ts`
+- **useOfficerProfiles.ts** (8 connections) — `src\hooks\useOfficerProfiles.ts`
 - **useOfficerProfiles()** (1 connections) — `src\hooks\useOfficerProfiles.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 76]] (1 shared connections)
+- [[Module 97]] (1 shared connections)
+- [[Module 104]] (1 shared connections)
+- [[Module 155]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (33%)
+- INFERRED: 6 (67%)
 - AMBIGUOUS: 0 (0%)
 
 ---

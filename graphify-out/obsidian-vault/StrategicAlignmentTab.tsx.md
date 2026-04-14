@@ -5,10 +5,20 @@ community: "Module 492"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_492
 ---
 
 # StrategicAlignmentTab.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_492
+## Connections
+- [[accordion.tsx]] - `imports_from` [INFERRED]
+- [[badge.tsx]] - `imports_from` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[progress.tsx]] - `imports_from` [INFERRED]
+- [[strategyData.ts]] - `imports_from` [INFERRED]
+- [[tabs.tsx]] - `imports_from` [INFERRED]
+- [[types.ts_5]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_492

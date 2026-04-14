@@ -12,6 +12,7 @@ tags:
 # TrainingRequestPage.tsx
 
 ## Connections
+- [[FillFormPage.tsx]] - `references` [INFERRED]
 - [[TrainingRequestPage()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_258

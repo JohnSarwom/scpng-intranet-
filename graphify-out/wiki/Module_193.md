@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **divisions.ts** (2 connections) — `src\data\divisions.ts`
+- **divisions.ts** (4 connections) — `src\data\divisions.ts`
 - **getStaffMembersByDivision()** (1 connections) — `src\data\divisions.ts`
 - **getStaffMemberByEmail()** (1 connections) — `src\data\divisions.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 511]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **payment.types.ts** (0 connections) — `src\types\payment.types.ts`
+- **payment.types.ts** (2 connections) — `src\types\payment.types.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 506]] (1 shared connections)
+- [[Module 548]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

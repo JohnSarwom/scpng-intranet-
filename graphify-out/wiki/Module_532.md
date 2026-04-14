@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **constants.ts** (0 connections) — `src\modules\regulatory\constants.ts`
+- **constants.ts** (2 connections) — `src\modules\regulatory\constants.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 541]] (1 shared connections)
+- [[Module 533]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **DocumentsPageSkeleton.tsx** (0 connections) — `src\components\documents\skeletons\DocumentsPageSkeleton.tsx`
+- **DocumentsPageSkeleton.tsx** (2 connections) — `src\components\documents\skeletons\DocumentsPageSkeleton.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 280]] (1 shared connections)
+- [[Module 457]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

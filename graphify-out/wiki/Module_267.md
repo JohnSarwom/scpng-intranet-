@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **ThemeToggle.tsx** (1 connections) — `src\components\layout\ThemeToggle.tsx`
+- **ThemeToggle.tsx** (2 connections) — `src\components\layout\ThemeToggle.tsx`
 - **ThemeToggle()** (1 connections) — `src\components\layout\ThemeToggle.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 351]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

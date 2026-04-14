@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **PersonalKPICards.tsx** (0 connections) — `src\components\dashboard\PersonalKPICards.tsx`
+- **PersonalKPICards.tsx** (10 connections) — `src\components\dashboard\PersonalKPICards.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 39]] (2 shared connections)
+- [[Module 307]] (2 shared connections)
+- [[Module 241]] (1 shared connections)
+- [[Module 197]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
+- [[Module 196]] (1 shared connections)
+- [[Module 402]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 10 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

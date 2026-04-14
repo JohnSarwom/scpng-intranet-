@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **KRAsTab.tsx** (27 connections) — `src\components\unit-tabs\KRAsTab.tsx`
+- **KRAsTab.tsx** (28 connections) — `src\components\unit-tabs\KRAsTab.tsx`
 - **handleKpiFormSubmit()** (6 connections) — `src\components\unit-tabs\KRAsTab.tsx`
 - **handleCloseKpiModal()** (2 connections) — `src\components\unit-tabs\KRAsTab.tsx`
 - **mapStatusToDbFormat()** (2 connections) — `src\components\unit-tabs\KRAsTab.tsx`
@@ -33,6 +33,7 @@
 - [[Module 39]] (7 shared connections)
 - [[Module 99]] (2 shared connections)
 - [[Module 284]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -40,8 +41,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 59 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 59 (97%)
+- INFERRED: 2 (3%)
 - AMBIGUOUS: 0 (0%)
 
 ---

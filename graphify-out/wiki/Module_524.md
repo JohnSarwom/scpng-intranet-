@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **unitData.ts** (0 connections) — `src\mockData\unitData.ts`
+- **unitData.ts** (2 connections) — `src\mockData\unitData.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 541]] (1 shared connections)
+- [[Assets Service]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -23,3 +23,9 @@ members: 6
 TABLE source_file, type FROM #community/Module_93
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 365]]
+
+## Top bridge nodes
+- [[MicrosoftAPIConfig.tsx]] - degree 6, connects to 1 community

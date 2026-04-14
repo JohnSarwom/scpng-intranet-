@@ -19,3 +19,13 @@ members: 2
 TABLE source_file, type FROM #community/Module_329
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_SharePoint Operations CRUD]]
+- 1 edge to [[_COMMUNITY_Module 210]]
+- 1 edge to [[_COMMUNITY_Module 137]]
+- 1 edge to [[_COMMUNITY_Module 56]]
+
+## Top bridge nodes
+- [[useTaskGroupPreferences.ts]] - degree 3, connects to 2 communities
+- [[useTaskGroupPreferences()]] - degree 3, connects to 2 communities

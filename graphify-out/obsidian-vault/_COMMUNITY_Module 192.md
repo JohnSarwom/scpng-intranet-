@@ -20,3 +20,11 @@ members: 3
 TABLE source_file, type FROM #community/Module_192
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 2 edges to [[_COMMUNITY_Module 291]]
+- 1 edge to [[_COMMUNITY_Assets Service]]
+
+## Top bridge nodes
+- [[useUnitContext()]] - degree 3, connects to 2 communities
+- [[UnitContext.tsx]] - degree 3, connects to 1 community

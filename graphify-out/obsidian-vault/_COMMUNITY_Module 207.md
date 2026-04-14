@@ -20,3 +20,16 @@ members: 3
 TABLE source_file, type FROM #community/Module_207
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 253]]
+- 1 edge to [[_COMMUNITY_Module 255]]
+- 1 edge to [[_COMMUNITY_Module 176]]
+- 1 edge to [[_COMMUNITY_Module 177]]
+- 1 edge to [[_COMMUNITY_Module 258]]
+- 1 edge to [[_COMMUNITY_Module 79]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+
+## Top bridge nodes
+- [[FillFormPage.tsx]] - degree 10, connects to 8 communities

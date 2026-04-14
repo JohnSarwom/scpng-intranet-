@@ -4,14 +4,16 @@
 
 ## Key Concepts
 
-- **LicensingRegistry.tsx** (3 connections) — `src\pages\LicensingRegistry.tsx`
+- **LicensingRegistry.tsx** (6 connections) — `src\pages\LicensingRegistry.tsx`
 - **generateLicenseJpegFile()** (2 connections) — `src\pages\LicensingRegistry.tsx`
 - **handleSaveToDatabase()** (2 connections) — `src\pages\LicensingRegistry.tsx`
 - **handleDateChange()** (1 connections) — `src\pages\LicensingRegistry.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (73%)
+- INFERRED: 3 (27%)
 - AMBIGUOUS: 0 (0%)
 
 ---

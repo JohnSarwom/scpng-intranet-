@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[UnitProvider()]] - `contains` [EXTRACTED]
+- [[useAssetsSharePoint()]] - `calls` [INFERRED]
 - [[useUnitContext()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_192

@@ -12,7 +12,9 @@ tags:
 # ScpngNewsUploadForm.tsx
 
 ## Connections
+- [[News.tsx]] - `references` [INFERRED]
 - [[handleImageFileChange()]] - `contains` [EXTRACTED]
 - [[handleSubmit()_3]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_172

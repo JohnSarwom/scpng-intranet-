@@ -19,3 +19,9 @@ members: 2
 TABLE source_file, type FROM #community/Module_274
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 351]]
+
+## Top bridge nodes
+- [[TicketInbox.tsx]] - degree 2, connects to 1 community

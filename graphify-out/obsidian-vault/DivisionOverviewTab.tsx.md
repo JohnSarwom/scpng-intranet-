@@ -5,13 +5,15 @@ community: "Module 252"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_252
 ---
 
 # DivisionOverviewTab.tsx
 
 ## Connections
+- [[Division.tsx]] - `imports_from` [INFERRED]
 - [[DivisionOverviewTab()]] - `contains` [EXTRACTED]
+- [[useDivisionData.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_252
+#graphify/code #graphify/INFERRED #community/Module_252

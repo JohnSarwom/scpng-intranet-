@@ -4,13 +4,16 @@
 
 ## Key Concepts
 
-- **useStaffByDepartment.ts** (2 connections) — `src\hooks\useStaffByDepartment.ts`
+- **useStaffByDepartment.ts** (6 connections) — `src\hooks\useStaffByDepartment.ts`
 - **isServiceAccount()** (1 connections) — `src\hooks\useStaffByDepartment.ts`
 - **useStaffByDepartment()** (1 connections) — `src\hooks\useStaffByDepartment.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 395]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
+- [[Module 264]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (50%)
+- INFERRED: 4 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

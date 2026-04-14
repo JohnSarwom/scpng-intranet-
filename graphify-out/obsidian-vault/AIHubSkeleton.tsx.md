@@ -5,10 +5,14 @@ community: "Module 370"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_370
 ---
 
 # AIHubSkeleton.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_370
+## Connections
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[skeleton.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_370

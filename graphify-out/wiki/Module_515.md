@@ -4,11 +4,16 @@
 
 ## Key Concepts
 
-- **supabaseClient.ts** (0 connections) — `src\lib\supabaseClient.ts`
+- **supabaseClient.ts** (6 connections) — `src\lib\supabaseClient.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 369]] (1 shared connections)
+- [[Module 392]] (1 shared connections)
+- [[Module 511]] (1 shared connections)
+- [[Module 512]] (1 shared connections)
+- [[Module 514]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +22,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 6 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

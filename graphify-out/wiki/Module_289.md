@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
+- **useIsMobile()** (3 connections) — `src\hooks\use-mobile.tsx`
 - **use-mobile.tsx** (1 connections) — `src\hooks\use-mobile.tsx`
-- **useIsMobile()** (1 connections) — `src\hooks\use-mobile.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 151]] (1 shared connections)
+- [[Module 154]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

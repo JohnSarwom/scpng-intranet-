@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **useSharePointUpload.ts** (1 connections) — `src\hooks\useSharePointUpload.ts`
+- **useSharePointUpload.ts** (2 connections) — `src\hooks\useSharePointUpload.ts`
 - **useSharePointUpload()** (1 connections) — `src\hooks\useSharePointUpload.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 416]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

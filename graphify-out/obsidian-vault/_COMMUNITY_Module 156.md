@@ -21,3 +21,9 @@ members: 4
 TABLE source_file, type FROM #community/Module_156
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 62]]
+
+## Top bridge nodes
+- [[useUpcomingCalendarEvents()]] - degree 2, connects to 1 community

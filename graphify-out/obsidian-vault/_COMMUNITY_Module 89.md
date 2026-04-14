@@ -24,3 +24,12 @@ members: 7
 TABLE source_file, type FROM #community/Module_89
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 440]]
+- 1 edge to [[_COMMUNITY_Module 441]]
+- 1 edge to [[_COMMUNITY_Module 442]]
+- 1 edge to [[_COMMUNITY_Module 444]]
+
+## Top bridge nodes
+- [[strategyAnalyticsUtils.ts]] - degree 10, connects to 4 communities

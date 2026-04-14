@@ -5,10 +5,14 @@ community: "Module 431"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_431
 ---
 
 # ProgressSteps.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_431
+## Connections
+- [[types.ts_5]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_431

@@ -5,12 +5,12 @@
 ## Key Concepts
 
 - **useMarketData.ts** (2 connections) — `src\hooks\useMarketData.ts`
+- **useLiveMarketUpdates()** (2 connections) — `src\hooks\useMarketData.ts`
 - **useMarketData()** (1 connections) — `src\hooks\useMarketData.ts`
-- **useLiveMarketUpdates()** (1 connections) — `src\hooks\useMarketData.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 109]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

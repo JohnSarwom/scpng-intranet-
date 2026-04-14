@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **GlobalAssigneeSelector.tsx** (4 connections) — `src\components\common\GlobalAssigneeSelector.tsx`
+- **GlobalAssigneeSelector.tsx** (6 connections) — `src\components\common\GlobalAssigneeSelector.tsx`
 - **handleSelect()** (1 connections) — `src\components\common\GlobalAssigneeSelector.tsx`
 - **handleRemove()** (1 connections) — `src\components\common\GlobalAssigneeSelector.tsx`
 
@@ -12,6 +12,8 @@
 
 - [[Module 264]] (1 shared connections)
 - [[Module 179]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
+- [[Module 498]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (75%)
+- INFERRED: 2 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -12,8 +12,10 @@ tags:
 # StrategyAnalytics.tsx
 
 ## Connections
+- [[Strategy.tsx]] - `references` [INFERRED]
 - [[calculateGoalProgressFromChildren()]] - `calls` [INFERRED]
 - [[calculateStrategicProgress()]] - `calls` [INFERRED]
 - [[getPeriodLabel()]] - `contains` [EXTRACTED]
+- [[useComponentVisibilityAdmin()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/INFERRED #community/Module_272

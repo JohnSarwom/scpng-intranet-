@@ -13,7 +13,9 @@ tags:
 
 ## Connections
 - [[cn()_4]] - `contains` [EXTRACTED]
+- [[collapsible.tsx]] - `references` [INFERRED]
 - [[handleKeyDown()_3]] - `contains` [EXTRACTED]
+- [[useIsMobile()]] - `calls` [INFERRED]
 - [[useSidebar()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_154

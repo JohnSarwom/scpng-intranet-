@@ -71,3 +71,19 @@ members: 54
 TABLE source_file, type FROM #community/TestGround_Admin
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 146]]
+- 1 edge to [[_COMMUNITY_SharePoint Explorer UI]]
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 228]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 255]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 480]]
+- 1 edge to [[_COMMUNITY_Module 491]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[TestGround.tsx]] - degree 64, connects to 11 communities

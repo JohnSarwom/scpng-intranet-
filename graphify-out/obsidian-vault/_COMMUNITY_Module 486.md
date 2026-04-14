@@ -18,3 +18,10 @@ members: 1
 TABLE source_file, type FROM #community/Module_486
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 107]]
+- 1 edge to [[_COMMUNITY_Module 487]]
+
+## Top bridge nodes
+- [[toast.tsx]] - degree 2, connects to 2 communities

@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[SharePointListSetupService]] - `contains` [EXTRACTED]
+- [[useSharePointOps.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/SharePoint_List_Setup

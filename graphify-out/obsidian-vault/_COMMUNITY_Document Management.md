@@ -43,3 +43,20 @@ members: 26
 TABLE source_file, type FROM #community/Document_Management
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 381]]
+- 1 edge to [[_COMMUNITY_Module 414]]
+- 1 edge to [[_COMMUNITY_Module 175]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 283]]
+- 1 edge to [[_COMMUNITY_Module 128]]
+- 1 edge to [[_COMMUNITY_Module 316]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[Documents.tsx]] - degree 37, connects to 12 communities

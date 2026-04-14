@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Documents.tsx** (25 connections) — `src\pages\Documents.tsx`
+- **Documents.tsx** (37 connections) — `src\pages\Documents.tsx`
 - **loadCategories()** (4 connections) — `src\pages\Documents.tsx`
 - **fetchPersonalDocumentsRoot()** (4 connections) — `src\pages\Documents.tsx`
 - **loadData()** (4 connections) — `src\pages\Documents.tsx`
@@ -33,7 +33,18 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 381]] (1 shared connections)
+- [[Module 414]] (1 shared connections)
+- [[Module 175]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 283]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -41,8 +52,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 76 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 76 (86%)
+- INFERRED: 12 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

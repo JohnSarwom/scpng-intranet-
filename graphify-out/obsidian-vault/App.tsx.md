@@ -14,5 +14,6 @@ tags:
 ## Connections
 - [[AssetsPageRoute()]] - `contains` [EXTRACTED]
 - [[main.tsx]] - `imports_from` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_165

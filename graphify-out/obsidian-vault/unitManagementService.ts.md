@@ -5,10 +5,14 @@ community: "Module 514"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_514
 ---
 
 # unitManagementService.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_514
+## Connections
+- [[supabaseClient.ts_1]] - `imports_from` [INFERRED]
+- [[types.ts_5]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_514

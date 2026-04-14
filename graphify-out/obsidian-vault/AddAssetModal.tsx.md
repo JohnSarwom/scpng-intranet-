@@ -18,5 +18,6 @@ tags:
 - [[handleCloseAndReset()]] - `contains` [EXTRACTED]
 - [[handleDateChange()_2]] - `contains` [EXTRACTED]
 - [[handleFileSelect()_3]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_83

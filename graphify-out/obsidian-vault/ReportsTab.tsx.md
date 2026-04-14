@@ -34,5 +34,6 @@ tags:
 - [[toggleAll()]] - `contains` [EXTRACTED]
 - [[toggleCategory()]] - `contains` [EXTRACTED]
 - [[toggleScheduleCategory()]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Reports_Tab

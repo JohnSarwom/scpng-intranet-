@@ -12,6 +12,7 @@ tags:
 # RoleManagement.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[handleCreateGroup()]] - `contains` [EXTRACTED]
 - [[handleDeleteGroup()]] - `contains` [EXTRACTED]
 - [[handleDuplicateGroup()]] - `contains` [EXTRACTED]

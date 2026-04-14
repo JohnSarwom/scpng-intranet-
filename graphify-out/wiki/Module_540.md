@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **config.ts** (0 connections) — `src\services\powerAutomate\config.ts`
+- **config.ts** (1 connections) — `src\services\powerAutomate\config.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 140]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

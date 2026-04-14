@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **ProgressSteps.tsx** (0 connections) — `src\components\setup-wizard\components\ProgressSteps.tsx`
+- **ProgressSteps.tsx** (2 connections) — `src\components\setup-wizard\components\ProgressSteps.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 541]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

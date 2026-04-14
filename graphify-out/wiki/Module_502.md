@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **microsoft-auth.ts** (0 connections) — `src\config\microsoft-auth.ts`
+- **microsoft-auth.ts** (2 connections) — `src\config\microsoft-auth.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 432]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **GalleryLightbox.tsx** (5 connections) — `src\components\gallery\GalleryLightbox.tsx`
+- **GalleryLightbox.tsx** (6 connections) — `src\components\gallery\GalleryLightbox.tsx`
 - **getSlotWidth()** (2 connections) — `src\components\gallery\GalleryLightbox.tsx`
 - **onResize()** (2 connections) — `src\components\gallery\GalleryLightbox.tsx`
 - **handler()** (1 connections) — `src\components\gallery\GalleryLightbox.tsx`
@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Gallery Management]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

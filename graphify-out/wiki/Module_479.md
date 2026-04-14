@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **select.tsx** (0 connections) — `src\components\ui\select.tsx`
+- **select.tsx** (24 connections) — `src\components\ui\select.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 379]] (1 shared connections)
+- [[Module 381]] (1 shared connections)
+- [[Module 384]] (1 shared connections)
+- [[Module 386]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 413]] (1 shared connections)
+- [[Module 417]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
+- [[Module 495]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 24 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

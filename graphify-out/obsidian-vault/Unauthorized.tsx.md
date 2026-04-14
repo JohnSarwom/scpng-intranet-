@@ -5,13 +5,15 @@ community: "Module 354"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_354
 ---
 
 # Unauthorized.tsx
 
 ## Connections
+- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
 - [[handleRefresh()_1]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_354
+#graphify/code #graphify/INFERRED #community/Module_354

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Gallery.tsx** (14 connections) — `src\pages\Gallery.tsx`
+- **Gallery.tsx** (25 connections) — `src\pages\Gallery.tsx`
 - **getColumns()** (2 connections) — `src\pages\Gallery.tsx`
 - **handleResize()** (2 connections) — `src\pages\Gallery.tsx`
 - **toggleSelectMode()** (2 connections) — `src\pages\Gallery.tsx`
@@ -22,7 +22,17 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 259]] (1 shared connections)
+- [[Module 260]] (1 shared connections)
+- [[Module 261]] (1 shared connections)
+- [[Module 98]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 458]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 32 (74%)
+- INFERRED: 11 (26%)
 - AMBIGUOUS: 0 (0%)
 
 ---

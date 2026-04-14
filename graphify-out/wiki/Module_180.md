@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **PaymentRecords.tsx** (2 connections) — `src\components\payments\PaymentRecords.tsx`
+- **PaymentRecords.tsx** (3 connections) — `src\components\payments\PaymentRecords.tsx`
 - **handleSort()** (1 connections) — `src\components\payments\PaymentRecords.tsx`
 - **SortIcon()** (1 connections) — `src\components\payments\PaymentRecords.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 348]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

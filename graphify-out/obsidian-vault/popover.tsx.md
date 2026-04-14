@@ -5,10 +5,16 @@ community: "Module 473"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_473
 ---
 
 # popover.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_473
+## Connections
+- [[DatePicker.tsx]] - `imports_from` [INFERRED]
+- [[DateRangePicker.tsx]] - `imports_from` [INFERRED]
+- [[EditRiskModal.tsx]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_473

@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **InquiryGridView.tsx** (0 connections) — `src\components\ticketing\InquiryGridView.tsx`
+- **InquiryGridView.tsx** (2 connections) — `src\components\ticketing\InquiryGridView.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[General Inquiries]] (1 shared connections)
+- [[Module 273]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

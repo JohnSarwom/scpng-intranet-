@@ -5,10 +5,13 @@ community: "Module 536"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_536
 ---
 
 # regulatoryQuestions.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_536
+## Connections
+- [[RegulatoryAIChat.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_536

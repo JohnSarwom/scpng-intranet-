@@ -5,13 +5,14 @@ community: "Module 346"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_346
 ---
 
 # Notes.tsx
 
 ## Connections
+- [[AssetCard.tsx]] - `references` [INFERRED]
 - [[NotesPage()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_346
+#graphify/code #graphify/INFERRED #community/Module_346

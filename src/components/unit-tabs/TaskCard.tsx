@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle, Repeat, CheckSquare } from 'lucide-react';
+import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle, Repeat, CheckSquare, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -17,6 +17,82 @@ import {
 import { StaffMember } from '@/types/staff';
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
 import { Employee } from '@/contexts/EmployeesContext';
+
+// ─── Confetti engine ───────────────────────────────────────────────────────────
+const CONFETTI_COLORS = [
+  "#1D9E75", "#5DCAA5", "#9FE1CB",
+  "#7a1530", "#FAC775", "#EF9F27",
+  "#B5D4F4", "#378ADD",
+];
+
+function spawnConfetti(canvas: HTMLCanvasElement | null) {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const W = canvas.width;
+  const H = canvas.height;
+
+  const pieces = Array.from({ length: 56 }, () => ({
+    x: W / 2 + (Math.random() - 0.5) * 30,
+    y: H / 2 + (Math.random() - 0.5) * 20,
+    vx: (Math.random() - 0.5) * 7,
+    vy: -(Math.random() * 6 + 3),
+    ay: 0.18,
+    w: Math.random() * 8 + 4,
+    h: Math.random() * 4 + 3,
+    angle: Math.random() * Math.PI * 2,
+    spin: (Math.random() - 0.5) * 0.28,
+    color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+    life: 1,
+    decay: Math.random() * 0.013 + 0.009,
+  }));
+
+  let rafId: number;
+  const draw = () => {
+    ctx.clearRect(0, 0, W, H);
+    let alive = false;
+    for (const p of pieces) {
+      p.vx *= 0.99;
+      p.vy += p.ay;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.angle += p.spin;
+      p.life -= p.decay;
+      if (p.life <= 0) continue;
+      alive = true;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    if (alive) rafId = requestAnimationFrame(draw);
+  };
+  draw();
+  return () => cancelAnimationFrame(rafId);
+}
+
+// Inject keyframes once
+let keyframesInjected = false;
+function injectKeyframes() {
+  if (keyframesInjected) return;
+  keyframesInjected = true;
+  const style = document.createElement("style");
+  style.textContent = `
+    @keyframes ringBurst {
+      0% { transform: translate(-50%,-50%) scale(0); opacity: 0.8; }
+      100% { transform: translate(-50%,-50%) scale(2.8); opacity: 0; }
+    }
+    @keyframes completionPulse {
+      0% { box-shadow: 0 0 0 0 rgba(29,158,117,0.3); }
+      70% { box-shadow: 0 0 0 8px rgba(29,158,117,0); }
+      100% { box-shadow: 0 0 0 0 rgba(29,158,117,0); }
+    }
+  `;
+  document.head.appendChild(style);
+}
 
 // Extend props to include anything needed by useSortable or event handlers
 export interface TaskCardProps {
@@ -102,6 +178,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   // Init local state from props, but allow instant toggle
   const [isCompletedOptimistic, setIsCompletedOptimistic] = useState(completed);
+  // "idle" | "completing" | "done"
+  const [completionPhase, setCompletionPhase] = useState<"idle" | "completing" | "done">("idle");
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const cancelConfettiRef = useRef<(() => void) | undefined>();
+
+  // Inject CSS keyframes on mount
+  useEffect(() => {
+    injectKeyframes();
+  }, []);
 
   // Sync state if prop changes (e.g. initial load or external update)
   useEffect(() => {
@@ -139,13 +224,34 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Optimistic update
-    const newValue = !isCompletedOptimistic;
-    setIsCompletedOptimistic(newValue);
 
-    if (onComplete) {
-      onComplete(id, newValue);
+    // If already completed, just toggle off directly (no animation for uncomplete)
+    if (isCompletedOptimistic) {
+      setIsCompletedOptimistic(false);
+      setCompletionPhase("idle");
+      onComplete?.(id, false);
+      return;
     }
+
+    // If animation is already running, ignore
+    if (completionPhase !== "idle") return;
+
+    // Start completion animation
+    setCompletionPhase("completing");
+    setIsCompletedOptimistic(true);
+
+    // Fire confetti
+    cancelConfettiRef.current = spawnConfetti(canvasRef.current);
+
+    // After overlay settles, transition to done phase and notify parent
+    setTimeout(() => {
+      setCompletionPhase("done");
+      onComplete?.(id, true);
+      // Reset phase after fade-out completes so card can be reused if not removed
+      setTimeout(() => {
+        setCompletionPhase("idle");
+      }, 600);
+    }, 1500);
   };
 
   const statusLabel = status ? (statusLabels[status as keyof typeof statusLabels] || status) : '';
@@ -154,48 +260,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Create header content - title with optional completion checkbox
   const headerContent = (
     <div className="flex items-start gap-2">
-      {onComplete && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="complete-button h-5 w-5 p-0 flex-shrink-0 mt-0.5 text-muted-foreground hover:text-primary backdrop-blur-sm bg-white/5 dark:bg-white/5"
-                onClick={handleToggleComplete}
-                onPointerDown={(e) => e.stopPropagation()}
-                draggable="false"
-              >
-                <AnimatePresence mode="wait" initial={false}>
-                  {isCompletedOptimistic ?
-                    <motion.div
-                      key="check"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                    >
-                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-500" />
-                    </motion.div> :
-                    <motion.div
-                      key="circle"
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <Circle className="h-4 w-4" />
-                    </motion.div>
-                  }
-                </AnimatePresence>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent container={container}>
-              <p>{isCompletedOptimistic ? 'Mark as incomplete' : 'Mark as complete'}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
       <div className={cn("text-[13px] font-medium leading-tight flex-grow mr-1 dark:text-gray-100", isCompletedOptimistic && "line-through text-muted-foreground")}>{title}</div>
     </div>
   );
@@ -256,6 +320,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const cardContent = description ? (
     <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1 leading-relaxed">{description}</p>
   ) : undefined;
+
+  const isCompleting = completionPhase === "completing";
+  const isDone = completionPhase === "done";
 
   // Create footer content - badges, dates, comments, assignee
   const footerContent = (
@@ -492,21 +559,106 @@ const TaskCard: React.FC<TaskCardProps> = ({
     </div>
   );
 
+  // Mark as complete button
+  const completeButton = onComplete ? (
+    <button
+      onClick={handleToggleComplete}
+      disabled={completionPhase !== "idle" && !isCompletedOptimistic}
+      onPointerDown={(e) => e.stopPropagation()}
+      draggable="false"
+      className={cn(
+        "flex items-center gap-1.5 w-full justify-center mt-2 py-1.5 px-3 rounded-md border text-xs font-medium transition-all duration-200 font-sans",
+        isCompleting
+          ? "bg-[#1D9E75] text-white border-[#1D9E75] cursor-default"
+          : isCompletedOptimistic
+            ? "bg-green-50 text-green-700 border-green-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800 dark:hover:bg-red-900/20 dark:hover:text-red-400 dark:hover:border-red-800"
+            : "bg-transparent text-muted-foreground border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer"
+      )}
+    >
+      <span className={cn(
+        "w-3.5 h-3.5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all duration-200",
+        isCompleting
+          ? "bg-white border-white text-[#1D9E75]"
+          : isCompletedOptimistic
+            ? "bg-green-600 border-green-600 text-white"
+            : "border-current"
+      )}>
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+          <path
+            d="M1.5 4l2 2 3-3.5"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
+      {isCompleting ? "Done!" : isCompletedOptimistic ? "Completed" : "Mark as complete"}
+    </button>
+  ) : null;
+
+  // Combined footer with button
+  const combinedFooter = (
+    <div className="w-full">
+      {footerContent}
+      {completeButton}
+    </div>
+  );
+
   return (
-    <PremiumKanbanCard
-      id={id}
-      headerContent={headerContent}
-      headerActions={headerActions}
-      cardContent={cardContent}
-      footerContent={footerContent}
-      onClick={onClick}
-      isDragging={false}
-      isDragOverlay={isDragOverlay}
-      isOverdue={isDueDatePassed}
-      isCompleted={isCompletedOptimistic}
-      glow={true}
-      className={cn("mb-3", className)}
-    />
+    <div className={cn("relative", isDone && "opacity-0 scale-95 -translate-y-1.5 transition-all duration-500 pointer-events-none")}>
+      {/* Confetti canvas */}
+      <canvas
+        ref={canvasRef}
+        width={320}
+        height={240}
+        className="absolute -top-10 -left-10 pointer-events-none z-20"
+        style={{ width: 'calc(100% + 80px)', height: 'calc(100% + 80px)' }}
+      />
+
+      {/* Ring burst */}
+      <div
+        className="absolute top-1/2 left-1/2 w-[60px] h-[60px] rounded-full border-2 border-[#1D9E75] pointer-events-none z-10"
+        style={{
+          transform: isCompleting ? undefined : 'translate(-50%, -50%) scale(0)',
+          opacity: isCompleting ? undefined : 0,
+          animation: isCompleting ? 'ringBurst 0.55s ease-out forwards' : 'none',
+        }}
+      />
+
+      {/* Done overlay */}
+      <div
+        className={cn(
+          "absolute inset-0 rounded-xl flex flex-col items-center justify-center gap-1.5 pointer-events-none z-10 transition-opacity duration-300",
+          isCompleting ? "opacity-100 delay-300" : "opacity-0"
+        )}
+        style={{ background: "rgba(234, 243, 222, 0.95)" }}
+      >
+        <div className="w-9 h-9 rounded-full bg-[#1D9E75] flex items-center justify-center">
+          <Check className="h-[18px] w-[18px] text-white" />
+        </div>
+        <span className="text-[13px] font-medium text-[#27500A]">Completed!</span>
+      </div>
+
+      <PremiumKanbanCard
+        id={id}
+        headerContent={headerContent}
+        headerActions={headerActions}
+        cardContent={cardContent}
+        footerContent={combinedFooter}
+        onClick={onClick}
+        isDragging={false}
+        isDragOverlay={isDragOverlay}
+        isOverdue={isDueDatePassed}
+        isCompleted={isCompletedOptimistic && completionPhase === "idle"}
+        glow={true}
+        className={cn(
+          "mb-3",
+          isCompleting && "border-[#1D9E75] shadow-[0_0_0_4px_rgba(29,158,117,0.12)]",
+          className
+        )}
+      />
+    </div>
   );
 };
 

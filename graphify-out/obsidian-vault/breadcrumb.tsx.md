@@ -5,10 +5,13 @@ community: "Module 455"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_455
 ---
 
 # breadcrumb.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_455
+## Connections
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_455

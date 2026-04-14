@@ -12,8 +12,10 @@ tags:
 # StaffMetricsTab.tsx
 
 ## Connections
+- [[Unit.tsx]] - `references` [INFERRED]
 - [[handleExportAll()]] - `contains` [EXTRACTED]
 - [[handleExportIndividual()]] - `contains` [EXTRACTED]
 - [[handleViewDetails()]] - `contains` [EXTRACTED]
+- [[useOfficerProfiles.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_155

@@ -12,6 +12,7 @@ tags:
 # MailAndPackages.tsx
 
 ## Connections
+- [[Tickets.tsx]] - `references` [INFERRED]
 - [[getInitials()_2]] - `contains` [EXTRACTED]
 - [[renderListItem()]] - `contains` [EXTRACTED]
 

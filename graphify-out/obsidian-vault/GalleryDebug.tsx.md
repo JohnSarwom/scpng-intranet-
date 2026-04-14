@@ -12,6 +12,7 @@ tags:
 # GalleryDebug.tsx
 
 ## Connections
+- [[Gallery.tsx]] - `references` [INFERRED]
 - [[testDirectQuery()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_261

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **MarketData.tsx** (5 connections) — `src\pages\MarketData.tsx`
+- **MarketData.tsx** (14 connections) — `src\pages\MarketData.tsx`
 - **Sparkline()** (1 connections) — `src\pages\MarketData.tsx`
 - **downloadCSV()** (1 connections) — `src\pages\MarketData.tsx`
 - **toggleFullscreen()** (1 connections) — `src\pages\MarketData.tsx`
@@ -13,7 +13,15 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 374]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
+- [[Module 483]] (1 shared connections)
+- [[Module 195]] (1 shared connections)
+- [[Module 157]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (53%)
+- INFERRED: 9 (47%)
 - AMBIGUOUS: 0 (0%)
 
 ---

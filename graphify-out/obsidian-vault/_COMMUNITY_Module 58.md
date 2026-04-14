@@ -30,11 +30,13 @@ SORT file.name ASC
 ## Connections to other communities
 - 3 edges to [[_COMMUNITY_SharePoint Operations CRUD]]
 - 3 edges to [[_COMMUNITY_Module 144]]
+- 2 edges to [[_COMMUNITY_Module 179]]
 - 2 edges to [[_COMMUNITY_Module 272]]
-- 1 edge to [[_COMMUNITY_Module 179]]
+- 1 edge to [[_COMMUNITY_Module 394]]
 
 ## Top bridge nodes
 - [[calculateStrategicProgress()]] - degree 7, connects to 3 communities
-- [[calculateKpiProgress()]] - degree 5, connects to 3 communities
+- [[calculateKpiProgress()]] - degree 6, connects to 3 communities
 - [[calculateKraProgress()]] - degree 5, connects to 2 communities
+- [[kpiUtils.ts]] - degree 9, connects to 1 community
 - [[calculateGoalProgressFromChildren()]] - degree 3, connects to 1 community

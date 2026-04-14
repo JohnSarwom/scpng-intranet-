@@ -12,6 +12,10 @@ tags:
 # useDivisions.ts
 
 ## Connections
+- [[OrgChart.tsx]] - `calls` [INFERRED]
+- [[Strategy.tsx]] - `calls` [INFERRED]
+- [[divisionService.ts_1]] - `imports_from` [EXTRACTED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useDivisions()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_301

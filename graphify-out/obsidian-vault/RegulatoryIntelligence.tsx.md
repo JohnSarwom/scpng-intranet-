@@ -5,13 +5,14 @@ community: "Module 349"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_349
 ---
 
 # RegulatoryIntelligence.tsx
 
 ## Connections
+- [[PageLayout.tsx]] - `references` [INFERRED]
 - [[RegulatoryIntelligence()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_349
+#graphify/code #graphify/INFERRED #community/Module_349

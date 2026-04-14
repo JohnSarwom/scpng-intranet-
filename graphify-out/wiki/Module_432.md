@@ -4,11 +4,17 @@
 
 ## Key Concepts
 
-- **SimplifiedOneDriveSetup.tsx** (0 connections) — `src\components\setup-wizard\components\SimplifiedOneDriveSetup.tsx`
+- **SimplifiedOneDriveSetup.tsx** (7 connections) — `src\components\setup-wizard\components\SimplifiedOneDriveSetup.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 456]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 84]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 451]] (1 shared connections)
+- [[Module 502]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +23,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 7 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

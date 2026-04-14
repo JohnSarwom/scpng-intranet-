@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **staffService.ts** (2 connections) — `src\services\staffService.ts`
+- **staffService.ts** (3 connections) — `src\services\staffService.ts`
 - **fetchStaffMembers()** (1 connections) — `src\services\staffService.ts`
 - **fetchStaffMemberByEmail()** (1 connections) — `src\services\staffService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 327]] (1 shared connections)
 
 ## Source Files
 
@@ -18,7 +18,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 5 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

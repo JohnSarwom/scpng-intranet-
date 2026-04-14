@@ -18,3 +18,9 @@ members: 1
 TABLE source_file, type FROM #community/Module_385
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 280]]
+
+## Top bridge nodes
+- [[AppGridSkeleton.tsx]] - degree 1, connects to 1 community

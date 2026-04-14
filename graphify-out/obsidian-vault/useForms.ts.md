@@ -12,6 +12,7 @@ tags:
 # useForms.ts
 
 ## Connections
+- [[formsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useForms()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_306

@@ -20,3 +20,9 @@ members: 3
 TABLE source_file, type FROM #community/Module_169
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Asset Management UI]]
+
+## Top bridge nodes
+- [[AssetInfoModal.tsx]] - degree 3, connects to 1 community

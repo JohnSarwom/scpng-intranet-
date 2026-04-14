@@ -31,3 +31,14 @@ members: 14
 TABLE source_file, type FROM #community/Assets_Service
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 373]]
+- 1 edge to [[_COMMUNITY_Module 192]]
+- 1 edge to [[_COMMUNITY_Module 509]]
+- 1 edge to [[_COMMUNITY_Module 291]]
+- 1 edge to [[_COMMUNITY_Module 292]]
+- 1 edge to [[_COMMUNITY_Module 524]]
+
+## Top bridge nodes
+- [[assetsSharePointService.ts]] - degree 7, connects to 6 communities

@@ -5,10 +5,16 @@ community: "Module 491"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_491
 ---
 
 # use-toast.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_491
+## Connections
+- [[AssetManagementNew.tsx]] - `references` [INFERRED]
+- [[TestGround.tsx]] - `references` [INFERRED]
+- [[Unit.tsx]] - `references` [INFERRED]
+- [[use-toast.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_491

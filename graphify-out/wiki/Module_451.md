@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **alert.tsx** (0 connections) — `src\components\ui\alert.tsx`
+- **alert.tsx** (4 connections) — `src\components\ui\alert.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 363]] (1 shared connections)
+- [[Module 430]] (1 shared connections)
+- [[Module 432]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

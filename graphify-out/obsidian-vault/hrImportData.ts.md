@@ -5,10 +5,13 @@ community: "Module 508"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_508
 ---
 
 # hrImportData.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_508
+## Connections
+- [[employeeData.ts]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_508

@@ -4,11 +4,15 @@
 
 ## Key Concepts
 
-- **InquiryBoardLane.tsx** (0 connections) — `src\components\ticketing\InquiryBoardLane.tsx`
+- **InquiryBoardLane.tsx** (5 connections) — `src\components\ticketing\InquiryBoardLane.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[General Inquiries]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 273]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +21,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 5 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

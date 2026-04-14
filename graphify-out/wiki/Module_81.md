@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DivisionModal.tsx** (6 connections) — `src\components\strategy\DivisionModal.tsx`
+- **DivisionModal.tsx** (7 connections) — `src\components\strategy\DivisionModal.tsx`
 - **getDivisionImagePath()** (1 connections) — `src\components\strategy\DivisionModal.tsx`
 - **getIcon()** (1 connections) — `src\components\strategy\DivisionModal.tsx`
 - **handleEditToggle()** (1 connections) — `src\components\strategy\DivisionModal.tsx`
@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (92%)
+- INFERRED: 1 (8%)
 - AMBIGUOUS: 0 (0%)
 
 ---

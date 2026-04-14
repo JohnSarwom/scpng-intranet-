@@ -5,10 +5,14 @@ community: "Module 361"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_361
 ---
 
 # registry.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_361
+## Connections
+- [[main.tsx]] - `imports_from` [INFERRED]
+- [[types.ts_5]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_361

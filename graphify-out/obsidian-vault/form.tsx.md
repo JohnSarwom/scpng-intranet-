@@ -5,10 +5,14 @@ community: "Module 466"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_466
 ---
 
 # form.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_466
+## Connections
+- [[label.tsx]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_466

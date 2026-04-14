@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **badge.tsx** (0 connections) — `src\components\ui\badge.tsx`
+- **badge.tsx** (16 connections) — `src\components\ui\badge.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 369]] (1 shared connections)
+- [[Module 384]] (1 shared connections)
+- [[Module 389]] (1 shared connections)
+- [[Module 393]] (1 shared connections)
+- [[Module 398]] (1 shared connections)
+- [[Module 403]] (1 shared connections)
+- [[Module 405]] (1 shared connections)
+- [[Module 408]] (1 shared connections)
+- [[Module 411]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 447]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 16 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,14 +4,20 @@
 
 ## Key Concepts
 
-- **AdminAssetsPage.tsx** (3 connections) — `src\pages\AdminAssetsPage.tsx`
+- **AdminAssetsPage.tsx** (10 connections) — `src\pages\AdminAssetsPage.tsx`
 - **handleTabChange()** (1 connections) — `src\pages\AdminAssetsPage.tsx`
 - **toggleFullscreen()** (1 connections) — `src\pages\AdminAssetsPage.tsx`
 - **renderTabContent()** (1 connections) — `src\pages\AdminAssetsPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 372]] (1 shared connections)
+- [[Module 225]] (1 shared connections)
+- [[Module 226]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 283]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (46%)
+- INFERRED: 7 (54%)
 - AMBIGUOUS: 0 (0%)
 
 ---

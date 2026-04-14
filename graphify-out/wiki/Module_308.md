@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **useHRService.ts** (1 connections) — `src\hooks\useHRService.ts`
+- **useHRService.ts** (3 connections) — `src\hooks\useHRService.ts`
 - **useHRService()** (1 connections) — `src\hooks\useHRService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[HR Service]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

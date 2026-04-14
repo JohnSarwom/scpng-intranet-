@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **registry.ts** (0 connections) — `src\bones\registry.ts`
+- **registry.ts** (2 connections) — `src\bones\registry.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 165]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

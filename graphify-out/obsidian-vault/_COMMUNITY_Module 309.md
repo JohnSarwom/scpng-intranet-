@@ -19,3 +19,10 @@ members: 2
 TABLE source_file, type FROM #community/Module_309
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 238]]
+- 1 edge to [[_COMMUNITY_Market News Service]]
+
+## Top bridge nodes
+- [[useInternalNews.ts]] - degree 3, connects to 2 communities

@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[MetricCard()]] - `contains` [EXTRACTED]
+- [[PersonalKPICards.tsx]] - `imports_from` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_241

@@ -12,6 +12,7 @@ tags:
 # AddPaymentModal.tsx
 
 ## Connections
+- [[PaymentsPage.tsx]] - `references` [INFERRED]
 - [[handleAssetSelect()]] - `contains` [EXTRACTED]
 - [[handleChange()]] - `contains` [EXTRACTED]
 - [[handleFileSelect()_1]] - `contains` [EXTRACTED]

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Forms.tsx** (4 connections) — `src\pages\Forms.tsx`
+- **Forms.tsx** (14 connections) — `src\pages\Forms.tsx`
 - **getIcon()** (1 connections) — `src\pages\Forms.tsx`
 - **handleFormAccess()** (1 connections) — `src\pages\Forms.tsx`
 - **getStatusBadgeVariant()** (1 connections) — `src\pages\Forms.tsx`
@@ -12,7 +12,16 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 417]] (1 shared connections)
+- [[Module 418]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 465]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (44%)
+- INFERRED: 10 (56%)
 - AMBIGUOUS: 0 (0%)
 
 ---

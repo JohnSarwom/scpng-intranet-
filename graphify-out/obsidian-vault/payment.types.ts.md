@@ -5,10 +5,14 @@ community: "Module 550"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_550
 ---
 
 # payment.types.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_550
+## Connections
+- [[index.ts_5]] - `contains` [INFERRED]
+- [[paymentConstants.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_550

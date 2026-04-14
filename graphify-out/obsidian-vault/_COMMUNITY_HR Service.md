@@ -45,3 +45,11 @@ members: 28
 TABLE source_file, type FROM #community/HR_Service
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 308]]
+- 1 edge to [[_COMMUNITY_Module 312]]
+- 1 edge to [[_COMMUNITY_Module 313]]
+
+## Top bridge nodes
+- [[hrSharePointService.ts]] - degree 6, connects to 3 communities

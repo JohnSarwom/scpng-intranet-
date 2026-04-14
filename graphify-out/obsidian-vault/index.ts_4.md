@@ -5,10 +5,13 @@ community: "Module 531"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_531
 ---
 
 # index.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_531
+## Connections
+- [[index.ts_4]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_531

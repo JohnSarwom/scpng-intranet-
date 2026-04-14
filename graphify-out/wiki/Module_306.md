@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **useForms.ts** (1 connections) — `src\hooks\useForms.ts`
-- **useForms()** (1 connections) — `src\hooks\useForms.ts`
+- **useForms.ts** (2 connections) — `src\hooks\useForms.ts`
+- **useForms()** (2 connections) — `src\hooks\useForms.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 70]] (1 shared connections)
+- [[Module 546]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (75%)
+- INFERRED: 1 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

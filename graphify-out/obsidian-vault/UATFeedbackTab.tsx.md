@@ -12,6 +12,8 @@ tags:
 # UATFeedbackTab.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
+- [[UATFeedbackPage.tsx]] - `references` [INFERRED]
 - [[getService()_1]] - `contains` [EXTRACTED]
 - [[handleDelete()_2]] - `contains` [EXTRACTED]
 - [[handleStatusChange()]] - `contains` [EXTRACTED]

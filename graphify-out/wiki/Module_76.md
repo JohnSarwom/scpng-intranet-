@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **OrgStructureManagement.tsx** (6 connections) — `src\components\admin\OrgStructureManagement.tsx`
+- **OrgStructureManagement.tsx** (8 connections) — `src\components\admin\OrgStructureManagement.tsx`
 - **getService()** (3 connections) — `src\components\admin\OrgStructureManagement.tsx`
 - **handleDelete()** (2 connections) — `src\components\admin\OrgStructureManagement.tsx`
 - **handleSave()** (2 connections) — `src\components\admin\OrgStructureManagement.tsx`
@@ -14,7 +14,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 319]] (1 shared connections)
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (89%)
+- INFERRED: 2 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

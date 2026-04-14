@@ -13,5 +13,7 @@ tags:
 
 ## Connections
 - [[UnitContext.tsx]] - `contains` [EXTRACTED]
+- [[assetsSharePointService.ts]] - `imports_from` [EXTRACTED]
+- [[useAssetsSharePoint.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_192

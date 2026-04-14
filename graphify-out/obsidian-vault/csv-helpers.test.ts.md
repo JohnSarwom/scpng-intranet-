@@ -5,10 +5,13 @@ community: "Module 542"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_542
 ---
 
 # csv-helpers.test.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_542
+## Connections
+- [[csv-helpers.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_542

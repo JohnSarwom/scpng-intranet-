@@ -5,13 +5,20 @@ community: "Module 228"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_228
 ---
 
 # DecommissionedAssetTableHeader.tsx
 
 ## Connections
+- [[AssetManagementNew.tsx]] - `references` [INFERRED]
 - [[DecommissionedAssetTableHeader()]] - `contains` [EXTRACTED]
+- [[DecommissionedAssets.tsx]] - `references` [INFERRED]
+- [[EditEmployeeProfile.tsx]] - `references` [INFERRED]
+- [[Strategy.tsx]] - `references` [INFERRED]
+- [[TestGround.tsx]] - `references` [INFERRED]
+- [[UILibrary.tsx]] - `references` [INFERRED]
+- [[Unit.tsx]] - `references` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_228
+#graphify/code #graphify/INFERRED #community/Module_228

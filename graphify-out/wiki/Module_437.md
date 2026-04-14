@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **StaticQuestionLibrarySidebar.tsx** (0 connections) — `src\components\shared\ai-chat\StaticQuestionLibrarySidebar.tsx`
+- **StaticQuestionLibrarySidebar.tsx** (1 connections) — `src\components\shared\ai-chat\StaticQuestionLibrarySidebar.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 436]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

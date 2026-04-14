@@ -5,10 +5,13 @@ community: "Module 435"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_435
 ---
 
 # AIChatPanel.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_435
+## Connections
+- [[index.ts_1]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_435

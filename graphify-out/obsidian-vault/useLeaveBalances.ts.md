@@ -12,6 +12,8 @@ tags:
 # useLeaveBalances.ts
 
 ## Connections
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[hrSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useLeaveBalances()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_312

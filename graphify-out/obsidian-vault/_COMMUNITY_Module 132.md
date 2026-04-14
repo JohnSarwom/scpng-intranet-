@@ -22,3 +22,14 @@ members: 5
 TABLE source_file, type FROM #community/Module_132
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 3 edges to [[_COMMUNITY_Module 387]]
+- 3 edges to [[_COMMUNITY_Module 390]]
+- 2 edges to [[_COMMUNITY_Module 388]]
+
+## Top bridge nodes
+- [[useSlideshows.ts]] - degree 7, connects to 3 communities
+- [[useCapitalMarketNews()]] - degree 4, connects to 3 communities
+- [[useMSOffice365Tips()]] - degree 2, connects to 1 community
+- [[useCapitalMarketActs()]] - degree 2, connects to 1 community

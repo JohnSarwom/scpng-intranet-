@@ -5,13 +5,14 @@ community: "Module 295"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_295
 ---
 
 # useCountdown.ts
 
 ## Connections
+- [[LaunchCountdown.tsx]] - `calls` [INFERRED]
 - [[useCountdown()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_295
+#graphify/code #graphify/INFERRED #community/Module_295

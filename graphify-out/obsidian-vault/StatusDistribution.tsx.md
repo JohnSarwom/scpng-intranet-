@@ -5,10 +5,15 @@ community: "Module 442"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_442
 ---
 
 # StatusDistribution.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_442
+## Connections
+- [[TaskCompletionDonut.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[strategyAnalyticsUtils.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_442

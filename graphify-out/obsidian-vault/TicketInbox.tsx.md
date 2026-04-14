@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[TicketAttachment()]] - `contains` [EXTRACTED]
+- [[Tickets.tsx]] - `references` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_274

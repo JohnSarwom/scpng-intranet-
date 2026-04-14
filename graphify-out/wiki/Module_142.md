@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **csv-helpers.ts** (4 connections) — `src\utils\csv-helpers.ts`
+- **csv-helpers.ts** (6 connections) — `src\utils\csv-helpers.ts`
 - **parseCSVRow()** (3 connections) — `src\utils\csv-helpers.ts`
 - **csvToObjects()** (2 connections) — `src\utils\csv-helpers.ts`
 - **validateCSV()** (2 connections) — `src\utils\csv-helpers.ts`
@@ -12,7 +12,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 542]] (1 shared connections)
+- [[Module 543]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (86%)
+- INFERRED: 2 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -5,10 +5,13 @@ community: "Module 501"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_501
 ---
 
 # assetConditions.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_501
+## Connections
+- [[assetChoices.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_501

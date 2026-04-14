@@ -5,13 +5,16 @@ community: "Module 226"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_226
 ---
 
 # MaintenancePage.tsx
 
 ## Connections
+- [[AdminAssetsPage.tsx]] - `references` [INFERRED]
 - [[MaintenancePage()]] - `contains` [EXTRACTED]
+- [[useAssetSubSharePoint()]] - `calls` [INFERRED]
+- [[useAssetsSharePoint()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_226
+#graphify/code #graphify/INFERRED #community/Module_226

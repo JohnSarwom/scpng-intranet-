@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **useStaffMembers.ts** (1 connections) — `src\hooks\useStaffMembers.ts`
-- **useStaffMembers()** (1 connections) — `src\hooks\useStaffMembers.ts`
+- **useStaffMembers.ts** (2 connections) — `src\hooks\useStaffMembers.ts`
+- **useStaffMembers()** (2 connections) — `src\hooks\useStaffMembers.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 211]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (75%)
+- INFERRED: 1 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

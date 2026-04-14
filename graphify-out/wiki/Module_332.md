@@ -4,12 +4,15 @@
 
 ## Key Concepts
 
-- **useUnitRoster.ts** (1 connections) — `src\hooks\useUnitRoster.ts`
+- **useUnitRoster.ts** (5 connections) — `src\hooks\useUnitRoster.ts`
 - **useUnitRoster()** (1 connections) — `src\hooks\useUnitRoster.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 129]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[User Management Service]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

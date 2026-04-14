@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **MeetingMinutes.tsx** (5 connections) — `src\pages\MeetingMinutes.tsx`
+- **MeetingMinutes.tsx** (8 connections) — `src\pages\MeetingMinutes.tsx`
 - **freshMeetingData()** (1 connections) — `src\pages\MeetingMinutes.tsx`
 - **getUnitCode()** (1 connections) — `src\pages\MeetingMinutes.tsx`
 - **generateNextMeetingId()** (1 connections) — `src\pages\MeetingMinutes.tsx`
@@ -13,7 +13,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 151]] (1 shared connections)
+- [[Meeting Minutes Form]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (77%)
+- INFERRED: 3 (23%)
 - AMBIGUOUS: 0 (0%)
 
 ---

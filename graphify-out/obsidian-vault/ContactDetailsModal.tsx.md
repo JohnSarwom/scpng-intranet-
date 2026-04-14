@@ -12,9 +12,11 @@ tags:
 # ContactDetailsModal.tsx
 
 ## Connections
+- [[Contacts.tsx]] - `references` [INFERRED]
 - [[getInitials()]] - `contains` [EXTRACTED]
 - [[handleCopy()_1]] - `contains` [EXTRACTED]
 - [[handleModalPhotoUpload()]] - `contains` [EXTRACTED]
 - [[handlePhotoUpload()]] - `contains` [EXTRACTED]
+- [[useEmployeePhotos.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_119

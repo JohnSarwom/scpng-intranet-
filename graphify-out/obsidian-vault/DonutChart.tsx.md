@@ -5,10 +5,16 @@ community: "Module 424"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_424
 ---
 
 # DonutChart.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_424
+## Connections
+- [[Strategy.tsx]] - `references` [INFERRED]
+- [[UILibrary.tsx]] - `references` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[chart.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_424

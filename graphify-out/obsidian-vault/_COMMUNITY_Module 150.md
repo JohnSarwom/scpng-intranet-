@@ -21,3 +21,11 @@ members: 4
 TABLE source_file, type FROM #community/Module_150
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 537]]
+- 1 edge to [[_COMMUNITY_Module 299]]
+- 1 edge to [[_COMMUNITY_Module 198]]
+
+## Top bridge nodes
+- [[DivisionWorkPlansTab.tsx]] - degree 6, connects to 3 communities

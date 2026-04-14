@@ -13,9 +13,14 @@ tags:
 
 ## Connections
 - [[OrgNode()]] - `contains` [EXTRACTED]
+- [[Strategy.tsx]] - `references` [INFERRED]
 - [[fetchPhotos()]] - `contains` [EXTRACTED]
 - [[handleChange()_1]] - `contains` [EXTRACTED]
 - [[if()_2]] - `contains` [EXTRACTED]
 - [[orderWeight()]] - `contains` [EXTRACTED]
+- [[useDivisions.ts]] - `calls` [INFERRED]
+- [[useEmployeePhotos.ts]] - `calls` [INFERRED]
+- [[useOfficerProfiles.ts]] - `calls` [INFERRED]
+- [[useUnits.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_104

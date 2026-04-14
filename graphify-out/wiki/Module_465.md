@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **dropdown-menu.tsx** (0 connections) — `src\components\ui\dropdown-menu.tsx`
+- **dropdown-menu.tsx** (4 connections) — `src\components\ui\dropdown-menu.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 373]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
+- [[Module 135]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

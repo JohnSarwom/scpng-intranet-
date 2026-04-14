@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[AddPhotoModal()]] - `contains` [EXTRACTED]
+- [[Gallery.tsx]] - `references` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_259

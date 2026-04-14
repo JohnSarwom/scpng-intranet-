@@ -5,10 +5,13 @@ community: "Module 459"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_459
 ---
 
 # collapsible.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_459
+## Connections
+- [[sidebar.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_459

@@ -12,6 +12,8 @@ tags:
 # useMicrosoftGraph.tsx
 
 ## Connections
+- [[NewsTicker.tsx]] - `imports_from` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
 - [[useMicrosoftGraph()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_316

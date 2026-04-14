@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DivisionUnitsTab.tsx** (5 connections) — `src\components\division\tabs\DivisionUnitsTab.tsx`
+- **DivisionUnitsTab.tsx** (9 connections) — `src\components\division\tabs\DivisionUnitsTab.tsx`
 - **computeOfficerStats()** (2 connections) — `src\components\division\tabs\DivisionUnitsTab.tsx`
 - **handleOfficerClick()** (2 connections) — `src\components\division\tabs\DivisionUnitsTab.tsx`
 - **ragText()** (1 connections) — `src\components\division\tabs\DivisionUnitsTab.tsx`
@@ -13,7 +13,10 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 537]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 304]] (1 shared connections)
+- [[Module 319]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (75%)
+- INFERRED: 4 (25%)
 - AMBIGUOUS: 0 (0%)
 
 ---

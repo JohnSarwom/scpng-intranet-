@@ -12,6 +12,9 @@ tags:
 # useSlideshows.ts
 
 ## Connections
+- [[CapitalMarketActsSlideshow.tsx]] - `imports_from` [INFERRED]
+- [[CapitalMarketNewsSlideshow.tsx]] - `imports_from` [INFERRED]
+- [[MSOffice365Slideshow.tsx]] - `imports_from` [INFERRED]
 - [[useAllSlideshows()]] - `contains` [EXTRACTED]
 - [[useCapitalMarketActs()]] - `contains` [EXTRACTED]
 - [[useCapitalMarketNews()]] - `contains` [EXTRACTED]

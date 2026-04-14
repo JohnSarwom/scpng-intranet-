@@ -5,10 +5,19 @@ community: "Module 450"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_450
 ---
 
 # alert-dialog.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_450
+## Connections
+- [[AIHub.tsx]] - `references` [INFERRED]
+- [[Admin.tsx]] - `references` [INFERRED]
+- [[EditUserModal.tsx]] - `imports_from` [INFERRED]
+- [[HRProfiles.tsx]] - `references` [INFERRED]
+- [[UILibrary.tsx]] - `references` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_450

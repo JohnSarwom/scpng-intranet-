@@ -4,9 +4,9 @@
 
 ## Key Concepts
 
-- **kpiUtils.ts** (8 connections) — `src\utils\kpiUtils.ts`
+- **kpiUtils.ts** (9 connections) — `src\utils\kpiUtils.ts`
 - **calculateStrategicProgress()** (7 connections) — `src\utils\kpiUtils.ts`
-- **calculateKpiProgress()** (5 connections) — `src\utils\kpiUtils.ts`
+- **calculateKpiProgress()** (6 connections) — `src\utils\kpiUtils.ts`
 - **calculateKraProgress()** (5 connections) — `src\utils\kpiUtils.ts`
 - **calculateGoalProgressFromChildren()** (3 connections) — `src\utils\kpiUtils.ts`
 - **calculateObjectiveStatus()** (2 connections) — `src\utils\kpiUtils.ts`
@@ -18,8 +18,9 @@
 
 - [[SharePoint Operations CRUD]] (3 shared connections)
 - [[Module 144]] (3 shared connections)
+- [[Module 179]] (2 shared connections)
 - [[Module 272]] (2 shared connections)
-- [[Module 179]] (1 shared connections)
+- [[Module 394]] (1 shared connections)
 
 ## Source Files
 
@@ -27,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 25 (76%)
-- INFERRED: 8 (24%)
+- EXTRACTED: 26 (74%)
+- INFERRED: 9 (26%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -5,7 +5,7 @@ community: "Module 206"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_206
 ---
 
@@ -13,6 +13,9 @@ tags:
 
 ## Connections
 - [[DailyMarketSummary()]] - `contains` [EXTRACTED]
+- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
+- [[PageLayout.tsx]] - `references` [INFERRED]
 - [[getLatestPoint()]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_206
+#graphify/code #graphify/INFERRED #community/Module_206

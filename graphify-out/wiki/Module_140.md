@@ -5,14 +5,14 @@
 ## Key Concepts
 
 - **PowerAutomateAuth** (4 connections) — `src\services\powerAutomate\auth.ts`
-- **auth.ts** (1 connections) — `src\services\powerAutomate\auth.ts`
+- **auth.ts** (2 connections) — `src\services\powerAutomate\auth.ts`
 - **.constructor()** (1 connections) — `src\services\powerAutomate\auth.ts`
 - **.getFlowToken()** (1 connections) — `src\services\powerAutomate\auth.ts`
 - **.getPowerAppsToken()** (1 connections) — `src\services\powerAutomate\auth.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 540]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

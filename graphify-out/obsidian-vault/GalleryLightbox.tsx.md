@@ -12,6 +12,7 @@ tags:
 # GalleryLightbox.tsx
 
 ## Connections
+- [[Gallery.tsx]] - `references` [INFERRED]
 - [[getSlotWidth()]] - `contains` [EXTRACTED]
 - [[handler()]] - `contains` [EXTRACTED]
 - [[onResize()]] - `contains` [EXTRACTED]

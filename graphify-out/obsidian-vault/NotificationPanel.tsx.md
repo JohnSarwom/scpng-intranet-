@@ -16,5 +16,6 @@ tags:
 - [[getTypeIcon()]] - `contains` [EXTRACTED]
 - [[handleClick()]] - `contains` [EXTRACTED]
 - [[handleNavigate()]] - `contains` [EXTRACTED]
+- [[useNotifications()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_124

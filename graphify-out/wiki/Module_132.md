@@ -4,15 +4,17 @@
 
 ## Key Concepts
 
-- **useSlideshows.ts** (4 connections) — `src\hooks\useSlideshows.ts`
+- **useSlideshows.ts** (7 connections) — `src\hooks\useSlideshows.ts`
+- **useCapitalMarketNews()** (4 connections) — `src\hooks\useSlideshows.ts`
+- **useMSOffice365Tips()** (2 connections) — `src\hooks\useSlideshows.ts`
+- **useCapitalMarketActs()** (2 connections) — `src\hooks\useSlideshows.ts`
 - **useAllSlideshows()** (1 connections) — `src\hooks\useSlideshows.ts`
-- **useMSOffice365Tips()** (1 connections) — `src\hooks\useSlideshows.ts`
-- **useCapitalMarketNews()** (1 connections) — `src\hooks\useSlideshows.ts`
-- **useCapitalMarketActs()** (1 connections) — `src\hooks\useSlideshows.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 387]] (3 shared connections)
+- [[Module 390]] (3 shared connections)
+- [[Module 388]] (2 shared connections)
 
 ## Source Files
 
@@ -20,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (50%)
+- INFERRED: 8 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

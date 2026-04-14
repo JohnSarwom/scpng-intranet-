@@ -5,10 +5,13 @@ community: "Module 522"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_522
 ---
 
 # provisioningData.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_522
+## Connections
+- [[mockData.d.ts]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_522

@@ -5,7 +5,7 @@
 ## Key Concepts
 
 - **LoggerService** (8 connections) — `src\utils\logger.ts`
-- **logger.ts** (1 connections) — `src\utils\logger.ts`
+- **logger.ts** (3 connections) — `src\utils\logger.ts`
 - **.constructor()** (1 connections) — `src\utils\logger.ts`
 - **.setLevel()** (1 connections) — `src\utils\logger.ts`
 - **.formatMessage()** (1 connections) — `src\utils\logger.ts`
@@ -16,7 +16,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 417]] (1 shared connections)
+- [[Module 418]] (1 shared connections)
 
 ## Source Files
 
@@ -24,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (89%)
+- INFERRED: 2 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

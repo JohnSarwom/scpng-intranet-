@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **DivisionAnalyticsTab.tsx** (0 connections) — `src\components\division\tabs\DivisionAnalyticsTab.tsx`
+- **DivisionAnalyticsTab.tsx** (8 connections) — `src\components\division\tabs\DivisionAnalyticsTab.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 457]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 475]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 545]] (1 shared connections)
+- [[Module 143]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 8 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

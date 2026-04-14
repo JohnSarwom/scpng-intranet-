@@ -4,12 +4,15 @@
 
 ## Key Concepts
 
-- **useTaskGroupPreferences.ts** (1 connections) — `src\hooks\useTaskGroupPreferences.ts`
-- **useTaskGroupPreferences()** (1 connections) — `src\hooks\useTaskGroupPreferences.ts`
+- **useTaskGroupPreferences.ts** (3 connections) — `src\hooks\useTaskGroupPreferences.ts`
+- **useTaskGroupPreferences()** (3 connections) — `src\hooks\useTaskGroupPreferences.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[SharePoint Operations CRUD]] (1 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 137]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

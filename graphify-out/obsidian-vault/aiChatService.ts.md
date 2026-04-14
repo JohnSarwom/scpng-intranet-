@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[AIChatService]] - `contains` [EXTRACTED]
+- [[types.ts_2]] - `references` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_134

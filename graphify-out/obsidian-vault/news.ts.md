@@ -5,10 +5,15 @@ community: "Module 549"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_549
 ---
 
 # news.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_549
+## Connections
+- [[index.ts_5]] - `contains` [INFERRED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_549

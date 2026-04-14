@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **use-toast.ts** (6 connections) — `src\hooks\use-toast.ts`
+- **use-toast.ts** (16 connections) — `src\hooks\use-toast.ts`
 - **reducer()** (3 connections) — `src\hooks\use-toast.ts`
 - **dispatch()** (3 connections) — `src\hooks\use-toast.ts`
 - **toast()** (3 connections) — `src\hooks\use-toast.ts`
@@ -14,7 +14,16 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 379]] (1 shared connections)
+- [[Module 384]] (1 shared connections)
+- [[Module 413]] (1 shared connections)
+- [[Module 432]] (1 shared connections)
+- [[Module 487]] (1 shared connections)
+- [[Module 491]] (1 shared connections)
+- [[Module 494]] (1 shared connections)
+- [[Module 495]] (1 shared connections)
+- [[Module 497]] (1 shared connections)
+- [[Module 498]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +31,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 20 (67%)
+- INFERRED: 10 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

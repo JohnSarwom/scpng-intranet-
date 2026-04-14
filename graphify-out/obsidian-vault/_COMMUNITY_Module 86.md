@@ -24,3 +24,21 @@ members: 7
 TABLE source_file, type FROM #community/Module_86
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 146]]
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 401]]
+- 1 edge to [[_COMMUNITY_Module 123]]
+- 1 edge to [[_COMMUNITY_Module 263]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 450]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 479]]
+- 1 edge to [[_COMMUNITY_Module 128]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[HRProfiles.tsx]] - degree 19, connects to 13 communities

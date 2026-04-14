@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **demoAssets.ts** (0 connections) — `src\mockData\demoAssets.ts`
+- **demoAssets.ts** (1 connections) — `src\mockData\demoAssets.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[SharePoint List Setup]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -5,10 +5,13 @@ community: "Module 506"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_506
 ---
 
 # paymentConstants.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_506
+## Connections
+- [[payment.types.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_506

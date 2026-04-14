@@ -24,6 +24,8 @@ SORT file.name ASC
 ## Connections to other communities
 - 1 edge to [[_COMMUNITY_Module 264]]
 - 1 edge to [[_COMMUNITY_Module 179]]
+- 1 edge to [[_COMMUNITY_Module 494]]
+- 1 edge to [[_COMMUNITY_Module 498]]
 
 ## Top bridge nodes
-- [[GlobalAssigneeSelector.tsx]] - degree 4, connects to 2 communities
+- [[GlobalAssigneeSelector.tsx]] - degree 6, connects to 4 communities

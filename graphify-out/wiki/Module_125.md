@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **AddPaymentModal.tsx** (4 connections) — `src\components\payments\AddPaymentModal.tsx`
+- **AddPaymentModal.tsx** (5 connections) — `src\components\payments\AddPaymentModal.tsx`
 - **handleChange()** (1 connections) — `src\components\payments\AddPaymentModal.tsx`
 - **handleFileSelect()** (1 connections) — `src\components\payments\AddPaymentModal.tsx`
 - **handleAssetSelect()** (1 connections) — `src\components\payments\AddPaymentModal.tsx`
@@ -12,7 +12,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 348]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,11 +4,20 @@
 
 ## Key Concepts
 
-- **AddEventModal.tsx** (0 connections) — `src\components\dashboard\AddEventModal.tsx`
+- **AddEventModal.tsx** (10 connections) — `src\components\dashboard\AddEventModal.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 463]] (1 shared connections)
+- [[Module 456]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
+- [[Module 483]] (1 shared connections)
+- [[Module 454]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 67]] (1 shared connections)
+- [[Module 84]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +26,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 10 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

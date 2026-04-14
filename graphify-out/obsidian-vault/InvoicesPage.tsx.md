@@ -5,13 +5,16 @@ community: "Module 225"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_225
 ---
 
 # InvoicesPage.tsx
 
 ## Connections
+- [[AdminAssetsPage.tsx]] - `references` [INFERRED]
 - [[InvoicesPage()]] - `contains` [EXTRACTED]
+- [[useAssetSubSharePoint()]] - `calls` [INFERRED]
+- [[useAssetsSharePoint()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_225
+#graphify/code #graphify/INFERRED #community/Module_225

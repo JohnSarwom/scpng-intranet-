@@ -12,6 +12,7 @@ tags:
 # VisitorManagement.tsx
 
 ## Connections
+- [[Tickets.tsx]] - `references` [INFERRED]
 - [[formatDuration()]] - `contains` [EXTRACTED]
 - [[formatTime()_1]] - `contains` [EXTRACTED]
 - [[getIndicatorClass()]] - `contains` [EXTRACTED]

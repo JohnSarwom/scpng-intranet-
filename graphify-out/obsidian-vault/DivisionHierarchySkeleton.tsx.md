@@ -5,10 +5,13 @@ community: "Module 445"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_445
 ---
 
 # DivisionHierarchySkeleton.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_445
+## Connections
+- [[skeleton.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_445

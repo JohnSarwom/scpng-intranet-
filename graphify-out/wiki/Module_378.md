@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **PieChart.tsx** (0 connections) — `src\components\charts\PieChart.tsx`
+- **PieChart.tsx** (1 connections) — `src\components\charts\PieChart.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 376]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

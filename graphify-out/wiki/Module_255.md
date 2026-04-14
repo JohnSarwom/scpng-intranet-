@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **FormRenderer.tsx** (1 connections) — `src\components\forms\FormRenderer.tsx`
+- **FormRenderer.tsx** (3 connections) — `src\components\forms\FormRenderer.tsx`
 - **FormRenderer()** (1 connections) — `src\components\forms\FormRenderer.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 207]] (1 shared connections)
+- [[TestGround Admin]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

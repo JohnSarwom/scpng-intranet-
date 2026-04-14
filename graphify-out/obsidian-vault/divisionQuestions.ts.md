@@ -5,10 +5,13 @@ community: "Module 404"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_404
 ---
 
 # divisionQuestions.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_404
+## Connections
+- [[DivisionAIChat.tsx]] - `references` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_404

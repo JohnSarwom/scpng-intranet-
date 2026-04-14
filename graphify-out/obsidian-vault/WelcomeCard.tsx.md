@@ -12,6 +12,7 @@ tags:
 # WelcomeCard.tsx
 
 ## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
 - [[WelcomeCard()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_250

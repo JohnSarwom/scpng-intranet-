@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **GeneralInquiries.tsx** (14 connections) — `src\components\ticketing\GeneralInquiries.tsx`
+- **GeneralInquiries.tsx** (17 connections) — `src\components\ticketing\GeneralInquiries.tsx`
 - **getPriorityIcon()** (1 connections) — `src\components\ticketing\GeneralInquiries.tsx`
 - **getStatusBadgeClass()** (1 connections) — `src\components\ticketing\GeneralInquiries.tsx`
 - **getCategoryBadgeClass()** (1 connections) — `src\components\ticketing\GeneralInquiries.tsx`
@@ -22,7 +22,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 447]] (1 shared connections)
+- [[Module 448]] (1 shared connections)
+- [[Module 351]] (1 shared connections)
 
 ## Source Files
 
@@ -30,8 +32,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 28 (90%)
+- INFERRED: 3 (10%)
 - AMBIGUOUS: 0 (0%)
 
 ---

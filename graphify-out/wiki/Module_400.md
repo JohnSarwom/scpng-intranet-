@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **NoticeBoardSkeleton.tsx** (0 connections) — `src\components\dashboard\skeletons\NoticeBoardSkeleton.tsx`
+- **NoticeBoardSkeleton.tsx** (3 connections) — `src\components\dashboard\skeletons\NoticeBoardSkeleton.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 393]] (1 shared connections)
+- [[Module 457]] (1 shared connections)
+- [[Module 280]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 3 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

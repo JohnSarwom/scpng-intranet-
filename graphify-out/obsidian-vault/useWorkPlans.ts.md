@@ -5,14 +5,17 @@ community: "Module 198"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_198
 ---
 
 # useWorkPlans.ts
 
 ## Connections
+- [[DivisionWorkPlanStats.tsx]] - `imports_from` [INFERRED]
+- [[DivisionWorkPlansTab.tsx]] - `calls` [INFERRED]
 - [[WORKPLAN_STORAGE_KEY()]] - `contains` [EXTRACTED]
+- [[WorkPlanBuilderPage.tsx]] - `calls` [INFERRED]
 - [[useWorkPlans()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_198
+#graphify/code #graphify/INFERRED #community/Module_198

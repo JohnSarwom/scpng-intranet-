@@ -19,6 +19,7 @@
 - [[.createStrategicObjectivesList()]] `EXTRACTED`
 - [[.addSampleData()]] `EXTRACTED`
 - [[.resolveFieldName()]] `EXTRACTED`
+- [[.setupWebsiteFeedbackResources()]] `EXTRACTED`
 - [[.createStrategyUnitsList()]] `EXTRACTED`
 - [[.setupCorporatePlanLists()]] `EXTRACTED`
 - [[.createMarketDataLists()]] `EXTRACTED`
@@ -29,7 +30,6 @@
 - [[.createUnitObjectivesList()]] `EXTRACTED`
 - [[.createFormRegistrationsList()]] `EXTRACTED`
 - [[.createProjectsList()]] `EXTRACTED`
-- [[.setupStrategicObjectivesStandalone()]] `EXTRACTED`
 
 ---
 

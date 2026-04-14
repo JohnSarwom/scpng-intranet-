@@ -12,10 +12,14 @@ tags:
 # DivisionUnitsTab.tsx
 
 ## Connections
+- [[Division.tsx]] - `imports_from` [INFERRED]
 - [[UnitPerformanceCard()]] - `contains` [EXTRACTED]
 - [[computeOfficerStats()]] - `contains` [EXTRACTED]
 - [[handleOfficerClick()]] - `contains` [EXTRACTED]
 - [[ragText()]] - `contains` [EXTRACTED]
 - [[switchView()]] - `contains` [EXTRACTED]
+- [[useDivisionData.ts]] - `calls` [INFERRED]
+- [[useEmployeePhotos.ts]] - `calls` [INFERRED]
+- [[useOfficerProfiles.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_97

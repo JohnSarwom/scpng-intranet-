@@ -12,6 +12,7 @@ tags:
 # ProjectsTab.tsx
 
 ## Connections
+- [[Unit.tsx]] - `references` [INFERRED]
 - [[formatCurrency()_1]] - `contains` [EXTRACTED]
 - [[formatDate()_3]] - `contains` [EXTRACTED]
 - [[getInitials()_3]] - `contains` [EXTRACTED]

@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **WorkPlanBuilderPage.tsx** (1 connections) — `src\pages\WorkPlanBuilderPage.tsx`
+- **WorkPlanBuilderPage.tsx** (4 connections) — `src\pages\WorkPlanBuilderPage.tsx`
 - **WorkPlanBuilderPage()** (1 connections) — `src\pages\WorkPlanBuilderPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 401]] (1 shared connections)
+- [[Module 299]] (1 shared connections)
+- [[Module 198]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (40%)
+- INFERRED: 3 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

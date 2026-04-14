@@ -12,6 +12,7 @@ tags:
 # EditPhotoModal.tsx
 
 ## Connections
+- [[Gallery.tsx]] - `references` [INFERRED]
 - [[handleSave()_5]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_260

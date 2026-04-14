@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **ITRequestPage.tsx** (2 connections) — `src\components\forms\ITRequestPage.tsx`
+- **ITRequestPage.tsx** (3 connections) — `src\components\forms\ITRequestPage.tsx`
 - **handleFormSubmit()** (1 connections) — `src\components\forms\ITRequestPage.tsx`
 - **handleFormSave()** (1 connections) — `src\components\forms\ITRequestPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 207]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

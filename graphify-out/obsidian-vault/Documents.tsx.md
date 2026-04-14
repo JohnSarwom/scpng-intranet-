@@ -12,6 +12,14 @@ tags:
 # Documents.tsx
 
 ## Connections
+- [[AddCategoryDialog.tsx]] - `references` [INFERRED]
+- [[AddDocumentModal.tsx]] - `references` [INFERRED]
+- [[AssetCard.tsx]] - `references` [INFERRED]
+- [[AssetsTab.tsx]] - `references` [INFERRED]
+- [[EditCategoryDialog.tsx]] - `references` [INFERRED]
+- [[MailPackageDialog.tsx]] - `references` [INFERRED]
+- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
+- [[PageLayout.tsx]] - `references` [INFERRED]
 - [[async()_1]] - `contains` [EXTRACTED]
 - [[createMockDocument()]] - `contains` [EXTRACTED]
 - [[fetchPersonalDocumentsRoot()]] - `contains` [EXTRACTED]
@@ -33,9 +41,13 @@ tags:
 - [[handleSecondaryNavChange()]] - `contains` [EXTRACTED]
 - [[handleShareDocument()]] - `contains` [EXTRACTED]
 - [[handleUpdateCategory()]] - `contains` [EXTRACTED]
+- [[input.tsx]] - `references` [INFERRED]
 - [[loadCategories()]] - `contains` [EXTRACTED]
 - [[loadData()]] - `contains` [EXTRACTED]
 - [[navigateToFolder()]] - `contains` [EXTRACTED]
 - [[navigateUp()]] - `contains` [EXTRACTED]
+- [[tooltip-wrapper.tsx]] - `references` [INFERRED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Document_Management

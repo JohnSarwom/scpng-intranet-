@@ -27,3 +27,22 @@ members: 10
 TABLE source_file, type FROM #community/Module_45
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 60]]
+- 1 edge to [[_COMMUNITY_Module 216]]
+- 1 edge to [[_COMMUNITY_Module 114]]
+- 1 edge to [[_COMMUNITY_Module 76]]
+- 1 edge to [[_COMMUNITY_Module 77]]
+- 1 edge to [[_COMMUNITY_Module 218]]
+- 1 edge to [[_COMMUNITY_Module 116]]
+- 1 edge to [[_COMMUNITY_Module 78]]
+- 1 edge to [[_COMMUNITY_Module 49]]
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 450]]
+- 1 edge to [[_COMMUNITY_Module 128]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[Admin.tsx]] - degree 23, connects to 14 communities

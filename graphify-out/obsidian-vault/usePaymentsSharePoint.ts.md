@@ -12,6 +12,9 @@ tags:
 # usePaymentsSharePoint.ts
 
 ## Connections
+- [[PaymentsPage.tsx]] - `calls` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[paymentsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[usePaymentsSharePoint()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_320

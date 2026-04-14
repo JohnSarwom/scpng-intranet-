@@ -20,3 +20,10 @@ members: 3
 TABLE source_file, type FROM #community/Module_172
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 316]]
+- 1 edge to [[_COMMUNITY_Module 136]]
+
+## Top bridge nodes
+- [[ScpngNewsUploadForm.tsx]] - degree 4, connects to 2 communities

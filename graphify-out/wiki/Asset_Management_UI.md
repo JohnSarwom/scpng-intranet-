@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **AssetManagementNew.tsx** (13 connections) — `src\pages\AssetManagementNew.tsx`
+- **AssetManagementNew.tsx** (32 connections) — `src\pages\AssetManagementNew.tsx`
 - **handleCloseModals()** (4 connections) — `src\pages\AssetManagementNew.tsx`
 - **handleSaveAdd()** (2 connections) — `src\pages\AssetManagementNew.tsx`
 - **handleSaveEdit()** (2 connections) — `src\pages\AssetManagementNew.tsx`
@@ -21,7 +21,18 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 169]] (1 shared connections)
+- [[Module 228]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 453]] (1 shared connections)
+- [[Module 465]] (1 shared connections)
+- [[Module 278]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
 
 ## Source Files
 
@@ -29,8 +40,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 32 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 32 (63%)
+- INFERRED: 19 (37%)
 - AMBIGUOUS: 0 (0%)
 
 ---

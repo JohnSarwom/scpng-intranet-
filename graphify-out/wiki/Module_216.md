@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **AssetPermissionsTab.tsx** (1 connections) — `src\components\admin\AssetPermissionsTab.tsx`
+- **AssetPermissionsTab.tsx** (3 connections) — `src\components\admin\AssetPermissionsTab.tsx`
 - **handleToggle()** (1 connections) — `src\components\admin\AssetPermissionsTab.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 131]] (1 shared connections)
+- [[Module 45]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -12,6 +12,8 @@ tags:
 # dashboardUtils.ts
 
 ## Connections
+- [[DivisionAnalyticsTab.tsx]] - `imports_from` [INFERRED]
+- [[DivisionPerformanceTrends.tsx]] - `imports_from` [INFERRED]
 - [[calculateTaskTrends()]] - `contains` [EXTRACTED]
 - [[calculateTrafficLightMetrics()]] - `contains` [EXTRACTED]
 - [[getMonthKey()]] - `contains` [EXTRACTED]

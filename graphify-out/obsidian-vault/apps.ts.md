@@ -5,10 +5,14 @@ community: "Module 544"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_544
 ---
 
 # apps.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_544
+## Connections
+- [[appLinks.ts]] - `imports_from` [INFERRED]
+- [[index.ts_5]] - `contains` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_544

@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **progress.tsx** (0 connections) — `src\components\ui\progress.tsx`
+- **progress.tsx** (8 connections) — `src\components\ui\progress.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 394]] (1 shared connections)
+- [[Module 397]] (1 shared connections)
+- [[Module 405]] (1 shared connections)
+- [[Module 411]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 492]] (1 shared connections)
+- [[Module 499]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 8 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

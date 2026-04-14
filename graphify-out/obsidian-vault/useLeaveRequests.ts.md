@@ -12,6 +12,9 @@ tags:
 # useLeaveRequests.ts
 
 ## Connections
+- [[LeaveApplicationPage.tsx]] - `calls` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[hrSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useLeaveRequests()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_313

@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **AssetInfoModal.tsx** (2 connections) — `src\components\assets\AssetInfoModal.tsx`
+- **AssetInfoModal.tsx** (3 connections) — `src\components\assets\AssetInfoModal.tsx`
 - **getConditionBadgeClass()** (1 connections) — `src\components\assets\AssetInfoModal.tsx`
 - **InfoRow()** (1 connections) — `src\components\assets\AssetInfoModal.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Asset Management UI]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

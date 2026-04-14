@@ -32,3 +32,9 @@ members: 15
 TABLE source_file, type FROM #community/SharePoint_Explorer_UI
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_TestGround Admin]]
+
+## Top bridge nodes
+- [[SharePointExplorer.tsx]] - degree 15, connects to 1 community

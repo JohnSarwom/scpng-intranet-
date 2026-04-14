@@ -4,13 +4,13 @@
 
 ## Key Concepts
 
-- **EditCategoryDialog.tsx** (2 connections) — `src\components\documents\EditCategoryDialog.tsx`
+- **EditCategoryDialog.tsx** (3 connections) — `src\components\documents\EditCategoryDialog.tsx`
 - **handleSubmit()** (1 connections) — `src\components\documents\EditCategoryDialog.tsx`
 - **handleDelete()** (1 connections) — `src\components\documents\EditCategoryDialog.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Document Management]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (80%)
+- INFERRED: 1 (20%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **Login.tsx** (2 connections) — `src\pages\Login.tsx`
+- **Login.tsx** (4 connections) — `src\pages\Login.tsx`
 - **handleMicrosoftLogin()** (1 connections) — `src\pages\Login.tsx`
 - **renderError()** (1 connections) — `src\pages\Login.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (67%)
+- INFERRED: 2 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

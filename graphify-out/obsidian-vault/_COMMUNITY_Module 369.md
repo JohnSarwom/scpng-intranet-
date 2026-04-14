@@ -18,3 +18,14 @@ members: 1
 TABLE source_file, type FROM #community/Module_369
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 280]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 454]]
+- 1 edge to [[_COMMUNITY_Module 449]]
+- 1 edge to [[_COMMUNITY_Module 515]]
+- 1 edge to [[_COMMUNITY_AI Hub Chat]]
+
+## Top bridge nodes
+- [[QuestionLibrarySidebar.tsx]] - degree 6, connects to 6 communities

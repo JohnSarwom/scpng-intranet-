@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **TrafficLightCard.tsx** (1 connections) — `src\components\dashboard\TrafficLightCard.tsx`
+- **TrafficLightCard.tsx** (3 connections) — `src\components\dashboard\TrafficLightCard.tsx`
 - **StatusIndicator()** (1 connections) — `src\components\dashboard\TrafficLightCard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 493]] (1 shared connections)
+- [[Module 353]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

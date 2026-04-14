@@ -4,13 +4,14 @@
 
 ## Key Concepts
 
-- **UnitContext.tsx** (2 connections) — `src\contexts\UnitContext.tsx`
+- **UnitContext.tsx** (3 connections) — `src\contexts\UnitContext.tsx`
+- **useUnitContext()** (3 connections) — `src\contexts\UnitContext.tsx`
 - **UnitProvider()** (1 connections) — `src\contexts\UnitContext.tsx`
-- **useUnitContext()** (1 connections) — `src\contexts\UnitContext.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 291]] (2 shared connections)
+- [[Assets Service]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (86%)
+- INFERRED: 1 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

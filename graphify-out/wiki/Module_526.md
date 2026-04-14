@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **types.ts** (0 connections) — `src\modules\licensing\types.ts`
+- **types.ts** (2 connections) — `src\modules\licensing\types.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[License Preview]] (1 shared connections)
+- [[Module 182]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

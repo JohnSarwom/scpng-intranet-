@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **WebsiteAnalyticsAIChat.tsx** (10 connections) — `src\components\analytics\WebsiteAnalyticsAIChat.tsx`
+- **WebsiteAnalyticsAIChat.tsx** (13 connections) — `src\components\analytics\WebsiteAnalyticsAIChat.tsx`
 - **handleSend()** (4 connections) — `src\components\analytics\WebsiteAnalyticsAIChat.tsx`
 - **serializeAnalyticsContext()** (2 connections) — `src\components\analytics\WebsiteAnalyticsAIChat.tsx`
 - **scrollToBottom()** (2 connections) — `src\components\analytics\WebsiteAnalyticsAIChat.tsx`
@@ -18,7 +18,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 371]] (1 shared connections)
+- [[Module 539]] (1 shared connections)
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -26,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 28 (90%)
+- INFERRED: 3 (10%)
 - AMBIGUOUS: 0 (0%)
 
 ---

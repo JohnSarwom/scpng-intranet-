@@ -12,6 +12,7 @@ tags:
 # SharePointExplorer.tsx
 
 ## Connections
+- [[TestGround.tsx]] - `references` [INFERRED]
 - [[handleAddColumn()]] - `contains` [EXTRACTED]
 - [[handleAddItem()_1]] - `contains` [EXTRACTED]
 - [[handleCopyAllLists()]] - `contains` [EXTRACTED]

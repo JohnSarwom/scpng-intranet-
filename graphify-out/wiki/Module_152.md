@@ -4,14 +4,14 @@
 
 ## Key Concepts
 
-- **StrategySetupWizard.tsx** (3 connections) — `src\components\strategy\StrategySetupWizard.tsx`
+- **StrategySetupWizard.tsx** (4 connections) — `src\components\strategy\StrategySetupWizard.tsx`
 - **handleNext()** (2 connections) — `src\components\strategy\StrategySetupWizard.tsx`
 - **handleSave()** (2 connections) — `src\components\strategy\StrategySetupWizard.tsx`
 - **handleBack()** (1 connections) — `src\components\strategy\StrategySetupWizard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 138]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

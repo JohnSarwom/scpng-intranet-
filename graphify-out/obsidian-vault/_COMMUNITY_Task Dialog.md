@@ -30,3 +30,10 @@ members: 13
 TABLE source_file, type FROM #community/Task_Dialog
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 324]]
+- 1 edge to [[_COMMUNITY_Module 56]]
+
+## Top bridge nodes
+- [[TaskDialog.tsx]] - degree 14, connects to 2 communities

@@ -4,14 +4,25 @@
 
 ## Key Concepts
 
-- **Contacts.tsx** (3 connections) — `src\pages\Contacts.tsx`
+- **Contacts.tsx** (18 connections) — `src\pages\Contacts.tsx`
 - **getDivisionIdFromOffice()** (1 connections) — `src\pages\Contacts.tsx`
 - **handleCopyAll()** (1 connections) — `src\pages\Contacts.tsx`
 - **fetchPhotos()** (1 connections) — `src\pages\Contacts.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 39]] (2 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 379]] (1 shared connections)
+- [[Module 119]] (1 shared connections)
+- [[Module 380]] (1 shared connections)
+- [[Module 120]] (1 shared connections)
+- [[Module 401]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
 
 ## Source Files
 
@@ -19,8 +30,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 6 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 6 (29%)
+- INFERRED: 15 (71%)
 - AMBIGUOUS: 0 (0%)
 
 ---

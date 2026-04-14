@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **RegulatoryDashboard.tsx** (1 connections) — `src\modules\regulatory\components\RegulatoryDashboard.tsx`
+- **RegulatoryDashboard.tsx** (3 connections) — `src\modules\regulatory\components\RegulatoryDashboard.tsx`
 - **getFilteredCases()** (1 connections) — `src\modules\regulatory\components\RegulatoryDashboard.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 322]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

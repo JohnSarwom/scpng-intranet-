@@ -21,6 +21,8 @@ tags:
 - [[handleSend()_2]] - `contains` [EXTRACTED]
 - [[handleStopGeneration()_2]] - `contains` [EXTRACTED]
 - [[scrollToBottom()_2]] - `contains` [EXTRACTED]
+- [[strategyQuestions.ts]] - `references` [INFERRED]
 - [[typeNextChar()_2]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_38

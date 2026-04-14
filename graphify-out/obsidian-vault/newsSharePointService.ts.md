@@ -13,6 +13,7 @@ tags:
 
 ## Connections
 - [[NewsSharePointService]] - `contains` [EXTRACTED]
+- [[NewsTicker.tsx]] - `imports_from` [INFERRED]
 - [[getAllNews()]] - `contains` [EXTRACTED]
 - [[transformNewsItem()_1]] - `contains` [EXTRACTED]
 

@@ -30,11 +30,19 @@ SORT file.name ASC
 ```
 
 ## Connections to other communities
-- 8 edges to [[_COMMUNITY_SharePoint Operations CRUD]]
+- 10 edges to [[_COMMUNITY_SharePoint Operations CRUD]]
 - 7 edges to [[_COMMUNITY_KRAKPI Tab]]
+- 3 edges to [[_COMMUNITY_Module 56]]
+- 2 edges to [[_COMMUNITY_Module 395]]
+- 2 edges to [[_COMMUNITY_Module 396]]
+- 2 edges to [[_COMMUNITY_Module 161]]
+- 1 edge to [[_COMMUNITY_Module 394]]
+- 1 edge to [[_COMMUNITY_SharePoint List Setup]]
+- 1 edge to [[_COMMUNITY_Module 210]]
 
 ## Top bridge nodes
+- [[useSharePointOps.ts]] - degree 16, connects to 6 communities
+- [[useSharePointTasks()]] - degree 6, connects to 4 communities
 - [[useSharePointKRAs()]] - degree 8, connects to 2 communities
 - [[useSharePointKPIs()]] - degree 8, connects to 2 communities
 - [[useSharePointObjectives()]] - degree 4, connects to 2 communities
-- [[useOpsService()]] - degree 11, connects to 1 community

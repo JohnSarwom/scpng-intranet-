@@ -7,10 +7,10 @@
 - **EmployeePhotosService** (11 connections) — `src\services\employeePhotosService.ts`
 - **.initialize()** (5 connections) — `src\services\employeePhotosService.ts`
 - **.getEmployeePhotos()** (5 connections) — `src\services\employeePhotosService.ts`
+- **employeePhotosService.ts** (3 connections) — `src\services\employeePhotosService.ts`
 - **escapeFilter()** (3 connections) — `src\services\employeePhotosService.ts`
 - **.getPhotoUrl()** (3 connections) — `src\services\employeePhotosService.ts`
 - **.uploadPhoto()** (3 connections) — `src\services\employeePhotosService.ts`
-- **employeePhotosService.ts** (2 connections) — `src\services\employeePhotosService.ts`
 - **.getPhotoByFilename()** (2 connections) — `src\services\employeePhotosService.ts`
 - **.processListItem()** (2 connections) — `src\services\employeePhotosService.ts`
 - **.getPhotoWithThumbnail()** (2 connections) — `src\services\employeePhotosService.ts`
@@ -20,7 +20,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 304]] (1 shared connections)
 
 ## Source Files
 
@@ -28,7 +28,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 42 (100%)
+- EXTRACTED: 43 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

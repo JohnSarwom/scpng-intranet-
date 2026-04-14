@@ -12,6 +12,7 @@ tags:
 # DocumentPermissionsTab.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[buildUpdatedPermissions()]] - `contains` [EXTRACTED]
 - [[getRoleBadge()]] - `contains` [EXTRACTED]
 - [[handleToggle()_1]] - `contains` [EXTRACTED]

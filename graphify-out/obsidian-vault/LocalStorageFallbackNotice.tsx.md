@@ -5,10 +5,13 @@ community: "Module 428"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_428
 ---
 
 # LocalStorageFallbackNotice.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_428
+## Connections
+- [[convertToCsv()]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_428

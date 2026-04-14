@@ -23,3 +23,12 @@ members: 6
 TABLE source_file, type FROM #community/Module_91
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 494]]
+- 1 edge to [[_COMMUNITY_Module 495]]
+- 1 edge to [[_COMMUNITY_Module 497]]
+- 1 edge to [[_COMMUNITY_Module 498]]
+
+## Top bridge nodes
+- [[ChecklistSection.tsx]] - degree 9, connects to 4 communities

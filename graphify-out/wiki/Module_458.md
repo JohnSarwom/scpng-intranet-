@@ -4,11 +4,17 @@
 
 ## Key Concepts
 
-- **checkbox.tsx** (0 connections) — `src\components\ui\checkbox.tsx`
+- **checkbox.tsx** (7 connections) — `src\components\ui\checkbox.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 364]] (1 shared connections)
+- [[Module 366]] (1 shared connections)
+- [[Module 412]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 497]] (1 shared connections)
+- [[Gallery Management]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +23,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 7 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

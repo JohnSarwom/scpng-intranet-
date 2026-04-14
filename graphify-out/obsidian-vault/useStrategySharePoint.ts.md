@@ -12,6 +12,9 @@ tags:
 # useStrategySharePoint.ts
 
 ## Connections
+- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
+- [[graphService.ts]] - `imports_from` [EXTRACTED]
+- [[strategyService.ts]] - `imports_from` [EXTRACTED]
 - [[useStrategySharePoint()]] - `contains` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_328

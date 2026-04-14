@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **EditStrategicObjectiveModal.tsx** (6 connections) — `src\components\strategy\EditStrategicObjectiveModal.tsx`
+- **EditStrategicObjectiveModal.tsx** (8 connections) — `src\components\strategy\EditStrategicObjectiveModal.tsx`
 - **handleAddKra()** (1 connections) — `src\components\strategy\EditStrategicObjectiveModal.tsx`
 - **handleRemoveKra()** (1 connections) — `src\components\strategy\EditStrategicObjectiveModal.tsx`
 - **handleStartEdit()** (1 connections) — `src\components\strategy\EditStrategicObjectiveModal.tsx`
@@ -14,7 +14,8 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 328]] (1 shared connections)
+- [[Module 138]] (1 shared connections)
 
 ## Source Files
 
@@ -22,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 12 (86%)
+- INFERRED: 2 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

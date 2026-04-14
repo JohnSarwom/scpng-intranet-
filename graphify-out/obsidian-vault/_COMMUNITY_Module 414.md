@@ -18,3 +18,14 @@ members: 1
 TABLE source_file, type FROM #community/Module_414
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 463]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 282]]
+- 1 edge to [[_COMMUNITY_Module 456]]
+- 1 edge to [[_COMMUNITY_Module 470]]
+- 1 edge to [[_COMMUNITY_Document Management]]
+
+## Top bridge nodes
+- [[AddCategoryDialog.tsx]] - degree 6, connects to 6 communities

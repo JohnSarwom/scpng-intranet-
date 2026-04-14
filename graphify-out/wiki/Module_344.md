@@ -4,12 +4,13 @@
 
 ## Key Concepts
 
-- **Apps.tsx** (1 connections) — `src\pages\Apps.tsx`
+- **Apps.tsx** (3 connections) — `src\pages\Apps.tsx`
 - **Apps()** (1 connections) — `src\pages\Apps.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 173]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +18,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (50%)
+- INFERRED: 2 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

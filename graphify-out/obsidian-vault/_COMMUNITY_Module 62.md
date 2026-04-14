@@ -25,3 +25,11 @@ members: 8
 TABLE source_file, type FROM #community/Module_62
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 399]]
+- 1 edge to [[_COMMUNITY_Module 538]]
+- 1 edge to [[_COMMUNITY_Module 156]]
+
+## Top bridge nodes
+- [[ScheduledEvents.tsx]] - degree 10, connects to 3 communities

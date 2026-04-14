@@ -19,3 +19,14 @@ members: 2
 TABLE source_file, type FROM #community/Module_293
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 2 edges to [[_COMMUNITY_Module 372]]
+- 1 edge to [[_COMMUNITY_Module 225]]
+- 1 edge to [[_COMMUNITY_Module 226]]
+- 1 edge to [[_COMMUNITY_Module 46]]
+- 1 edge to [[_COMMUNITY_Module 210]]
+
+## Top bridge nodes
+- [[useAssetSubSharePoint.ts]] - degree 4, connects to 3 communities
+- [[useAssetSubSharePoint()]] - degree 4, connects to 3 communities

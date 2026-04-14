@@ -4,12 +4,16 @@
 
 ## Key Concepts
 
-- **tooltip-wrapper.tsx** (1 connections) — `src\components\ui\tooltip-wrapper.tsx`
+- **tooltip-wrapper.tsx** (6 connections) — `src\components\ui\tooltip-wrapper.tsx`
 - **TooltipWrapper()** (1 connections) — `src\components\ui\tooltip-wrapper.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 372]] (1 shared connections)
+- [[Module 373]] (1 shared connections)
+- [[Module 160]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
+- [[Document Management]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (29%)
+- INFERRED: 5 (71%)
 - AMBIGUOUS: 0 (0%)
 
 ---

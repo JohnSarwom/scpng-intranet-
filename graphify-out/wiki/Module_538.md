@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **Index.tsx** (0 connections) — `src\pages\Index.tsx`
+- **Index.tsx** (20 connections) — `src\pages\Index.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 236]] (1 shared connections)
+- [[Module 387]] (1 shared connections)
+- [[Module 388]] (1 shared connections)
+- [[Module 238]] (1 shared connections)
+- [[Module 390]] (1 shared connections)
+- [[Module 392]] (1 shared connections)
+- [[Module 393]] (1 shared connections)
+- [[Module 394]] (1 shared connections)
+- [[Module 395]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
+- [[Module 398]] (1 shared connections)
+- [[Module 149]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 20 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

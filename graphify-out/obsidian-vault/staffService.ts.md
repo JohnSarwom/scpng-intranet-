@@ -14,5 +14,6 @@ tags:
 ## Connections
 - [[fetchStaffMemberByEmail()]] - `contains` [EXTRACTED]
 - [[fetchStaffMembers()]] - `contains` [EXTRACTED]
+- [[useStaffMembers.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_211

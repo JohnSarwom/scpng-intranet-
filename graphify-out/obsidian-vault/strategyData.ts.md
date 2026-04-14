@@ -5,10 +5,14 @@ community: "Module 523"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_523
 ---
 
 # strategyData.ts
 
-#graphify/code #graphify/EXTRACTED #community/Module_523
+## Connections
+- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
+- [[StrategicAlignmentTab.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_523

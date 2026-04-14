@@ -12,6 +12,8 @@ tags:
 # DecommissionedAssets.tsx
 
 ## Connections
+- [[AssetCard.tsx]] - `references` [INFERRED]
+- [[DecommissionedAssetTableHeader.tsx]] - `references` [INFERRED]
 - [[formatDateString()]] - `contains` [EXTRACTED]
 - [[handleDeleteAsset()]] - `contains` [EXTRACTED]
 - [[handleEditAsset()]] - `contains` [EXTRACTED]
@@ -19,5 +21,6 @@ tags:
 - [[handleSort()_2]] - `contains` [EXTRACTED]
 - [[handleViewAsset()]] - `contains` [EXTRACTED]
 - [[resetFilters()]] - `contains` [EXTRACTED]
+- [[useAssetsSharePoint()]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_66

@@ -4,11 +4,18 @@
 
 ## Key Concepts
 
-- **tabs.tsx** (0 connections) — `src\components\ui\tabs.tsx`
+- **tabs.tsx** (8 connections) — `src\components\ui\tabs.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 365]] (1 shared connections)
+- [[Module 389]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
+- [[Module 107]] (1 shared connections)
+- [[Module 492]] (1 shared connections)
+- [[Module 499]] (1 shared connections)
+- [[Module 537]] (1 shared connections)
+- [[Module 539]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +24,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 8 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

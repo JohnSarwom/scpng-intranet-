@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **csv-helpers.test.ts** (0 connections) — `src\tests\csv-helpers.test.ts`
+- **csv-helpers.test.ts** (1 connections) — `src\tests\csv-helpers.test.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 142]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **KnowledgeUploadModal.tsx** (5 connections) — `src\components\ai-hub\KnowledgeUploadModal.tsx`
+- **KnowledgeUploadModal.tsx** (6 connections) — `src\components\ai-hub\KnowledgeUploadModal.tsx`
 - **handleFileChange()** (1 connections) — `src\components\ai-hub\KnowledgeUploadModal.tsx`
 - **handleLinkChange()** (1 connections) — `src\components\ai-hub\KnowledgeUploadModal.tsx`
 - **addLinkInput()** (1 connections) — `src\components\ai-hub\KnowledgeUploadModal.tsx`
@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[AI Hub Chat]] (1 shared connections)
 
 ## Source Files
 
@@ -21,8 +21,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (91%)
+- INFERRED: 1 (9%)
 - AMBIGUOUS: 0 (0%)
 
 ---

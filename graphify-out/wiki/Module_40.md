@@ -10,15 +10,15 @@
 - **.mapToSharePointItem()** (3 connections) — `src\services\unitService.ts`
 - **.mapFromSharePointItem()** (3 connections) — `src\services\unitService.ts`
 - **.updateUnit()** (3 connections) — `src\services\unitService.ts`
+- **unitService.ts** (2 connections) — `src\services\unitService.ts`
 - **.parseStatutoryDuties()** (2 connections) — `src\services\unitService.ts`
 - **.getUnits()** (2 connections) — `src\services\unitService.ts`
 - **.deleteUnit()** (2 connections) — `src\services\unitService.ts`
-- **unitService.ts** (1 connections) — `src\services\unitService.ts`
 - **.constructor()** (1 connections) — `src\services\unitService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 333]] (1 shared connections)
 
 ## Source Files
 
@@ -26,7 +26,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 36 (100%)
+- EXTRACTED: 37 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -36,3 +36,24 @@ members: 19
 TABLE source_file, type FROM #community/AI_Hub_Chat
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 146]]
+- 1 edge to [[_COMMUNITY_Module 94]]
+- 1 edge to [[_COMMUNITY_Module 369]]
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 374]]
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Module 127]]
+- 1 edge to [[_COMMUNITY_Module 450]]
+- 1 edge to [[_COMMUNITY_Module 469]]
+- 1 edge to [[_COMMUNITY_Module 470]]
+- 1 edge to [[_COMMUNITY_Module 478]]
+- 1 edge to [[_COMMUNITY_Module 479]]
+- 1 edge to [[_COMMUNITY_Module 480]]
+- 1 edge to [[_COMMUNITY_Module 483]]
+- 1 edge to [[_COMMUNITY_Module 128]]
+- 1 edge to [[_COMMUNITY_Module 316]]
+
+## Top bridge nodes
+- [[AIHub.tsx]] - degree 34, connects to 16 communities

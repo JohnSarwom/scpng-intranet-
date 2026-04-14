@@ -4,12 +4,18 @@
 
 ## Key Concepts
 
-- **useGraphProfile.ts** (1 connections) — `src\hooks\useGraphProfile.ts`
-- **useGraphProfile()** (1 connections) — `src\hooks\useGraphProfile.ts`
+- **useGraphProfile()** (7 connections) — `src\hooks\useGraphProfile.ts`
+- **useGraphProfile.ts** (4 connections) — `src\hooks\useGraphProfile.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 395]] (2 shared connections)
+- [[Module 396]] (2 shared connections)
+- [[Module 210]] (1 shared connections)
+- [[Module 177]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 137]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +23,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 3 (27%)
+- INFERRED: 8 (73%)
 - AMBIGUOUS: 0 (0%)
 
 ---

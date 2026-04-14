@@ -5,14 +5,14 @@
 ## Key Concepts
 
 - **AIChatService** (4 connections) — `src\integrations\supabase\aiChatService.ts`
-- **aiChatService.ts** (1 connections) — `src\integrations\supabase\aiChatService.ts`
+- **aiChatService.ts** (2 connections) — `src\integrations\supabase\aiChatService.ts`
 - **.createChatContext()** (1 connections) — `src\integrations\supabase\aiChatService.ts`
 - **.addChatMessage()** (1 connections) — `src\integrations\supabase\aiChatService.ts`
 - **.processQuery()** (1 connections) — `src\integrations\supabase\aiChatService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 513]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 8 (89%)
+- INFERRED: 1 (11%)
 - AMBIGUOUS: 0 (0%)
 
 ---

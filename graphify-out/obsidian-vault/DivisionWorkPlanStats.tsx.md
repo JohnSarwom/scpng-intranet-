@@ -5,10 +5,15 @@ community: "Module 410"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_410
 ---
 
 # DivisionWorkPlanStats.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_410
+## Connections
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[useDivisionData.ts]] - `imports_from` [INFERRED]
+- [[useWorkPlans.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_410

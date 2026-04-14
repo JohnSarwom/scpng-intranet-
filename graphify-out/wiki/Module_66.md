@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DecommissionedAssets.tsx** (7 connections) — `src\pages\DecommissionedAssets.tsx`
+- **DecommissionedAssets.tsx** (10 connections) — `src\pages\DecommissionedAssets.tsx`
 - **handleSort()** (1 connections) — `src\pages\DecommissionedAssets.tsx`
 - **handleFilterChange()** (1 connections) — `src\pages\DecommissionedAssets.tsx`
 - **resetFilters()** (1 connections) — `src\pages\DecommissionedAssets.tsx`
@@ -15,7 +15,9 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 224]] (1 shared connections)
+- [[Module 228]] (1 shared connections)
+- [[Module 291]] (1 shared connections)
 
 ## Source Files
 
@@ -23,8 +25,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 14 (82%)
+- INFERRED: 3 (18%)
 - AMBIGUOUS: 0 (0%)
 
 ---

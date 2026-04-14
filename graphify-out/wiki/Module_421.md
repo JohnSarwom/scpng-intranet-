@@ -4,11 +4,11 @@
 
 ## Key Concepts
 
-- **LeaveApplicationPaper.tsx** (0 connections) — `src\components\forms\LeaveApplicationPaper.tsx`
+- **LeaveApplicationPaper.tsx** (1 connections) — `src\components\forms\LeaveApplicationPaper.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 456]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +17,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 1 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

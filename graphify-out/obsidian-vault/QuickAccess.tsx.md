@@ -5,10 +5,15 @@ community: "Module 398"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_398
 ---
 
 # QuickAccess.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_398
+## Connections
+- [[Index.tsx]] - `imports_from` [INFERRED]
+- [[badge.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_398

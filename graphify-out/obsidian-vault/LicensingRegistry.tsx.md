@@ -5,15 +5,18 @@ community: "Module 162"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_162
 ---
 
 # LicensingRegistry.tsx
 
 ## Connections
+- [[MailPackageDialog.tsx]] - `references` [INFERRED]
+- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
 - [[generateLicenseJpegFile()]] - `contains` [EXTRACTED]
 - [[handleDateChange()_5]] - `contains` [EXTRACTED]
 - [[handleSaveToDatabase()]] - `contains` [EXTRACTED]
+- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_162
+#graphify/code #graphify/INFERRED #community/Module_162

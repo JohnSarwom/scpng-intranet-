@@ -4,11 +4,13 @@
 
 ## Key Concepts
 
-- **CapitalMarketNewsSlideshow.tsx** (0 connections) — `src\components\dashboard\CapitalMarketNewsSlideshow.tsx`
+- **CapitalMarketNewsSlideshow.tsx** (4 connections) — `src\components\dashboard\CapitalMarketNewsSlideshow.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 132]] (2 shared connections)
+- [[Module 237]] (1 shared connections)
+- [[Module 538]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +19,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

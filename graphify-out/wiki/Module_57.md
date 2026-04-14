@@ -5,8 +5,8 @@
 ## Key Concepts
 
 - **AnnouncementsSharePointService** (6 connections) — `src\services\announcementsSharePointService.ts`
+- **announcementsSharePointService.ts** (4 connections) — `src\services\announcementsSharePointService.ts`
 - **.initialize()** (4 connections) — `src\services\announcementsSharePointService.ts`
-- **announcementsSharePointService.ts** (3 connections) — `src\services\announcementsSharePointService.ts`
 - **.createAnnouncementsList()** (2 connections) — `src\services\announcementsSharePointService.ts`
 - **.getAnnouncements()** (2 connections) — `src\services\announcementsSharePointService.ts`
 - **.deleteAnnouncement()** (2 connections) — `src\services\announcementsSharePointService.ts`
@@ -16,7 +16,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 317]] (1 shared connections)
 
 ## Source Files
 
@@ -24,7 +24,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
+- EXTRACTED: 23 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

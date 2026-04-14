@@ -12,6 +12,7 @@ tags:
 # ApiManagement.tsx
 
 ## Connections
+- [[Admin.tsx]] - `references` [INFERRED]
 - [[handleEditClick()]] - `contains` [EXTRACTED]
 - [[handleSaveConfig()]] - `contains` [EXTRACTED]
 - [[handleSaveEdit()]] - `contains` [EXTRACTED]

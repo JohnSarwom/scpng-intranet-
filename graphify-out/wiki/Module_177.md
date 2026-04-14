@@ -4,13 +4,17 @@
 
 ## Key Concepts
 
-- **LeaveApplicationPage.tsx** (2 connections) — `src\components\forms\LeaveApplicationPage.tsx`
+- **LeaveApplicationPage.tsx** (7 connections) — `src\components\forms\LeaveApplicationPage.tsx`
 - **handlePrintApplication()** (1 connections) — `src\components\forms\LeaveApplicationPage.tsx`
 - **onSubmit()** (1 connections) — `src\components\forms\LeaveApplicationPage.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 307]] (1 shared connections)
+- [[Module 312]] (1 shared connections)
+- [[Module 313]] (1 shared connections)
+- [[Module 324]] (1 shared connections)
+- [[Module 207]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +22,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (44%)
+- INFERRED: 5 (56%)
 - AMBIGUOUS: 0 (0%)
 
 ---

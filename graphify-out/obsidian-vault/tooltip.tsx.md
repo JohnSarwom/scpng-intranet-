@@ -5,10 +5,13 @@ community: "Module 490"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_490
 ---
 
 # tooltip.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_490
+## Connections
+- [[utils.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_490

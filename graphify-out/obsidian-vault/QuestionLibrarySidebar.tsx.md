@@ -5,10 +5,18 @@ community: "Module 369"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_369
 ---
 
 # QuestionLibrarySidebar.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_369
+## Connections
+- [[AIHub.tsx]] - `references` [INFERRED]
+- [[accordion.tsx]] - `imports_from` [INFERRED]
+- [[badge.tsx]] - `imports_from` [INFERRED]
+- [[input.tsx]] - `imports_from` [INFERRED]
+- [[skeleton.tsx]] - `imports_from` [INFERRED]
+- [[supabaseClient.ts_1]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_369

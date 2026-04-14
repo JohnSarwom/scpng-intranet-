@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **mockData.d.ts** (0 connections) — `src\mockData\mockData.d.ts`
+- **mockData.d.ts** (2 connections) — `src\mockData\mockData.d.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 519]] (1 shared connections)
+- [[Module 522]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

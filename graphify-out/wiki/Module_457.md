@@ -4,11 +4,22 @@
 
 ## Key Concepts
 
-- **card.tsx** (0 connections) — `src\components\ui\card.tsx`
+- **card.tsx** (40 connections) — `src\components\ui\card.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 365]] (1 shared connections)
+- [[Module 367]] (1 shared connections)
+- [[Module 370]] (1 shared connections)
+- [[Module 372]] (1 shared connections)
+- [[Module 382]] (1 shared connections)
+- [[Module 389]] (1 shared connections)
+- [[Module 391]] (1 shared connections)
+- [[Module 393]] (1 shared connections)
+- [[Module 394]] (1 shared connections)
+- [[Module 396]] (1 shared connections)
+- [[Module 398]] (1 shared connections)
+- [[Module 400]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +28,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 40 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

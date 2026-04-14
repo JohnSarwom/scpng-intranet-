@@ -23,3 +23,11 @@ members: 6
 TABLE source_file, type FROM #community/Module_110
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 151]]
+- 1 edge to [[_COMMUNITY_Meeting Minutes Form]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+
+## Top bridge nodes
+- [[MeetingMinutes.tsx]] - degree 8, connects to 3 communities

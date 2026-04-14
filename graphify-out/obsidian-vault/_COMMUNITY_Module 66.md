@@ -25,3 +25,11 @@ members: 8
 TABLE source_file, type FROM #community/Module_66
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 224]]
+- 1 edge to [[_COMMUNITY_Module 228]]
+- 1 edge to [[_COMMUNITY_Module 291]]
+
+## Top bridge nodes
+- [[DecommissionedAssets.tsx]] - degree 10, connects to 3 communities

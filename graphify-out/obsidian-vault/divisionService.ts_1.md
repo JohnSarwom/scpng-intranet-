@@ -13,5 +13,6 @@ tags:
 
 ## Connections
 - [[DivisionService]] - `contains` [EXTRACTED]
+- [[useDivisions.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Division_Service

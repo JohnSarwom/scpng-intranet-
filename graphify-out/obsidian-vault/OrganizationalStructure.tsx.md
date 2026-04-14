@@ -12,6 +12,7 @@ tags:
 # OrganizationalStructure.tsx
 
 ## Connections
+- [[Contacts.tsx]] - `references` [INFERRED]
 - [[handleFilterChange()]] - `contains` [EXTRACTED]
 - [[handleNodeClick()]] - `contains` [EXTRACTED]
 - [[handleZoomIn()]] - `contains` [EXTRACTED]

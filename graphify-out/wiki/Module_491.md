@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **use-toast.ts** (0 connections) — `src\components\ui\use-toast.ts`
+- **use-toast.ts** (4 connections) — `src\components\ui\use-toast.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 84]] (1 shared connections)
+- [[Asset Management UI]] (1 shared connections)
+- [[TestGround Admin]] (1 shared connections)
+- [[Module 56]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

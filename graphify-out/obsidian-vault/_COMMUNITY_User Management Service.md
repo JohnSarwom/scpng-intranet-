@@ -33,3 +33,12 @@ members: 16
 TABLE source_file, type FROM #community/User_Management_Service
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 364]]
+- 1 edge to [[_COMMUNITY_Module 366]]
+- 1 edge to [[_COMMUNITY_Module 324]]
+- 1 edge to [[_COMMUNITY_Module 332]]
+
+## Top bridge nodes
+- [[userSharePointService.ts]] - degree 6, connects to 4 communities

@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **csv-sync.test.ts** (0 connections) — `src\tests\csv-sync.test.ts`
+- **csv-sync.test.ts** (2 connections) — `src\tests\csv-sync.test.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 297]] (1 shared connections)
+- [[Module 142]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

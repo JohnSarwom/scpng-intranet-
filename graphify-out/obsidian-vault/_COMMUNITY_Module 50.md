@@ -26,3 +26,9 @@ members: 9
 TABLE source_file, type FROM #community/Module_50
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 316]]
+
+## Top bridge nodes
+- [[OneDriveSetup.tsx]] - degree 9, connects to 1 community

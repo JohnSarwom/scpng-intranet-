@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **News.tsx** (4 connections) — `src\pages\News.tsx`
+- **News.tsx** (14 connections) — `src\pages\News.tsx`
 - **fetchSharePointNews()** (2 connections) — `src\pages\News.tsx`
 - **handleInvokeEdgeFunction()** (2 connections) — `src\pages\News.tsx`
 - **handleReadMoreClick()** (1 connections) — `src\pages\News.tsx`
@@ -12,7 +12,16 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 382]] (1 shared connections)
+- [[Module 383]] (1 shared connections)
+- [[Module 172]] (1 shared connections)
+- [[Module 236]] (1 shared connections)
+- [[Module 174]] (1 shared connections)
+- [[Module 391]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 128]] (1 shared connections)
 
 ## Source Files
 
@@ -20,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 10 (50%)
+- INFERRED: 10 (50%)
 - AMBIGUOUS: 0 (0%)
 
 ---

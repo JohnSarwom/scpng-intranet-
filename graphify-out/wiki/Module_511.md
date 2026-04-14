@@ -4,11 +4,14 @@
 
 ## Key Concepts
 
-- **divisionService.ts** (0 connections) — `src\integrations\supabase\divisionService.ts`
+- **divisionService.ts** (4 connections) — `src\integrations\supabase\divisionService.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 505]] (1 shared connections)
+- [[Module 193]] (1 shared connections)
+- [[Module 515]] (1 shared connections)
+- [[Module 541]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +20,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 4 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

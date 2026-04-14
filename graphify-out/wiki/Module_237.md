@@ -4,12 +4,14 @@
 
 ## Key Concepts
 
-- **InfoSlideshow.tsx** (1 connections) — `src\components\dashboard\InfoSlideshow.tsx`
+- **InfoSlideshow.tsx** (4 connections) — `src\components\dashboard\InfoSlideshow.tsx`
 - **handleReadMore()** (1 connections) — `src\components\dashboard\InfoSlideshow.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 387]] (1 shared connections)
+- [[Module 388]] (1 shared connections)
+- [[Module 390]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (40%)
+- INFERRED: 3 (60%)
 - AMBIGUOUS: 0 (0%)
 
 ---

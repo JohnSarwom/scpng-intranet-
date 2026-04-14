@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **AIHub.tsx** (18 connections) — `src\pages\AIHub.tsx`
+- **AIHub.tsx** (34 connections) — `src\pages\AIHub.tsx`
 - **scrollToBottom()** (3 connections) — `src\pages\AIHub.tsx`
 - **handleSendChatMessage()** (3 connections) — `src\pages\AIHub.tsx`
 - **handleScrollToBottomClick()** (2 connections) — `src\pages\AIHub.tsx`
@@ -26,7 +26,18 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 94]] (1 shared connections)
+- [[Module 369]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 450]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 478]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
 
 ## Source Files
 
@@ -34,8 +45,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 44 (73%)
+- INFERRED: 16 (27%)
 - AMBIGUOUS: 0 (0%)
 
 ---

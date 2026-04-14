@@ -5,10 +5,17 @@ community: "Module 408"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/EXTRACTED
+  - graphify/INFERRED
   - community/Module_408
 ---
 
 # DivisionTrafficLightPanel.tsx
 
-#graphify/code #graphify/EXTRACTED #community/Module_408
+## Connections
+- [[badge.tsx]] - `imports_from` [INFERRED]
+- [[button.tsx]] - `imports_from` [INFERRED]
+- [[card.tsx]] - `imports_from` [INFERRED]
+- [[dialog.tsx]] - `imports_from` [INFERRED]
+- [[division.types.ts]] - `imports_from` [INFERRED]
+
+#graphify/code #graphify/INFERRED #community/Module_408

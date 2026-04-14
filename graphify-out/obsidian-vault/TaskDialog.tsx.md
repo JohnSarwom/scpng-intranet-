@@ -12,6 +12,7 @@ tags:
 # TaskDialog.tsx
 
 ## Connections
+- [[Unit.tsx]] - `references` [INFERRED]
 - [[handleAddComment()_1]] - `contains` [EXTRACTED]
 - [[handleAddSubtask()]] - `contains` [EXTRACTED]
 - [[handleDrop()_2]] - `contains` [EXTRACTED]
@@ -24,5 +25,6 @@ tags:
 - [[sanitizeFolderName()]] - `contains` [EXTRACTED]
 - [[scrollToBottom()_3]] - `contains` [EXTRACTED]
 - [[uploadPendingFiles()]] - `contains` [EXTRACTED]
+- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Task_Dialog

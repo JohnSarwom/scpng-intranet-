@@ -4,12 +4,23 @@
 
 ## Key Concepts
 
-- **EditEmployeeProfile.tsx** (1 connections) — `src\pages\EditEmployeeProfile.tsx`
+- **EditEmployeeProfile.tsx** (14 connections) — `src\pages\EditEmployeeProfile.tsx`
 - **EditEmployeeProfile()** (1 connections) — `src\pages\EditEmployeeProfile.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 146]] (1 shared connections)
+- [[Module 224]] (1 shared connections)
+- [[Module 228]] (1 shared connections)
+- [[Module 374]] (1 shared connections)
+- [[Module 401]] (1 shared connections)
+- [[Module 151]] (1 shared connections)
+- [[Module 127]] (1 shared connections)
+- [[Module 469]] (1 shared connections)
+- [[Module 470]] (1 shared connections)
+- [[Module 479]] (1 shared connections)
+- [[Module 480]] (1 shared connections)
+- [[Module 282]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +28,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (13%)
+- INFERRED: 13 (87%)
 - AMBIGUOUS: 0 (0%)
 
 ---

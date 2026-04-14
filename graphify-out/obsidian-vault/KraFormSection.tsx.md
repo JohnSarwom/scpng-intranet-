@@ -15,5 +15,6 @@ tags:
 - [[GlobalAssigneeSelector.tsx]] - `references` [EXTRACTED]
 - [[KpiModal.tsx]] - `references` [EXTRACTED]
 - [[handleDateChange()]] - `contains` [EXTRACTED]
+- [[useStaffByDepartment.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Module_264

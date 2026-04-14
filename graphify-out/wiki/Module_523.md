@@ -4,11 +4,12 @@
 
 ## Key Concepts
 
-- **strategyData.ts** (0 connections) — `src\mockData\strategyData.ts`
+- **strategyData.ts** (2 connections) — `src\mockData\strategyData.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 394]] (1 shared connections)
+- [[Module 492]] (1 shared connections)
 
 ## Source Files
 
@@ -17,7 +18,7 @@
 ## Audit Trail
 
 - EXTRACTED: 0 (0%)
-- INFERRED: 0 (0%)
+- INFERRED: 2 (100%)
 - AMBIGUOUS: 0 (0%)
 
 ---

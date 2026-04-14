@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **OneDriveSetup.tsx** (8 connections) — `src\components\setup-wizard\steps\OneDriveSetup.tsx`
+- **OneDriveSetup.tsx** (9 connections) — `src\components\setup-wizard\steps\OneDriveSetup.tsx`
 - **handleNavigateUp()** (1 connections) — `src\components\setup-wizard\steps\OneDriveSetup.tsx`
 - **handleCreateFolder()** (1 connections) — `src\components\setup-wizard\steps\OneDriveSetup.tsx`
 - **handleRenameFolder()** (1 connections) — `src\components\setup-wizard\steps\OneDriveSetup.tsx`
@@ -16,7 +16,7 @@
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 316]] (1 shared connections)
 
 ## Source Files
 
@@ -24,8 +24,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 16 (94%)
+- INFERRED: 1 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

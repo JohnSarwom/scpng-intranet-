@@ -29,3 +29,10 @@ members: 12
 TABLE source_file, type FROM #community/Module_34
 SORT file.name ASC
 ```
+
+## Connections to other communities
+- 1 edge to [[_COMMUNITY_Module 316]]
+- 1 edge to [[_COMMUNITY_Module 536]]
+
+## Top bridge nodes
+- [[RegulatoryAIChat.tsx]] - degree 13, connects to 2 communities

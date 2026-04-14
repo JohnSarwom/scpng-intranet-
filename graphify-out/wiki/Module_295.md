@@ -4,12 +4,12 @@
 
 ## Key Concepts
 
-- **useCountdown.ts** (1 connections) — `src\hooks\useCountdown.ts`
+- **useCountdown.ts** (2 connections) — `src\hooks\useCountdown.ts`
 - **useCountdown()** (1 connections) — `src\hooks\useCountdown.ts`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 121]] (1 shared connections)
 
 ## Source Files
 
@@ -17,8 +17,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 2 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 2 (67%)
+- INFERRED: 1 (33%)
 - AMBIGUOUS: 0 (0%)
 
 ---

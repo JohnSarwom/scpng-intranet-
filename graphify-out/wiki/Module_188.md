@@ -4,13 +4,15 @@
 
 ## Key Concepts
 
-- **chart.tsx** (2 connections) — `src\components\ui\chart.tsx`
+- **chart.tsx** (5 connections) — `src\components\ui\chart.tsx`
 - **useChart()** (1 connections) — `src\components\ui\chart.tsx`
 - **cn()** (1 connections) — `src\components\ui\chart.tsx`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Module 424]] (1 shared connections)
+- [[Module 440]] (1 shared connections)
+- [[Module 441]] (1 shared connections)
 
 ## Source Files
 
@@ -18,8 +20,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 4 (57%)
+- INFERRED: 3 (43%)
 - AMBIGUOUS: 0 (0%)
 
 ---
