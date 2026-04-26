@@ -364,6 +364,31 @@ export const useMicrosoftGraph = () => {
   }, [checkMsalAuth, msalInstance]);
 
   /**
+   * Moves a file or folder to a different parent folder in OneDrive.
+   * @param itemId The OneDrive item ID to move
+   * @param destinationFolderId The target folder ID (use 'root' for root)
+   * @returns true on success, false on failure
+   */
+  const moveOneDriveItem = useCallback(async (
+    itemId: string,
+    destinationFolderId: string
+  ): Promise<boolean> => {
+    if (!checkMsalAuth() || !msalInstance) return false;
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) return false;
+      const parentReference = destinationFolderId === 'root'
+        ? { path: '/drive/root:' }
+        : { id: destinationFolderId };
+      await client.api(`/me/drive/items/${itemId}`).patch({ parentReference });
+      return true;
+    } catch (error: any) {
+      toast.error(`Move failed: ${error.message}`);
+      return false;
+    }
+  }, [checkMsalAuth, msalInstance]);
+
+  /**
    * Uploads a binary file to a specific SharePoint location
    */
   const uploadBinaryFileToSharePoint = useCallback(async (
@@ -508,6 +533,7 @@ export const useMicrosoftGraph = () => {
     createOneDriveFolder,
     renameOneDriveItem,
     deleteOneDriveItem,
+    moveOneDriveItem,
   }), [
     isLoading,
     lastError,
@@ -524,5 +550,6 @@ export const useMicrosoftGraph = () => {
     createOneDriveFolder,
     renameOneDriveItem,
     deleteOneDriveItem,
+    moveOneDriveItem,
   ]);
 };

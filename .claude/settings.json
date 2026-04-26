@@ -7,7 +7,10 @@
       "Bash(node -e \"const { randomUUID } = require\\(''crypto''\\); console.log\\(randomUUID\\(\\)\\)\")",
       "Bash(python -c ':*)",
       "Bash(graphify query:*)",
-      "Bash(python _inject_semantic_edges.py)"
+      "Bash(python _inject_semantic_edges.py)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)"
     ]
   },
   "hooks": {

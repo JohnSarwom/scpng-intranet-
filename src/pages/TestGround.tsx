@@ -12,8 +12,10 @@ import { SharePointListSetupService } from '@/services/sharePointListSetupServic
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { PowerAutomateService } from '@/services/powerAutomateService';
 import { RegulatorySharePointSetupService } from '@/services/regulatorySharePointSetupService';
+import { FacebookAnalyticsSetupService } from '@/services/facebookAnalyticsSetupService';
 import { StrategyMigrationService } from '@/services/strategyMigrationService';
 import { AnnouncementsSharePointService } from '@/services/announcementsSharePointService';
+import { KraKpiSeedService } from '@/services/kraKpiSeedService';
 import { getGraphClient } from '@/services/graphService';
 import {
     Settings,
@@ -84,6 +86,8 @@ const TestGround = () => {
     const [isMigratingStrategy, setIsMigratingStrategy] = useState(false);
     const [setupResult, setSetupResult] = useState<any>(null);
     const [isSettingUpRegulatory, setIsSettingUpRegulatory] = useState(false);
+    const [isSettingUpFacebook, setIsSettingUpFacebook] = useState(false);
+    const [isDroppingFbUrlCols, setIsDroppingFbUrlCols] = useState(false);
     const [isSettingUpAnnouncements, setIsSettingUpAnnouncements] = useState(false);
     const [isPurgingOps, setIsPurgingOps] = useState(false);
     const [isSeedingOfficers, setIsSeedingOfficers] = useState(false);
@@ -751,6 +755,107 @@ const TestGround = () => {
         }
     };
 
+    const handleSetupFacebookAnalytics = async () => {
+        setIsSettingUpFacebook(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: "🚀 Deploying Facebook Analytics Lists",
+                description: "Creating Facebook_Posts, Facebook_Comments, and Facebook_Messages lists...",
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new FacebookAnalyticsSetupService(graphClient, site.id);
+            const result = await setupService.setupAllLists();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: "✅ Facebook Analytics Ready!",
+                    description: "Three SharePoint lists are live. Copy the list IDs from the console.",
+                });
+                if (result.listIds) {
+                    console.log('📋 Facebook list IDs — copy these into your Apps Script Script Properties:');
+                    console.log(`FB_POSTS_LIST_ID    = ${result.listIds.posts}`);
+                    console.log(`FB_COMMENTS_LIST_ID = ${result.listIds.comments}`);
+                    console.log(`FB_MESSAGES_LIST_ID = ${result.listIds.messages}`);
+                }
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('❌ Facebook Analytics Setup failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: "❌ Deployment Failed",
+                description: error.message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSettingUpFacebook(false);
+        }
+    };
+
+    const handleDropFacebookUrlColumns = async () => {
+        if (!confirm(
+            'Drop ImageUrl, VideoUrl and PostLink columns from Facebook_Posts?\n\n' +
+            'These will be recreated as multi-line columns the next time you click ' +
+            '"Deploy Facebook Analytics Lists". Existing post rows are kept but their ' +
+            'URL fields will be blank until the next Apps Script sync.'
+        )) return;
+
+        setIsDroppingFbUrlCols(true);
+        setSetupResult(null);
+
+        try {
+            toast({
+                title: '🧹 Dropping URL columns',
+                description: 'Removing single-line ImageUrl/VideoUrl/PostLink from Facebook_Posts...',
+            });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const site = await graphClient
+                .api('/sites/scpng1.sharepoint.com:/sites/scpngintranet')
+                .get();
+
+            const setupService = new FacebookAnalyticsSetupService(graphClient, site.id);
+            const result = await setupService.dropUrlColumns();
+            setSetupResult(result);
+
+            if (result.success) {
+                toast({
+                    title: '✅ URL columns dropped',
+                    description: 'Now click "Deploy Facebook Analytics Lists" to recreate them as multi-line.',
+                });
+            } else {
+                toast({
+                    title: '⚠️ Partial drop',
+                    description: result.message,
+                    variant: 'destructive',
+                });
+            }
+        } catch (error: any) {
+            console.error('❌ Drop URL columns failed:', error);
+            setSetupResult({ success: false, message: error.message, error });
+            toast({
+                title: '❌ Drop failed',
+                description: error.message,
+                variant: 'destructive',
+            });
+        } finally {
+            setIsDroppingFbUrlCols(false);
+        }
+    };
+
     const handleSetupOrgHierarchy = async () => {
         setIsSettingUpOrgHierarchy(true);
         setSetupResult(null);
@@ -838,6 +943,8 @@ const TestGround = () => {
     };
 
     const [isResettingStrategy, setIsResettingStrategy] = useState(false);
+    const [isReseedingFramework, setIsReseedingFramework] = useState(false);
+    const [frameworkSeedLog, setFrameworkSeedLog] = useState<string[]>([]);
 
     const handleResetStrategyProgress = async () => {
         if (!confirm('This will reset the progress of ALL Strategic Objectives to 0%. This is useful if you have deleted all operational data and want a clean slate.\n\nAre you sure completely?')) return;
@@ -881,6 +988,42 @@ const TestGround = () => {
             });
         } finally {
             setIsResettingStrategy(false);
+        }
+    };
+
+    const handleReseedScpngFramework = async () => {
+        if (!confirm(
+            'WARNING: This will DELETE all existing Unit Objectives, KRAs, and KPIs, then recreate the full SCPNG Strategic Performance Framework (5 Goals / 18 KRAs / 72 KPIs) from the official document.\n\nThis cannot be undone. Proceed?'
+        )) return;
+
+        setIsReseedingFramework(true);
+        setFrameworkSeedLog([]);
+
+        try {
+            toast({ title: 'Resetting SCPNG Framework', description: 'Deleting old data and seeding new framework...' });
+
+            const graphClient = await getGraphClient(msalInstance);
+            if (!graphClient) throw new Error('Failed to get Graph client');
+
+            const seedService = new KraKpiSeedService(graphClient);
+            const result = await seedService.resetAndSeed((line) => {
+                setFrameworkSeedLog(prev => [...prev, line]);
+            });
+
+            if (result.success) {
+                toast({
+                    title: 'Framework Reset Complete',
+                    description: `${result.stats.goals} Goals, ${result.stats.bridgeObjectives} division objectives, ${result.stats.kras} KRAs, ${result.stats.kpis} KPIs created.`,
+                });
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            console.error('Framework reseed failed:', error);
+            setFrameworkSeedLog(prev => [...prev, `ERROR: ${error.message}`]);
+            toast({ title: 'Reseed Failed', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsReseedingFramework(false);
         }
     };
 
@@ -2554,6 +2697,87 @@ const TestGround = () => {
                     </CardContent>
                 </Card>
 
+                {/* Facebook Analytics Setup Card (NEW) */}
+                <Card className="border-2 border-blue-600 shadow-lg bg-gradient-to-br from-white to-blue-50 dark:from-gray-900 dark:to-blue-950/30">
+                    <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <CardTitle className="text-2xl flex items-center gap-2 text-blue-700 text-bold">
+                                    <Network className="h-6 w-6" />
+                                    Facebook Analytics Backend Setup
+                                </CardTitle>
+                                <CardDescription className="text-base font-medium mt-1">
+                                    Deploy the three SharePoint lists that store Facebook posts, comments, and messages synced from Google Apps Script.
+                                </CardDescription>
+                            </div>
+                            <Badge className="bg-blue-600 text-white">New</Badge>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                    <Layers className="h-4 w-4" /> Lists Created
+                                </h3>
+                                <ul className="grid grid-cols-1 gap-2 text-sm font-medium">
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Facebook_Posts (id, type, message, media, engagement)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Facebook_Comments (comment + reply thread)</li>
+                                    <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Facebook_Messages (Messenger inbox)</li>
+                                </ul>
+                                <p className="text-xs text-muted-foreground pt-2">
+                                    After deploy, the list IDs are logged to the browser console. Paste them into your Google Apps Script Script Properties as <code>FB_POSTS_LIST_ID</code>, <code>FB_COMMENTS_LIST_ID</code>, <code>FB_MESSAGES_LIST_ID</code>.
+                                </p>
+                            </div>
+
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-900 flex flex-col justify-center">
+                                <div className="space-y-4">
+                                    <Button
+                                        onClick={handleSetupFacebookAnalytics}
+                                        disabled={isSettingUpFacebook}
+                                        size="lg"
+                                        className="w-full bg-blue-600 hover:bg-blue-700 shadow-md py-6 text-lg font-bold"
+                                    >
+                                        {isSettingUpFacebook ? (
+                                            <>
+                                                <Loader2 className="h-6 w-6 animate-spin mr-2" />
+                                                Deploying Lists...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Settings className="h-6 w-6 mr-2" />
+                                                Deploy Facebook Analytics Lists
+                                            </>
+                                        )}
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleDropFacebookUrlColumns}
+                                        disabled={isDroppingFbUrlCols}
+                                        variant="outline"
+                                        size="sm"
+                                        className="w-full border-amber-400 text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                    >
+                                        {isDroppingFbUrlCols ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                                                Dropping URL columns...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Drop URL columns (then redeploy)
+                                            </>
+                                        )}
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground -mt-2">
+                                        Run this if your existing Facebook_Posts list has single-line ImageUrl/VideoUrl/PostLink columns truncating Facebook CDN URLs. After dropping, click <strong>Deploy Facebook Analytics Lists</strong> to recreate them as multi-line.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 {/* Enterprise Strategy Hub Setup Card */}
                 <Card className="border-2 border-intranet-primary shadow-lg bg-gradient-to-br from-white to-intranet-primary/5 dark:from-gray-900 dark:to-intranet-primary/10">
                     <CardHeader>
@@ -3387,6 +3611,49 @@ const TestGround = () => {
                                     </>
                                 )}
                             </Button>
+
+                            <div className="border-t border-gray-200 my-4"></div>
+
+                            <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                                <RefreshCw className="w-4 h-4 text-red-600" />
+                                Reset & Reseed SCPNG Framework
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-3">
+                                Wipes all Objectives, KRAs and KPIs, then seeds the official framework:
+                                5 Strategic Goals, 18 KRAs, 72 KPIs across all divisions.
+                            </p>
+
+                            <Button
+                                onClick={handleReseedScpngFramework}
+                                disabled={isReseedingFramework}
+                                variant="destructive"
+                                className="w-full gap-2 bg-red-700 hover:bg-red-800 text-white"
+                            >
+                                {isReseedingFramework ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Reseeding Framework...
+                                    </>
+                                ) : (
+                                    <>
+                                        <RefreshCw className="h-4 w-4" />
+                                        Reset & Reseed Official Framework
+                                    </>
+                                )}
+                            </Button>
+
+                            {frameworkSeedLog.length > 0 && (
+                                <div className="mt-3 bg-gray-950 rounded-md p-3 max-h-56 overflow-y-auto font-mono text-xs text-green-400 space-y-0.5">
+                                    {frameworkSeedLog.map((line, i) => (
+                                        <div key={i} className={line.startsWith('ERROR') ? 'text-red-400' : line.startsWith('  ') ? 'text-gray-400' : 'text-green-300'}>
+                                            {line}
+                                        </div>
+                                    ))}
+                                    {isReseedingFramework && (
+                                        <div className="text-yellow-400 animate-pulse">Running...</div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

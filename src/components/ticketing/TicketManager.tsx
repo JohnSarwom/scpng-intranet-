@@ -58,6 +58,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PremiumKanbanBoard, PremiumKanbanColumn } from '@/components/ui/PremiumKanban';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -314,10 +315,34 @@ const BoardLane = ({
     }
   };
 
+  const headerActions = (
+    <>
+      <Button 
+        variant="ghost" 
+        size="icon"
+        className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-white/10"
+        onClick={onAddTicket}
+        title="Add Ticket"
+      >
+        <Plus className="h-3.5 w-3.5" />
+      </Button>
+      <Button 
+        variant="ghost" 
+        size="icon"
+        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 hover:bg-white/10"
+        onClick={() => onDeleteGroup(id)}
+        title="Delete Group"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </>
+  );
+
   return (
-    <div className="w-80 flex-shrink-0 flex flex-col bg-muted/30 dark:bg-muted/20 rounded-lg overflow-hidden">
-      <div className="p-3 font-medium flex items-center justify-between bg-muted/50 dark:bg-muted/30">
-        {isEditing ? (
+    <PremiumKanbanColumn
+      id={id}
+      title={
+        isEditing ? (
           <input
             ref={inputRef}
             type="text"
@@ -325,49 +350,47 @@ const BoardLane = ({
             onChange={(e) => setTempTitle(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="bg-background text-foreground p-1 rounded w-full mr-2"
+            className="bg-background text-foreground p-1 rounded w-full mr-2 text-xs font-medium"
           />
         ) : (
-          <h3 onDoubleClick={handleDoubleClick} className="cursor-pointer">{title}</h3>
-        )}
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="ml-2">{tickets.length}</Badge>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-primary"
-            onClick={onAddTicket}
-            title="Add Ticket"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
-            onClick={() => onDeleteGroup(id)}
-            title="Delete Group"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
+          <span onDoubleClick={handleDoubleClick} className="cursor-pointer">{title}</span>
+        )
+      }
+      count={tickets.length}
+      headerActions={headerActions}
+      isOver={isColumnOver || dropTargetInfo.columnId === id}
+      className={cn(
+        (isColumnOver || dropTargetInfo.columnId === id) && "ring-intranet-primary/20 scale-[1.02]"
+      )}
+    >
       <div 
-        className={cn(
-          "p-2 flex-grow overflow-y-auto min-h-[200px] space-y-3",
-          (isColumnOver || dropTargetInfo.columnId === id) && tickets.length === 0 && "border-2 border-dashed border-primary/50 rounded-md",
-          (isColumnOver || dropTargetInfo.columnId === id) && "bg-primary/5 transition-colors duration-150"
-        )} 
         ref={setNodeRef}
+        className="flex-grow space-y-3 min-h-[500px] relative"
       >
         <SortableContext items={incompleteTickets.map(ticket => ticket.id)} strategy={verticalListSortingStrategy}>
+          {incompleteTickets.length === 0 && completedTickets.length === 0 && (
+            <div className="border-2 border-dashed border-gray-200/50 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center p-8 text-center h-[200px] bg-white/5 backdrop-blur-sm">
+              <Kanban className="h-10 w-10 text-muted-foreground/20 mb-3" />
+              <p className="text-xs font-medium text-muted-foreground/30 mb-4 uppercase tracking-widest">No tickets in this group</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onAddTicket}
+                className="pointer-events-auto border-white/10 hover:bg-white/5 font-bold text-xs uppercase tracking-tighter"
+              >
+                <Plus className="mr-2 h-3.5 w-3.5" />
+                Add Ticket
+              </Button>
+            </div>
+          )}
+
           {incompleteTickets.map((ticket) => (
             <React.Fragment key={ticket.id}>
               {dropTargetInfo.columnId === id && 
                dropTargetInfo.overItemId === ticket.id && 
                !dropTargetInfo.isBottomHalf && 
                dropTargetInfo.overItemId !== dropTargetInfo.columnId &&
-                <div className="h-1 w-full bg-red-500 my-0.5 rounded-full"></div>
+                <div className="h-1 w-full bg-intranet-primary my-0.5 rounded-full shadow-[0_0_8px_rgba(131,0,42,0.5)]"></div>
               }
 
               <TicketCard
@@ -384,7 +407,7 @@ const BoardLane = ({
               {dropTargetInfo.columnId === id && 
                dropTargetInfo.overItemId === ticket.id && 
                dropTargetInfo.isBottomHalf && 
-                <div className="h-1 w-full bg-red-500 my-0.5 rounded-full"></div>
+                <div className="h-1 w-full bg-intranet-primary my-0.5 rounded-full shadow-[0_0_8px_rgba(131,0,42,0.5)]"></div>
               }
             </React.Fragment>
           ))}
@@ -392,43 +415,32 @@ const BoardLane = ({
           {dropTargetInfo.columnId === id && 
            dropTargetInfo.overItemId === null && 
            incompleteTickets.length > 0 &&
-            <div className="h-1 w-full bg-red-500 mt-1 rounded-full"></div>
+            <div className="h-1 w-full bg-intranet-primary mt-1 rounded-full shadow-[0_0_8px_rgba(131,0,42,0.5)]"></div>
           }
         </SortableContext>
         
         {/* Completed tasks dropdown section */}
         {hasCompletedTasks && (
-          <div className="mt-4 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+          <div className="mt-4 pt-2 border-t border-dashed border-gray-200 dark:border-white/10">
             <button 
               onClick={() => setShowCompletedTasks(prev => !prev)}
-              className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground py-1 px-2 rounded hover:bg-muted/30 transition-colors"
+              className="w-full flex items-center justify-between text-[10px] uppercase tracking-widest font-medium text-muted-foreground/60 hover:text-foreground py-1 px-2 rounded hover:bg-white/5 transition-colors"
             >
               <div className="flex items-center">
-                <CheckCircle className="h-3.5 w-3.5 mr-2 text-green-600" />
-                <span>Completed tasks</span>
+                <CheckCircle className="h-3.5 w-3.5 mr-2" />
+                <span>Completed ({completedTickets.length})</span>
               </div>
-              <div className="flex items-center">
-                <span className="mr-1.5">{completedTickets.length}</span>
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showCompletedTasks ? 'rotate-180' : ''}`} />
-              </div>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${showCompletedTasks ? 'rotate-180' : ''}`} />
             </button>
             
             {showCompletedTasks && (
-              <div className="pt-2 space-y-3">
+              <div className="pt-4 space-y-3 opacity-80">
                 <SortableContext items={completedTickets.map(t => t.id)} strategy={verticalListSortingStrategy}>
                   {completedTickets.map((ticket) => (
                     <TicketCard
                       key={ticket.id}
                       id={ticket.id}
-                      title={ticket.title}
-                      description={ticket.description}
-                      assignee={ticket.assignee}
-                      priority={ticket.priority}
-                      startDate={ticket.startDate}
-                      endDate={ticket.endDate}
-                      commentsCount={ticket.commentsCount}
-                      status={ticket.status}
-                      completed={ticket.completed}
+                      {...ticket}
                       onEdit={() => onEditTicket(ticket.id)}
                       onDelete={() => onDeleteTicket(ticket.id)}
                       onComplete={onToggleComplete}
@@ -442,17 +454,11 @@ const BoardLane = ({
             )}
           </div>
         )}
-        
-        {/* Placeholder for empty column drop */}
-        {(isColumnOver || dropTargetInfo.columnId === id) && tickets.length === 0 && (
-          <div className="flex items-center justify-center h-24 rounded-md">
-            <p className="text-sm text-muted-foreground">Drop here</p>
-          </div>
-        )}
       </div>
-    </div>
+    </PremiumKanbanColumn>
   );
 };
+
 
 // Grid view component
 const GridView: React.FC<{
@@ -1747,7 +1753,7 @@ const TicketManager: React.FC = () => {
           onDragOver={handleDragOver}
         >
           {viewMode === "board" ? (
-            <div className="px-4 pb-4 flex space-x-4 overflow-x-auto">
+            <PremiumKanbanBoard className="px-4">
               {buckets.map(bucket => {
                 const columnId = bucket.id;
                 const columnTickets = getFilteredTickets()[columnId] || [];
@@ -1774,24 +1780,24 @@ const TicketManager: React.FC = () => {
               })}
               {isAddingGroup ? (
                 <div className="w-80 flex-shrink-0">
-                  <div className="bg-muted/30 dark:bg-muted/20 rounded-lg p-3">
+                  <div className="bg-white/50 dark:bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-gray-200/50 dark:border-white/10 shadow-sm">
                     <Input
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                       placeholder="Group name"
                       autoFocus
-                      className="mb-2"
+                      className="mb-3 h-8 text-xs font-medium"
                     />
                     <div className="flex space-x-2">
-                      <Button size="sm" onClick={handleSaveNewGroup}>Save</Button>
-                      <Button size="sm" variant="outline" onClick={handleCancelAddGroup}>Cancel</Button>
+                      <Button size="sm" onClick={handleSaveNewGroup} className="h-7 text-xs font-semibold px-4">Save</Button>
+                      <Button size="sm" variant="ghost" onClick={handleCancelAddGroup} className="h-7 text-xs">Cancel</Button>
                     </div>
                   </div>
                 </div>
               ) : (
                 <Button
                   variant="outline"
-                  className="h-auto flex-shrink-0 w-80 border-dashed py-3 bg-muted/20 dark:bg-muted/10 hover:bg-muted/30 dark:hover:bg-muted/20"
+                  className="h-auto flex-shrink-0 w-80 border-dashed border-2 py-6 rounded-2xl bg-gray-200/20 dark:bg-white/[0.03] hover:bg-gray-200/40 dark:hover:bg-white/10 border-gray-300/50 dark:border-white/10 transition-all group"
                   onClick={() => {
                     setIsAddingGroup(true);
                     if (viewMode !== 'board') {
@@ -1799,11 +1805,15 @@ const TicketManager: React.FC = () => {
                     }
                   }}
                 >
-                  <Plus className="mr-2 h-5 w-5" />
-                  Add New Group
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-2 rounded-full bg-white/50 dark:bg-white/5 group-hover:scale-110 transition-transform">
+                      <Plus className="h-5 w-5 text-muted-foreground group-hover:text-intranet-primary" />
+                    </div>
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 group-hover:text-foreground">Add New Group</span>
+                  </div>
                 </Button>
               )}
-            </div>
+            </PremiumKanbanBoard>
           ) : viewMode === "grid" ? (
             <GridView 
               tickets={getFilteredTickets()} 

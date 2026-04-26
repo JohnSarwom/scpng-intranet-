@@ -6,10 +6,11 @@ import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle } f
 import { cn } from '@/lib/utils';
 import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BaseCard } from '@/components/ui/BaseCard';
+import { PremiumKanbanCard } from '@/components/ui/PremiumKanban';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
 
 // Extend props to include anything needed by useSortable or event handlers
 export interface TicketCardProps {
@@ -474,7 +475,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   );
 
   return (
-    <BaseCard
+    <PremiumKanbanCard
       id={id}
       headerContent={headerContent}
       headerActions={headerActions}
@@ -483,9 +484,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
       onClick={onClick}
       isDragging={false}
       isDragOverlay={isDragOverlay}
+      isOverdue={isDueDatePassed}
+      isCompleted={completed}
+      glow={true}
+      maroonAccent={true}
       cardClassName={cn(
-        isDueDatePassed && "border-red-500 dark:border-red-600",
-        completed && "opacity-80 bg-gray-50 dark:bg-gray-800/50",
         className
       )}
     />

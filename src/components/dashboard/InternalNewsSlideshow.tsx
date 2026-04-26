@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from 'lucide-react';
 import { useInternalNews, NewsItem } from '@/hooks/useInternalNews';
+import { decodeHtmlEntities } from '@/lib/utils';
 
 // Category color mapping
 const CATEGORY_COLORS = {
@@ -31,7 +32,7 @@ const NewsSlide: React.FC<NewsSlideProps> = ({ item, onReadMore }) => {
         <div className="relative w-full h-[240px] mb-4 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700">
           <img
             src={item.image}
-            alt={item.title}
+            alt={decodeHtmlEntities(item.title)}
             className="w-full h-full object-cover"
             onError={(e) => {
               e.currentTarget.src = 'https://via.placeholder.com/800x450/83002A/FFFFFF?text=SCPNG+News';
@@ -67,12 +68,12 @@ const NewsSlide: React.FC<NewsSlideProps> = ({ item, onReadMore }) => {
 
           {/* Title */}
           <h3 className="text-xl font-bold leading-tight line-clamp-2 dark:text-white">
-            {item.title}
+            {decodeHtmlEntities(item.title)}
           </h3>
 
           {/* Description */}
           <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-3">
-            {item.description}
+            {decodeHtmlEntities(item.description)}
           </p>
 
           {/* Author */}

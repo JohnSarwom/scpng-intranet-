@@ -136,3 +136,44 @@ export async function compressImage(file: File, maxWidth = 1920, quality = 0.8):
     reader.onerror = (err) => reject(err);
   });
 }
+
+/**
+ * Decodes common HTML entities in a string.
+ * Useful for text coming from SharePoint or RSS feeds that contain encoded characters.
+ */
+export function decodeHtmlEntities(str: string | null | undefined): string {
+  if (!str) return '';
+  
+  const entities: Record<string, string> = {
+    '&nbsp;': ' ',
+    '&amp;': '&',
+    '&lt;': '<',
+    '&gt;': '>',
+    '&quot;': '"',
+    '&#039;': "'",
+    '&#39;': "'",
+    '&#x27;': "'",
+    '&#x2F;': '/',
+    '&#x2f;': '/',
+    '&#32;': ' ',
+    '&#8211;': '–', // en-dash
+    '&#8212;': '—', // em-dash
+    '&#8216;': '‘',
+    '&#8217;': '’',
+    '&#8220;': '“',
+    '&#8221;': '”',
+    '&ndash;': '–',
+    '&mdash;': '—',
+    '&lsquo;': '‘',
+    '&rsquo;': '’',
+    '&ldquo;': '“',
+    '&rdquo;': '”',
+    '&middot;': '·',
+    '&bull;': '•',
+    '&hellip;': '…',
+  };
+
+  return str.replace(/&[#\w\d]+;/g, (match) => {
+    return entities[match] || match;
+  });
+}

@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
-import { cn } from '@/lib/utils';
+import { cn, decodeHtmlEntities } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -84,7 +84,7 @@ const ArticleCardComponent: React.FC<{ article: PageNewsArticle; handleReadMoreC
       {article.urlToImage && (
         <img
           src={article.urlToImage}
-          alt={`Image for ${article.title}`}
+          alt={`Image for ${decodeHtmlEntities(article.title)}`}
           className="w-full h-48 object-cover transition-transform duration-500 hover:scale-105"
           onError={(e) => (e.currentTarget.style.display = 'none')}
         />
@@ -100,10 +100,10 @@ const ArticleCardComponent: React.FC<{ article: PageNewsArticle; handleReadMoreC
           <CardTitle className="text-lg leading-tight hover:text-intranet-primary transition-colors dark:text-gray-100 dark:hover:text-intranet-accent-light line-clamp-2">
             {article.sourceUrl && !article.sourceUrl.startsWith('#article-') && article.sourceUrl !== '#' ? (
               <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                {article.title}
+                {decodeHtmlEntities(article.title)}
               </a>
             ) : (
-              article.title
+              decodeHtmlEntities(article.title)
             )}
           </CardTitle>
           {article.sourceName && (

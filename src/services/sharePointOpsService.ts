@@ -331,7 +331,6 @@ export class SharePointOpsService {
                 Owner: objective.owner,
                 ParentGoalIdLookupId: objective.parentGoalId ? Number(objective.parentGoalId) : null,
                 Icon: objective.icon,
-                IsFeatured: objective.isFeatured,
                 Deliverables: objective.deliverables?.join(', '),
                 LinkedDeliverable: objective.linkedDeliverable
             }

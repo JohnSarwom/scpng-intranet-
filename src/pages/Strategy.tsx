@@ -1032,16 +1032,20 @@ const Strategy = () => {
                                                                                     // Group by parentGoalId (strategic objective)
                                                                                     const stratGroups: Record<string, { title: string; objectives: (Objective & { _deliverable: string })[] }> = {};
                                                                                     allObjs.forEach(obj => {
-                                                                                        const parentId = obj.parentGoalId ? String(obj.parentGoalId) : 'unlinked';
-                                                                                        if (!stratGroups[parentId]) {
-                                                                                            // Look up strategic objective title
-                                                                                            const stratObj = effectiveObjectives.find((so: any) => String(so.id) === parentId);
-                                                                                            stratGroups[parentId] = {
-                                                                                                title: stratObj?.title || obj.parentGoalTitle || 'Unlinked Objectives',
+                                                                                        // Prefer linkedDeliverable (set by seed to goal title) — avoids unreliable SP lookup resolution
+                                                                                        const linkedDel = (obj.linkedDeliverable || '').trim();
+                                                                                        const parentId = obj.parentGoalId ? String(obj.parentGoalId) : '';
+                                                                                        const groupKey = linkedDel || parentId || 'unlinked';
+
+                                                                                        if (!stratGroups[groupKey]) {
+                                                                                            const stratObj = effectiveObjectives.find((so: any) => String(so.id) === parentId)
+                                                                                                || (allUnitObjectives || []).find((so: any) => String(so.id) === parentId);
+                                                                                            stratGroups[groupKey] = {
+                                                                                                title: linkedDel || stratObj?.title || obj.parentGoalTitle || 'Unlinked Objectives',
                                                                                                 objectives: []
                                                                                             };
                                                                                         }
-                                                                                        stratGroups[parentId].objectives.push(obj);
+                                                                                        stratGroups[groupKey].objectives.push(obj);
                                                                                     });
 
                                                                                     // Sort: linked strategic objectives first, unlinked last
@@ -1065,7 +1069,8 @@ const Strategy = () => {
                                                                                             ? Math.round(group.objectives.reduce((sum, obj) => sum + (obj.progress || 0), 0) / group.objectives.length)
                                                                                             : 0;
 
-                                                                                        const stratObj = effectiveObjectives.find((so: any) => String(so.id) === stratId);
+                                                                                        const stratObj = effectiveObjectives.find((so: any) => String(so.id) === stratId)
+                                                                                            || (allUnitObjectives || []).find((so: any) => String(so.id) === stratId);
                                                                                         const StratIcon = stratObj?.icon ? (IconMap[stratObj.icon] || (typeof stratObj.icon === 'function' ? stratObj.icon : Layers)) : Layers;
 
                                                                                         return (

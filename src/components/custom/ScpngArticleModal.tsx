@@ -9,6 +9,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 // Define the structure of a news article
 // You might want to centralize this type if it's used elsewhere (e.g., in a types.ts file)
@@ -58,7 +59,7 @@ const ScpngArticleModal: React.FC<ScpngArticleModalProps> = ({ article, isOpen, 
         onInteractOutside={(e) => e.preventDefault()} // Optional: prevent closing on outside click
       >
         <DialogHeader className="px-6 py-4 border-b dark:border-white/10">
-          <DialogTitle className="text-2xl font-bold dark:text-gray-100">{article.title}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold dark:text-gray-100">{decodeHtmlEntities(article.title)}</DialogTitle>
           <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
             Published: {new Date(article.published_at).toLocaleDateString()}
             {article.source_name && ` | Source: ${article.source_name}`}
@@ -81,7 +82,7 @@ const ScpngArticleModal: React.FC<ScpngArticleModalProps> = ({ article, isOpen, 
           {article.url_to_image && (
             <img 
               src={article.url_to_image} 
-              alt={article.title} 
+              alt={decodeHtmlEntities(article.title)} 
               className="w-full h-auto max-h-[400px] object-contain mb-6 rounded" 
             />
           )}

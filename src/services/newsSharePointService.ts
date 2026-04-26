@@ -58,6 +58,40 @@ interface SharePointListResponse {
 }
 
 /**
+ * Parses SharePoint Image field which can be either a string URL 
+ * or a JSON string containing image metadata.
+ */
+function parseSharePointImage(imageField: string | undefined): string | undefined {
+    if (!imageField) return undefined;
+
+    const trimmed = imageField.trim();
+    
+    // Handle JSON format often used in modern SharePoint Image columns
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+            const imageData = JSON.parse(trimmed);
+            const relativeUrl = imageData.serverRelativeUrl || imageData.serverUrl;
+            
+            if (relativeUrl) {
+                if (relativeUrl.startsWith('http')) return relativeUrl;
+                // Combine with domain if it's a relative path
+                const domain = SITE_DOMAIN;
+                return `https://${domain}${relativeUrl.startsWith('/') ? '' : '/'}${relativeUrl}`;
+            }
+        } catch (e) {
+            console.warn('Failed to parse SharePoint image JSON metadata:', e);
+        }
+    }
+
+    // Handle relative paths
+    if (trimmed.startsWith('/')) {
+        return `https://${SITE_DOMAIN}${trimmed}`;
+    }
+
+    return trimmed;
+}
+
+/**
  * Transforms SharePoint item to application NewsItem type
  */
 function transformNewsItem(item: SharePointListItem): SharePointNewsItem {
@@ -67,7 +101,7 @@ function transformNewsItem(item: SharePointListItem): SharePointNewsItem {
         title: fields.Title || '',
         description: fields.Description || '',
         category: fields.Category || 'General',
-        imageUrl: fields.ImageURL,
+        imageUrl: parseSharePointImage(fields.ImageURL),
         publishDate: fields.PublishDate || fields.Created || new Date().toISOString(),
         sourceName: fields.SourceName,
         sourceUrl: fields.SourceURL,

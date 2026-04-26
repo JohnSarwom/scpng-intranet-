@@ -10,6 +10,7 @@ import {
   BarChart3, Activity, MousePointerClick, Zap
 } from 'lucide-react';
 import WebsiteAnalyticsAIChat, { type WebsiteAnalyticsData } from '@/components/analytics/WebsiteAnalyticsAIChat';
+import FacebookAnalyticsTab from '@/components/analytics/FacebookAnalyticsTab';
 
 // ─── Mock Data ───────────────────────────────────────────────
 
@@ -882,15 +883,7 @@ const WebsiteAnalytics = () => {
           </TabsContent>
 
           <TabsContent value="facebook" className="mt-0">
-            <Card className="border-dashed border-2">
-              <CardContent className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center mb-4 text-white">
-                  <span className="font-bold text-xl leading-none">f</span>
-                </div>
-                <p className="text-lg font-medium">Facebook Analytics</p>
-                <p className="text-sm">Page reach, engagement, and follower demographic insights will appear here.</p>
-              </CardContent>
-            </Card>
+            <FacebookAnalyticsTab />
           </TabsContent>
 
           <TabsContent value="linkedin" className="mt-0">

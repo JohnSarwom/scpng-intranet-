@@ -708,6 +708,7 @@ export default function Documents() {
     createOneDriveFolder,
     renameOneDriveItem,
     deleteOneDriveItem,
+    moveOneDriveItem,
   } = useMicrosoftGraph();
   const { instance } = useMsal();
   const { user } = useSupabaseAuth();
@@ -748,6 +749,9 @@ export default function Documents() {
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Drag-to-folder state
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
   // Rename dialog
   const [renameTarget, setRenameTarget] = useState<DisplayableDocument | null>(null);
@@ -1462,7 +1466,7 @@ export default function Documents() {
 
 
   // New component for visual document/folder cards
-  const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions }: {
+  const DocumentFolderCard = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions, isDragTarget, onDragOver, onDragLeave, onDrop }: {
     folder: DocumentFolder;
     onClick: (folder: DocumentFolder) => void;
     onEdit?: (folder: DocumentFolder) => void;
@@ -1471,10 +1475,17 @@ export default function Documents() {
     onRename?: (folder: DocumentFolder) => void;
     onDriveDelete?: (folder: DocumentFolder) => void;
     showDriveActions?: boolean;
+    isDragTarget?: boolean;
+    onDragOver?: (e: React.DragEvent) => void;
+    onDragLeave?: (e: React.DragEvent) => void;
+    onDrop?: (e: React.DragEvent) => void;
   }) => (
     <Card
-      className="group relative overflow-hidden cursor-pointer transition-shadow duration-200 hover:shadow-md bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 shadow-sm"
+      className={`group relative overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-md bg-white dark:bg-gray-800 border shadow-sm ${isDragTarget ? 'border-primary border-2 bg-primary/5 dark:bg-primary/10 scale-[1.02]' : 'border-gray-200/60 dark:border-white/10'}`}
       onClick={() => onClick(folder)}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       {/* Hover action buttons - top right */}
       {showDriveActions && (
@@ -1591,7 +1602,7 @@ export default function Documents() {
 
 
   // List-view row for folders
-  const DocumentFolderRow = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions }: {
+  const DocumentFolderRow = ({ folder, onClick, onEdit, onDelete, showAdminActions, onRename, onDriveDelete, showDriveActions, isDragTarget, onDragOver, onDragLeave, onDrop }: {
     folder: DocumentFolder;
     onClick: (folder: DocumentFolder) => void;
     onEdit?: (folder: DocumentFolder) => void;
@@ -1600,10 +1611,17 @@ export default function Documents() {
     onRename?: (folder: DocumentFolder) => void;
     onDriveDelete?: (folder: DocumentFolder) => void;
     showDriveActions?: boolean;
+    isDragTarget?: boolean;
+    onDragOver?: (e: React.DragEvent) => void;
+    onDragLeave?: (e: React.DragEvent) => void;
+    onDrop?: (e: React.DragEvent) => void;
   }) => (
     <div
-      className="group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 rounded-lg cursor-pointer hover:shadow-md transition-shadow"
+      className={`group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border rounded-lg cursor-pointer hover:shadow-md transition-all ${isDragTarget ? 'border-primary border-2 bg-primary/5 dark:bg-primary/10 scale-[1.01]' : 'border-gray-200/60 dark:border-white/10'}`}
       onClick={() => onClick(folder)}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       <div className="flex-shrink-0">
         <FolderOpen className="h-8 w-8 text-blue-500" />
@@ -1806,6 +1824,17 @@ export default function Documents() {
       const result = await uploadToOneDrive(file, currentOneDriveParentId());
       if (result) toast.success(`"${file.name}" uploaded successfully`);
     }
+    setUploadProgress(null);
+    setIsDriveUploading(false);
+    await refreshCurrentFolder();
+  };
+
+  /** Handle dropping a file onto a folder to move it */
+  const handleMoveToFolder = async (fileId: string, fileName: string, folderId: string, folderName: string) => {
+    setIsDriveUploading(true);
+    setUploadProgress(`Moving "${fileName}" to "${folderName}"…`);
+    const ok = await moveOneDriveItem(fileId, folderId);
+    if (ok) toast.success(`"${fileName}" moved to "${folderName}"`);
     setUploadProgress(null);
     setIsDriveUploading(false);
     await refreshCurrentFolder();
@@ -2300,9 +2329,20 @@ export default function Documents() {
                         {activePrimaryTab === 'my-documents' ? (
                           /* Drag-and-drop zone wrapper */
                           <div
-                            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              // Only show upload overlay for external file drops (not internal moves)
+                              if (e.dataTransfer.types.includes('Files') && !e.dataTransfer.types.includes('application/x-onedrive-item')) {
+                                setIsDragOver(true);
+                              }
+                            }}
                             onDragLeave={() => setIsDragOver(false)}
-                            onDrop={handleDrop}
+                            onDrop={(e) => {
+                              // Only handle external file upload drops here; folder drops handled per-folder
+                              if (e.dataTransfer.types.includes('Files') && !e.dataTransfer.types.includes('application/x-onedrive-item')) {
+                                handleDrop(e);
+                              }
+                            }}
                             className={`rounded-lg transition-colors ${isDragOver ? 'bg-primary/5 border-2 border-dashed border-primary p-4' : ''}`}
                           >
                             {isDragOver && (
@@ -2328,11 +2368,30 @@ export default function Documents() {
                                           showDriveActions
                                           onRename={(f) => { setRenameTarget(doc); setRenameValue(doc.name); }}
                                           onDriveDelete={(f) => setDeleteTarget(doc)}
+                                          isDragTarget={dragOverFolderId === doc.id}
+                                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverFolderId(doc.id); }}
+                                          onDragLeave={(e) => { e.stopPropagation(); setDragOverFolderId(null); }}
+                                          onDrop={(e) => {
+                                            e.preventDefault(); e.stopPropagation();
+                                            setDragOverFolderId(null);
+                                            const itemId = e.dataTransfer.getData('application/x-onedrive-item');
+                                            const itemName = e.dataTransfer.getData('text/plain');
+                                            if (itemId) handleMoveToFolder(itemId, itemName, doc.id, doc.name);
+                                          }}
                                         />
                                       );
                                     } else {
                                       return (
-                                        <div key={doc.id} className="group relative">
+                                        <div
+                                          key={doc.id}
+                                          className="group relative"
+                                          draggable
+                                          onDragStart={(e) => {
+                                            e.dataTransfer.setData('application/x-onedrive-item', doc.id);
+                                            e.dataTransfer.setData('text/plain', doc.name);
+                                            e.dataTransfer.effectAllowed = 'move';
+                                          }}
+                                        >
                                           <FileCard
                                             file={{
                                               id: doc.id, name: doc.name, size: formatFileSize(doc.size),
@@ -2383,11 +2442,30 @@ export default function Documents() {
                                           showDriveActions
                                           onRename={(f) => { setRenameTarget(doc); setRenameValue(doc.name); }}
                                           onDriveDelete={(f) => setDeleteTarget(doc)}
+                                          isDragTarget={dragOverFolderId === doc.id}
+                                          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverFolderId(doc.id); }}
+                                          onDragLeave={(e) => { e.stopPropagation(); setDragOverFolderId(null); }}
+                                          onDrop={(e) => {
+                                            e.preventDefault(); e.stopPropagation();
+                                            setDragOverFolderId(null);
+                                            const itemId = e.dataTransfer.getData('application/x-onedrive-item');
+                                            const itemName = e.dataTransfer.getData('text/plain');
+                                            if (itemId) handleMoveToFolder(itemId, itemName, doc.id, doc.name);
+                                          }}
                                         />
                                       );
                                     } else {
                                       return (
-                                        <div key={doc.id} className="group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 rounded-lg">
+                                        <div
+                                          key={doc.id}
+                                          className="group flex items-center gap-4 px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200/60 dark:border-white/10 rounded-lg"
+                                          draggable
+                                          onDragStart={(e) => {
+                                            e.dataTransfer.setData('application/x-onedrive-item', doc.id);
+                                            e.dataTransfer.setData('text/plain', doc.name);
+                                            e.dataTransfer.effectAllowed = 'move';
+                                          }}
+                                        >
                                           <div className="flex-shrink-0">{getFileIconForDocument(doc)}</div>
                                           <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleFileClick(doc)}>
                                             <p className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">{doc.name}</p>
