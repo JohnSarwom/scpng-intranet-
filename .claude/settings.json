@@ -10,7 +10,8 @@
       "Bash(python _inject_semantic_edges.py)",
       "Bash(python3 -c ' *)",
       "Bash(python -c ' *)",
-      "Bash(pip install *)"
+      "Bash(pip install *)",
+      "Bash(python -c *)"
     ]
   },
   "hooks": {

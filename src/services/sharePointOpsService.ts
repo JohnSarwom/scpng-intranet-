@@ -364,7 +364,6 @@ export class SharePointOpsService {
         if (objective.owner !== undefined) fields.Owner = objective.owner;
         if (objective.parentGoalId !== undefined) fields.ParentGoalIdLookupId = objective.parentGoalId ? Number(objective.parentGoalId) : null;
         if (objective.icon !== undefined) fields.Icon = objective.icon;
-        if (objective.isFeatured !== undefined) fields.IsFeatured = objective.isFeatured;
         if (objective.deliverables !== undefined) fields.Deliverables = objective.deliverables?.join(', ');
         if (objective.linkedDeliverable !== undefined) fields.LinkedDeliverable = objective.linkedDeliverable;
 

@@ -1013,7 +1013,7 @@ const TestGround = () => {
             if (result.success) {
                 toast({
                     title: 'Framework Reset Complete',
-                    description: `${result.stats.goals} Goals, ${result.stats.bridgeObjectives} division objectives, ${result.stats.kras} KRAs, ${result.stats.kpis} KPIs created.`,
+                    description: `${result.stats.goals} Goals, ${result.stats.keyDeliverables} Key Deliverables, ${result.stats.initiatives} Initiatives, ${result.stats.kras} KRAs, ${result.stats.kpis} KPIs created.`,
                 });
             } else {
                 throw new Error(result.message);

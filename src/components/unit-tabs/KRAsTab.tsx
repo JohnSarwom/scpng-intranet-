@@ -1270,30 +1270,53 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                       </PremiumTableRow>
                     </PremiumTableHeader>
                     <PremiumTableBody>
-                      {objectivesData.length === 0 ? (
-                        <PremiumTableRow>
-                          <PremiumTableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
-                            No Initiatives defined yet. Use the "Add Initiative" button.
-                          </PremiumTableCell>
-                        </PremiumTableRow>
-                      ) : (
-                        objectivesData.map((objective) => (
+                      {(() => {
+                        // Show only user-created initiatives — exclude Org (Strategic Goals)
+                        // and Unit (seeded bridge objectives used for the Strategy hierarchy).
+                        const userInitiatives = objectivesData.filter(
+                          o => o.goalType !== 'Org' && o.goalType !== 'Unit'
+                        );
+                        if (userInitiatives.length === 0) return (
+                          <PremiumTableRow>
+                            <PremiumTableCell colSpan={8} className="h-24 text-center dark:text-gray-400">
+                              No Initiatives defined yet. Use the "Add Initiative" button.
+                            </PremiumTableCell>
+                          </PremiumTableRow>
+                        );
+                        return userInitiatives.map((objective) => {
+                          // Initiative.parentGoalId → Key Deliverable (Unit obj)
+                          // KD.parentGoalId → Strategic Goal (Org obj)
+                          // KRAs link to the KD, so progress reads through the KD.
+                          const parentKd = objectivesData.find(o =>
+                            String(o.id) === String(objective.parentGoalId) && o.goalType === 'Unit'
+                          );
+                          const strategicGoal = parentKd
+                            ? strategicObjectives.find(so => String(so.id) === String(parentKd.parentGoalId))
+                            : strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId));
+
+                          const kdLinkedKras = parentKd
+                            ? kras.filter(k =>
+                                String(k.objective_id) === String(parentKd.id) ||
+                                String(k.objectiveId) === String(parentKd.id)
+                              )
+                            : kras.filter(k =>
+                                String(k.objective_id) === String(objective.id) ||
+                                String(k.objectiveId) === String(objective.id)
+                              );
+                          const kdLinkedKpis = kdLinkedKras.flatMap(k => (k as any).unitKpis || []);
+                          const progress = calculateStrategicProgress(kdLinkedKras, kdLinkedKpis);
+
+                          return (
                           <PremiumTableRow key={objective.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/20 transition-colors dark:border-white/10">
                             <PremiumTableCell className="font-bold dark:text-gray-200">{objective.title}</PremiumTableCell>
                             <PremiumTableCell>
-                              {(() => {
-                                // Try to resolve title from prop or lookup
-                                const title = objective.parentGoalTitle ||
-                                  (objective.parentGoalId ? strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId))?.title : null);
-
-                                return title ? (
+                              {strategicGoal ? (
                                   <Badge variant="outline" className="bg-intranet-primary/5 text-intranet-primary border-intranet-primary/20 dark:bg-intranet-primary/10 dark:text-intranet-primary/90 dark:border-intranet-primary/30">
-                                    {title}
+                                    {strategicGoal.title}
                                   </Badge>
                                 ) : (
                                   <span className="text-muted-foreground dark:text-gray-500 text-[10px] italic">Direct/Board</span>
-                                );
-                              })()}
+                                )}
                             </PremiumTableCell>
                             <PremiumTableCell>
                               {objective.linkedDeliverable ? (
@@ -1314,27 +1337,15 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                             </PremiumTableCell>
                             <PremiumTableCell className="text-sm text-muted-foreground dark:text-gray-400 max-w-[200px] truncate">{objective.description || '-'}</PremiumTableCell>
                             <PremiumTableCell>
-                              <StatusBadge status={calculateObjectiveStatus(objective, kras) || 'Not Started'} />
+                              <StatusBadge status={calculateObjectiveStatus(objective, kdLinkedKras) || 'Not Started'} />
                             </PremiumTableCell>
                             <PremiumTableCell>
-                              {(() => {
-                                const linkedKras = kras.filter(k =>
-                                  String(k.objective_id) === String(objective.id) ||
-                                  String(k.objectiveId) === String(objective.id)
-                                );
-                                // Collect all KPIs belonging to these KRAs
-                                const linkedKpis = linkedKras.flatMap(k => (k as any).unitKpis || []);
-                                const progress = calculateStrategicProgress(linkedKras, linkedKpis);
-
-                                return (
-                                  <div className="flex flex-col gap-1 min-w-[80px]">
-                                    <div className="flex justify-between text-[10px] font-medium dark:text-gray-400">
-                                      <span>{progress}%</span>
-                                    </div>
-                                    <Progress value={progress} className="h-1.5 dark:bg-gray-800" />
-                                  </div>
-                                );
-                              })()}
+                              <div className="flex flex-col gap-1 min-w-[80px]">
+                                <div className="flex justify-between text-[10px] font-medium dark:text-gray-400">
+                                  <span>{progress}%</span>
+                                </div>
+                                <Progress value={progress} className="h-1.5 dark:bg-gray-800" />
+                              </div>
                             </PremiumTableCell>
                             <PremiumTableCell sticky="right" className="text-right">
                               {canEdit && (
@@ -1349,8 +1360,9 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                               )}
                             </PremiumTableCell>
                           </PremiumTableRow>
-                        ))
-                      )}
+                          );
+                        });
+                      })()}
                     </PremiumTableBody>
                 </PremiumTable>
               </TabsContent>

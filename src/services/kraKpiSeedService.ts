@@ -2,9 +2,13 @@
  * SCPNG Strategic Performance Framework — Seed Service
  *
  * Deletes all existing Unit_Objectives, Performance_KRAs, and Performance_KPIs
- * then recreates the full 5-Goal / 18-KRA / 72-KPI framework from the official
- * "KPIs & KRAs.xlsx" document, including division-level bridge objectives so
- * the Strategy cascade page hierarchy populates correctly per division/unit.
+ * then recreates the full 5-Goal / 18-KD / 18-Initiative / 18-KRA / 72-KPI framework:
+ *
+ *   Strategic Goal (Org)
+ *     └── Key Deliverable (Unit)   ← org KRA title; KRAs link here for progress calc
+ *           └── Initiative (Division) ← seeded placeholder; units rename to their own
+ *                 └── KRA (Performance_KRAs) ← objective_id → Key Deliverable
+ *                       └── KPI (Performance_KPIs)
  */
 
 import { Client } from '@microsoft/microsoft-graph-client';
@@ -40,8 +44,32 @@ interface KpiRecord {
 export interface SeedResult {
     success: boolean;
     message: string;
-    stats: { goals: number; bridgeObjectives: number; kras: number; kpis: number };
+    stats: { goals: number; keyDeliverables: number; initiatives: number; kras: number; kpis: number };
 }
+
+// ─── OFFICER EMAIL MAP ────────────────────────────────────────────────────────
+// Confirmed emails from hierarchyDetails; remainder follow {initial}{surname}@scpng.gov.pg pattern.
+const OFFICER_EMAIL: Record<string, string> = {
+    'James Joshua':    'jjoshua@scpng.gov.pg',    // confirmed
+    'Andy Ambulu':     'aambulu@scpng.gov.pg',    // confirmed
+    'Sam Taki':        'staki@scpng.gov.pg',       // confirmed
+    'Tyson Yapao':     'tyapao@scpng.gov.pg',      // confirmed
+    'Joy Komba':       'jkomba@scpng.gov.pg',      // inferred
+    'Zomay Apini':     'zapini@scpng.gov.pg',      // inferred
+    'Ninipe Gurumo':   'ngurumo@scpng.gov.pg',     // inferred
+    'Eric Kipongi':    'ekipongi@scpng.gov.pg',    // inferred
+    'Thomas Mondaya':  'tmondaya@scpng.gov.pg',    // inferred
+    'Leeroy Wambillie':'lwambillie@scpng.gov.pg',  // inferred
+    'Regina Wai':      'rwai@scpng.gov.pg',        // inferred
+    'Jacob Kom':       'jkom@scpng.gov.pg',        // inferred
+};
+
+const officerAssignee = (name: string) => ({
+    id: '',
+    name,
+    email: OFFICER_EMAIL[name] ?? '',
+    displayName: name,
+});
 
 // ─── SEED DATA ────────────────────────────────────────────────────────────────
 
@@ -228,9 +256,10 @@ export class KraKpiSeedService {
     /**
      * Deletes ALL items in Unit_Objectives, Performance_KRAs, Performance_KPIs
      * then recreates the full SCPNG Strategic Performance Framework:
-     *   • 5 org-level Strategic Goals (visible on Strategy overview)
-     *   • 18 division-level bridge objectives (visible in the cascade hierarchy per division)
-     *   • 18 KRAs linked to their bridge objectives
+     *   • 5 Strategic Goals (goalType='Org')
+     *   • 18 Key Deliverables (goalType='Unit') — one per KRA; KRAs link here for progress calc
+     *   • 18 Initiatives (goalType='Division') — seeded placeholders units can rename
+     *   • 18 KRAs linked to their Key Deliverable (UnitObjectiveLookupId → KD)
      *   • 72 KPIs linked to their KRAs
      */
     async resetAndSeed(onProgress?: (line: string) => void): Promise<SeedResult> {
@@ -276,10 +305,13 @@ export class KraKpiSeedService {
         }
 
         // ── 4. CREATE org-level Strategic Goals ───────────────────────────
+        // Deliverables = KRA titles for this goal — the Add Initiative modal reads
+        // this column to populate the "Organizational KRAs" radio list.
         log('Creating 5 Strategic Goals (Org level)...');
         const goalIdMap: Record<string, string> = {};
 
         for (const goal of STRATEGIC_GOALS) {
+            const kraDeliverables = KRAS.filter(k => k.goalId === goal.id).map(k => k.title);
             const created = await this.opsService.addObjective({
                 title: goal.title,
                 description: goal.outcome,
@@ -287,26 +319,27 @@ export class KraKpiSeedService {
                 status: 'Not Started',
                 progress: 0,
                 year: '2025/26',
+                deliverables: kraDeliverables,
             });
             goalIdMap[goal.id] = String(created.id);
-            log(`  Created: ${goal.title}`);
+            log(`  Created: ${goal.title} (${kraDeliverables.length} KRAs)`);
         }
 
-        // ── 5. CREATE division-level bridge objectives (one per KRA) ───────
-        // These are goalType='Division' with division+unit set so they appear
-        // in the Strategy cascade hierarchy under the correct division/unit.
-        // linkedDeliverable groups them under their strategic goal in the UI.
-        log(`Creating ${KRAS.length} division-level bridge objectives...`);
-        const bridgeIdMap: Record<string, string> = {};
+        // ── 5. CREATE Key Deliverables (one per KRA, goalType='Unit') ────────
+        // These anchor the progress calculation chain: KRAs link here via
+        // UnitObjectiveLookupId so calculateStrategicProgress works unchanged.
+        // They also appear in the Strategy cascade hierarchy per division/unit.
+        log(`Creating ${KRAS.length} Key Deliverables...`);
+        const kdIdMap: Record<string, string> = {};
 
         for (const kra of KRAS) {
             const parentGoalSpId = goalIdMap[kra.goalId];
             const goalRecord = STRATEGIC_GOALS.find(g => g.id === kra.goalId)!;
 
-            const bridge = await this.opsService.addObjective({
+            const kd = await this.opsService.addObjective({
                 title: kra.title,
                 description: goalRecord.outcome,
-                goalType: 'Division',
+                goalType: 'Unit',
                 division: kra.division,
                 unit: kra.unit,
                 owner: kra.responsibleOfficer,
@@ -316,16 +349,44 @@ export class KraKpiSeedService {
                 parentGoalId: parentGoalSpId,
                 linkedDeliverable: goalRecord.title,
             });
-            bridgeIdMap[kra.id] = String(bridge.id);
-            log(`  Created bridge: [${kra.division} / ${kra.unit}] ${kra.title}`);
+            kdIdMap[kra.id] = String(kd.id);
+            log(`  Created KD: [${kra.division}] ${kra.title}`);
         }
 
-        // ── 6. CREATE KRAs linked to their bridge objectives ───────────────
+        // ── 6. CREATE Initiatives (one per KD, goalType='Division') ──────────
+        // Seeded as placeholders — units rename these to their own initiative names.
+        // parentGoalId → Key Deliverable so the waterfall is:
+        //   Strategic Goal → Key Deliverable → Initiative → KRA → KPI
+        log(`Creating ${KRAS.length} Initiatives...`);
+
+        for (const kra of KRAS) {
+            const kdSpId = kdIdMap[kra.id];
+            const goalRecord = STRATEGIC_GOALS.find(g => g.id === kra.goalId)!;
+
+            await this.opsService.addObjective({
+                title: kra.title,
+                description: goalRecord.outcome,
+                goalType: 'Division',
+                division: kra.division,
+                unit: kra.unit,
+                owner: kra.responsibleOfficer,
+                status: 'Not Started',
+                progress: 0,
+                year: '2025/26',
+                parentGoalId: kdSpId,
+                linkedDeliverable: kra.title,
+            });
+            log(`  Created Initiative: [${kra.division}] ${kra.title}`);
+        }
+
+        // ── 7. CREATE KRAs linked to their Key Deliverables ───────────────
+        // objective_id → KD (not Initiative) so the existing progress calc chain
+        // (calculateStrategicProgress via UnitObjectiveLookupId) works unchanged.
         log(`Creating ${KRAS.length} KRAs...`);
         const kraIdMap: Record<string, string> = {};
 
         for (const kra of KRAS) {
-            const objectiveId = bridgeIdMap[kra.id];
+            const objectiveId = kdIdMap[kra.id];
             const created = await this.opsService.addKRA({
                 title: kra.title,
                 division: kra.division,
@@ -333,7 +394,7 @@ export class KraKpiSeedService {
                 objective_id: objectiveId,
                 status: 'pending' as any,
                 progress: 0,
-                owner: { id: '', name: kra.responsibleOfficer, email: '' },
+                owner: officerAssignee(kra.responsibleOfficer),
                 assignees: [],
                 description: '',
             });
@@ -341,7 +402,7 @@ export class KraKpiSeedService {
             log(`  Created KRA: ${kra.title}`);
         }
 
-        // ── 7. CREATE KPIs linked to their KRAs ───────────────────────────
+        // ── 8. CREATE KPIs linked to their KRAs ───────────────────────────
         log(`Creating ${KPIS.length} KPIs...`);
         let kpiCount = 0;
 
@@ -361,7 +422,7 @@ export class KraKpiSeedService {
                 metric: kpi.metric,
                 status: 'on-track',
                 kra_id: kraId,
-                assignees: [{ id: '', name: kpi.assignedOfficer, email: '', displayName: kpi.assignedOfficer }],
+                assignees: [officerAssignee(kpi.assignedOfficer)],
                 calculationType: 'manual',
             });
             kpiCount++;
@@ -370,7 +431,7 @@ export class KraKpiSeedService {
             }
         }
 
-        const summary = `Reset complete: ${STRATEGIC_GOALS.length} Strategic Goals, ${KRAS.length} bridge objectives, ${KRAS.length} KRAs, ${kpiCount} KPIs created successfully.`;
+        const summary = `Reset complete: ${STRATEGIC_GOALS.length} Strategic Goals, ${KRAS.length} Key Deliverables, ${KRAS.length} Initiatives, ${KRAS.length} KRAs, ${kpiCount} KPIs created successfully.`;
         log(summary);
 
         return {
@@ -378,7 +439,8 @@ export class KraKpiSeedService {
             message: summary,
             stats: {
                 goals: STRATEGIC_GOALS.length,
-                bridgeObjectives: KRAS.length,
+                keyDeliverables: KRAS.length,
+                initiatives: KRAS.length,
                 kras: KRAS.length,
                 kpis: kpiCount,
             },

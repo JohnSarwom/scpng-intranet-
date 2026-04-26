@@ -337,7 +337,7 @@ const Strategy = () => {
 
         console.log('📊 [Strategy Hierarchy] Built hierarchy keys:', Object.keys(hierarchy));
         return hierarchy;
-    }, [allUnitObjectives]);
+    }, [allUnitObjectives, allKras, allKpis]);
 
     // Dynamic state for local overrides (after wizard saves)
     const [localMission, setLocalMission] = useState<string | null>(null);
@@ -930,6 +930,8 @@ const Strategy = () => {
                                         const allDivObjectives = Object.values(units).flatMap(d => Object.values(d).flat());
                                         const totalObjectives = allDivObjectives.length;
 
+                                        if (totalObjectives === 0) return null;
+
                                         // Calculate Division Progress with status fallback
                                         const divTotalProgress = allDivObjectives.reduce((sum, obj) => {
                                             let p = obj.progress || 0;
@@ -1174,6 +1176,17 @@ const Strategy = () => {
                                         );
                                     })}
                                 </Accordion>
+                            )}
+
+                            {/* No-data state: hierarchy loaded but all divisions are empty */}
+                            {!isLoadingHierarchy && divisionHierarchy &&
+                                Object.values(divisionHierarchy).every(units =>
+                                    Object.values(units).flatMap(d => Object.values(d).flat()).length === 0
+                                ) && (
+                                <div className="text-center py-16 text-muted-foreground">
+                                    <p className="text-sm">No division objectives found.</p>
+                                    <p className="text-xs mt-1">Run the framework seed from TestGround to populate the hierarchy.</p>
+                                </div>
                             )}
 
                             {/* Static fallback when no live data is available */}
