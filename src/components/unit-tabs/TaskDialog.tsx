@@ -639,7 +639,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="kpi" className="py-3 px-4 rounded-lg">
                     <SelectValue placeholder="Select a KPI" />
                   </SelectTrigger>
-                  <SelectContent container={container}>
+                  <SelectContent container={container} className="max-h-60 overflow-y-auto">
                     <SelectItem value="none">None</SelectItem>
                     {visibleKpis.map((kpi) => (
                       <SelectItem key={kpi.id} value={kpi.id.toString()}>
