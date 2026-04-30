@@ -549,7 +549,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   <SelectTrigger id="group" className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                     <SelectValue placeholder="Select group" />
                   </SelectTrigger>
-                  <SelectContent container={container} className="dark:bg-gray-950 dark:border-white/10">
+                  <SelectContent container={container} className="max-h-60 overflow-y-auto dark:bg-gray-950 dark:border-white/10">
                     {effectiveBuckets.map((bucket) => (
                       <SelectItem key={bucket.id} value={bucket.id}>
                         {bucket.title}
