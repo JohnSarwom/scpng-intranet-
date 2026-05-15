@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\division\analytics\divisionQuestions.ts"
 type: "code"
-community: "Module 404"
+community: "Community 407"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_404
+  - graphify/EXTRACTED
+  - community/Community_407
 ---
 
 # divisionQuestions.ts
 
-## Connections
-- [[DivisionAIChat.tsx]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_404
+#graphify/code #graphify/EXTRACTED #community/Community_407

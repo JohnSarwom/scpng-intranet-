@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Documents.tsx"
 type: "code"
-community: "Document Management"
-location: "L894"
+community: "Documents Page"
+location: "L914"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Document_Management
+  - community/Documents_Page
 ---
 
 # handleDeleteCategory()
@@ -15,4 +15,4 @@ tags:
 - [[Documents.tsx]] - `contains` [EXTRACTED]
 - [[loadCategories()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Document_Management
+#graphify/code #graphify/EXTRACTED #community/Documents_Page

@@ -462,3 +462,60 @@
   background: rgba(156, 163, 175, 1);
   /* tailwind gray-400 */
 }
+
+/* ─── Global thin scrollbar — applies to every scrollable element ─── */
+*,
+[data-radix-select-viewport],
+[data-radix-popover-content],
+[data-radix-dropdown-menu-content] {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent !important;
+}
+
+*::-webkit-scrollbar,
+[data-radix-select-viewport]::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+  display: block !important;
+}
+
+*::-webkit-scrollbar-track,
+[data-radix-select-viewport]::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+*::-webkit-scrollbar-thumb,
+[data-radix-select-viewport]::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.6) !important;
+  border-radius: 4px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+  transition: background-color 0.2s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover,
+[data-radix-select-viewport]::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.9) !important;
+  background-clip: content-box !important;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent !important;
+}
+
+.dark *,
+.dark [data-radix-select-viewport] {
+  scrollbar-color: rgba(75, 85, 99, 0.7) transparent !important;
+}
+
+.dark *::-webkit-scrollbar-thumb,
+.dark [data-radix-select-viewport]::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.7) !important;
+  background-clip: content-box !important;
+}
+
+.dark *::-webkit-scrollbar-thumb:hover,
+.dark [data-radix-select-viewport]::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 1) !important;
+  background-clip: content-box !important;
+}

@@ -12,9 +12,6 @@ tags:
 # GeneralInquiries.tsx
 
 ## Connections
-- [[InquiryBoardLane.tsx]] - `imports_from` [INFERRED]
-- [[InquiryGridView.tsx]] - `imports_from` [INFERRED]
-- [[Tickets.tsx]] - `references` [INFERRED]
 - [[getCategoryBadgeClass()]] - `contains` [EXTRACTED]
 - [[getPriorityIcon()]] - `contains` [EXTRACTED]
 - [[getStatusBadgeClass()]] - `contains` [EXTRACTED]

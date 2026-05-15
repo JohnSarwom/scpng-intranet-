@@ -13,6 +13,5 @@ tags:
 
 ## Connections
 - [[PaymentsSharePointService]] - `contains` [EXTRACTED]
-- [[usePaymentsSharePoint.ts]] - `imports_from` [EXTRACTED]
 
 #graphify/code #graphify/EXTRACTED #community/Payments_Service

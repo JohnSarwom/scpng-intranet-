@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\database\DatabaseTab.tsx"
 type: "code"
-community: "Module 221"
+community: "Community 223"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_221
+  - community/Community_223
 ---
 
 # DatabaseTab.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DatabaseTab()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_221
+#graphify/code #graphify/EXTRACTED #community/Community_223

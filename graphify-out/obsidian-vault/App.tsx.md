@@ -1,12 +1,12 @@
 ---
 source_file: "src\App.tsx"
 type: "code"
-community: "Module 165"
+community: "Community 166"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_165
+  - community/Community_166
 ---
 
 # App.tsx
@@ -14,6 +14,5 @@ tags:
 ## Connections
 - [[AssetsPageRoute()]] - `contains` [EXTRACTED]
 - [[main.tsx]] - `imports_from` [EXTRACTED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_165
+#graphify/code #graphify/EXTRACTED #community/Community_166

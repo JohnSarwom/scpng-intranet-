@@ -1,17 +1,17 @@
 ---
-source_file: "src\components\unit-tabs\AssetsTab.tsx"
+source_file: "src\components\dashboard\CalendarEventModal.tsx"
 type: "code"
-community: "Module 128"
-location: "L78"
+community: "Community 96"
+location: "L130"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_128
+  - community/Community_96
 ---
 
 # formatDate()
 
 ## Connections
-- [[AssetsTab.tsx]] - `contains` [EXTRACTED]
+- [[CalendarEventModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_128
+#graphify/code #graphify/EXTRACTED #community/Community_96

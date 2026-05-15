@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useMicrosoftContacts.tsx"
 type: "code"
-community: "Module 315"
+community: "Community 317"
 location: "L33"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_315
+  - community/Community_317
 ---
 
 # useMicrosoftContacts()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useMicrosoftContacts.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_315
+#graphify/code #graphify/EXTRACTED #community/Community_317

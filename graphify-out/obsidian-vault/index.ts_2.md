@@ -1,19 +1,14 @@
 ---
 source_file: "src\modules\licensing\components\index.ts"
 type: "code"
-community: "Module 528"
+community: "Community 531"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_528
+  - graphify/EXTRACTED
+  - community/Community_531
 ---
 
 # index.ts
 
-## Connections
-- [[FloatingActionButton.tsx]] - `contains` [INFERRED]
-- [[LicensingHeader.tsx]] - `contains` [INFERRED]
-- [[index.ts_2]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_528
+#graphify/code #graphify/EXTRACTED #community/Community_531

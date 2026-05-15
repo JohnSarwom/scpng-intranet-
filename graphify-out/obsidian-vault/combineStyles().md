@@ -14,6 +14,5 @@ tags:
 ## Connections
 - [[HtmlLicensePreview.tsx]] - `contains` [EXTRACTED]
 - [[getStyle()]] - `calls` [EXTRACTED]
-- [[types.ts_3]] - `imports_from` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/License_Preview

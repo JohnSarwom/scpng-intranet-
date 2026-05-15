@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\unit-tabs\TrafficLightDashboard.tsx"
 type: "code"
-community: "Module 493"
+community: "Community 496"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_493
+  - graphify/EXTRACTED
+  - community/Community_496
 ---
 
 # TrafficLightDashboard.tsx
 
-## Connections
-- [[TrafficLightCard.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_493
+#graphify/code #graphify/EXTRACTED #community/Community_496

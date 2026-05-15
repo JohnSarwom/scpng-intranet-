@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\charts\PieChart.tsx"
 type: "code"
-community: "Module 378"
+community: "Community 381"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_378
+  - graphify/EXTRACTED
+  - community/Community_381
 ---
 
 # PieChart.tsx
 
-## Connections
-- [[index.ts]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_378
+#graphify/code #graphify/EXTRACTED #community/Community_381

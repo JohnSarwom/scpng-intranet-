@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\DivisionModal.tsx"
 type: "code"
-community: "Module 81"
+community: "Community 80"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_81
+  - community/Community_80
 ---
 
 # DivisionModal.tsx
@@ -18,6 +18,5 @@ tags:
 - [[handleEditToggle()]] - `contains` [EXTRACTED]
 - [[handleNestedChange()]] - `contains` [EXTRACTED]
 - [[handleSave()_6]] - `contains` [EXTRACTED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_81
+#graphify/code #graphify/EXTRACTED #community/Community_80

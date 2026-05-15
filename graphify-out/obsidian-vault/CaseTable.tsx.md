@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\CaseTable.tsx"
 type: "code"
-community: "Module 65"
+community: "Community 65"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_65
+  - community/Community_65
 ---
 
 # CaseTable.tsx
@@ -20,4 +20,4 @@ tags:
 - [[handleSaveCase()]] - `contains` [EXTRACTED]
 - [[handleViewCase()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_65
+#graphify/code #graphify/EXTRACTED #community/Community_65

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\common\StatusDropdown.tsx"
 type: "code"
-community: "Module 234"
+community: "Community 236"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_234
+  - community/Community_236
 ---
 
 # StatusDropdown.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[StatusDropdown()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_234
+#graphify/code #graphify/EXTRACTED #community/Community_236

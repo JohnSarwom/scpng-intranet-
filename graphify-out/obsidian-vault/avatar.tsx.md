@@ -1,22 +1,14 @@
 ---
 source_file: "src\components\ui\avatar.tsx"
 type: "code"
-community: "Module 453"
+community: "Community 456"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_453
+  - graphify/EXTRACTED
+  - community/Community_456
 ---
 
 # avatar.tsx
 
-## Connections
-- [[AssetDashboard.tsx]] - `imports_from` [INFERRED]
-- [[AssetManagementNew.tsx]] - `references` [INFERRED]
-- [[EditTaskModal.tsx]] - `imports_from` [INFERRED]
-- [[StaffDetailModal.tsx]] - `imports_from` [INFERRED]
-- [[Unit.tsx]] - `references` [INFERRED]
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_453
+#graphify/code #graphify/EXTRACTED #community/Community_456

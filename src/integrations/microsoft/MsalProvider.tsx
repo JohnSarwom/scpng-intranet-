@@ -8,13 +8,15 @@ import {
   IPublicClientApplication
 } from '@azure/msal-browser';
 import { MsalProvider as MsalReactProvider } from '@azure/msal-react';
+import { useNavigate } from 'react-router-dom';
 import msalConfig, { updateMsalConfig, loginRequest } from './msalConfig';
+import { CustomNavigationClient } from './CustomNavigationClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth.tsx';
 import { toast } from 'sonner';
 import { getUserProfile, setMsalInstance, getAccount } from './msalService';
 import microsoftAuthConfig from '@/config/microsoft-auth';
 import { supabase } from '@/lib/supabaseClient'; // Keep for invoking edge function if needed here
-import { Loader2 } from 'lucide-react';
+import AppLoadingShell from '@/components/layout/AppLoadingShell';
 
 // Define admin emails that match the ones in useAuth.tsx
 const ADMIN_EMAILS = ['geosyncsurvey@gmail.com', 'admin@scpng.com'];
@@ -39,9 +41,10 @@ export const useMsalContext = () => useContext(MsalContext);
 
 // Component to wrap the application with the MSAL provider
 export const MsalAuthProvider = ({ children }: { children: React.ReactNode }) => {
-  // Attempt to call useSupabaseAuth hook very early, after state hooks if any that affect its call.
-  // For now, to be safe, let's place it before useState hooks if its call isn't dependent on them,
-  // or immediately after if it is. Given it provides a context, it should be high up.
+  // useNavigate works here because BrowserRouter now wraps MsalAuthProvider in App.tsx.
+  // We need this to register CustomNavigationClient so MSAL uses React Router instead
+  // of window.location for its internal navigations (e.g. navigateToLoginRequestUrl).
+  const navigate = useNavigate();
 
   let supabaseAuthContextData = null;
   let setUserFunction: ((user: any | null) => void) | undefined = undefined; // Renamed to avoid conflict if setUser was a prop
@@ -98,6 +101,10 @@ export const MsalAuthProvider = ({ children }: { children: React.ReactNode }) =>
           }
         });
 
+        // Register CustomNavigationClient BEFORE handleRedirectPromise so that
+        // navigateToLoginRequestUrl uses React Router (no full page reload).
+        instance.setNavigationClient(new CustomNavigationClient(navigate));
+
         await instance.initialize();
         console.log('[MsalAuthProvider] MSAL initialized successfully');
 
@@ -105,9 +112,6 @@ export const MsalAuthProvider = ({ children }: { children: React.ReactNode }) =>
         setMsalInstance(instance); // For msalService
         if (typeof window !== 'undefined') { (window as any).msalInstance = instance; }
 
-        // Simplified redirect handling: MSAL handles its state.
-        // The crucial part is that after MSAL login, the app (e.g., Login.tsx or a callback)
-        // should trigger the Supabase session creation (e.g., via your Edge Function).
         try {
           console.log('[MsalAuthProvider] Attempting to handle redirect promise...');
           const response = await instance.handleRedirectPromise();
@@ -157,12 +161,7 @@ export const MsalAuthProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   if (isInitializing || !isInitialized || !msalInstance) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-gray-600">Initializing Authentication Library...</span>
-      </div>
-    );
+    return <AppLoadingShell message="Initializing Microsoft authentication..." />;
   }
 
   const renderFallbackContent = () => {

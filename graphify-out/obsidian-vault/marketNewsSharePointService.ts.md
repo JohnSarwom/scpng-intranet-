@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\marketNewsSharePointService.ts"
 type: "code"
-community: "Market News Service"
+community: "Community 23"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Market_News_Service
+  - community/Community_23
 ---
 
 # marketNewsSharePointService.ts
@@ -18,6 +18,5 @@ tags:
 - [[getNewsByCompany()]] - `contains` [EXTRACTED]
 - [[getTimeAgo()_1]] - `contains` [EXTRACTED]
 - [[transformNewsItem()]] - `contains` [EXTRACTED]
-- [[useInternalNews.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Market_News_Service
+#graphify/code #graphify/EXTRACTED #community/Community_23

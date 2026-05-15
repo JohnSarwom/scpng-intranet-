@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\supabase\galleryService.ts"
 type: "code"
-community: "Module 33"
+community: "Community 32"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_33
+  - community/Community_32
 ---
 
 # galleryService.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[GalleryService]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_33
+#graphify/code #graphify/EXTRACTED #community/Community_32

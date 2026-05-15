@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\powerAutomate\templates\customEmail.ts"
 type: "code"
-community: "Module 356"
+community: "Community 359"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_356
+  - community/Community_359
 ---
 
 # customEmail.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[buildCustomEmailTemplate()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_356
+#graphify/code #graphify/EXTRACTED #community/Community_359

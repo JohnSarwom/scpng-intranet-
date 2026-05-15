@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\supabase\supabaseAuth.ts"
 type: "code"
-community: "Module 85"
+community: "Community 84"
 location: "L98"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_85
+  - community/Community_84
 ---
 
 # getCurrentUser()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[supabaseAuth.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_85
+#graphify/code #graphify/EXTRACTED #community/Community_84

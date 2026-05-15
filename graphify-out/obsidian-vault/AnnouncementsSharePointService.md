@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\announcementsSharePointService.ts"
 type: "code"
-community: "Module 57"
+community: "Community 56"
 location: "L61"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_57
+  - community/Community_56
 ---
 
 # AnnouncementsSharePointService
@@ -19,4 +19,4 @@ tags:
 - [[.initialize()]] - `method` [EXTRACTED]
 - [[announcementsSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_57
+#graphify/code #graphify/EXTRACTED #community/Community_56

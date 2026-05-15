@@ -1,18 +1,17 @@
 ---
 source_file: "src\main.tsx"
 type: "code"
-community: "Module 165"
+community: "Community 166"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_165
+  - community/Community_166
 ---
 
 # main.tsx
 
 ## Connections
 - [[App.tsx]] - `imports_from` [EXTRACTED]
-- [[registry.ts]] - `imports_from` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_165
+#graphify/code #graphify/EXTRACTED #community/Community_166

@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\slideshowSharePointService.ts"
 type: "code"
-community: "Slideshow Service"
+community: "Community 26"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Slideshow_Service
+  - community/Community_26
 ---
 
 # slideshowSharePointService.ts
@@ -19,4 +19,4 @@ tags:
 - [[getMSOffice365Tips()]] - `contains` [EXTRACTED]
 - [[transformSlideshowItem()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Slideshow_Service
+#graphify/code #graphify/EXTRACTED #community/Community_26

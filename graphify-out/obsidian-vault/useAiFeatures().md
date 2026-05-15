@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\licensing\hooks\useAiFeatures.ts"
 type: "code"
-community: "Module 337"
+community: "Community 339"
 location: "L16"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_337
+  - community/Community_339
 ---
 
 # useAiFeatures()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useAiFeatures.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_337
+#graphify/code #graphify/EXTRACTED #community/Community_339

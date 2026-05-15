@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\modals\EditAssetModal.tsx"
 type: "code"
-community: "Module 130"
+community: "Community 131"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_130
+  - community/Community_131
 ---
 
 # EditAssetModal.tsx
@@ -17,4 +17,4 @@ tags:
 - [[handleDateChange()_4]] - `contains` [EXTRACTED]
 - [[handleSaveChanges()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_130
+#graphify/code #graphify/EXTRACTED #community/Community_131

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useStaffByDivision.ts"
 type: "code"
-community: "Module 326"
+community: "Community 328"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_326
+  - community/Community_328
 ---
 
 # useStaffByDivision.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useStaffByDivision()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_326
+#graphify/code #graphify/EXTRACTED #community/Community_328

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Trash2, ListChecks, Calculator } from 'lucide-react';
+import { Trash2, ListChecks, Calculator, ClipboardCheck } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
@@ -65,6 +65,14 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
   ];
   const [calculatedQuarter, setCalculatedQuarter] = useState<string>(() => getQuarter(formData.targetDate));
 
+  const FREQUENCY_OPTIONS: { value: string; label: string }[] = [
+    { value: 'daily', label: 'Daily' },
+    { value: 'weekly', label: 'Weekly' },
+    { value: 'monthly', label: 'Monthly' },
+    { value: 'quarterly', label: 'Quarterly' },
+    { value: 'annual', label: 'Annual' },
+  ];
+
   // Initialize calculation type if missing
   useEffect(() => {
     if (!formData.calculationType) {
@@ -107,10 +115,8 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
   };
 
   const handleTypeChange = (value: string) => {
-    if (!value) return; // Prevent unselecting
-    onChange('calculationType', value as 'manual' | 'checklist');
-    // Removed standardizing target to 100 and forcing checklist evaluation
-    // to preserve user input in manual fields.
+    if (!value) return;
+    onChange('calculationType', value as 'manual' | 'checklist' | 'task-completion');
   };
 
   // Update quarter when targetDate changes
@@ -150,6 +156,25 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
           />
         </div>
 
+        {/* Role Level */}
+        <div className="grid gap-1.5">
+          <Label className="dark:text-gray-300">Role Level</Label>
+          <Select
+            value={formData.level || ''}
+            onValueChange={(v) => onChange('level', v as any)}
+            disabled={disabled}
+          >
+            <SelectTrigger className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
+              <SelectValue placeholder="Select level..." />
+            </SelectTrigger>
+            <SelectContent className="dark:bg-gray-900 dark:border-white/10">
+              <SelectItem value="director">Director</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="staff">Staff / Officer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Calculation Method Toggle */}
         <div className="flex flex-col space-y-2">
           <Label className="dark:text-gray-300">Measurement Method</Label>
@@ -160,21 +185,29 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             className="justify-start dark:bg-gray-950 dark:p-1 dark:rounded-lg dark:border dark:border-white/5"
             disabled={disabled}
           >
-            <ToggleGroupItem 
-              value="manual" 
-              aria-label="Manual Calculation" 
+            <ToggleGroupItem
+              value="manual"
+              aria-label="Manual Calculation"
               className="gap-2 dark:data-[state=on]:bg-intranet-primary dark:data-[state=on]:text-white dark:text-gray-400"
             >
               <Calculator className="h-4 w-4" />
               Manual Input
             </ToggleGroupItem>
-            <ToggleGroupItem 
-              value="checklist" 
-              aria-label="Checklist Calculation" 
+            <ToggleGroupItem
+              value="checklist"
+              aria-label="Checklist Calculation"
               className="gap-2 dark:data-[state=on]:bg-blue-600 dark:data-[state=on]:text-white dark:text-gray-400"
             >
               <ListChecks className="h-4 w-4" />
               Checklist
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="task-completion"
+              aria-label="Task Completion"
+              className="gap-2 dark:data-[state=on]:bg-emerald-600 dark:data-[state=on]:text-white dark:text-gray-400"
+            >
+              <ClipboardCheck className="h-4 w-4" />
+              Task Completion
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -332,6 +365,100 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             disabled={disabled}
             className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
           />
+        </div>
+
+        {/* Governance Section */}
+        <div className="border dark:border-white/10 rounded-md p-4 space-y-4 bg-background dark:bg-gray-950/50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground dark:text-gray-500">Governance</p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label className="dark:text-gray-300">Data Source</Label>
+              <Input
+                value={formData.dataSource || ''}
+                onChange={(e) => onChange('dataSource', e.target.value)}
+                placeholder="e.g., HRIS, Finance System"
+                disabled={disabled}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="dark:text-gray-300">Reporting Frequency</Label>
+              <Select
+                value={formData.reportingFrequency || ''}
+                onValueChange={(v) => onChange('reportingFrequency', v as any)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
+                  <SelectValue placeholder="Select frequency..." />
+                </SelectTrigger>
+                <SelectContent className="dark:bg-gray-900 dark:border-white/10">
+                  {FREQUENCY_OPTIONS.map(o => (
+                    <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-1.5">
+              <Label className="dark:text-gray-300">Review Authority</Label>
+              <Input
+                value={formData.reviewAuthority || ''}
+                onChange={(e) => onChange('reviewAuthority', e.target.value)}
+                placeholder="e.g., Division Director"
+                disabled={disabled}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="dark:text-gray-300">Weight (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={formData.weight ?? ''}
+                onChange={(e) => onChange('weight', e.target.value ? Number(e.target.value) : undefined)}
+                placeholder="e.g., 40"
+                disabled={disabled}
+                className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100"
+              />
+            </div>
+          </div>
+
+          {/* KPI Owner (single person) */}
+          <div className="grid gap-1.5">
+            <Label className="dark:text-gray-300">KPI Owner</Label>
+            <GlobalAssigneeSelector
+              selected={formData.owner ? [{
+                id: String(formData.owner.id),
+                displayName: formData.owner.name,
+                givenName: '', surname: '', mail: formData.owner.email || ''
+              }] : []}
+              onChange={(employees) => {
+                const u = employees[0];
+                onChange('owner', u ? { id: u.id, name: u.displayName, email: u.mail } : undefined);
+              }}
+              mode="single"
+              placeholder="Select KPI owner..."
+              container={container}
+              disabled={disabled}
+            />
+          </div>
+
+          {/* Review note — shown when rejected */}
+          {formData.reviewStatus === 'rejected' && (
+            <div className="grid gap-1.5">
+              <Label className="dark:text-gray-300 text-red-500">Rejection Note</Label>
+              <Textarea
+                value={formData.reviewNote || ''}
+                readOnly
+                rows={2}
+                className="dark:bg-gray-900 dark:border-red-900/40 dark:text-gray-400 text-red-600 bg-red-50"
+              />
+            </div>
+          )}
         </div>
       </CardContent>
     </Card >

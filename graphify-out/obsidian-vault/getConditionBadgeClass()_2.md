@@ -1,12 +1,12 @@
 ---
 source_file: "src\constants\assetChoices.ts"
 type: "code"
-community: "Module 288"
+community: "Community 289"
 location: "L58"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_288
+  - community/Community_289
 ---
 
 # getConditionBadgeClass()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[assetChoices.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_288
+#graphify/code #graphify/EXTRACTED #community/Community_289

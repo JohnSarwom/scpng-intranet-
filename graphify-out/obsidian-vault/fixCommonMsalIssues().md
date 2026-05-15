@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\msalDiagnostics.ts"
 type: "code"
-community: "Module 158"
+community: "Community 159"
 location: "L195"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_158
+  - community/Community_159
 ---
 
 # fixCommonMsalIssues()
@@ -15,4 +15,4 @@ tags:
 - [[attemptPopupLogin()]] - `calls` [EXTRACTED]
 - [[msalDiagnostics.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_158
+#graphify/code #graphify/EXTRACTED #community/Community_159

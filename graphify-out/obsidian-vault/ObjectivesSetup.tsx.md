@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\steps\ObjectivesSetup.tsx"
 type: "code"
-community: "Module 103"
+community: "Community 103"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_103
+  - community/Community_103
 ---
 
 # ObjectivesSetup.tsx
@@ -18,4 +18,4 @@ tags:
 - [[toggleObjectiveExpansion()]] - `contains` [EXTRACTED]
 - [[updateObjective()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_103
+#graphify/code #graphify/EXTRACTED #community/Community_103

@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\menubar.tsx"
 type: "code"
-community: "Module 471"
+community: "Community 474"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_471
+  - graphify/EXTRACTED
+  - community/Community_474
 ---
 
 # menubar.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_471
+#graphify/code #graphify/EXTRACTED #community/Community_474

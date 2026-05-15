@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\shared\ai-chat\AIChatMessageList.tsx"
 type: "code"
-community: "Module 271"
+community: "Community 273"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_271
+  - community/Community_273
 ---
 
 # AIChatMessageList.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[if()_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_271
+#graphify/code #graphify/EXTRACTED #community/Community_273

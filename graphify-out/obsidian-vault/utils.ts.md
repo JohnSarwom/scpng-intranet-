@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\utils.ts"
 type: "code"
-community: "Module 80"
+community: "Community 79"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_80
+  - community/Community_79
 ---
 
 # utils.ts
@@ -19,4 +19,4 @@ tags:
 - [[generateId()]] - `contains` [EXTRACTED]
 - [[getFileIconName()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_80
+#graphify/code #graphify/EXTRACTED #community/Community_79

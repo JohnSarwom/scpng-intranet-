@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\supabase\supabaseClient.ts"
 type: "code"
-community: "Module 200"
+community: "Community 201"
 location: "L22"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_200
+  - community/Community_201
 ---
 
 # getSupabaseClient()
@@ -15,4 +15,4 @@ tags:
 - [[initSupabase()]] - `calls` [EXTRACTED]
 - [[supabaseClient.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_200
+#graphify/code #graphify/EXTRACTED #community/Community_201

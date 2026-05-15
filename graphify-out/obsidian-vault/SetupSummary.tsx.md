@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\setup-wizard\steps\SetupSummary.tsx"
 type: "code"
-community: "Module 433"
+community: "Community 436"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_433
+  - graphify/EXTRACTED
+  - community/Community_436
 ---
 
 # SetupSummary.tsx
 
-## Connections
-- [[card.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_433
+#graphify/code #graphify/EXTRACTED #community/Community_436

@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\supabase\aiChatService.ts"
 type: "code"
-community: "Module 134"
+community: "Community 135"
 location: "L6"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_134
+  - community/Community_135
 ---
 
 # AIChatService
@@ -17,4 +17,4 @@ tags:
 - [[.processQuery()]] - `method` [EXTRACTED]
 - [[aiChatService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_134
+#graphify/code #graphify/EXTRACTED #community/Community_135

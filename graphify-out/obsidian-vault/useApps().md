@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useApps.ts"
 type: "code"
-community: "Module 290"
+community: "Community 291"
 location: "L24"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_290
+  - community/Community_291
 ---
 
 # useApps()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useApps.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_290
+#graphify/code #graphify/EXTRACTED #community/Community_291

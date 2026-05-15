@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\AssetManagementNew.tsx"
 type: "code"
-community: "Asset Management UI"
-location: "L352"
+community: "Asset Management"
+location: "L353"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Asset_Management_UI
+  - community/Asset_Management
 ---
 
 # handleConfirmDelete()
@@ -15,4 +15,4 @@ tags:
 - [[AssetManagementNew.tsx]] - `contains` [EXTRACTED]
 - [[handleCloseModals()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Asset_Management_UI
+#graphify/code #graphify/EXTRACTED #community/Asset_Management

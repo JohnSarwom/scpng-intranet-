@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\dashboard\WelcomeBanner.tsx"
 type: "code"
-community: "Module 249"
+community: "Community 251"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_249
+  - community/Community_251
 ---
 
 # WelcomeBanner.tsx
 
 ## Connections
-- [[Index.tsx]] - `imports_from` [INFERRED]
 - [[WelcomeBanner()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_249
+#graphify/code #graphify/EXTRACTED #community/Community_251

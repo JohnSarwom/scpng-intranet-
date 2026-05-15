@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\table\SortableTableHeader.tsx"
 type: "code"
-community: "Module 230"
+community: "Community 232"
 location: "L17"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_230
+  - community/Community_232
 ---
 
 # SortableTableHeader()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SortableTableHeader.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_230
+#graphify/code #graphify/EXTRACTED #community/Community_232

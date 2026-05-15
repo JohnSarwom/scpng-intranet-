@@ -1,20 +1,14 @@
 ---
 source_file: "src\components\ui\use-toast.ts"
 type: "code"
-community: "Module 491"
+community: "Community 494"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_491
+  - graphify/EXTRACTED
+  - community/Community_494
 ---
 
 # use-toast.ts
 
-## Connections
-- [[AssetManagementNew.tsx]] - `references` [INFERRED]
-- [[TestGround.tsx]] - `references` [INFERRED]
-- [[Unit.tsx]] - `references` [INFERRED]
-- [[use-toast.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_491
+#graphify/code #graphify/EXTRACTED #community/Community_494

@@ -1,22 +1,18 @@
 ---
 source_file: "src\hooks\useSharePointOps.ts"
 type: "code"
-community: "Module 39"
+community: "Community 38"
 location: "L449"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_39
+  - graphify/EXTRACTED
+  - community/Community_38
 ---
 
 # useSharePointTasks()
 
 ## Connections
-- [[PersonalKPICards.tsx]] - `calls` [INFERRED]
-- [[PersonalKPIStats.tsx]] - `calls` [INFERRED]
-- [[Unit.tsx]] - `calls` [INFERRED]
-- [[sharePointOpsService.ts]] - `calls` [INFERRED]
 - [[useOpsService()]] - `calls` [EXTRACTED]
 - [[useSharePointOps.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_39
+#graphify/code #graphify/EXTRACTED #community/Community_38

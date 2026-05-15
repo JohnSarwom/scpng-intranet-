@@ -18,7 +18,7 @@ members: 23
 - [[filterKRAs()]] - code - src\components\unit-tabs\ReportsTab.tsx
 - [[filterObjectives()]] - code - src\components\unit-tabs\ReportsTab.tsx
 - [[filterTasks()]] - code - src\components\unit-tabs\ReportsTab.tsx
-- [[formatDate()_4]] - code - src\components\unit-tabs\ReportsTab.tsx
+- [[formatDate()_5]] - code - src\components\unit-tabs\ReportsTab.tsx
 - [[getDateRange()]] - code - src\components\unit-tabs\ReportsTab.tsx
 - [[handleCopyMetadata()]] - code - src\components\unit-tabs\ReportsTab.tsx
 - [[handleDeleteSchedule()]] - code - src\components\unit-tabs\ReportsTab.tsx
@@ -40,9 +40,3 @@ members: 23
 TABLE source_file, type FROM #community/Reports_Tab
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 324]]
-
-## Top bridge nodes
-- [[ReportsTab.tsx]] - degree 23, connects to 1 community

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\AIConfiguration.tsx"
 type: "code"
-community: "Module 167"
+community: "Community 168"
 location: "L47"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_167
+  - community/Community_168
 ---
 
 # saveAIConfig()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AIConfiguration.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_167
+#graphify/code #graphify/EXTRACTED #community/Community_168

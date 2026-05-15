@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\taskBoardUtils.ts"
 type: "code"
-community: "Module 359"
+community: "Community 362"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_359
+  - community/Community_362
 ---
 
 # getEffectiveGroupId()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[taskBoardUtils.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_359
+#graphify/code #graphify/EXTRACTED #community/Community_362

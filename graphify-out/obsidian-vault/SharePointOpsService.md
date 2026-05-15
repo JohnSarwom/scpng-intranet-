@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\sharePointOpsService.ts"
 type: "code"
-community: "SharePoint Operations CRUD"
+community: "SharePoint Ops Service"
 location: "L52"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Operations_CRUD
+  - community/SharePoint_Ops_Service
 ---
 
 # SharePointOpsService
@@ -27,7 +27,7 @@ tags:
 - [[.buildWorkPlanFields()]] - `method` [EXTRACTED]
 - [[.calculateNextSendAt()]] - `method` [EXTRACTED]
 - [[.clearCountdown()]] - `method` [EXTRACTED]
-- [[.constructor()_19]] - `method` [EXTRACTED]
+- [[.constructor()_22]] - `method` [EXTRACTED]
 - [[.createReportSchedulesList()]] - `method` [EXTRACTED]
 - [[.createReportsList()]] - `method` [EXTRACTED]
 - [[.debugListColumns()]] - `method` [EXTRACTED]
@@ -108,6 +108,5 @@ tags:
 - [[.updateViewSetting()]] - `method` [EXTRACTED]
 - [[.updateWorkPlan()]] - `method` [EXTRACTED]
 - [[sharePointOpsService.ts]] - `contains` [EXTRACTED]
-- [[useOpsService()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Operations_CRUD
+#graphify/code #graphify/EXTRACTED #community/SharePoint_Ops_Service

@@ -1,17 +1,14 @@
 ---
 source_file: "src\mockData\mockOfficerProfiles.ts"
 type: "code"
-community: "Module 520"
+community: "Community 523"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_520
+  - graphify/EXTRACTED
+  - community/Community_523
 ---
 
 # mockOfficerProfiles.ts
 
-## Connections
-- [[.setupWebsiteFeedbackResources()]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_520
+#graphify/code #graphify/EXTRACTED #community/Community_523

@@ -1,17 +1,18 @@
 ---
-source_file: "src\components\unit-tabs\RisksTab.tsx"
+source_file: "src\components\unit-tabs\ReportsTab.tsx"
 type: "code"
-community: "Module 64"
-location: "L158"
+community: "Reports Tab"
+location: "L366"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_64
+  - community/Reports_Tab
 ---
 
 # formatDate()
 
 ## Connections
-- [[RisksTab.tsx]] - `contains` [EXTRACTED]
+- [[ReportPreview()]] - `calls` [EXTRACTED]
+- [[ReportsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_64
+#graphify/code #graphify/EXTRACTED #community/Reports_Tab

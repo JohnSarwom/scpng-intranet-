@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Calendar.tsx"
 type: "code"
-community: "Module 205"
+community: "Community 207"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_205
+  - community/Community_207
 ---
 
 # Calendar.tsx
@@ -15,4 +15,4 @@ tags:
 - [[getDateClassname()]] - `contains` [EXTRACTED]
 - [[getEventTypeColor()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_205
+#graphify/code #graphify/EXTRACTED #community/Community_207

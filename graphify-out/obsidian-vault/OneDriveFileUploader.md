@@ -1,18 +1,18 @@
 ---
 source_file: "src\utils\OneDriveFileUploader.ts"
 type: "code"
-community: "Module 41"
+community: "Community 40"
 location: "L34"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_41
+  - community/Community_40
 ---
 
 # OneDriveFileUploader
 
 ## Connections
-- [[.constructor()_29]] - `method` [EXTRACTED]
+- [[.constructor()_32]] - `method` [EXTRACTED]
 - [[.convertToCsv()]] - `method` [EXTRACTED]
 - [[.createFolder()]] - `method` [EXTRACTED]
 - [[.getAccessToken()]] - `method` [EXTRACTED]
@@ -23,4 +23,4 @@ tags:
 - [[.uploadFile()]] - `method` [EXTRACTED]
 - [[OneDriveFileUploader.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_41
+#graphify/code #graphify/EXTRACTED #community/Community_40

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useComponentVisibility.ts"
 type: "code"
-community: "Module 131"
+community: "Community 132"
 location: "L102"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_131
+  - community/Community_132
 ---
 
 # getCachedSettings()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useComponentVisibility.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_131
+#graphify/code #graphify/EXTRACTED #community/Community_132

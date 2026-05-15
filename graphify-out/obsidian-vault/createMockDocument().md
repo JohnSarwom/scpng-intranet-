@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Documents.tsx"
 type: "code"
-community: "Document Management"
-location: "L284"
+community: "Documents Page"
+location: "L285"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Document_Management
+  - community/Documents_Page
 ---
 
 # createMockDocument()
@@ -16,4 +16,4 @@ tags:
 - [[getFileIcon()]] - `calls` [EXTRACTED]
 - [[getRandomSharedUsers()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Document_Management
+#graphify/code #graphify/EXTRACTED #community/Documents_Page

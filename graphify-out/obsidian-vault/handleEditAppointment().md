@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\AppointmentView.tsx"
 type: "code"
-community: "Module 51"
+community: "Community 50"
 location: "L297"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_51
+  - community/Community_50
 ---
 
 # handleEditAppointment()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AppointmentView.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_51
+#graphify/code #graphify/EXTRACTED #community/Community_50

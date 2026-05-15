@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\sharedDocumentsService.ts"
 type: "code"
-community: "Module 112"
+community: "Community 112"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_112
+  - community/Community_112
 ---
 
 # sharedDocumentsService.ts
@@ -18,4 +18,4 @@ tags:
 - [[getSiteId()_1]] - `contains` [EXTRACTED]
 - [[uploadSharedDocument()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_112
+#graphify/code #graphify/EXTRACTED #community/Community_112

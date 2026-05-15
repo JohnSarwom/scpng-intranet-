@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useExcelSync.ts"
 type: "code"
-community: "Module 305"
+community: "Community 306"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_305
+  - community/Community_306
 ---
 
 # useExcelSync.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useExcelSync()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_305
+#graphify/code #graphify/EXTRACTED #community/Community_306

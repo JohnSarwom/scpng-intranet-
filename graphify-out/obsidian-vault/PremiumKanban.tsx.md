@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ui\PremiumKanban.tsx"
 type: "code"
-community: "Module 279"
+community: "Community 281"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_279
+  - community/Community_281
 ---
 
 # PremiumKanban.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[cn()_3]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_279
+#graphify/code #graphify/EXTRACTED #community/Community_281

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\TasksTab.tsx"
 type: "code"
-community: "Module 53"
-location: "L2140"
+community: "Community 52"
+location: "L2160"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_53
+  - community/Community_52
 ---
 
 # async()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TasksTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_53
+#graphify/code #graphify/EXTRACTED #community/Community_52

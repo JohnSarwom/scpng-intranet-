@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\apps\EditAppModal.tsx"
 type: "code"
-community: "Module 118"
+community: "Community 119"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_118
+  - community/Community_119
 ---
 
 # EditAppModal.tsx
@@ -17,4 +17,4 @@ tags:
 - [[handleRemoveImage()_2]] - `contains` [EXTRACTED]
 - [[handleSubmit()_2]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_118
+#graphify/code #graphify/EXTRACTED #community/Community_119

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\OrganizationalStrategy.tsx"
 type: "code"
-community: "Org Strategy Editor"
+community: "Organizational Strategy"
 location: "L150"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Org_Strategy_Editor
+  - community/Organizational_Strategy
 ---
 
 # startAddingKra()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[OrganizationalStrategy.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Org_Strategy_Editor
+#graphify/code #graphify/EXTRACTED #community/Organizational_Strategy

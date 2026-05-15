@@ -1,19 +1,14 @@
 ---
 source_file: "src\components\dashboard\QuickAccess.tsx"
 type: "code"
-community: "Module 398"
+community: "Community 401"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_398
+  - graphify/EXTRACTED
+  - community/Community_401
 ---
 
 # QuickAccess.tsx
 
-## Connections
-- [[Index.tsx]] - `imports_from` [INFERRED]
-- [[badge.tsx]] - `imports_from` [INFERRED]
-- [[card.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_398
+#graphify/code #graphify/EXTRACTED #community/Community_401

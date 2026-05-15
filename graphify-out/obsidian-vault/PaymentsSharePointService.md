@@ -14,7 +14,7 @@ tags:
 ## Connections
 - [[.addPayment()]] - `method` [EXTRACTED]
 - [[.approvePayment()]] - `method` [EXTRACTED]
-- [[.constructor()_14]] - `method` [EXTRACTED]
+- [[.constructor()_17]] - `method` [EXTRACTED]
 - [[.deletePayment()]] - `method` [EXTRACTED]
 - [[.filterPaymentsByRole()]] - `method` [EXTRACTED]
 - [[.getListColumns()_2]] - `method` [EXTRACTED]

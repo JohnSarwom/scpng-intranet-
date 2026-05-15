@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useUIRoles.ts"
 type: "code"
-community: "Module 331"
+community: "Community 333"
 location: "L111"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_331
+  - community/Community_333
 ---
 
 # useUIRoles()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useUIRoles.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_331
+#graphify/code #graphify/EXTRACTED #community/Community_333

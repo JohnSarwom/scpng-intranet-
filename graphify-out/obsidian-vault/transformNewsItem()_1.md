@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\newsSharePointService.ts"
 type: "code"
-community: "Module 72"
-location: "L63"
+community: "Community 57"
+location: "L97"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_72
+  - community/Community_57
 ---
 
 # transformNewsItem()
@@ -14,5 +14,6 @@ tags:
 ## Connections
 - [[.createNewsItem()_1]] - `calls` [EXTRACTED]
 - [[newsSharePointService.ts]] - `contains` [EXTRACTED]
+- [[parseSharePointImage()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_72
+#graphify/code #graphify/EXTRACTED #community/Community_57

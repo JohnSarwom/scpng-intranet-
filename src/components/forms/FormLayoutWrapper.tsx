@@ -7,7 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock } from 'lucide-react';
 import { FormTemplate } from '@/types/forms';
-import { useFormContext } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
+
+export type FormLayoutView = 'digital' | 'paper' | 'tracking';
 
 export interface FormLayoutWrapperProps {
     title: string;
@@ -18,6 +20,9 @@ export interface FormLayoutWrapperProps {
     trackingContent: React.ReactNode;
     showPaperTab?: boolean;
     showTrackingTab?: boolean;
+    showProgress?: boolean;
+    activeView?: FormLayoutView;
+    onViewChange?: (value: FormLayoutView) => void;
 }
 
 export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
@@ -29,16 +34,24 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
     trackingContent,
     showPaperTab = true,
     showTrackingTab = true,
+    showProgress = true,
+    activeView,
+    onViewChange,
 }) => {
-    const [viewMode, setViewMode] = useState<'digital' | 'paper' | 'tracking'>('digital');
+    const [internalViewMode, setInternalViewMode] = useState<FormLayoutView>('digital');
+    const viewMode = activeView ?? internalViewMode;
+    const setViewMode = (value: FormLayoutView) => {
+        setInternalViewMode(value);
+        onViewChange?.(value);
+    };
     const navigate = useNavigate();
     const formContext = useFormContext();
+    const watchedData = useWatch({ control: formContext.control });
 
     // Calculate progress if template and form context exist
     const calculateProgress = () => {
         if (!template || !formContext || viewMode !== 'digital') return 0;
 
-        const watchedData = formContext.watch();
         const allFields = template.sections.flatMap(section => section.fields);
         const requiredFields = allFields.filter(field => field.required);
         const filledRequiredFields = requiredFields.filter(field => {
@@ -55,7 +68,7 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
 
     return (
         <div className="space-y-4">
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as any)} className="w-full">
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as FormLayoutView)} className="w-full">
                 <div className="flex justify-between items-center mb-6">
                     <Button
                         variant="ghost"
@@ -100,7 +113,7 @@ export const FormLayoutWrapper: React.FC<FormLayoutWrapperProps> = ({
                                 </div>
                             </div>
  
-                            {viewMode === 'digital' && (
+                            {viewMode === 'digital' && showProgress && (
                                 <div className="space-y-2 mt-4 text-sm">
                                     <div className="flex justify-between">
                                         <span className="font-medium dark:text-gray-300">Form completion</span>

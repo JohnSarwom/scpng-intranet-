@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\analytics\StrategyAIChat.tsx"
 type: "code"
-community: "Module 38"
+community: "Community 37"
 location: "L192"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_38
+  - community/Community_37
 ---
 
 # handleScroll()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[StrategyAIChat.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_38
+#graphify/code #graphify/EXTRACTED #community/Community_37

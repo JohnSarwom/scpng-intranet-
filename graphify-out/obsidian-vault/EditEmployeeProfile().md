@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\EditEmployeeProfile.tsx"
 type: "code"
-community: "Module 345"
+community: "Community 347"
 location: "L37"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_345
+  - community/Community_347
 ---
 
 # EditEmployeeProfile()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[EditEmployeeProfile.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_345
+#graphify/code #graphify/EXTRACTED #community/Community_347

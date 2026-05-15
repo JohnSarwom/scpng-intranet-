@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\dashboard\MetricCard.tsx"
 type: "code"
-community: "Module 241"
+community: "Community 243"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_241
+  - community/Community_243
 ---
 
 # MetricCard.tsx
 
 ## Connections
 - [[MetricCard()]] - `contains` [EXTRACTED]
-- [[PersonalKPICards.tsx]] - `imports_from` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_241
+#graphify/code #graphify/EXTRACTED #community/Community_243

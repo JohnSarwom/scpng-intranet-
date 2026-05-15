@@ -8,7 +8,7 @@ const defaultConfig = {
     authority: microsoftAuthConfig.authorityUrl,
     redirectUri: microsoftAuthConfig.redirectUri,
     postLogoutRedirectUri: microsoftAuthConfig.redirectUri,
-    navigateToLoginRequestUrl: true // Changed to true to ensure proper navigation after login
+    navigateToLoginRequestUrl: true // CustomNavigationClient routes this via React Router (no full reload)
   },
   cache: {
     cacheLocation: 'sessionStorage', // Use sessionStorage for better security

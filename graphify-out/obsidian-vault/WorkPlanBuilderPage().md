@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\WorkPlanBuilderPage.tsx"
 type: "code"
-community: "Module 355"
+community: "Community 358"
 location: "L9"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_355
+  - community/Community_358
 ---
 
 # WorkPlanBuilderPage()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[WorkPlanBuilderPage.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_355
+#graphify/code #graphify/EXTRACTED #community/Community_358

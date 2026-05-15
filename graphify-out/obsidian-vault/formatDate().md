@@ -1,17 +1,17 @@
 ---
-source_file: "src\components\dashboard\CalendarEventModal.tsx"
+source_file: "src\components\analytics\FacebookAnalyticsTab.tsx"
 type: "code"
-community: "Module 96"
-location: "L130"
+community: "Community 118"
+location: "L20"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_96
+  - community/Community_118
 ---
 
 # formatDate()
 
 ## Connections
-- [[CalendarEventModal.tsx]] - `contains` [EXTRACTED]
+- [[FacebookAnalyticsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_96
+#graphify/code #graphify/EXTRACTED #community/Community_118

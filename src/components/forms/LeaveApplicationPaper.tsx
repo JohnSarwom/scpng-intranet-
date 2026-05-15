@@ -75,14 +75,6 @@ const LeaveApplicationPaper: React.FC = () => {
               </table>
             </td>
           </tr>
-          <tr>
-            <td style={{ padding: '6px' }}>
-              SIGNATURE OFFICER: <input type="text" {...register('signatureOfficer')} className="form-input" />
-            </td>
-            <td style={{ padding: '6px' }}>
-              DATE: <input type="date" {...register('officerDate')} className="form-input" />
-            </td>
-          </tr>
         </tbody>
       </table>
 
@@ -91,7 +83,7 @@ const LeaveApplicationPaper: React.FC = () => {
         <tbody>
           <tr>
             <td style={{ width: '50%', height: '45px', padding: '6px' }}>
-              SIGNATURE FOR MANAGER: <input type="text" {...register('managerSignature')} className="form-input" />
+              MANAGER: <input type="text" {...register('managerName')} className="form-input" />
             </td>
             <td style={{ width: '30%', padding: '6px' }}>
               DESIGNATION: <input type="text" {...register('managerDesignation')} className="form-input" />
@@ -108,7 +100,7 @@ const LeaveApplicationPaper: React.FC = () => {
         <tbody>
           <tr>
             <td style={{ width: '50%', height: '45px', padding: '6px' }}>
-              SIGNATURE FOR DIRECTOR: <input type="text" {...register('directorSignature')} className="form-input" />
+              DIRECTOR: <input type="text" {...register('directorName')} className="form-input" />
             </td>
             <td style={{ width: '30%', padding: '6px' }}>
               DESIGNATION: <input type="text" {...register('directorDesignation')} className="form-input" />
@@ -150,7 +142,6 @@ const LeaveApplicationPaper: React.FC = () => {
             </td>
             <td style={{ width: '40%', verticalAlign: 'bottom', padding: '12px' }}>
               <div style={{ marginBottom: '12px', fontSize: '13px' }}>HR DELEGATE: <input type="text" {...register('hrDelegate')} style={{ width: '150px', borderBottom: '1px dotted black', marginLeft: '5px' }} /></div>
-              <div style={{ marginBottom: '12px', fontSize: '13px' }}>SIGNATURE: <input type="text" {...register('hrSignature')} style={{ width: '165px', borderBottom: '1px dotted black', marginLeft: '5px' }} /></div>
               <div style={{ fontSize: '13px' }}>DATE: <input type="date" {...register('hrDate')} style={{ width: '195px', borderBottom: '1px dotted black', marginLeft: '5px' }} /></div>
             </td>
           </tr>

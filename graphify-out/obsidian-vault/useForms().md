@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useForms.ts"
 type: "code"
-community: "Module 306"
+community: "Community 308"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_306
+  - community/Community_308
 ---
 
 # useForms()
 
 ## Connections
-- [[forms.ts]] - `calls` [INFERRED]
 - [[useForms.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_306
+#graphify/code #graphify/EXTRACTED #community/Community_308

@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\DecommissionedAssets.tsx"
 type: "code"
-community: "Module 66"
+community: "Community 66"
 location: "L139"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_66
+  - community/Community_66
 ---
 
 # handleEditAsset()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DecommissionedAssets.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_66
+#graphify/code #graphify/EXTRACTED #community/Community_66

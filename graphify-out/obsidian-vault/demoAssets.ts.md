@@ -1,17 +1,14 @@
 ---
 source_file: "src\mockData\demoAssets.ts"
 type: "code"
-community: "Module 516"
+community: "Community 519"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_516
+  - graphify/EXTRACTED
+  - community/Community_519
 ---
 
 # demoAssets.ts
 
-## Connections
-- [[.setupWebsiteFeedbackResources()]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_516
+#graphify/code #graphify/EXTRACTED #community/Community_519

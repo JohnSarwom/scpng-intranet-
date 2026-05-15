@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\divisionService.ts"
 type: "code"
-community: "Division Service"
+community: "Community 28"
 location: "L9"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Division_Service
+  - community/Community_28
 ---
 
 # DivisionService
@@ -25,4 +25,4 @@ tags:
 - [[.uploadDivisionImage()]] - `method` [EXTRACTED]
 - [[divisionService.ts_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Division_Service
+#graphify/code #graphify/EXTRACTED #community/Community_28

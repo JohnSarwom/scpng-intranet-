@@ -113,6 +113,21 @@ export class SharePointOpsService {
                     console.warn('⚠️ [SP Ops] Auto-ensure custom date columns failed (non-blocking):', err.message)
                 );
 
+                // Auto-ensure KPI governance columns (level, dataSource, reviewStatus, etc.)
+                this.ensureKpiGovernanceColumns().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure KPI governance columns failed (non-blocking):', err.message)
+                );
+
+                // Auto-ensure KRA governance columns (level, parentKpiId)
+                this.ensureKraGovernanceColumns().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure KRA governance columns failed (non-blocking):', err.message)
+                );
+
+                // Auto-ensure Risk link columns (RelatedKPIId, RelatedKRAId)
+                this.ensureRiskLinkColumns().catch(err =>
+                    console.warn('⚠️ [SP Ops] Auto-ensure Risk link columns failed (non-blocking):', err.message)
+                );
+
             } catch (error) {
                 console.error('❌ [SharePointOpsService] Init failed', error);
                 this.initializationPromise = null; // Reset on error
@@ -220,6 +235,78 @@ export class SharePointOpsService {
         }
     }
 
+
+    private async ensureKpiGovernanceColumns(): Promise<void> {
+        const listId = this.listIds['KPIS'];
+        if (!listId) return;
+
+        const columns = [
+            { name: 'Level', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'DataSource', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'ReportingFrequency', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'ReviewAuthority', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'Weight', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'KpiOwner', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'ReviewStatus', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'ReviewNote', def: { text: { allowMultipleLines: true, textType: 'plain' } } },
+        ];
+
+        for (const col of columns) {
+            try {
+                const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter(`name eq '${col.name}'`).select('id,name').get();
+                if (!res.value || res.value.length === 0) {
+                    console.log(`🔧 [SP Ops] Creating ${col.name} column on Performance_KPIs...`);
+                    await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({ name: col.name, ...col.def });
+                }
+            } catch (err: any) {
+                console.warn(`⚠️ [SP Ops] Failed to ensure ${col.name} on Performance_KPIs:`, err.message);
+            }
+        }
+    }
+
+    private async ensureKraGovernanceColumns(): Promise<void> {
+        const listId = this.listIds['KRAS'];
+        if (!listId) return;
+
+        const columns = [
+            { name: 'Level', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'ParentKpiId', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+        ];
+
+        for (const col of columns) {
+            try {
+                const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter(`name eq '${col.name}'`).select('id,name').get();
+                if (!res.value || res.value.length === 0) {
+                    console.log(`🔧 [SP Ops] Creating ${col.name} column on Performance_KRAs...`);
+                    await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({ name: col.name, ...col.def });
+                }
+            } catch (err: any) {
+                console.warn(`⚠️ [SP Ops] Failed to ensure ${col.name} on Performance_KRAs:`, err.message);
+            }
+        }
+    }
+
+    private async ensureRiskLinkColumns(): Promise<void> {
+        const listId = this.listIds['RISKS'];
+        if (!listId) return;
+
+        const columns = [
+            { name: 'RelatedKPIId', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+            { name: 'RelatedKRAId', def: { text: { allowMultipleLines: false, textType: 'plain' } } },
+        ];
+
+        for (const col of columns) {
+            try {
+                const res = await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).filter(`name eq '${col.name}'`).select('id,name').get();
+                if (!res.value || res.value.length === 0) {
+                    console.log(`🔧 [SP Ops] Creating ${col.name} column on Operations_Risks...`);
+                    await this.client.api(`/sites/${this.siteId}/lists/${listId}/columns`).post({ name: col.name, ...col.def });
+                }
+            } catch (err: any) {
+                console.warn(`⚠️ [SP Ops] Failed to ensure ${col.name} on Operations_Risks:`, err.message);
+            }
+        }
+    }
 
     private async ensureCustomDateColumns(): Promise<void> {
         const listId = this.listIds['REPORT_SCHEDULES'];
@@ -1035,7 +1122,9 @@ export class SharePointOpsService {
                 Progress: kra.progress ?? 0,
                 Description: kra.description,
                 UnitObjectiveLookupId: kra.objective_id ? Number(kra.objective_id) : null,
-                Assignees: mergedAssignees.length > 0 ? JSON.stringify(mergedAssignees) : undefined
+                Assignees: mergedAssignees.length > 0 ? JSON.stringify(mergedAssignees) : undefined,
+                Level: (kra as any).level || null,
+                ParentKpiId: (kra as any).parentKpiId ? String((kra as any).parentKpiId) : null,
             }
         };
 
@@ -1075,6 +1164,8 @@ export class SharePointOpsService {
         if (kra.progress !== undefined) fields.Progress = kra.progress;
         if (kra.description !== undefined) fields.Description = kra.description;
         if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = kra.objective_id ? Number(kra.objective_id) : null;
+        if ((kra as any).level !== undefined) fields.Level = (kra as any).level;
+        if ((kra as any).parentKpiId !== undefined) fields.ParentKpiId = (kra as any).parentKpiId ? String((kra as any).parentKpiId) : null;
         // Rebuild Assignees JSON with owner embedded (same logic as addKRA).
         // Regular assignees get their own entries (no isOwner flag).
         // Owner gets a separate entry with isOwner:true.
@@ -1140,7 +1231,16 @@ export class SharePointOpsService {
                 EndDate: kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null, // targetDate maps to EndDate
                 RelatedKRALookupId: kpi.kra_id ? Number(kpi.kra_id) : null,
                 CalculationType: kpi.calculationType || 'manual',
-                ChecklistJSON: kpi.checklist ? JSON.stringify(kpi.checklist) : undefined
+                ChecklistJSON: kpi.checklist ? JSON.stringify(kpi.checklist) : undefined,
+                // Governance fields
+                Level: kpi.level || null,
+                DataSource: kpi.dataSource || null,
+                ReportingFrequency: kpi.reportingFrequency || null,
+                ReviewAuthority: kpi.reviewAuthority || null,
+                Weight: kpi.weight !== undefined ? String(kpi.weight) : null,
+                KpiOwner: kpi.owner ? JSON.stringify(kpi.owner) : null,
+                ReviewStatus: kpi.reviewStatus || 'draft',
+                ReviewNote: kpi.reviewNote || null,
             }
         };
 
@@ -1184,9 +1284,16 @@ export class SharePointOpsService {
         if (kpi.checklist !== undefined) fields.ChecklistJSON = JSON.stringify(kpi.checklist);
 
         if (kpi.assignees !== undefined) {
-            // Assignees is a Text column storing JSON
             fields['Assignees'] = JSON.stringify(kpi.assignees || []);
         }
+        if (kpi.level !== undefined) fields.Level = kpi.level;
+        if (kpi.dataSource !== undefined) fields.DataSource = kpi.dataSource;
+        if (kpi.reportingFrequency !== undefined) fields.ReportingFrequency = kpi.reportingFrequency;
+        if (kpi.reviewAuthority !== undefined) fields.ReviewAuthority = kpi.reviewAuthority;
+        if (kpi.weight !== undefined) fields.Weight = String(kpi.weight);
+        if (kpi.owner !== undefined) fields.KpiOwner = kpi.owner ? JSON.stringify(kpi.owner) : null;
+        if (kpi.reviewStatus !== undefined) fields.ReviewStatus = kpi.reviewStatus;
+        if (kpi.reviewNote !== undefined) fields.ReviewNote = kpi.reviewNote;
 
         try {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).patch({ fields });
@@ -1557,6 +1664,9 @@ export class SharePointOpsService {
             createdAt: item.createdDateTime,
             updatedAt: item.lastModifiedDateTime,
             description: f.Description || '',
+            // Governance fields
+            level: (f.Level as any) || undefined,
+            parentKpiId: f.ParentKpiId ? String(f.ParentKpiId) : undefined,
         };
     }
 
@@ -1571,6 +1681,11 @@ export class SharePointOpsService {
         } catch (e) {
             console.warn(`[SP Ops] Failed to parse Assignees JSON for KPI ${item.id}`, e);
         }
+
+        let kpiOwner: any = undefined;
+        try {
+            if (f.KpiOwner) kpiOwner = JSON.parse(f.KpiOwner);
+        } catch { kpiOwner = undefined; }
 
         return {
             id: item.id,
@@ -1588,7 +1703,17 @@ export class SharePointOpsService {
             startDate: f.StartDate || null,
             targetDate: f.EndDate || null,
             calculationType: (f.CalculationType as any) || 'manual',
-            checklist: f.ChecklistJSON ? JSON.parse(f.ChecklistJSON) : [],
+            checklist: f.ChecklistJSON ? (() => { try { return JSON.parse(f.ChecklistJSON); } catch { return []; } })() : [],
+            // Governance fields
+            level: (f.Level as any) || undefined,
+            owner: kpiOwner,
+            dataSource: f.DataSource || undefined,
+            reportingFrequency: (f.ReportingFrequency as any) || undefined,
+            reviewAuthority: f.ReviewAuthority || undefined,
+            weight: f.Weight ? Number(f.Weight) : undefined,
+            // Review workflow
+            reviewStatus: (f.ReviewStatus as any) || 'draft',
+            reviewNote: f.ReviewNote || undefined,
         };
     }
     async addProject(project: Partial<Project>): Promise<Project> {
@@ -1735,7 +1860,9 @@ export class SharePointOpsService {
             createdAt: item.createdDateTime ? new Date(item.createdDateTime) : new Date(),
             updatedAt: item.lastModifiedDateTime ? new Date(item.lastModifiedDateTime) : new Date(),
             unit_id: f.Department,
-            division_id: f.Department // Assuming division == department for now
+            division_id: f.Department,
+            kpi_id: f.RelatedKPIId || null,
+            kra_id: f.RelatedKRAId || null,
         };
     }
 

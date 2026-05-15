@@ -1,5 +1,5 @@
 
-import { Kpi, ChecklistItem } from '@/types';
+import { Kpi, Task, ChecklistItem, StrategicKRA, StrategicInitiative } from '@/types';
 
 /**
  * Calculates the progress of a KPI based on its calculation type.
@@ -7,7 +7,7 @@ import { Kpi, ChecklistItem } from '@/types';
  * @param kpi The KPI object to calculate progress for.
  * @returns The calculated progress as a percentage (0-100).
  */
-export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
+export const calculateKpiProgress = (kpi: Partial<Kpi>, tasks?: Partial<Task>[]): number => {
     // Priority 1: If Status is explicitly 'Completed', force 100%
     const status = (kpi.status || '').toLowerCase();
     if (status === 'completed' || status === 'achieved' || status === 'done') {
@@ -20,7 +20,20 @@ export const calculateKpiProgress = (kpi: Partial<Kpi>): number => {
         return Math.round((completed / kpi.checklist.length) * 100);
     }
 
-    // Priority 3: Manual target/actual calculation
+    // Priority 3: Task-completion — count linked tasks that are done
+    if (kpi.calculationType === 'task-completion' && tasks && tasks.length > 0) {
+        const linked = tasks.filter(t => String(t.kpi_id) === String(kpi.id));
+        if (linked.length > 0) {
+            const done = linked.filter(t =>
+                t.completed === true ||
+                ['completed', 'done'].includes((t.status || '').toLowerCase())
+            ).length;
+            return Math.round((done / linked.length) * 100);
+        }
+        return 0;
+    }
+
+    // Priority 4: Manual target/actual calculation
     if (kpi.target && kpi.target > 0) {
         const actual = kpi.actual || 0;
         const rawProgress = (actual / kpi.target) * 100;
@@ -55,7 +68,14 @@ export const calculateKraProgress = (kra: any, kpis: Partial<Kpi>[] = []): numbe
         return kra.progress || 0;
     }
 
-    // KRA progress = % of KPIs that have a "completed" status
+    // Use weighted average when weights are defined on KPIs
+    const totalWeight = kraKpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
+    if (totalWeight > 0) {
+        const weightedSum = kraKpis.reduce((sum, kpi) => sum + calculateKpiProgress(kpi) * (kpi.weight || 0), 0);
+        return Math.round(weightedSum / totalWeight);
+    }
+
+    // Fallback: % of KPIs that have a "completed" status
     const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
     const completedCount = kraKpis.filter(kpi =>
         COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
@@ -103,42 +123,61 @@ export const calculateGoalProgressFromChildren = (
     goalId: string | number,
     childObjectives: any[],
     allKras: any[] = [],
-    allKpis: any[] = []
+    allKpis: any[] = [],
+    strategicKRAs: StrategicKRA[] = [],
+    strategicInitiatives: StrategicInitiative[] = []
 ): number => {
     if (!childObjectives || childObjectives.length === 0) return 0;
 
-    // Find all Unit Objectives linked to this goal
+    // Operational track: Unit Objectives linked via parentGoalId
     const linkedChildren = childObjectives.filter(child =>
         String(child.parentGoalId) === String(goalId)
     );
 
-    if (linkedChildren.length === 0) return 0;
+    let operationalProgress = 0;
+    let hasOperational = false;
 
-    const totalProgress = linkedChildren.reduce((sum, child) => {
-        let p = child.progress || 0;
-
-        // Try to get dynamic progress calculated from KRAs/KPIs
-        if (allKras.length > 0) {
-            const linkedKras = allKras.filter(k =>
-                String(k.objective_id) === String(child.id) ||
-                String(k.objectiveId) === String(child.id)
-            );
-            if (linkedKras.length > 0) {
-                p = calculateStrategicProgress(linkedKras, allKpis);
+    if (linkedChildren.length > 0) {
+        hasOperational = true;
+        const total = linkedChildren.reduce((sum, child) => {
+            let p = child.progress || 0;
+            if (allKras.length > 0) {
+                const linkedKras = allKras.filter(k =>
+                    String(k.objective_id) === String(child.id) ||
+                    String(k.objectiveId) === String(child.id)
+                );
+                if (linkedKras.length > 0) {
+                    p = calculateStrategicProgress(linkedKras, allKpis);
+                }
             }
+            return sum + p;
+        }, 0);
+        operationalProgress = Math.round(total / linkedChildren.length);
+    }
+
+    // Corporate Plan track: Strategic KRAs → Initiatives linked via goalId
+    let corpProgress = 0;
+    let hasCorp = false;
+
+    if (strategicKRAs.length > 0 && strategicInitiatives.length > 0) {
+        const corpKras = strategicKRAs.filter(k => String(k.goalId) === String(goalId));
+        if (corpKras.length > 0) {
+            hasCorp = true;
+            const total = corpKras.reduce((sum, kra) => {
+                return sum + calculateCorporateKraProgress(kra, strategicInitiatives, allKpis);
+            }, 0);
+            corpProgress = Math.round(total / corpKras.length);
         }
+    }
 
-        // The Unit Objectives table (KRAsTab.tsx) strictly displays the dynamic numerical progress,
-        // so we must NOT force p=100 just because the status string is 'completed', 
-        // to maintain consistency with the visual numbers the user sees visually (e.g. 0% + 50% = 25%).
+    if (hasOperational && hasCorp) {
+        // Blend both tracks with equal weight (tunable)
+        return Math.round((operationalProgress + corpProgress) / 2);
+    }
+    if (hasCorp) return corpProgress;
+    if (hasOperational) return operationalProgress;
 
-        console.log(`[kpiUtils] Goal ${goalId} -> Child ${child.id} (${child.title}): dynamic_p=${p}`);
-        return sum + p;
-    }, 0);
-
-    const avg = Math.round(totalProgress / linkedChildren.length);
-    console.log(`[kpiUtils] Goal ${goalId} -> Total children: ${linkedChildren.length}, Avg Progress: ${avg}%`);
-    return avg;
+    return 0;
 };
 
 /**
@@ -202,7 +241,14 @@ export const calculateInitiativeProgress = (initiative: any, kpis: Partial<Kpi>[
         return initiative.progress || 0;
     }
 
-    // Average the progress of all child KPIs (unlike the old KRA logic which just counted completed KPIs)
+    // Use weighted average when weights are defined on KPIs
+    const totalWeight = initKpis.reduce((sum, kpi) => sum + (kpi.weight || 0), 0);
+    if (totalWeight > 0) {
+        const weightedSum = initKpis.reduce((sum, kpi) => sum + calculateKpiProgress(kpi) * (kpi.weight || 0), 0);
+        return Math.round(weightedSum / totalWeight);
+    }
+
+    // Fallback: simple average
     const totalProgress = initKpis.reduce((sum, kpi) => sum + calculateKpiProgress(kpi), 0);
     return Math.round(totalProgress / initKpis.length);
 };

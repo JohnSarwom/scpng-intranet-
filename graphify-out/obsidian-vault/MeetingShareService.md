@@ -1,18 +1,18 @@
 ---
 source_file: "src\services\meetingShareService.ts"
 type: "code"
-community: "Module 47"
+community: "Community 46"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_47
+  - community/Community_46
 ---
 
 # MeetingShareService
 
 ## Connections
-- [[.constructor()_11]] - `method` [EXTRACTED]
+- [[.constructor()_14]] - `method` [EXTRACTED]
 - [[.createSharingLink()]] - `method` [EXTRACTED]
 - [[.getDriveIdByName()]] - `method` [EXTRACTED]
 - [[.getListIdByName()]] - `method` [EXTRACTED]
@@ -22,4 +22,4 @@ tags:
 - [[.uploadDraft()]] - `method` [EXTRACTED]
 - [[meetingShareService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_47
+#graphify/code #graphify/EXTRACTED #community/Community_46

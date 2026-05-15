@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\UATFeedbackPage.tsx"
 type: "code"
-community: "Module 352"
+community: "Community 355"
 location: "L8"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_352
+  - community/Community_355
 ---
 
 # UATFeedbackPage()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[UATFeedbackPage.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_352
+#graphify/code #graphify/EXTRACTED #community/Community_355

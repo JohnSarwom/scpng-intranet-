@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\Notes.tsx"
 type: "code"
-community: "Module 214"
+community: "Community 216"
 location: "L56"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_214
+  - community/Community_216
 ---
 
 # handleAddNote()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Notes.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_214
+#graphify/code #graphify/EXTRACTED #community/Community_216

@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\meetingShareService.ts"
 type: "code"
-community: "Module 47"
+community: "Community 46"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_47
+  - community/Community_46
 ---
 
 # meetingShareService.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[MeetingShareService]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_47
+#graphify/code #graphify/EXTRACTED #community/Community_46

@@ -1,19 +1,14 @@
 ---
 source_file: "src\components\custom\ArticleGridSkeleton.tsx"
 type: "code"
-community: "Module 382"
+community: "Community 385"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_382
+  - graphify/EXTRACTED
+  - community/Community_385
 ---
 
 # ArticleGridSkeleton.tsx
 
-## Connections
-- [[News.tsx]] - `references` [INFERRED]
-- [[card.tsx]] - `imports_from` [INFERRED]
-- [[skeleton.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_382
+#graphify/code #graphify/EXTRACTED #community/Community_385

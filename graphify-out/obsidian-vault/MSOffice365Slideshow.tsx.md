@@ -1,21 +1,14 @@
 ---
 source_file: "src\components\dashboard\MSOffice365Slideshow.tsx"
 type: "code"
-community: "Module 390"
+community: "Community 393"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_390
+  - graphify/EXTRACTED
+  - community/Community_393
 ---
 
 # MSOffice365Slideshow.tsx
 
-## Connections
-- [[Index.tsx]] - `imports_from` [INFERRED]
-- [[InfoSlideshow.tsx]] - `imports_from` [INFERRED]
-- [[useCapitalMarketNews()]] - `calls` [INFERRED]
-- [[useMSOffice365Tips()]] - `calls` [INFERRED]
-- [[useSlideshows.ts]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_390
+#graphify/code #graphify/EXTRACTED #community/Community_393

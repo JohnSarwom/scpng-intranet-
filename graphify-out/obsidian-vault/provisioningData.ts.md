@@ -1,17 +1,14 @@
 ---
 source_file: "src\mockData\provisioningData.ts"
 type: "code"
-community: "Module 522"
+community: "Community 525"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_522
+  - graphify/EXTRACTED
+  - community/Community_525
 ---
 
 # provisioningData.ts
 
-## Connections
-- [[mockData.d.ts]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_522
+#graphify/code #graphify/EXTRACTED #community/Community_525

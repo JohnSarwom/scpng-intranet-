@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\employeePhotosService.ts"
 type: "code"
-community: "Module 30"
+community: "Community 29"
 location: "L22"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_30
+  - community/Community_29
 ---
 
 # EmployeePhotosService
@@ -24,4 +24,4 @@ tags:
 - [[.uploadPhoto()]] - `method` [EXTRACTED]
 - [[employeePhotosService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_30
+#graphify/code #graphify/EXTRACTED #community/Community_29

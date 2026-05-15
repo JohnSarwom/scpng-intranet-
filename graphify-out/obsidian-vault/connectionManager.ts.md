@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\powerAutomate\connectionManager.ts"
 type: "code"
-community: "Module 141"
+community: "Community 142"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_141
+  - community/Community_142
 ---
 
 # connectionManager.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ConnectionManager]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_141
+#graphify/code #graphify/EXTRACTED #community/Community_142

@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\licensing\hooks\useElementStyles.ts"
 type: "code"
-community: "Module 338"
+community: "Community 340"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_338
+  - community/Community_340
 ---
 
 # useElementStyles.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useElementStyles()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_338
+#graphify/code #graphify/EXTRACTED #community/Community_340

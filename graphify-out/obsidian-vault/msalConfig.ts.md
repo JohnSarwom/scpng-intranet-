@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\msalConfig.ts"
 type: "code"
-community: "Module 133"
+community: "Community 134"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_133
+  - community/Community_134
 ---
 
 # msalConfig.ts
@@ -17,4 +17,4 @@ tags:
 - [[getCurrentOrigin()]] - `contains` [EXTRACTED]
 - [[updateMsalConfig()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_133
+#graphify/code #graphify/EXTRACTED #community/Community_134

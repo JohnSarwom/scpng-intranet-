@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\TaskCompletionDonut.tsx"
 type: "code"
-community: "Module 244"
+community: "Community 246"
 location: "L133"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_244
+  - community/Community_246
 ---
 
 # toggleSegment()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TaskCompletionDonut.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_244
+#graphify/code #graphify/EXTRACTED #community/Community_246

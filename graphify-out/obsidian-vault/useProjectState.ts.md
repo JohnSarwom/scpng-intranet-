@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useProjectState.ts"
 type: "code"
-community: "Module 321"
+community: "Community 323"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_321
+  - community/Community_323
 ---
 
 # useProjectState.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useProjectState()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_321
+#graphify/code #graphify/EXTRACTED #community/Community_323

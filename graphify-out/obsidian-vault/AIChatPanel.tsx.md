@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\shared\ai-chat\AIChatPanel.tsx"
 type: "code"
-community: "Module 435"
+community: "Community 438"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_435
+  - graphify/EXTRACTED
+  - community/Community_438
 ---
 
 # AIChatPanel.tsx
 
-## Connections
-- [[index.ts_1]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_435
+#graphify/code #graphify/EXTRACTED #community/Community_438

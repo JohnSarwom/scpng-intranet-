@@ -1,17 +1,14 @@
 ---
 source_file: "src\modules\licensing\constants.ts"
 type: "code"
-community: "Module 525"
+community: "Community 528"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_525
+  - graphify/EXTRACTED
+  - community/Community_528
 ---
 
 # constants.ts
 
-## Connections
-- [[types.ts_5]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_525
+#graphify/code #graphify/EXTRACTED #community/Community_528

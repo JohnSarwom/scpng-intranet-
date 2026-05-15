@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\divisionStaffMap.ts"
 type: "code"
-community: "Module 88"
+community: "Community 89"
 location: "L381"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_88
+  - community/Community_89
 ---
 
 # DivisionStaffMap
@@ -19,4 +19,4 @@ tags:
 - [[.getStaffForUserDivision()]] - `method` [EXTRACTED]
 - [[divisionStaffMap.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_88
+#graphify/code #graphify/EXTRACTED #community/Community_89

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\auth\RoleProtectedRoute.tsx"
 type: "code"
-community: "Module 232"
+community: "Community 234"
 location: "L21"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_232
+  - community/Community_234
 ---
 
 # AccessDeniedCard()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[RoleProtectedRoute.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_232
+#graphify/code #graphify/EXTRACTED #community/Community_234

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useRoleBasedAuth.ts"
 type: "code"
-community: "Module 324"
+community: "Community 326"
 location: "L19"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_324
+  - community/Community_326
 ---
 
 # useRoleBasedAuth()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useRoleBasedAuth.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_324
+#graphify/code #graphify/EXTRACTED #community/Community_326

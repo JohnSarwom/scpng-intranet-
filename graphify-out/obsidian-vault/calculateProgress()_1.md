@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\forms\FormLayoutWrapper.tsx"
 type: "code"
-community: "Module 254"
+community: "Community 256"
 location: "L38"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_254
+  - community/Community_256
 ---
 
 # calculateProgress()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[FormLayoutWrapper.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_254
+#graphify/code #graphify/EXTRACTED #community/Community_256

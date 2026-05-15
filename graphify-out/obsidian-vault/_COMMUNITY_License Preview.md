@@ -32,9 +32,3 @@ members: 15
 TABLE source_file, type FROM #community/License_Preview
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 526]]
-
-## Top bridge nodes
-- [[combineStyles()]] - degree 3, connects to 1 community

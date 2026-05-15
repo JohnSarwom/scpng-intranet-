@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\msalDiagnostics.ts"
 type: "code"
-community: "Module 158"
+community: "Community 159"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_158
+  - community/Community_159
 ---
 
 # msalDiagnostics.ts
@@ -16,4 +16,4 @@ tags:
 - [[fixCommonMsalIssues()]] - `contains` [EXTRACTED]
 - [[runMsalDiagnostics()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_158
+#graphify/code #graphify/EXTRACTED #community/Community_159

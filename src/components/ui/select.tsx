@@ -82,8 +82,10 @@ const SelectContent = React.forwardRef<
       {...props}
     >
       <SelectPrimitive.Viewport
+        style={{ maxHeight: "240px", overflowY: "auto" }}
+        onWheel={(e) => e.stopPropagation()}
         className={cn(
-          "p-1 max-h-60 overflow-y-auto",
+          "p-1",
           position === "popper" &&
           "w-full min-w-[var(--radix-select-trigger-width)]"
         )}

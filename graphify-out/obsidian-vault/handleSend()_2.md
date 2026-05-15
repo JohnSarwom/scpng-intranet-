@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\analytics\StrategyAIChat.tsx"
 type: "code"
-community: "Module 38"
+community: "Community 37"
 location: "L320"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_38
+  - community/Community_37
 ---
 
 # handleSend()
@@ -17,4 +17,4 @@ tags:
 - [[handleFollowUpClick()_2]] - `calls` [EXTRACTED]
 - [[handleStopGeneration()_2]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_38
+#graphify/code #graphify/EXTRACTED #community/Community_37

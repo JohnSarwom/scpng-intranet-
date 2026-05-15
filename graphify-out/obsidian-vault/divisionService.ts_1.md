@@ -1,18 +1,17 @@
 ---
 source_file: "src\services\divisionService.ts"
 type: "code"
-community: "Division Service"
+community: "Community 28"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Division_Service
+  - community/Community_28
 ---
 
 # divisionService.ts
 
 ## Connections
 - [[DivisionService]] - `contains` [EXTRACTED]
-- [[useDivisions.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Division_Service
+#graphify/code #graphify/EXTRACTED #community/Community_28

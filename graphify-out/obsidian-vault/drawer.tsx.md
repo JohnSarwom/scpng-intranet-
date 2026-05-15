@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\drawer.tsx"
 type: "code"
-community: "Module 464"
+community: "Community 467"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_464
+  - graphify/EXTRACTED
+  - community/Community_467
 ---
 
 # drawer.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_464
+#graphify/code #graphify/EXTRACTED #community/Community_467

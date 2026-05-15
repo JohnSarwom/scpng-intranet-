@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\custom\ScpngNewsUploadForm.tsx"
 type: "code"
-community: "Module 172"
+community: "Community 173"
 location: "L67"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_172
+  - community/Community_173
 ---
 
 # handleImageFileChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ScpngNewsUploadForm.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_172
+#graphify/code #graphify/EXTRACTED #community/Community_173

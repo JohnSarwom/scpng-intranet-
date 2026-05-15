@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Admin.tsx"
 type: "code"
-community: "Module 45"
+community: "Community 44"
 location: "L101"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_45
+  - community/Community_44
 ---
 
 # handleUpdateUser()
@@ -18,4 +18,4 @@ tags:
 - [[handleDeleteGroup()_2]] - `calls` [EXTRACTED]
 - [[handleUpdateGroup()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_45
+#graphify/code #graphify/EXTRACTED #community/Community_44

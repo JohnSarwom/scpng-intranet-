@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\tooltip.tsx"
 type: "code"
-community: "Module 490"
+community: "Community 493"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_490
+  - graphify/EXTRACTED
+  - community/Community_493
 ---
 
 # tooltip.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_490
+#graphify/code #graphify/EXTRACTED #community/Community_493

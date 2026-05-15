@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\FullAssetInfoModal.tsx"
 type: "code"
-community: "Module 170"
+community: "Community 171"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_170
+  - community/Community_171
 ---
 
 # FullAssetInfoModal.tsx
@@ -15,4 +15,4 @@ tags:
 - [[displayValue()]] - `contains` [EXTRACTED]
 - [[getConditionBadgeClass()_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_170
+#graphify/code #graphify/EXTRACTED #community/Community_171

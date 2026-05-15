@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\admin\SharePointExplorer.tsx"
 type: "code"
-community: "SharePoint Explorer UI"
+community: "SharePoint Explorer"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Explorer_UI
+  - community/SharePoint_Explorer
 ---
 
 # SharePointExplorer.tsx
 
 ## Connections
-- [[TestGround.tsx]] - `references` [INFERRED]
 - [[handleAddColumn()]] - `contains` [EXTRACTED]
 - [[handleAddItem()_1]] - `contains` [EXTRACTED]
 - [[handleCopyAllLists()]] - `contains` [EXTRACTED]
@@ -28,4 +27,4 @@ tags:
 - [[loadDetails()]] - `contains` [EXTRACTED]
 - [[loadLists()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer_UI
+#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer

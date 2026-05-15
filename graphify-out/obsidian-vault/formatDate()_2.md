@@ -1,17 +1,17 @@
 ---
-source_file: "src\components\unit-tabs\KRAsTab.tsx"
+source_file: "src\components\unit-tabs\AssetsTab.tsx"
 type: "code"
-community: "KRA/KPI Tab"
-location: "L82"
+community: "Community 129"
+location: "L78"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/KRA/KPI_Tab
+  - community/Community_129
 ---
 
 # formatDate()
 
 ## Connections
-- [[KRAsTab.tsx]] - `contains` [EXTRACTED]
+- [[AssetsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/KRA/KPI_Tab
+#graphify/code #graphify/EXTRACTED #community/Community_129

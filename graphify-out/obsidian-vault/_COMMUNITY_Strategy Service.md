@@ -10,7 +10,7 @@ members: 25
 **Members:** 25 nodes
 
 ## Members
-- [[.constructor()_22]] - code - src\services\strategyService.ts
+- [[.constructor()_25]] - code - src\services\strategyService.ts
 - [[.fetchAlignments()]] - code - src\services\strategyService.ts
 - [[.fetchConfig()]] - code - src\services\strategyService.ts
 - [[.fetchHierarchy()]] - code - src\services\strategyService.ts
@@ -42,9 +42,3 @@ members: 25
 TABLE source_file, type FROM #community/Strategy_Service
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 328]]
-
-## Top bridge nodes
-- [[strategyService.ts]] - degree 3, connects to 1 community

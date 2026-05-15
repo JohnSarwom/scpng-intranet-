@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\gallery\EditPhotoModal.tsx"
 type: "code"
-community: "Module 260"
+community: "Community 262"
 location: "L34"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_260
+  - community/Community_262
 ---
 
 # handleSave()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[EditPhotoModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_260
+#graphify/code #graphify/EXTRACTED #community/Community_262

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\analytics\MilestonesTimeline.tsx"
 type: "code"
-community: "Module 153"
+community: "Community 153"
 location: "L12"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_153
+  - community/Community_153
 ---
 
 # parseMilestoneDate()
@@ -15,4 +15,4 @@ tags:
 - [[MilestonesTimeline.tsx]] - `contains` [EXTRACTED]
 - [[getCountdown()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_153
+#graphify/code #graphify/EXTRACTED #community/Community_153

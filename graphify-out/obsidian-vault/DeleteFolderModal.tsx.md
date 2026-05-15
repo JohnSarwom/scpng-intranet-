@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\setup-wizard\components\DeleteFolderModal.tsx"
 type: "code"
-community: "Module 426"
+community: "Community 429"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_426
+  - graphify/EXTRACTED
+  - community/Community_429
 ---
 
 # DeleteFolderModal.tsx
 
-## Connections
-- [[button.tsx]] - `imports_from` [INFERRED]
-- [[types.ts_5]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_426
+#graphify/code #graphify/EXTRACTED #community/Community_429

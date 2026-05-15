@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\staffService.ts"
 type: "code"
-community: "Module 211"
+community: "Community 213"
 location: "L58"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_211
+  - community/Community_213
 ---
 
 # fetchStaffMemberByEmail()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[staffService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_211
+#graphify/code #graphify/EXTRACTED #community/Community_213

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useSupabaseData.tsx"
 type: "code"
-community: "Module 54"
+community: "Community 53"
 location: "L42"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_54
+  - community/Community_53
 ---
 
 # isMsalAccountInfo()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useSupabaseData.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_54
+#graphify/code #graphify/EXTRACTED #community/Community_53

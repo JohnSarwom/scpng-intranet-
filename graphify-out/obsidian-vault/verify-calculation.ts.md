@@ -1,12 +1,12 @@
 ---
 source_file: "src\tests\verify-calculation.ts"
 type: "code"
-community: "Module 358"
+community: "Community 361"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_358
+  - community/Community_361
 ---
 
 # verify-calculation.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[testCalculateLogic()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_358
+#graphify/code #graphify/EXTRACTED #community/Community_361

@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\radio-group.tsx"
 type: "code"
-community: "Module 476"
+community: "Community 479"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_476
+  - graphify/EXTRACTED
+  - community/Community_479
 ---
 
 # radio-group.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_476
+#graphify/code #graphify/EXTRACTED #community/Community_479

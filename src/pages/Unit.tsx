@@ -366,6 +366,27 @@ const Unit = () => {
     }
   }, [kpiState, canEditStrategy]);
 
+  const handleSubmitKpiForReview = async (kpiId: string | number, reviewerEmail: string) => {
+    try {
+      const graphClient = await getGraphClient(msalInstance);
+      if (!graphClient) return;
+      const { SharePointOpsService } = await import('@/services/sharePointOpsService');
+      const service = new SharePointOpsService(graphClient);
+      await service.initialize();
+      await service.addNotification({
+        title: 'KPI Review Requested',
+        message: `${userContext?.name || 'A user'} submitted a KPI for your review.`,
+        recipientEmail: reviewerEmail,
+        type: 'review',
+        category: 'KPI',
+        actionUrl: '/unit',
+        createdBy: userContext?.email || '',
+      });
+    } catch (err: any) {
+      console.error('handleSubmitKpiForReview error:', err);
+    }
+  };
+
   // Create/Task Handlers
   const handleCreateTask = (groupId?: string) => {
     setEditingTask(null);
@@ -943,6 +964,7 @@ const Unit = () => {
                 strategicObjectives={strategicObjectives}
                 canEdit={canEditStrategy}
                 onEditTask={taskState.update}
+                onSubmitForReview={handleSubmitKpiForReview}
               />
             )}
           </TabsContent>

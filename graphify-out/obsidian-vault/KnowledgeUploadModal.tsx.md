@@ -1,22 +1,21 @@
 ---
 source_file: "src\components\ai-hub\KnowledgeUploadModal.tsx"
 type: "code"
-community: "Module 94"
+community: "Community 94"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_94
+  - community/Community_94
 ---
 
 # KnowledgeUploadModal.tsx
 
 ## Connections
-- [[AIHub.tsx]] - `references` [INFERRED]
 - [[addLinkInput()]] - `contains` [EXTRACTED]
 - [[handleFileChange()_2]] - `contains` [EXTRACTED]
 - [[handleLinkChange()]] - `contains` [EXTRACTED]
 - [[handleSubmit()]] - `contains` [EXTRACTED]
 - [[removeLinkInput()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_94
+#graphify/code #graphify/EXTRACTED #community/Community_94

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\steps\KPISetup.tsx"
 type: "code"
-community: "Module 101"
+community: "Community 101"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_101
+  - community/Community_101
 ---
 
 # KPISetup.tsx
@@ -18,4 +18,4 @@ tags:
 - [[toggleKpiExpansion()]] - `contains` [EXTRACTED]
 - [[updateKpi()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_101
+#graphify/code #graphify/EXTRACTED #community/Community_101

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\table\DecommissionedAssetTableHeader.tsx"
 type: "code"
-community: "Module 228"
+community: "Community 230"
 location: "L12"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_228
+  - community/Community_230
 ---
 
 # DecommissionedAssetTableHeader()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DecommissionedAssetTableHeader.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_228
+#graphify/code #graphify/EXTRACTED #community/Community_230

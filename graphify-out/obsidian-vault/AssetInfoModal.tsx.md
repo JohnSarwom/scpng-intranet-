@@ -1,19 +1,18 @@
 ---
 source_file: "src\components\assets\AssetInfoModal.tsx"
 type: "code"
-community: "Module 169"
+community: "Community 170"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_169
+  - community/Community_170
 ---
 
 # AssetInfoModal.tsx
 
 ## Connections
-- [[AssetManagementNew.tsx]] - `references` [INFERRED]
 - [[InfoRow()]] - `contains` [EXTRACTED]
 - [[getConditionBadgeClass()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_169
+#graphify/code #graphify/EXTRACTED #community/Community_170

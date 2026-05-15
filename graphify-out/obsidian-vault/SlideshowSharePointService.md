@@ -1,18 +1,18 @@
 ---
 source_file: "src\services\slideshowSharePointService.ts"
 type: "code"
-community: "Slideshow Service"
+community: "Community 26"
 location: "L59"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Slideshow_Service
+  - community/Community_26
 ---
 
 # SlideshowSharePointService
 
 ## Connections
-- [[.constructor()_20]] - `method` [EXTRACTED]
+- [[.constructor()_23]] - `method` [EXTRACTED]
 - [[.createSlideshowItem()]] - `method` [EXTRACTED]
 - [[.deleteSlideshowItem()]] - `method` [EXTRACTED]
 - [[.getAllSlideshows()]] - `method` [EXTRACTED]
@@ -21,4 +21,4 @@ tags:
 - [[.updateSlideshowItem()]] - `method` [EXTRACTED]
 - [[slideshowSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Slideshow_Service
+#graphify/code #graphify/EXTRACTED #community/Community_26

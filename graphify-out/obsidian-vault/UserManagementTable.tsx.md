@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\UserManagementTable.tsx"
 type: "code"
-community: "Module 219"
+community: "Community 221"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_219
+  - community/Community_221
 ---
 
 # UserManagementTable.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[fetchUsers()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_219
+#graphify/code #graphify/EXTRACTED #community/Community_221

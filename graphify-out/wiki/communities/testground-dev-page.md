@@ -1,0 +1,96 @@
+# TestGround Dev Page
+
+**Community 2** · 57 nodes · cohesion 0.04
+
+## Nodes
+
+- **TestGround.tsx** (`src\pages\TestGround.tsx`) — degree 56
+- **async()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleClearMockData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleCopy()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleCreateNotificationsList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleCreateUATFeedbackList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleCreateWorkPlansList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleDeleteDocs()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleDeleteReportFlow()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleDeployReportFlow()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleDropFacebookUrlColumns()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleEnsureAssigneesColumn()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleEnsureCompletionColumn()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleEnsureDocsList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleExtractIds()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleGenerateForUser()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleGenerateMockData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleInspectFlow()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleITRequestSubmit()** (`src\pages\TestGround.tsx`) — degree 2
+- **handleListConnections()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleListFlows()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleMigrateStrategyData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handlePurgeAndResetOperations()** (`src\pages\TestGround.tsx`) — degree 1
+- **handlePurgeDemoData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleReseedScpngFramework()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleResetAndSeedProjects()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleResetStrategyProgress()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedAssets()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedAssetSubLists()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedDivisionsAndUnits()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedMarketData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedOfficerData()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedOfficerProfilesList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSeedTasks()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupAnnouncements()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupAppSettings()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupAssetSubLists()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupCorporatePlan()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupDivisionsAndUnits()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupDocs()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupDocumentCategories()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupEmployeeProfiles()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupFacebookAnalytics()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupFormsEngine()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupITRequestList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupMarketLists()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupOfficerProfilesList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupOperationsLists()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupOrgHierarchy()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupRegulatoryEngine()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupReportSchedulesList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupReportsList()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupStrategyHubEngine()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupStrategyLists()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleSetupTaskGroups()** (`src\pages\TestGround.tsx`) — degree 1
+- **handleUploadMockData()** (`src\pages\TestGround.tsx`) — degree 1
+- **loadRecentITRequests()** (`src\pages\TestGround.tsx`) — degree 2
+
+## Internal Edges
+
+- TestGround.tsx --contains-> loadRecentITRequests() [EXTRACTED]
+- TestGround.tsx --contains-> handleSeedTasks() [EXTRACTED]
+- TestGround.tsx --contains-> handleSeedAssets() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupAssetSubLists() [EXTRACTED]
+- TestGround.tsx --contains-> handleSeedAssetSubLists() [EXTRACTED]
+- TestGround.tsx --contains-> handlePurgeDemoData() [EXTRACTED]
+- TestGround.tsx --contains-> handleExtractIds() [EXTRACTED]
+- TestGround.tsx --contains-> handleCopy() [EXTRACTED]
+- TestGround.tsx --contains-> handleSeedOfficerData() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupStrategyLists() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupDivisionsAndUnits() [EXTRACTED]
+- TestGround.tsx --contains-> handleSeedDivisionsAndUnits() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupAnnouncements() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupStrategyHubEngine() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupCorporatePlan() [EXTRACTED]
+- TestGround.tsx --contains-> handleMigrateStrategyData() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupRegulatoryEngine() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupFacebookAnalytics() [EXTRACTED]
+- TestGround.tsx --contains-> handleDropFacebookUrlColumns() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupOrgHierarchy() [EXTRACTED]
+- TestGround.tsx --contains-> handlePurgeAndResetOperations() [EXTRACTED]
+- TestGround.tsx --contains-> handleResetStrategyProgress() [EXTRACTED]
+- TestGround.tsx --contains-> handleReseedScpngFramework() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupOperationsLists() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupTaskGroups() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupFormsEngine() [EXTRACTED]
+- TestGround.tsx --contains-> handleSetupITRequestList() [EXTRACTED]
+- TestGround.tsx --contains-> handleITRequestSubmit() [EXTRACTED]
+- TestGround.tsx --contains-> handleEnsureAssigneesColumn() [EXTRACTED]
+- TestGround.tsx --contains-> handleEnsureCompletionColumn() [EXTRACTED]

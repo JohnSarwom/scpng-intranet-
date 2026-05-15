@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\resizable.tsx"
 type: "code"
-community: "Module 477"
+community: "Community 480"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_477
+  - graphify/EXTRACTED
+  - community/Community_480
 ---
 
 # resizable.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_477
+#graphify/code #graphify/EXTRACTED #community/Community_480

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\DivisionSelector.tsx"
 type: "code"
-community: "Module 213"
+community: "Community 215"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_213
+  - community/Community_215
 ---
 
 # DivisionSelector()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DivisionSelector.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_213
+#graphify/code #graphify/EXTRACTED #community/Community_215

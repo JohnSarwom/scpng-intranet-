@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\dashboard\StatCircle.tsx"
 type: "code"
-community: "Module 399"
+community: "Community 402"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_399
+  - graphify/EXTRACTED
+  - community/Community_402
 ---
 
 # StatCircle.tsx
 
-## Connections
-- [[ScheduledEvents.tsx]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_399
+#graphify/code #graphify/EXTRACTED #community/Community_402

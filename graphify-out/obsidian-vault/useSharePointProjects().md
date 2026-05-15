@@ -1,19 +1,18 @@
 ---
 source_file: "src\hooks\useSharePointOps.ts"
 type: "code"
-community: "Module 39"
+community: "Community 38"
 location: "L398"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_39
+  - community/Community_38
 ---
 
 # useSharePointProjects()
 
 ## Connections
-- [[Unit.tsx]] - `calls` [INFERRED]
 - [[useOpsService()]] - `calls` [EXTRACTED]
 - [[useSharePointOps.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_39
+#graphify/code #graphify/EXTRACTED #community/Community_38

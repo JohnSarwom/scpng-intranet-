@@ -1,21 +1,18 @@
 ---
 source_file: "src\pages\DailyMarketSummary.tsx"
 type: "code"
-community: "Module 206"
+community: "Community 208"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_206
+  - graphify/EXTRACTED
+  - community/Community_208
 ---
 
 # DailyMarketSummary.tsx
 
 ## Connections
 - [[DailyMarketSummary()]] - `contains` [EXTRACTED]
-- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
-- [[PageLayout.tsx]] - `references` [INFERRED]
 - [[getLatestPoint()]] - `contains` [EXTRACTED]
-- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/INFERRED #community/Module_206
+#graphify/code #graphify/EXTRACTED #community/Community_208

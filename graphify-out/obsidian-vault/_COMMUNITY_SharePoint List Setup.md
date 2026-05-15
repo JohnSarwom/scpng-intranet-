@@ -18,7 +18,7 @@ members: 102
 - [[.addSampleData()]] - code - src\services\sharePointListSetupService.ts
 - [[.checkExistingLists()]] - code - src\services\sharePointListSetupService.ts
 - [[.clearMockPerformanceData()]] - code - src\services\sharePointListSetupService.ts
-- [[.constructor()_18]] - code - src\services\sharePointListSetupService.ts
+- [[.constructor()_21]] - code - src\services\sharePointListSetupService.ts
 - [[.createAllLists()]] - code - src\services\sharePointListSetupService.ts
 - [[.createAssetInvoicesList()]] - code - src\services\sharePointListSetupService.ts
 - [[.createAssetMaintenanceList()]] - code - src\services\sharePointListSetupService.ts
@@ -32,7 +32,7 @@ members: 102
 - [[.createInternalAppSettingsList()]] - code - src\services\sharePointListSetupService.ts
 - [[.createKpisList()]] - code - src\services\sharePointListSetupService.ts
 - [[.createKrasList()]] - code - src\services\sharePointListSetupService.ts
-- [[.createList()_2]] - code - src\services\sharePointListSetupService.ts
+- [[.createList()_3]] - code - src\services\sharePointListSetupService.ts
 - [[.createMarketCompaniesList()]] - code - src\services\sharePointListSetupService.ts
 - [[.createMarketDataLists()]] - code - src\services\sharePointListSetupService.ts
 - [[.createMarketPriceHistoryList()]] - code - src\services\sharePointListSetupService.ts
@@ -119,14 +119,3 @@ members: 102
 TABLE source_file, type FROM #community/SharePoint_List_Setup
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 39]]
-- 1 edge to [[_COMMUNITY_Module 516]]
-- 1 edge to [[_COMMUNITY_Module 517]]
-- 1 edge to [[_COMMUNITY_Module 520]]
-- 1 edge to [[_COMMUNITY_Module 521]]
-
-## Top bridge nodes
-- [[.setupWebsiteFeedbackResources()]] - degree 6, connects to 4 communities
-- [[sharePointListSetupService.ts]] - degree 2, connects to 1 community

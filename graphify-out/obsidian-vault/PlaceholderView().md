@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\licensing\components\PlaceholderView.tsx"
 type: "code"
-community: "Module 336"
+community: "Community 338"
 location: "L7"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_336
+  - community/Community_338
 ---
 
 # PlaceholderView()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PlaceholderView.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_336
+#graphify/code #graphify/EXTRACTED #community/Community_338

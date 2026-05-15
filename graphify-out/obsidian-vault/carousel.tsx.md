@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\ui\carousel.tsx"
 type: "code"
-community: "Module 276"
+community: "Community 278"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_276
+  - graphify/EXTRACTED
+  - community/Community_278
 ---
 
 # carousel.tsx
 
 ## Connections
-- [[NoticeBoard.tsx]] - `imports_from` [INFERRED]
 - [[useCarousel()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_276
+#graphify/code #graphify/EXTRACTED #community/Community_278

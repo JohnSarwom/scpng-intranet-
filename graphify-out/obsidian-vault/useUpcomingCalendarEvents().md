@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useCalendarEvents.ts"
 type: "code"
-community: "Module 156"
+community: "Community 157"
 location: "L151"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_156
+  - graphify/EXTRACTED
+  - community/Community_157
 ---
 
 # useUpcomingCalendarEvents()
 
 ## Connections
-- [[ScheduledEvents.tsx]] - `calls` [INFERRED]
 - [[useCalendarEvents.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_156
+#graphify/code #graphify/EXTRACTED #community/Community_157

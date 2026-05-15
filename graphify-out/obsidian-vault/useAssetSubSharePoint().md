@@ -1,20 +1,17 @@
 ---
 source_file: "src\hooks\useAssetSubSharePoint.ts"
 type: "code"
-community: "Module 293"
+community: "Community 294"
 location: "L8"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_293
+  - graphify/EXTRACTED
+  - community/Community_294
 ---
 
 # useAssetSubSharePoint()
 
 ## Connections
-- [[AssetDashboard.tsx]] - `calls` [INFERRED]
-- [[InvoicesPage.tsx]] - `calls` [INFERRED]
-- [[MaintenancePage.tsx]] - `calls` [INFERRED]
 - [[useAssetSubSharePoint.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_293
+#graphify/code #graphify/EXTRACTED #community/Community_294

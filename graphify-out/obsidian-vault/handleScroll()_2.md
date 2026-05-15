@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\layout\MainSidebar.tsx"
 type: "code"
-community: "Module 266"
+community: "Community 268"
 location: "L63"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_266
+  - community/Community_268
 ---
 
 # handleScroll()
 
 ## Connections
 - [[MainSidebar.tsx]] - `contains` [EXTRACTED]
-- [[navItems.ts]] - `imports_from` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_266
+#graphify/code #graphify/EXTRACTED #community/Community_268

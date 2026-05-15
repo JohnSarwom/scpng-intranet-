@@ -1,18 +1,17 @@
 ---
 source_file: "src\pages\Notes.tsx"
 type: "code"
-community: "Module 346"
+community: "Community 349"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_346
+  - graphify/EXTRACTED
+  - community/Community_349
 ---
 
 # Notes.tsx
 
 ## Connections
-- [[AssetCard.tsx]] - `references` [INFERRED]
 - [[NotesPage()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_346
+#graphify/code #graphify/EXTRACTED #community/Community_349

@@ -15,8 +15,6 @@ const TrainingRequestPage: React.FC = () => {
     const handleFormSubmit = async (data: Record<string, any>) => {
         // Basic mock submission for now
         console.log('Form submitted:', data);
-        toast.success('Training Request submitted successfully!');
-        form.reset();
     };
 
     const handleFormSave = async (data: Record<string, any>) => {

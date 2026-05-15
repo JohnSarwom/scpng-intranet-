@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\apps\AppDetailsModal.tsx"
 type: "code"
-community: "Module 223"
+community: "Community 225"
 location: "L28"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_223
+  - community/Community_225
 ---
 
 # handleOpenApp()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AppDetailsModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_223
+#graphify/code #graphify/EXTRACTED #community/Community_225

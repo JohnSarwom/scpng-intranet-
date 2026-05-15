@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Documents.tsx"
 type: "code"
-community: "Document Management"
-location: "L1009"
+community: "Documents Page"
+location: "L1109"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Document_Management
+  - community/Documents_Page
 ---
 
 # loadData()
@@ -17,4 +17,4 @@ tags:
 - [[handleReauthenticate()]] - `calls` [EXTRACTED]
 - [[handleShareDocument()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Document_Management
+#graphify/code #graphify/EXTRACTED #community/Documents_Page

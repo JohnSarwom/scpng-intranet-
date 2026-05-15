@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\AssetInfoModal.tsx"
 type: "code"
-community: "Module 169"
+community: "Community 170"
 location: "L23"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_169
+  - community/Community_170
 ---
 
 # getConditionBadgeClass()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AssetInfoModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_169
+#graphify/code #graphify/EXTRACTED #community/Community_170

@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\CaseDetailsModal.tsx"
 type: "code"
-community: "Module 203"
+community: "Community 205"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_203
+  - community/Community_205
 ---
 
 # CaseDetailsModal.tsx
@@ -15,4 +15,4 @@ tags:
 - [[getRiskColor()]] - `contains` [EXTRACTED]
 - [[getStatusColor()_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_203
+#graphify/code #graphify/EXTRACTED #community/Community_205

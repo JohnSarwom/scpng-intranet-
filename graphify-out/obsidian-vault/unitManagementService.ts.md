@@ -1,18 +1,14 @@
 ---
 source_file: "src\integrations\supabase\unitManagementService.ts"
 type: "code"
-community: "Module 514"
+community: "Community 517"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_514
+  - graphify/EXTRACTED
+  - community/Community_517
 ---
 
 # unitManagementService.ts
 
-## Connections
-- [[supabaseClient.ts_1]] - `imports_from` [INFERRED]
-- [[types.ts_5]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_514
+#graphify/code #graphify/EXTRACTED #community/Community_517

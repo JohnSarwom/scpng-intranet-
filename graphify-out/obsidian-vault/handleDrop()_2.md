@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\TaskDialog.tsx"
 type: "code"
-community: "Task Dialog"
+community: "Community 27"
 location: "L308"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Task_Dialog
+  - community/Community_27
 ---
 
 # handleDrop()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TaskDialog.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Task_Dialog
+#graphify/code #graphify/EXTRACTED #community/Community_27

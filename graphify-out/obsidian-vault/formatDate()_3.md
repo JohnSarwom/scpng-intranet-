@@ -1,17 +1,17 @@
 ---
-source_file: "src\components\unit-tabs\ProjectsTab.tsx"
+source_file: "src\components\unit-tabs\KRAsTab.tsx"
 type: "code"
-community: "Module 42"
-location: "L183"
+community: "KRAs Tab"
+location: "L82"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_42
+  - community/KRAs_Tab
 ---
 
 # formatDate()
 
 ## Connections
-- [[ProjectsTab.tsx]] - `contains` [EXTRACTED]
+- [[KRAsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_42
+#graphify/code #graphify/EXTRACTED #community/KRAs_Tab

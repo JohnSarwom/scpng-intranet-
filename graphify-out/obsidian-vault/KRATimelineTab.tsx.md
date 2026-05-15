@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\KRATimelineTab.tsx"
 type: "code"
-community: "Module 35"
+community: "Community 34"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_35
+  - community/Community_34
 ---
 
 # KRATimelineTab.tsx
@@ -23,4 +23,4 @@ tags:
 - [[isCritical()]] - `contains` [EXTRACTED]
 - [[parseDate()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_35
+#graphify/code #graphify/EXTRACTED #community/Community_34

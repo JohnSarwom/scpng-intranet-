@@ -177,7 +177,7 @@ export const useHRService = () => {
             const service = await getService();
             return service.getEmployeeProfile(employeeId);
           },
-          staleTime: 1000 * 60 * 5,
+          staleTime: 0,
         });
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
@@ -252,7 +252,7 @@ export const useHRService = () => {
             const service = await getService();
             return service.getLeaveBalances(employeeId);
           },
-          staleTime: 1000 * 60 * 5,
+          staleTime: 0,
         });
       } catch (e: unknown) {
         console.error('Failed to fetch leave balances:', e);
@@ -293,7 +293,6 @@ export const useHRService = () => {
       return service.submitLeaveRequest(data);
     },
     onSuccess: () => {
-      toast.success('Leave request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['hr', 'leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['hr', 'leave-balances'] });
     },
@@ -301,8 +300,106 @@ export const useHRService = () => {
       const msg = e instanceof Error ? e.message : String(e);
       const errorMsg = `Failed to submit leave request: ${msg}`;
       setError(errorMsg);
-      toast.error(errorMsg);
     }
+  });
+
+  /**
+   * Approve leave request Mutation
+   */
+  const approveLeaveRequestMutation = useMutation({
+    mutationFn: async (payload: {
+      itemId: string;
+      currentStage: string;
+      approverName: string;
+      approverEmail: string;
+      employeeId: string;
+      leaveType: string;
+      daysRequested: number;
+      comments?: string;
+    }) => {
+      const service = await getService();
+      return service.approveLeaveRequest(
+        payload.itemId,
+        payload.currentStage,
+        payload.approverName,
+        payload.approverEmail,
+        payload.employeeId,
+        payload.leaveType,
+        payload.daysRequested,
+        payload.comments
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-balances'] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Approval failed: ${msg}`);
+    },
+  });
+
+  /**
+   * Reject leave request Mutation
+   */
+  const rejectLeaveRequestMutation = useMutation({
+    mutationFn: async (payload: {
+      itemId: string;
+      currentStage: string;
+      approverName: string;
+      approverEmail: string;
+      employeeId: string;
+      reason: string;
+    }) => {
+      const service = await getService();
+      return service.rejectLeaveRequest(
+        payload.itemId,
+        payload.currentStage,
+        payload.approverName,
+        payload.approverEmail,
+        payload.employeeId,
+        payload.reason
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-requests'] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Rejection failed: ${msg}`);
+    },
+  });
+
+  /**
+   * Cancel leave request Mutation
+   */
+  const cancelLeaveRequestMutation = useMutation({
+    mutationFn: async (payload: {
+      itemId: string;
+      employeeId: string;
+      leaveType: string;
+      daysRequested: number;
+      cancellerEmail: string;
+    }) => {
+      const service = await getService();
+      return service.cancelLeaveRequest(
+        payload.itemId,
+        payload.employeeId,
+        payload.leaveType,
+        payload.daysRequested,
+        payload.cancellerEmail
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['hr', 'leave-balances'] });
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Cancellation failed: ${msg}`);
+    },
   });
 
   /**
@@ -342,9 +439,29 @@ export const useHRService = () => {
    * Create leave balance Mutation
    */
   const createLeaveBalanceMutation = useMutation({
-    mutationFn: async ({ employeeId, leaveType, entitlement, year }: { employeeId: string; leaveType: string; entitlement: number; year: number }) => {
+    mutationFn: async ({
+      employeeId,
+      leaveType,
+      entitlement,
+      year,
+      used = 0,
+      pending = 0,
+    }: {
+      employeeId: string;
+      leaveType: string;
+      entitlement: number;
+      year: number;
+      used?: number;
+      pending?: number;
+    }) => {
       const service = await getService();
-      return service.createLeaveBalance(employeeId, leaveType, entitlement, year);
+      return service.createLeaveBalance(employeeId, leaveType, entitlement, year, used, pending);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['hr', 'leave-balances'] }),
+        queryClient.invalidateQueries({ queryKey: ['hr', 'profile'] }),
+      ]);
     },
     onError: (e: unknown) => {
       console.error('Failed to create leave balance:', e);
@@ -353,12 +470,47 @@ export const useHRService = () => {
   });
 
   /**
-   * Delete ALL data Mutation
+   * Update leave balance Mutation
+   */
+  const updateLeaveBalanceMutation = useMutation({
+    mutationFn: async ({
+      itemId,
+      data,
+    }: {
+      itemId: string;
+      data: {
+        leaveType: string;
+        year: number;
+        entitlement: number;
+        used: number;
+        pending: number;
+        accrualRate?: number;
+        lastAccrualDate?: string;
+      };
+    }) => {
+      const service = await getService();
+      return service.updateLeaveBalance(itemId, data);
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['hr', 'leave-balances'] }),
+        queryClient.invalidateQueries({ queryKey: ['hr', 'leave-requests'] }),
+        queryClient.invalidateQueries({ queryKey: ['hr', 'profile'] }),
+      ]);
+    },
+    onError: (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(`Failed to update leave balance: ${msg}`);
+    }
+  });
+
+  /**
+   * Delete ALL data Mutation — caller must confirm admin intent by passing true
    */
   const deleteAllDataMutation = useMutation({
     mutationFn: async () => {
       const service = await getService();
-      return service.deleteAllData();
+      return service.deleteAllData(true); // callerIsAdmin guard satisfied at hook level
     },
     onSuccess: () => {
       toast.success('All HR data has been permanently deleted');
@@ -379,6 +531,10 @@ export const useHRService = () => {
     updateEmployeeMutation.isPending ||
     submitLeaveRequestMutation.isPending ||
     createLeaveBalanceMutation.isPending ||
+    updateLeaveBalanceMutation.isPending ||
+    approveLeaveRequestMutation.isPending ||
+    rejectLeaveRequestMutation.isPending ||
+    cancelLeaveRequestMutation.isPending ||
     deleteAllDataMutation.isPending;
 
   return {
@@ -397,8 +553,29 @@ export const useHRService = () => {
     fetchLeaveBalances,
     fetchLeaveRequests,
     submitLeaveRequest: submitLeaveRequestMutation.mutateAsync,
-    createLeaveBalance: (employeeId: string, leaveType: string, entitlement: number, year: number) =>
-      createLeaveBalanceMutation.mutateAsync({ employeeId, leaveType, entitlement, year }),
+    createLeaveBalance: (
+      employeeId: string,
+      leaveType: string,
+      entitlement: number,
+      year: number,
+      used?: number,
+      pending?: number
+    ) => createLeaveBalanceMutation.mutateAsync({ employeeId, leaveType, entitlement, year, used, pending }),
+    updateLeaveBalance: (
+      itemId: string,
+      data: {
+        leaveType: string;
+        year: number;
+        entitlement: number;
+        used: number;
+        pending: number;
+        accrualRate?: number;
+        lastAccrualDate?: string;
+      }
+    ) => updateLeaveBalanceMutation.mutateAsync({ itemId, data }),
+    approveLeaveRequest: approveLeaveRequestMutation.mutateAsync,
+    rejectLeaveRequest: rejectLeaveRequestMutation.mutateAsync,
+    cancelLeaveRequest: cancelLeaveRequestMutation.mutateAsync,
     // Statistics
     fetchStatistics,
     // Admin

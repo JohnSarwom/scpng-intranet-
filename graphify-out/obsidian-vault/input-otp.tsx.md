@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\ui\input-otp.tsx"
 type: "code"
-community: "Module 468"
+community: "Community 471"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_468
+  - graphify/EXTRACTED
+  - community/Community_471
 ---
 
 # input-otp.tsx
 
-## Connections
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_468
+#graphify/code #graphify/EXTRACTED #community/Community_471

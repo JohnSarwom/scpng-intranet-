@@ -1,22 +1,18 @@
 ---
 source_file: "src\components\common\GlobalAssigneeSelector.tsx"
 type: "code"
-community: "Module 171"
+community: "Community 172"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_171
+  - community/Community_172
 ---
 
 # GlobalAssigneeSelector.tsx
 
 ## Connections
-- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
-- [[EditTaskModal.tsx]] - `imports_from` [INFERRED]
-- [[KpiInputBlock.tsx]] - `references` [EXTRACTED]
-- [[KraFormSection.tsx]] - `references` [EXTRACTED]
 - [[handleRemove()_1]] - `contains` [EXTRACTED]
 - [[handleSelect()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_171
+#graphify/code #graphify/EXTRACTED #community/Community_172

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\TicketInbox.tsx"
 type: "code"
-community: "Module 274"
+community: "Community 276"
 location: "L103"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_274
+  - community/Community_276
 ---
 
 # TicketAttachment()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TicketInbox.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_274
+#graphify/code #graphify/EXTRACTED #community/Community_276

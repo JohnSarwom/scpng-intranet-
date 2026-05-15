@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\modals\AddRiskModal.tsx"
 type: "code"
-community: "Module 31"
+community: "Community 30"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_31
+  - community/Community_30
 ---
 
 # AddRiskModal.tsx
@@ -24,4 +24,4 @@ tags:
 - [[resetForm()_1]] - `contains` [EXTRACTED]
 - [[validate()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_31
+#graphify/code #graphify/EXTRACTED #community/Community_30

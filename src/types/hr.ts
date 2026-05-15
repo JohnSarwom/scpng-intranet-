@@ -15,7 +15,17 @@ export type EmploymentType =
 
 export type EmploymentStatus = 'Active' | 'On Leave' | 'Terminated' | 'Retired';
 export type Gender = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
-export type LeaveType = 'Annual' | 'Sick' | 'Special' | 'Maternity' | 'Paternity' | 'Unpaid' | 'Compassionate';
+export type LeaveType =
+  | 'Annual'
+  | 'Sick'
+  | 'Compassionate'
+  | 'Special'        // Carers Leave
+  | 'Maternity'
+  | 'Paternity'
+  | 'Unpaid'         // Leave Without Pay
+  | 'Study'
+  | 'Recreational'
+  | 'Breast Feeding';
 export type LeaveRequestStatus = 'Pending' | 'Approved' | 'Declined' | 'Cancelled' | 'Rejected';
 export type DocumentType = 'CV' | 'Contract' | 'ID Copy' | 'Qualification' | 'Police Check' | 'Visa' | 'Medical' | 'Certificate' | 'Other';
 export type TrainingStatus = 'Current' | 'Expired' | 'Pending Renewal';
@@ -28,6 +38,26 @@ export type CaseSeverity = 'Low' | 'Medium' | 'High';
 export type ChangeType = 'Promotion' | 'Transfer' | 'Demotion' | 'Role Change' | 'Salary Adjustment';
 export type AuditEntityType = 'Employee' | 'Leave' | 'Document' | 'Training' | 'Review' | 'Case';
 export type AuditAction = 'Created' | 'Updated' | 'Deleted' | 'Viewed';
+
+export interface ApprovalAttachment {
+  name: string;
+  url?: string;
+  uploadedBy?: string;
+  uploadedAt?: string;
+}
+
+export interface ApprovalHistoryEntry {
+  id: string;
+  stage: string;
+  action: 'Submitted' | 'Approved' | 'Rejected' | 'Cancelled' | 'Escalated' | 'Commented';
+  actorName: string;
+  actorEmail?: string;
+  comments?: string;
+  attachments?: ApprovalAttachment[];
+  fromStage?: string;
+  toStage?: string;
+  createdAt: string;
+}
 
 /**
  * Main Employee Profile
@@ -116,7 +146,12 @@ export interface LeaveRequest {
   directorApprovedDate?: string; // Date when director approved
   hrApprovedDate?: string; // Date when HR approved
   comments?: string;
+  approvalHistory?: ApprovalHistoryEntry[];
+  attachments?: ApprovalAttachment[];
   createdDate?: string;
+  employeeEmail?: string;
+  division?: string;
+  unit?: string;
 }
 
 /**
@@ -293,11 +328,10 @@ export interface LeaveRequestSubmission {
   endDate: string;
   daysRequested: number;
   reason?: string;
-  // Additional fields for form submission
   name?: string;
   division?: string;
   unit?: string;
-  signature?: string;
+  employeeEmail?: string;
 }
 
 /**
@@ -380,4 +414,45 @@ export interface OffboardingProcess {
   status: 'Not Started' | 'In Progress' | 'Completed';
   reason?: string;
   checklist: OffboardingItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Workflow Admin
+// ---------------------------------------------------------------------------
+
+export type WorkflowStage =
+  | 'Manager Review'
+  | 'Director Review'
+  | 'HR Review';
+
+/**
+ * Per-division/unit approver assignment.
+ * SharePoint List: HR_WorkflowApprovers
+ */
+export interface WorkflowApprover {
+  id?: string | number;
+  division: string;
+  unit: string;
+  stage: WorkflowStage;
+  approverName: string;
+  approverEmail: string;
+  skipDirectorReview?: boolean; // only read from Manager Review row
+}
+
+export type EmailTemplateStage =
+  | 'Submission'
+  | 'Manager Approved'
+  | 'Director Approved'
+  | 'Fully Approved'
+  | 'Rejected';
+
+/**
+ * Per-stage email template.
+ * SharePoint List: HR_EmailTemplates
+ */
+export interface EmailTemplate {
+  id?: string | number;
+  stage: EmailTemplateStage;
+  subject: string;
+  body: string;
 }

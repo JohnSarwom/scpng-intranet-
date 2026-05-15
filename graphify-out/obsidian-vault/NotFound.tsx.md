@@ -1,18 +1,17 @@
 ---
 source_file: "src\pages\NotFound.tsx"
 type: "code"
-community: "Module 347"
+community: "Community 350"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_347
+  - graphify/EXTRACTED
+  - community/Community_350
 ---
 
 # NotFound.tsx
 
 ## Connections
-- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
 - [[NotFound()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_347
+#graphify/code #graphify/EXTRACTED #community/Community_350

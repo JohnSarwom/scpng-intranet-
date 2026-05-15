@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\licensing\hooks\usePreviewSettings.ts"
 type: "code"
-community: "Module 340"
+community: "Community 342"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_340
+  - community/Community_342
 ---
 
 # usePreviewSettings()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[usePreviewSettings.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_340
+#graphify/code #graphify/EXTRACTED #community/Community_342

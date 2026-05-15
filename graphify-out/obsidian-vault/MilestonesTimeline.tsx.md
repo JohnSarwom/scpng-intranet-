@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\analytics\MilestonesTimeline.tsx"
 type: "code"
-community: "Module 153"
+community: "Community 153"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_153
+  - community/Community_153
 ---
 
 # MilestonesTimeline.tsx
@@ -16,4 +16,4 @@ tags:
 - [[getDotColour()]] - `contains` [EXTRACTED]
 - [[parseMilestoneDate()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_153
+#graphify/code #graphify/EXTRACTED #community/Community_153

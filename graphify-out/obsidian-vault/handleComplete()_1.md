@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\steps\KRASetup.tsx"
 type: "code"
-community: "Module 102"
+community: "Community 102"
 location: "L64"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_102
+  - community/Community_102
 ---
 
 # handleComplete()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KRASetup.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_102
+#graphify/code #graphify/EXTRACTED #community/Community_102

@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\ticketing\TicketManager.tsx"
 type: "code"
-community: "Ticket Manager"
+community: "Ticket Manager Kanban"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Ticket_Manager
+  - community/Ticket_Manager_Kanban
 ---
 
 # TicketManager.tsx
 
 ## Connections
-- [[Tickets.tsx]] - `references` [INFERRED]
 - [[UserNav()]] - `contains` [EXTRACTED]
 - [[addBucket()]] - `contains` [EXTRACTED]
 - [[cancelDelete()]] - `contains` [EXTRACTED]
@@ -45,4 +44,4 @@ tags:
 - [[handleToggleComplete()_2]] - `contains` [EXTRACTED]
 - [[handleViewModeChange()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Ticket_Manager
+#graphify/code #graphify/EXTRACTED #community/Ticket_Manager_Kanban

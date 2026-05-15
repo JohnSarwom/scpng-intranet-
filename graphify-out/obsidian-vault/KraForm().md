@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\kra\KraForm.tsx"
 type: "code"
-community: "Module 265"
+community: "Community 267"
 location: "L3"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_265
+  - community/Community_267
 ---
 
 # KraForm()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KraForm.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_265
+#graphify/code #graphify/EXTRACTED #community/Community_267

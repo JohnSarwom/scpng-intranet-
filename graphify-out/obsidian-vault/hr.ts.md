@@ -1,17 +1,14 @@
 ---
 source_file: "src\types\hr.ts"
 type: "code"
-community: "Module 547"
+community: "Community 550"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_547
+  - graphify/EXTRACTED
+  - community/Community_550
 ---
 
 # hr.ts
 
-## Connections
-- [[index.ts_5]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_547
+#graphify/code #graphify/EXTRACTED #community/Community_550

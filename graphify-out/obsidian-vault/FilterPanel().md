@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\FilterPanel.tsx"
 type: "code"
-community: "Module 341"
+community: "Community 343"
 location: "L13"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_341
+  - community/Community_343
 ---
 
 # FilterPanel()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[FilterPanel.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_341
+#graphify/code #graphify/EXTRACTED #community/Community_343

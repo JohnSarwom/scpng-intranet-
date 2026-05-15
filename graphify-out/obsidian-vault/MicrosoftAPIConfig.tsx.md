@@ -1,22 +1,21 @@
 ---
 source_file: "src\components\admin\database\MicrosoftAPIConfig.tsx"
 type: "code"
-community: "Module 93"
+community: "Community 93"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_93
+  - community/Community_93
 ---
 
 # MicrosoftAPIConfig.tsx
 
 ## Connections
-- [[DatabaseIntegration.tsx]] - `imports_from` [INFERRED]
 - [[handleMicrosoftPermissionToggle()]] - `contains` [EXTRACTED]
 - [[handleQuickSetup()]] - `contains` [EXTRACTED]
 - [[handleSaveConfig()_1]] - `contains` [EXTRACTED]
 - [[handleTestConnection()]] - `contains` [EXTRACTED]
 - [[loadConfig()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_93
+#graphify/code #graphify/EXTRACTED #community/Community_93

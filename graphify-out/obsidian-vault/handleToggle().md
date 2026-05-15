@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\AssetPermissionsTab.tsx"
 type: "code"
-community: "Module 216"
+community: "Community 218"
 location: "L61"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_216
+  - community/Community_218
 ---
 
 # handleToggle()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AssetPermissionsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_216
+#graphify/code #graphify/EXTRACTED #community/Community_218

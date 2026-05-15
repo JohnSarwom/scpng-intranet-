@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\division\tabs\DivisionWorkPlansTab.tsx"
 type: "code"
-community: "Module 150"
+community: "Community 150"
 location: "L385"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_150
+  - community/Community_150
 ---
 
 # goToNew()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DivisionWorkPlansTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_150
+#graphify/code #graphify/EXTRACTED #community/Community_150

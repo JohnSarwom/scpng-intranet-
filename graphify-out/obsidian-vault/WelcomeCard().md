@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\WelcomeCard.tsx"
 type: "code"
-community: "Module 250"
+community: "Community 252"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_250
+  - community/Community_252
 ---
 
 # WelcomeCard()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[WelcomeCard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_250
+#graphify/code #graphify/EXTRACTED #community/Community_252

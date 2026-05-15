@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\SharePointExplorer.tsx"
 type: "code"
-community: "SharePoint Explorer UI"
+community: "SharePoint Explorer"
 location: "L256"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Explorer_UI
+  - community/SharePoint_Explorer
 ---
 
 # handleCopyAllLists()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SharePointExplorer.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer_UI
+#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer

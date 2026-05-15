@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\HRProfiles.tsx"
 type: "code"
-community: "Module 86"
+community: "Community 86"
 location: "L155"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_86
+  - community/Community_86
 ---
 
 # getEmploymentTypeBadgeColor()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[HRProfiles.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_86
+#graphify/code #graphify/EXTRACTED #community/Community_86

@@ -2293,11 +2293,25 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
 
             toast({ title: "Success", description: "Task added successfully" });
 
-            // Fire API call in background — on success, the refetch will replace the temp task with real data
+            // Fire API call in background — on success, swap temp task with real data immediately
             try {
               const createdTask = await addTask(newTaskData);
               console.log(`[Metrics] Add Task API Completed at ${performance.now().toFixed(2)}ms`);
               try { console.timeEnd('TaskSubmit-Processing'); } catch (e) { }
+
+              // Replace temp ID with real SharePoint ID immediately so any subsequent action
+              // (e.g. mark complete) uses the real ID rather than waiting for the background refetch.
+              if (createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
+                setBoardData(prev => {
+                  const next = { ...prev };
+                  Object.keys(next).forEach(key => {
+                    next[key] = next[key].map(t =>
+                      t.id === tempId ? { ...t, ...(createdTask as Task) } : t
+                    );
+                  });
+                  return next;
+                });
+              }
 
               // Fire-and-forget: notifications + assignee group creation
               const taskAssignees = taskData.assignees || [];

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useCalendarEvents.ts"
 type: "code"
-community: "Module 156"
+community: "Community 157"
 location: "L131"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_156
+  - community/Community_157
 ---
 
 # useTodaysCalendarEvents()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useCalendarEvents.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_156
+#graphify/code #graphify/EXTRACTED #community/Community_157

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\FileUpload.tsx"
 type: "code"
-community: "Module 166"
+community: "Community 167"
 location: "L47"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_166
+  - community/Community_167
 ---
 
 # handleRemoveImage()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[FileUpload.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_166
+#graphify/code #graphify/EXTRACTED #community/Community_167

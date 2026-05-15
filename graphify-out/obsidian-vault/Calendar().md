@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ui\calendar.tsx"
 type: "code"
-community: "Module 275"
+community: "Community 277"
 location: "L10"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_275
+  - community/Community_277
 ---
 
 # Calendar()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[calendar.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_275
+#graphify/code #graphify/EXTRACTED #community/Community_277

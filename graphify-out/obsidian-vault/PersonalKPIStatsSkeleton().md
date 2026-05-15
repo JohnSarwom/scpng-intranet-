@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\skeletons\PersonalKPIStatsSkeleton.tsx"
 type: "code"
-community: "Module 251"
+community: "Community 253"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_251
+  - community/Community_253
 ---
 
 # PersonalKPIStatsSkeleton()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PersonalKPIStatsSkeleton.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_251
+#graphify/code #graphify/EXTRACTED #community/Community_253

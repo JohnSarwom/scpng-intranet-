@@ -1,12 +1,12 @@
 ---
 source_file: "src\mockData\projects.ts"
 type: "code"
-community: "Module 201"
+community: "Community 203"
 location: "L217"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_201
+  - community/Community_203
 ---
 
 # getRandomStaff()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[projects.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_201
+#graphify/code #graphify/EXTRACTED #community/Community_203

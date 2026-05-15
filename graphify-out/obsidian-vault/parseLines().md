@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\meetingDocxService.ts"
 type: "code"
-community: "Module 71"
+community: "Community 71"
 location: "L7"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_71
+  - community/Community_71
 ---
 
 # parseLines()
@@ -15,4 +15,4 @@ tags:
 - [[buildPayload()]] - `calls` [EXTRACTED]
 - [[meetingDocxService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_71
+#graphify/code #graphify/EXTRACTED #community/Community_71

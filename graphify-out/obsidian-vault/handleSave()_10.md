@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Settings.tsx"
 type: "code"
-community: "Module 137"
+community: "Community 137"
 location: "L180"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_137
+  - community/Community_137
 ---
 
 # handleSave()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Settings.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_137
+#graphify/code #graphify/EXTRACTED #community/Community_137

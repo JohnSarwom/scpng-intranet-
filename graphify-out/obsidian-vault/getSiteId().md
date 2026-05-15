@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\documentCategoriesService.ts"
 type: "code"
-community: "Module 68"
+community: "Community 68"
 location: "L18"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_68
+  - community/Community_68
 ---
 
 # getSiteId()
@@ -18,4 +18,4 @@ tags:
 - [[fetchDocumentCategories()]] - `calls` [EXTRACTED]
 - [[updateDocumentCategory()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_68
+#graphify/code #graphify/EXTRACTED #community/Community_68

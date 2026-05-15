@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\newsSharePointService.ts"
 type: "code"
-community: "Module 72"
-location: "L191"
+community: "Community 57"
+location: "L225"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_72
+  - community/Community_57
 ---
 
 # getAllNews()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[newsSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_72
+#graphify/code #graphify/EXTRACTED #community/Community_57

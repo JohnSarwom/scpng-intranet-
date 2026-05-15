@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\MeetingMinutes.tsx"
 type: "code"
-community: "Module 110"
+community: "Community 109"
 location: "L83"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_110
+  - community/Community_109
 ---
 
 # MeetingMinutes()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[MeetingMinutes.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_110
+#graphify/code #graphify/EXTRACTED #community/Community_109

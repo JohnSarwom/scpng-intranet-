@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\unit-tabs\modals\DeleteModal.tsx"
 type: "code"
-community: "Module 496"
+community: "Community 499"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_496
+  - graphify/EXTRACTED
+  - community/Community_499
 ---
 
 # DeleteModal.tsx
 
-## Connections
-- [[button.tsx]] - `imports_from` [INFERRED]
-- [[dialog.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_496
+#graphify/code #graphify/EXTRACTED #community/Community_499

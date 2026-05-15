@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\DivisionModal.tsx"
 type: "code"
-community: "Module 81"
+community: "Community 80"
 location: "L100"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_81
+  - community/Community_80
 ---
 
 # handleEditToggle()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DivisionModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_81
+#graphify/code #graphify/EXTRACTED #community/Community_80

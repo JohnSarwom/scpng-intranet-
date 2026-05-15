@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Tickets.tsx"
 type: "code"
-community: "Module 351"
-location: "L43"
+community: "Community 354"
+location: "L40"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_351
+  - community/Community_354
 ---
 
 # PlaceholderContent()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Tickets.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_351
+#graphify/code #graphify/EXTRACTED #community/Community_354

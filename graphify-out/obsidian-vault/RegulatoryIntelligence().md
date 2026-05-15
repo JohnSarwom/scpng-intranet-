@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\RegulatoryIntelligence.tsx"
 type: "code"
-community: "Module 349"
+community: "Community 352"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_349
+  - community/Community_352
 ---
 
 # RegulatoryIntelligence()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[RegulatoryIntelligence.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_349
+#graphify/code #graphify/EXTRACTED #community/Community_352

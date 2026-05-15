@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\modals\AddAssetModal.tsx"
 type: "code"
-community: "Module 83"
+community: "Community 82"
 location: "L55"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_83
+  - community/Community_82
 ---
 
 # formatDateForInput()
@@ -16,4 +16,4 @@ tags:
 - [[handleCloseAndReset()]] - `calls` [EXTRACTED]
 - [[handleDateChange()_2]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_83
+#graphify/code #graphify/EXTRACTED #community/Community_82

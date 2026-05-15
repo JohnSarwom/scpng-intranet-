@@ -12,7 +12,7 @@ tags:
 # StrategyService
 
 ## Connections
-- [[.constructor()_22]] - `method` [EXTRACTED]
+- [[.constructor()_25]] - `method` [EXTRACTED]
 - [[.fetchAlignments()]] - `method` [EXTRACTED]
 - [[.fetchConfig()]] - `method` [EXTRACTED]
 - [[.fetchHierarchy()]] - `method` [EXTRACTED]

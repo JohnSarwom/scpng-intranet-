@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useLeaveRequests.ts"
 type: "code"
-community: "Module 313"
+community: "Community 315"
 location: "L7"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_313
+  - community/Community_315
 ---
 
 # useLeaveRequests()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useLeaveRequests.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_313
+#graphify/code #graphify/EXTRACTED #community/Community_315

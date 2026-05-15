@@ -101,17 +101,18 @@ const WebsiteFeedbackPage: React.FC = () => {
       // 3. Submit to SharePoint list
       const result = await addSharePointListItem(SITE_PATH, SUBMISSION_LIST, payload);
       if (result) {
-        toast.success('Feedback submitted successfully. Thank you!');
         setIsSubmitted(true);
         form.reset();
         setPendingScreenshots([]);
         localStorage.removeItem(`form_draft_${websiteFeedbackTemplate.id}`);
       } else {
-        toast.error('Submission failed. Please try again.');
+        throw new Error('Submission failed. Please try again.');
       }
     } catch (err) {
       console.error('WebsiteFeedbackPage submit error:', err);
-      toast.error('An error occurred while submitting your feedback.');
+      throw err instanceof Error
+        ? err
+        : new Error('An error occurred while submitting your feedback.');
     } finally {
       setIsSubmitting(false);
     }

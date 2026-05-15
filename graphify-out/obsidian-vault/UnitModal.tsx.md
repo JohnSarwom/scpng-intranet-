@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\UnitModal.tsx"
 type: "code"
-community: "Module 105"
+community: "Community 105"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_105
+  - community/Community_105
 ---
 
 # UnitModal.tsx
@@ -17,6 +17,5 @@ tags:
 - [[handleEditToggle()_1]] - `contains` [EXTRACTED]
 - [[handleNestedChange()_1]] - `contains` [EXTRACTED]
 - [[handleSave()_8]] - `contains` [EXTRACTED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_105
+#graphify/code #graphify/EXTRACTED #community/Community_105

@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\mockDataMapper.ts"
 type: "code"
-community: "Module 113"
+community: "Community 113"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_113
+  - community/Community_113
 ---
 
 # mockDataMapper.ts
@@ -18,4 +18,4 @@ tags:
 - [[mapKraToSharePoint()]] - `contains` [EXTRACTED]
 - [[mapTaskToSharePoint()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_113
+#graphify/code #graphify/EXTRACTED #community/Community_113

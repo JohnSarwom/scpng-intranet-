@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\contacts\OrganizationalStructure.tsx"
 type: "code"
-community: "Module 120"
+community: "Community 121"
 location: "L255"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_120
+  - community/Community_121
 ---
 
 # handleFilterChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[OrganizationalStructure.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_120
+#graphify/code #graphify/EXTRACTED #community/Community_121

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\ScheduledEvents.tsx"
 type: "code"
-community: "Module 62"
+community: "Community 62"
 location: "L62"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_62
+  - community/Community_62
 ---
 
 # handleEventClick()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ScheduledEvents.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_62
+#graphify/code #graphify/EXTRACTED #community/Community_62

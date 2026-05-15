@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\AssetsTab.tsx"
 type: "code"
-community: "Module 128"
+community: "Community 129"
 location: "L36"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_128
+  - community/Community_129
 ---
 
 # handleEdit()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AssetsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_128
+#graphify/code #graphify/EXTRACTED #community/Community_129

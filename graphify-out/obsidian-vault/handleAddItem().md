@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ChecklistSection.tsx"
 type: "code"
-community: "Module 91"
+community: "Community 91"
 location: "L25"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_91
+  - community/Community_91
 ---
 
 # handleAddItem()
@@ -15,4 +15,4 @@ tags:
 - [[ChecklistSection.tsx]] - `contains` [EXTRACTED]
 - [[handleKeyDown()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_91
+#graphify/code #graphify/EXTRACTED #community/Community_91

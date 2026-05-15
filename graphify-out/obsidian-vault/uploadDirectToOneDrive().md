@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\SetupWizard.tsx"
 type: "code"
-community: "Module 181"
+community: "Community 182"
 location: "L170"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_181
+  - community/Community_182
 ---
 
 # uploadDirectToOneDrive()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SetupWizard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_181
+#graphify/code #graphify/EXTRACTED #community/Community_182

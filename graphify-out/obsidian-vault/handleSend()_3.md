@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\RegulatoryAIChat.tsx"
 type: "code"
-community: "Module 34"
+community: "Community 33"
 location: "L292"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_34
+  - community/Community_33
 ---
 
 # handleSend()
@@ -18,4 +18,4 @@ tags:
 - [[handleStopGeneration()_3]] - `calls` [EXTRACTED]
 - [[serializeRegulatoryContext()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_34
+#graphify/code #graphify/EXTRACTED #community/Community_33

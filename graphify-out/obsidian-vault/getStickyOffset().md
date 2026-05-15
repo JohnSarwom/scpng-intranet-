@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\global\GlobalDataTable.tsx"
 type: "code"
-community: "Module 262"
+community: "Community 264"
 location: "L59"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_262
+  - community/Community_264
 ---
 
 # getStickyOffset()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[GlobalDataTable.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_262
+#graphify/code #graphify/EXTRACTED #community/Community_264

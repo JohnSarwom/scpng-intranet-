@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\powerAutomate\flowActions.ts"
 type: "code"
-community: "Module 48"
+community: "Community 47"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_48
+  - community/Community_47
 ---
 
 # flowActions.ts
@@ -22,4 +22,4 @@ tags:
 - [[spGetItems()]] - `contains` [EXTRACTED]
 - [[spPatchItem()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_48
+#graphify/code #graphify/EXTRACTED #community/Community_47

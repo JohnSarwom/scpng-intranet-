@@ -22,6 +22,7 @@ import {
     MessageSquareText,
     ClipboardList,
     FilePlus,
+    ClipboardCheck,
     LucideIcon
 } from 'lucide-react';
 
@@ -48,6 +49,7 @@ export const mainNavItems: NavItem[] = [
     { icon: TrendingUp, path: '/market-data', label: 'Market Data', resource: 'market_data' },
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
     { icon: FormInput, path: '/forms', label: 'Forms', resource: 'forms' },
+    { icon: ClipboardCheck, path: '/approvals', label: 'Approvals', resource: null },
     { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: null },
     { icon: GalleryHorizontal, path: '/gallery', label: 'Gallery', resource: 'gallery' },
     { icon: Users, path: '/contacts', label: 'Contacts', resource: 'contacts' },

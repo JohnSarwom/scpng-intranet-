@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\NotFound.tsx"
 type: "code"
-community: "Module 347"
+community: "Community 350"
 location: "L7"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_347
+  - community/Community_350
 ---
 
 # NotFound()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[NotFound.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_347
+#graphify/code #graphify/EXTRACTED #community/Community_350

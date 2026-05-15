@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ui\pagination.tsx"
 type: "code"
-community: "Module 106"
+community: "Community 106"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_106
+  - community/Community_106
 ---
 
 # pagination.tsx
@@ -18,4 +18,4 @@ tags:
 - [[PaginationNext()]] - `contains` [EXTRACTED]
 - [[PaginationPrevious()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_106
+#graphify/code #graphify/EXTRACTED #community/Community_106

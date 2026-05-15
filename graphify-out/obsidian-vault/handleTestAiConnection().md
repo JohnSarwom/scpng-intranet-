@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\AIHub.tsx"
 type: "code"
-community: "AI Hub Chat"
+community: "AI Hub"
 location: "L1248"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/AI_Hub_Chat
+  - community/AI_Hub
 ---
 
 # handleTestAiConnection()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AIHub.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/AI_Hub_Chat
+#graphify/code #graphify/EXTRACTED #community/AI_Hub

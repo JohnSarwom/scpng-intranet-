@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\table\TableSortIndicator.tsx"
 type: "code"
-community: "Module 231"
+community: "Community 233"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_231
+  - community/Community_233
 ---
 
 # TableSortIndicator.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TableSortIndicator()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_231
+#graphify/code #graphify/EXTRACTED #community/Community_233

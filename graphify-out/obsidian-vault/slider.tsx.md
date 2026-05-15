@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\ui\slider.tsx"
 type: "code"
-community: "Module 482"
+community: "Community 485"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_482
+  - graphify/EXTRACTED
+  - community/Community_485
 ---
 
 # slider.tsx
 
-## Connections
-- [[UILibrary.tsx]] - `references` [INFERRED]
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_482
+#graphify/code #graphify/EXTRACTED #community/Community_485

@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\graphService.ts"
 type: "code"
-community: "Module 210"
+community: "Community 212"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_210
+  - community/Community_212
 ---
 
 # getAccessToken()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[graphService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_210
+#graphify/code #graphify/EXTRACTED #community/Community_212

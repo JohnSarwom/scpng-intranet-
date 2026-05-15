@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\gallery\AddPhotoModal.tsx"
 type: "code"
-community: "Module 259"
+community: "Community 261"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_259
+  - community/Community_261
 ---
 
 # AddPhotoModal.tsx
 
 ## Connections
 - [[AddPhotoModal()]] - `contains` [EXTRACTED]
-- [[Gallery.tsx]] - `references` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_259
+#graphify/code #graphify/EXTRACTED #community/Community_261

@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\admin\UserManagement.tsx"
 type: "code"
-community: "Module 78"
+community: "Community 77"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_78
+  - community/Community_77
 ---
 
 # UserManagement.tsx
 
 ## Connections
-- [[Admin.tsx]] - `references` [INFERRED]
 - [[handleDeleteUser()]] - `contains` [EXTRACTED]
 - [[handleEditUser()]] - `contains` [EXTRACTED]
 - [[handleSave()_3]] - `contains` [EXTRACTED]
@@ -20,4 +19,4 @@ tags:
 - [[startAddingUser()]] - `contains` [EXTRACTED]
 - [[toggleGroup()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_78
+#graphify/code #graphify/EXTRACTED #community/Community_77

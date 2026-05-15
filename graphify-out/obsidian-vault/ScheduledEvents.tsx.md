@@ -1,19 +1,17 @@
 ---
 source_file: "src\components\dashboard\ScheduledEvents.tsx"
 type: "code"
-community: "Module 62"
+community: "Community 62"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_62
+  - community/Community_62
 ---
 
 # ScheduledEvents.tsx
 
 ## Connections
-- [[Index.tsx]] - `imports_from` [INFERRED]
-- [[StatCircle.tsx]] - `references` [INFERRED]
 - [[StatRow()]] - `contains` [EXTRACTED]
 - [[formatEventDate()]] - `contains` [EXTRACTED]
 - [[formatEventTime()]] - `contains` [EXTRACTED]
@@ -21,6 +19,5 @@ tags:
 - [[handleEditEvent()]] - `contains` [EXTRACTED]
 - [[handleEventClick()]] - `contains` [EXTRACTED]
 - [[handleEventCreated()]] - `contains` [EXTRACTED]
-- [[useUpcomingCalendarEvents()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_62
+#graphify/code #graphify/EXTRACTED #community/Community_62

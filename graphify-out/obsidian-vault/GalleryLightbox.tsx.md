@@ -1,22 +1,21 @@
 ---
 source_file: "src\components\gallery\GalleryLightbox.tsx"
 type: "code"
-community: "Module 98"
+community: "Community 98"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_98
+  - community/Community_98
 ---
 
 # GalleryLightbox.tsx
 
 ## Connections
-- [[Gallery.tsx]] - `references` [INFERRED]
 - [[getSlotWidth()]] - `contains` [EXTRACTED]
 - [[handler()]] - `contains` [EXTRACTED]
 - [[onResize()]] - `contains` [EXTRACTED]
 - [[onTouchEnd()]] - `contains` [EXTRACTED]
 - [[onTouchStart()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_98
+#graphify/code #graphify/EXTRACTED #community/Community_98

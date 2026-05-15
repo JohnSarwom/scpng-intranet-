@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\common\GlobalAssigneeSelector.tsx"
 type: "code"
-community: "Module 171"
+community: "Community 172"
 location: "L111"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_171
+  - community/Community_172
 ---
 
 # handleRemove()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[GlobalAssigneeSelector.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_171
+#graphify/code #graphify/EXTRACTED #community/Community_172

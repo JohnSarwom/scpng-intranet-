@@ -104,15 +104,16 @@ interface CategoryWithFiles {
 }
 
 interface NavigationState {
-  currentLevel: 'categories' | 'files';
+  currentLevel: 'categories' | 'subcategory' | 'files';
   currentCategoryId: string | null;
+  currentSubCategoryName: string | null;
   breadcrumbs: BreadcrumbItem[];
 }
 
 interface BreadcrumbItem {
   id: string;
   name: string;
-  level: 'root' | 'category';
+  level: 'root' | 'category' | 'subcategory';
 }
 
 // New Primary Tab Structure
@@ -616,7 +617,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
       return {
         id: category.id,
         name: category.label,
-        description: category.children ? `${category.children.length} subcategories` : 'Document category',
+        description: 'Folder',
         fileCount: fileCount,
         totalSize: totalSize,
         lastModified: new Date().toISOString(), // Could find latest doc date
@@ -634,7 +635,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
       {
         id: 'unit-shared-docs',
         name: 'Division Shared Documents',
-        description: 'Shared with division members',
+        description: 'Folder',
         fileCount: Math.floor(Math.random() * 30) + 15,
         totalSize: Math.floor(Math.random() * 200) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
@@ -646,7 +647,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
       {
         id: 'team-projects',
         name: 'Team Projects',
-        description: 'Collaborative project files',
+        description: 'Folder',
         fileCount: Math.floor(Math.random() * 20) + 8,
         totalSize: Math.floor(Math.random() * 150) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 5) * 24 * 60 * 60 * 1000).toISOString(),
@@ -658,7 +659,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
       {
         id: 'department-resources',
         name: 'Department Resources',
-        description: 'Resources shared across department',
+        description: 'Folder',
         fileCount: Math.floor(Math.random() * 25) + 12,
         totalSize: Math.floor(Math.random() * 100) * 1024 * 1024,
         lastModified: new Date(Date.now() - Math.floor(Math.random() * 10) * 24 * 60 * 60 * 1000).toISOString(),
@@ -670,7 +671,7 @@ const getDocumentFolders = (activePrimaryTab: string, activeSecondaryNav: string
       {
         id: 'policies-procedures-manuals',
         name: 'Policies, Procedures, Guidelines and Manuals',
-        description: '12 subcategories',
+        description: 'Folder',
         fileCount: 0,
         totalSize: 0,
         lastModified: new Date('2026-01-12').toISOString(),
@@ -768,10 +769,25 @@ export default function Documents() {
   const [isNewFolderOpen, setIsNewFolderOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
+  // Add subfolder dialog (inside a category)
+  const [isAddSubfolderOpen, setIsAddSubfolderOpen] = useState(false);
+  const [newSubfolderName, setNewSubfolderName] = useState('');
+  const [isAddingSubfolder, setIsAddingSubfolder] = useState(false);
+
+  // Rename subfolder dialog
+  const [renamingSubfolder, setRenamingSubfolder] = useState<string | null>(null);
+  const [renameSubfolderValue, setRenameSubfolderValue] = useState('');
+  const [isRenamingSubfolder, setIsRenamingSubfolder] = useState(false);
+
+  // Delete subfolder confirm
+  const [deletingSubfolder, setDeletingSubfolder] = useState<string | null>(null);
+  const [isDeletingSubfolder, setIsDeletingSubfolder] = useState(false);
+
   // Navigation state for drill-down functionality
   const [navigationState, setNavigationState] = useState<NavigationState>({
     currentLevel: 'categories',
     currentCategoryId: null,
+    currentSubCategoryName: null,
     breadcrumbs: []
   });
 
@@ -911,6 +927,86 @@ export default function Documents() {
       toast.error(`Failed to delete category: ${error.message}`);
     } finally {
       setIsEditingCategory(false);
+    }
+  };
+
+  const handleAddSubfolder = async () => {
+    const name = newSubfolderName.trim();
+    if (!name || !navigationState.currentCategoryId || !currentCategoryDef) return;
+    const cat = dynamicCategories.find(c => c.title === currentCategoryDef.label);
+    if (!cat) {
+      toast.error('Category not found in SharePoint. Please refresh and try again.');
+      return;
+    }
+    if (cat.subCategories.includes(name)) {
+      toast.error(`Subfolder "${name}" already exists in this category.`);
+      return;
+    }
+    setIsAddingSubfolder(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      const updatedSubCategories = [...cat.subCategories, name];
+      await updateDocumentCategory(client, cat.id, { subCategories: updatedSubCategories });
+      toast.success(`Subfolder "${name}" added successfully.`);
+      setIsAddSubfolderOpen(false);
+      setNewSubfolderName('');
+      await loadCategories();
+    } catch (error: any) {
+      toast.error(`Failed to add subfolder: ${error.message}`);
+    } finally {
+      setIsAddingSubfolder(false);
+    }
+  };
+
+  const getCategoryForCurrentView = () =>
+    dynamicCategories.find(c => {
+      const safeId = c.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-parent';
+      return safeId === navigationState.currentCategoryId;
+    });
+
+  const handleRenameSubfolderConfirm = async () => {
+    const newName = renameSubfolderValue.trim();
+    if (!newName || !renamingSubfolder) return;
+    const cat = getCategoryForCurrentView();
+    if (!cat) { toast.error('Category not found. Please refresh.'); return; }
+    if (cat.subCategories.includes(newName) && newName !== renamingSubfolder) {
+      toast.error(`A subfolder named "${newName}" already exists.`); return;
+    }
+    setIsRenamingSubfolder(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      const updated = cat.subCategories.map(s => s === renamingSubfolder ? newName : s);
+      await updateDocumentCategory(client, cat.id, { subCategories: updated });
+      toast.success(`Renamed to "${newName}"`);
+      setRenamingSubfolder(null);
+      setRenameSubfolderValue('');
+      await loadCategories();
+    } catch (error: any) {
+      toast.error(`Failed to rename: ${error.message}`);
+    } finally {
+      setIsRenamingSubfolder(false);
+    }
+  };
+
+  const handleDeleteSubfolderConfirm = async () => {
+    if (!deletingSubfolder) return;
+    const cat = getCategoryForCurrentView();
+    if (!cat) { toast.error('Category not found. Please refresh.'); return; }
+    setIsDeletingSubfolder(true);
+    try {
+      const client = await getGraphClient(instance);
+      if (!client) throw new Error('Could not initialize Graph Client');
+      const updated = cat.subCategories.filter(s => s !== deletingSubfolder);
+      await updateDocumentCategory(client, cat.id, { subCategories: updated });
+      toast.success(`Subfolder "${deletingSubfolder}" removed.`);
+      setDeletingSubfolder(null);
+      await loadCategories();
+    } catch (error: any) {
+      toast.error(`Failed to delete: ${error.message}`);
+    } finally {
+      setIsDeletingSubfolder(false);
     }
   };
 
@@ -1255,6 +1351,7 @@ export default function Documents() {
     setNavigationState({
       currentLevel: 'categories',
       currentCategoryId: null,
+      currentSubCategoryName: null,
       breadcrumbs: []
     });
   };
@@ -1506,7 +1603,7 @@ export default function Documents() {
           )}
         </div>
       )}
-      {showAdminActions && folder.category === 'company-category' && (
+      {showAdminActions && (folder.category === 'company-category' || folder.category === 'company-subcategory') && (
         <div className="absolute top-3 right-3 flex items-center gap-1 z-10">
           {onEdit && (
             <button
@@ -1563,39 +1660,6 @@ export default function Documents() {
           </div>
         </div>
 
-        {/* Shared with avatars */}
-        {folder.sharedWith && folder.sharedWith.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-400 dark:text-gray-500">Shared with:</span>
-              <div className="flex -space-x-2">
-                {folder.sharedWith.slice(0, 3).map((user, index) => (
-                  <div
-                    key={user.id}
-                    className={`w-6 h-6 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800 relative z-${10 - index}`}
-                    title={user.name}
-                  >
-                    {user.initials}
-                  </div>
-                ))}
-                {folder.sharedWith.length > 3 && (
-                  <div className="w-6 h-6 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800">
-                    +{folder.sharedWith.length - 3}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {folder.category === 'company-category' && (
-          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/5">
-            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-              <Building className="h-3 w-3" />
-              <span>Organisational Wide</span>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
@@ -1649,30 +1713,6 @@ export default function Documents() {
           <Clock className="h-4 w-4" />
           {formatDate(folder.lastModified)}
         </span>
-        {folder.category === 'company-category' && (
-          <span className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Building className="h-3.5 w-3.5" />
-            Org Wide
-          </span>
-        )}
-        {folder.sharedWith && folder.sharedWith.length > 0 && (
-          <div className="flex -space-x-2">
-            {folder.sharedWith.slice(0, 3).map((user, index) => (
-              <div
-                key={user.id}
-                className={`w-6 h-6 rounded-full ${user.color} text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800`}
-                title={user.name}
-              >
-                {user.initials}
-              </div>
-            ))}
-            {folder.sharedWith.length > 3 && (
-              <div className="w-6 h-6 rounded-full bg-gray-400 text-white text-xs font-medium flex items-center justify-center border-2 border-white dark:border-gray-800">
-                +{folder.sharedWith.length - 3}
-              </div>
-            )}
-          </div>
-        )}
       </div>
       {showDriveActions && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -1692,7 +1732,7 @@ export default function Documents() {
           )}
         </div>
       )}
-      {showAdminActions && folder.category === 'company-category' && (
+      {showAdminActions && (folder.category === 'company-category' || folder.category === 'company-subcategory') && (
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
           {onEdit && (
             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(folder); }}
@@ -1721,16 +1761,28 @@ export default function Documents() {
         navigateToFolder(doc);
       }
     } else if (folder.category === 'company-category') {
-      // Drill down into category files
-      // Set state to files view
+      // Drill into subfolder list
       setNavigationState({
-        currentLevel: 'files',
+        currentLevel: 'subcategory',
         currentCategoryId: folder.id,
+        currentSubCategoryName: null,
         breadcrumbs: [
           { id: 'root', name: 'Document Categories', level: 'root' },
           { id: folder.id, name: folder.name, level: 'category' }
         ]
       });
+    } else if (folder.category === 'company-subcategory') {
+      // Drill into files within a subfolder
+      setNavigationState(prev => ({
+        currentLevel: 'files',
+        currentCategoryId: prev.currentCategoryId,
+        currentSubCategoryName: folder.name,
+        breadcrumbs: [
+          { id: 'root', name: 'Document Categories', level: 'root' },
+          { id: prev.currentCategoryId!, name: prev.breadcrumbs.find(b => b.level === 'category')?.name || '', level: 'category' },
+          { id: folder.name, name: folder.name, level: 'subcategory' }
+        ]
+      }));
     } else if (folder.category === 'document') {
       // Open the document
       const doc = documents.find(d => d.id === folder.id);
@@ -1743,11 +1795,22 @@ export default function Documents() {
   // Handle breadcrumb navigation
   const handleBreadcrumbClick = (breadcrumb: BreadcrumbItem) => {
     if (breadcrumb.level === 'root') {
-      // Navigate back to categories
       setNavigationState({
         currentLevel: 'categories',
         currentCategoryId: null,
+        currentSubCategoryName: null,
         breadcrumbs: []
+      });
+    } else if (breadcrumb.level === 'category') {
+      // Go back up to the subfolder list for this category
+      setNavigationState({
+        currentLevel: 'subcategory',
+        currentCategoryId: breadcrumb.id,
+        currentSubCategoryName: null,
+        breadcrumbs: [
+          { id: 'root', name: 'Document Categories', level: 'root' },
+          { id: breadcrumb.id, name: breadcrumb.name, level: 'category' }
+        ]
       });
     }
   };
@@ -1911,79 +1974,70 @@ export default function Documents() {
 
   // Generate folder representation of current data
   const documentFolders = useMemo(() => {
-    // If we're in file view, don't use the folder generator
-    if (navigationState.currentLevel === 'files' && navigationState.currentCategoryId) {
-      return []; // Files will be handled separately
-    }
+    if (navigationState.currentLevel !== 'categories') return [];
     return getDocumentFolders(activePrimaryTab, activeSecondaryNav, filteredDocuments, activeCompanyWideCategories);
-  }, [activePrimaryTab, activeSecondaryNav, filteredDocuments, navigationState, activeCompanyWideCategories]);
+  }, [activePrimaryTab, activeSecondaryNav, filteredDocuments, navigationState.currentLevel, activeCompanyWideCategories]);
 
-  // Get current category data for file view
-  // Dynamic generation of view data based on real documents and selected category
-  const currentCategoryData = useMemo(() => {
-    if (navigationState.currentLevel === 'files' && navigationState.currentCategoryId) {
-      const categoryId = navigationState.currentCategoryId;
-      const categoryDef = activeCompanyWideCategories.find(c => c.id === categoryId);
-      if (!categoryDef) return null;
-
-      // Filter documents belonging to this category
-      // categoryDef.label should match the 'Category' column in SharePoint
-      const categoryDocuments = documents.filter(doc => (doc as any).category === categoryDef.label);
-
-      // Group by subCategory to form sections
-      const sectionsMap = new Map<string, DisplayableDocument[]>();
-      const unassigned: DisplayableDocument[] = [];
-
-      categoryDocuments.forEach(doc => {
-        const subCat = (doc as any).subCategory;
-        if (subCat) {
-          if (!sectionsMap.has(subCat)) sectionsMap.set(subCat, []);
-          sectionsMap.get(subCat)?.push(doc);
-        } else {
-          unassigned.push(doc);
-        }
-      });
-
-      const sections: DocumentSection[] = [];
-      sectionsMap.forEach((docs, subCatName) => {
-        sections.push({
-          id: subCatName,
-          name: subCatName,
-          description: '',
-          files: docs.map(d => ({
-            id: d.id, name: d.name, size: formatFileSize(d.size), lastModified: formatDate(d.lastModified),
-            fileType: d.name.split('.').pop()?.toUpperCase() || '', extension: d.name.split('.').pop() || '',
-            icon: getFileIconForDocument(d), sharedWith: [], description: d.description, tags: d.tags ? d.tags.split(',') : [], url: d.url
-          }))
-        });
-      });
-
-      if (unassigned.length > 0) {
-        sections.push({
-          id: 'general', name: 'General', description: 'Uncategorized documents',
-          files: unassigned.map(d => ({
-            id: d.id, name: d.name, size: formatFileSize(d.size), lastModified: formatDate(d.lastModified),
-            fileType: d.name.split('.').pop()?.toUpperCase() || '', extension: d.name.split('.').pop() || '',
-            icon: getFileIconForDocument(d), sharedWith: [], description: d.description, tags: d.tags ? d.tags.split(',') : [], url: d.url
-          }))
-        });
-      }
-
+  // --- Subcategory level: folder cards for each subfolder inside a category ---
+  const currentSubfolderCards = useMemo((): DocumentFolder[] => {
+    if (navigationState.currentLevel !== 'subcategory' || !navigationState.currentCategoryId) return [];
+    const categoryDef = activeCompanyWideCategories.find(c => c.id === navigationState.currentCategoryId);
+    if (!categoryDef) return [];
+    const subNames = categoryDef.children?.map(c => c.label) || [];
+    return subNames.map(name => {
+      const docsInSub = documents.filter(d => (d as any).subCategory === name);
       return {
-        id: categoryDef.id,
-        name: categoryDef.label,
-        description: `Documents in ${categoryDef.label}`,
-        icon: getCategoryIcon(categoryDef.id),
-        fileCount: categoryDocuments.length,
-        totalSize: categoryDocuments.reduce((a, b) => a + (b.size || 0), 0),
-        lastModified: '',
-        category: 'company-category',
+        id: name,
+        name,
+        description: `${docsInSub.length} document${docsInSub.length !== 1 ? 's' : ''}`,
+        fileCount: docsInSub.length,
+        totalSize: docsInSub.reduce((a, b) => a + (b.size || 0), 0),
+        lastModified: docsInSub[0]?.lastModified || new Date().toISOString(),
+        icon: <FolderOpen className="h-12 w-12 text-blue-500" />,
+        category: 'company-subcategory',
         isFolder: true,
         sharedWith: [],
-        recentFiles: [], // Could implement recent files logic here
-        sections: sections
-      };
+      } as DocumentFolder;
+    });
+  }, [navigationState, documents, activeCompanyWideCategories]);
 
+  // Current category name/label for use in headers
+  const currentCategoryDef = useMemo(() => {
+    if (!navigationState.currentCategoryId) return null;
+    return activeCompanyWideCategories.find(c => c.id === navigationState.currentCategoryId) || null;
+  }, [navigationState.currentCategoryId, activeCompanyWideCategories]);
+
+  // --- Files level: documents inside a specific subfolder ---
+  const currentCategoryData = useMemo(() => {
+    if (navigationState.currentLevel === 'files' && navigationState.currentCategoryId) {
+      const categoryDef = activeCompanyWideCategories.find(c => c.id === navigationState.currentCategoryId);
+      if (!categoryDef) return null;
+      const subName = navigationState.currentSubCategoryName;
+      // New schema: category = org label (e.g. "Training & Human Resources"), subCategory = subfolder name
+      // Old schema: category = 'SCPNG Shared Documents', subCategory = org label — treat as belonging here
+      const scopedDocs = subName
+        ? documents.filter(d =>
+            // new schema: category matches org label AND subCategory matches subfolder
+            ((d as any).category === categoryDef.label && (d as any).subCategory === subName) ||
+            // old schema: subCategory matches subfolder name directly
+            ((d as any).category !== categoryDef.label && (d as any).subCategory === subName)
+          )
+        : documents.filter(d =>
+            // no subfolder: just category matches with no subCategory set
+            (d as any).category === categoryDef.label && !(d as any).subCategory
+          );
+      const files = scopedDocs.map(d => ({
+        id: d.id, name: d.name, size: formatFileSize(d.size), lastModified: formatDate(d.lastModified),
+        fileType: d.name.split('.').pop()?.toUpperCase() || '', extension: d.name.split('.').pop() || '',
+        icon: getFileIconForDocument(d), sharedWith: [], description: d.description,
+        tags: d.tags ? d.tags.split(',') : [], url: d.url,
+      }));
+      return {
+        id: subName || 'general',
+        name: subName || 'General',
+        categoryName: categoryDef.label,
+        files,
+      };
     }
     return null;
   }, [navigationState, documents, activeCompanyWideCategories]);
@@ -2536,48 +2590,110 @@ export default function Documents() {
                     </>
                   )}
 
-                  {/* File View - Show files within a category */}
-                  {navigationState.currentLevel === 'files' && currentCategoryData && (
-                    <div className="space-y-8">
-
-                      {/* File sections */}
-                      {currentCategoryData.sections.map((section) => (
-                        <div key={section.id} className="space-y-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-primary dark:text-gray-100">{section.name}</h3>
-                            {section.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{section.description}</p>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                            {section.files.map((file) => {
-                              const canDeleteFile = activePrimaryTab === 'external-shared' ? canDeleteExt : canDeleteOrg;
-                              return (
-                                <div key={file.id} className="group relative">
-                                  <FileCard file={file} onClick={handleFileClick} />
-                                  {canDeleteFile && (
-                                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                      {file.url && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}
-                                          className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all shadow-sm"
-                                          title="Open"
-                                        ><ExternalLink className="h-3.5 w-3.5" /></button>
-                                      )}
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); setSharedDocDeleteTarget(file); }}
-                                        className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                                        title="Delete"
-                                      ><Trash2 className="h-3.5 w-3.5" /></button>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
+                  {/* Subcategory View — subfolder cards inside a category */}
+                  {navigationState.currentLevel === 'subcategory' && currentCategoryDef && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-xl font-semibold text-primary dark:text-gray-100">{currentCategoryDef.label}</h2>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {currentSubfolderCards.length} subfolder{currentSubfolderCards.length !== 1 ? 's' : ''}
+                          </p>
                         </div>
-                      ))}
+                        {canManageOrgCategories && activePrimaryTab === 'company-wide' && (
+                          <Button variant="outline" onClick={() => { setNewSubfolderName(''); setIsAddSubfolderOpen(true); }} className="dark:border-white/10">
+                            <FolderPlus className="h-4 w-4 mr-2" /> Add Subfolder
+                          </Button>
+                        )}
+                      </div>
+
+                      {currentSubfolderCards.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-16 text-center">
+                          <FolderOpen className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
+                          <p className="text-gray-500 dark:text-gray-400 text-sm">No subfolders yet.</p>
+                          {canManageOrgCategories && (
+                            <Button variant="outline" size="sm" className="mt-3 dark:border-white/10"
+                              onClick={() => { setNewSubfolderName(''); setIsAddSubfolderOpen(true); }}>
+                              <FolderPlus className="h-4 w-4 mr-2" /> Add Subfolder
+                            </Button>
+                          )}
+                        </div>
+                      ) : viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {currentSubfolderCards.map(folder => (
+                            <DocumentFolderCard
+                              key={folder.id}
+                              folder={folder}
+                              onClick={handleFolderClick}
+                              showAdminActions={canManageOrgCategories && activePrimaryTab === 'company-wide'}
+                              onEdit={canManageOrgCategories ? (f) => { setRenamingSubfolder(f.name); setRenameSubfolderValue(f.name); } : undefined}
+                              onDelete={canManageOrgCategories ? (f) => setDeletingSubfolder(f.name) : undefined}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {currentSubfolderCards.map(folder => (
+                            <DocumentFolderRow
+                              key={folder.id}
+                              folder={folder}
+                              onClick={handleFolderClick}
+                              showAdminActions={canManageOrgCategories && activePrimaryTab === 'company-wide'}
+                              onEdit={canManageOrgCategories ? (f) => { setRenamingSubfolder(f.name); setRenameSubfolderValue(f.name); } : undefined}
+                              onDelete={canManageOrgCategories ? (f) => setDeletingSubfolder(f.name) : undefined}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Files View — documents inside a specific subfolder */}
+                  {navigationState.currentLevel === 'files' && currentCategoryData && (
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-xl font-semibold text-primary dark:text-gray-100">{currentCategoryData.name}</h2>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {currentCategoryData.files.length} document{currentCategoryData.files.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        {canUploadOrg && activePrimaryTab === 'company-wide' && (
+                          <Button onClick={() => setIsAddDocumentModalOpen(true)} variant="default" disabled={isUploading || isLoading}>
+                            <PlusCircle className="h-4 w-4 mr-2" /> Add Document
+                          </Button>
+                        )}
+                      </div>
+
+                      {currentCategoryData.files.length === 0 ? (
+                        <div className="flex items-center gap-3 px-4 py-8 rounded-lg border border-dashed border-gray-200 dark:border-white/10 text-gray-400 dark:text-gray-500 text-sm">
+                          <Folder className="h-5 w-5 flex-shrink-0" />
+                          <span>No documents yet. Use "Add Document" to upload files to this subfolder.</span>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                          {currentCategoryData.files.map((file) => {
+                            const canDeleteFile = activePrimaryTab === 'external-shared' ? canDeleteExt : canDeleteOrg;
+                            return (
+                              <div key={file.id} className="group relative">
+                                <FileCard file={file} onClick={handleFileClick} />
+                                {canDeleteFile && (
+                                  <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    {file.url && (
+                                      <button onClick={(e) => { e.stopPropagation(); window.open(file.url, '_blank'); }}
+                                        className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-primary hover:text-white transition-all shadow-sm"
+                                        title="Open"><ExternalLink className="h-3.5 w-3.5" /></button>
+                                    )}
+                                    <button onClick={(e) => { e.stopPropagation(); setSharedDocDeleteTarget(file); }}
+                                      className="p-1.5 rounded bg-white dark:bg-gray-700 border border-gray-200 dark:border-white/10 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                      title="Delete"><Trash2 className="h-3.5 w-3.5" /></button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2592,9 +2708,22 @@ export default function Documents() {
         isOpen={isAddDocumentModalOpen}
         onOpenChange={setIsAddDocumentModalOpen}
         onShare={handleShareDocument}
-        availableCategories={currentSharePointCategoriesForModal}
+        availableCategories={
+          navigationState.currentLevel === 'files' && currentCategoryData
+            ? [currentCategoryData.categoryName]
+            : currentSharePointCategoriesForModal
+        }
         subCategoryMap={dynamicSubCategoryMap}
-        initialCategory={currentSharePointCategoriesForModal[0]}
+        initialCategory={
+          navigationState.currentLevel === 'files' && currentCategoryData
+            ? currentCategoryData.categoryName
+            : currentSharePointCategoriesForModal[0]
+        }
+        initialSubCategory={
+          navigationState.currentLevel === 'files'
+            ? navigationState.currentSubCategoryName || undefined
+            : undefined
+        }
       />
 
       <AddCategoryDialog
@@ -2731,6 +2860,91 @@ export default function Documents() {
               </Button>
               <Button variant="destructive" onClick={handleSharedDocDeleteConfirm} disabled={isDeletingSharedDoc}>
                 {isDeletingSharedDoc ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                Delete
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Subfolder dialog */}
+      {isAddSubfolderOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Add Subfolder</h3>
+              <button onClick={() => setIsAddSubfolderOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={newSubfolderName}
+              onChange={(e) => setNewSubfolderName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAddSubfolder(); if (e.key === 'Escape') setIsAddSubfolderOpen(false); }}
+              placeholder="Subfolder name"
+              className="w-full px-3 py-2 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsAddSubfolderOpen(false)} className="dark:border-white/10">Cancel</Button>
+              <Button onClick={handleAddSubfolder} disabled={!newSubfolderName.trim() || isAddingSubfolder}>
+                {isAddingSubfolder ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <FolderPlus className="h-4 w-4 mr-2" />}
+                Create
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Subfolder dialog */}
+      {renamingSubfolder !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Rename Subfolder</h3>
+              <button onClick={() => setRenamingSubfolder(null)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <input
+              autoFocus
+              type="text"
+              value={renameSubfolderValue}
+              onChange={(e) => setRenameSubfolderValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleRenameSubfolderConfirm(); if (e.key === 'Escape') setRenamingSubfolder(null); }}
+              className="w-full px-3 py-2 rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-700 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary mb-4"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setRenamingSubfolder(null)} className="dark:border-white/10">Cancel</Button>
+              <Button onClick={handleRenameSubfolderConfirm} disabled={!renameSubfolderValue.trim() || isRenamingSubfolder}>
+                {isRenamingSubfolder ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                Rename
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Subfolder confirm dialog */}
+      {deletingSubfolder !== null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="flex-shrink-0 p-2 rounded-full bg-red-100 dark:bg-red-900/30">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Delete "{deletingSubfolder}"?</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  This will remove the subfolder definition. Documents already tagged to this subfolder will not be deleted but will become unclassified.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeletingSubfolder(null)} className="dark:border-white/10">Cancel</Button>
+              <Button variant="destructive" onClick={handleDeleteSubfolderConfirm} disabled={isDeletingSubfolder}>
+                {isDeletingSubfolder ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
                 Delete
               </Button>
             </div>

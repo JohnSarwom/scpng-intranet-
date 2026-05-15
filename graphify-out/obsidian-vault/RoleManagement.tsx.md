@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\admin\RoleManagement.tsx"
 type: "code"
-community: "Module 77"
+community: "Community 76"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_77
+  - community/Community_76
 ---
 
 # RoleManagement.tsx
 
 ## Connections
-- [[Admin.tsx]] - `references` [INFERRED]
 - [[handleCreateGroup()]] - `contains` [EXTRACTED]
 - [[handleDeleteGroup()]] - `contains` [EXTRACTED]
 - [[handleDuplicateGroup()]] - `contains` [EXTRACTED]
@@ -20,4 +19,4 @@ tags:
 - [[saveNewGroup()]] - `contains` [EXTRACTED]
 - [[togglePermission()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_77
+#graphify/code #graphify/EXTRACTED #community/Community_76

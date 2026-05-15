@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\forms\TrainingRequestPage.tsx"
 type: "code"
-community: "Module 258"
+community: "Community 260"
 location: "L10"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_258
+  - community/Community_260
 ---
 
 # TrainingRequestPage()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TrainingRequestPage.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_258
+#graphify/code #graphify/EXTRACTED #community/Community_260

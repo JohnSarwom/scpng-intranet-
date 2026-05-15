@@ -1,18 +1,17 @@
 ---
 source_file: "src\services\assetSubSharePointService.ts"
 type: "code"
-community: "Module 46"
+community: "Community 45"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_46
+  - community/Community_45
 ---
 
 # assetSubSharePointService.ts
 
 ## Connections
 - [[AssetSubSharePointService]] - `contains` [EXTRACTED]
-- [[useAssetSubSharePoint.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_46
+#graphify/code #graphify/EXTRACTED #community/Community_45

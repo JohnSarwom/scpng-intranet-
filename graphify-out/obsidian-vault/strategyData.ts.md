@@ -1,18 +1,14 @@
 ---
 source_file: "src\mockData\strategyData.ts"
 type: "code"
-community: "Module 523"
+community: "Community 526"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_523
+  - graphify/EXTRACTED
+  - community/Community_526
 ---
 
 # strategyData.ts
 
-## Connections
-- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
-- [[StrategicAlignmentTab.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_523
+#graphify/code #graphify/EXTRACTED #community/Community_526

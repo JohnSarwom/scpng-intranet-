@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\hr\HRDataImporter.tsx"
 type: "code"
-community: "Module 263"
+community: "Community 265"
 location: "L42"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_263
+  - community/Community_265
 ---
 
 # handleImport()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[HRDataImporter.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_263
+#graphify/code #graphify/EXTRACTED #community/Community_265

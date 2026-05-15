@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\BannerManagement.tsx"
 type: "code"
-community: "Module 61"
+community: "Community 61"
 location: "L34"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_61
+  - community/Community_61
 ---
 
 # handleFileChange()
@@ -15,4 +15,4 @@ tags:
 - [[BannerManagement.tsx]] - `contains` [EXTRACTED]
 - [[handleFile()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_61
+#graphify/code #graphify/EXTRACTED #community/Community_61

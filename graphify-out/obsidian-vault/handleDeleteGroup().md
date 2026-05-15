@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\RoleManagement.tsx"
 type: "code"
-community: "Module 77"
+community: "Community 76"
 location: "L96"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_77
+  - community/Community_76
 ---
 
 # handleDeleteGroup()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[RoleManagement.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_77
+#graphify/code #graphify/EXTRACTED #community/Community_76

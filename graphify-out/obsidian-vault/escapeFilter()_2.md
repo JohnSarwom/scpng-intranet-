@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\userSharePointService.ts"
 type: "code"
-community: "User Management Service"
+community: "User SharePoint Service"
 location: "L29"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/User_Management_Service
+  - community/User_SharePoint_Service
 ---
 
 # escapeFilter()
@@ -15,4 +15,4 @@ tags:
 - [[.getUser()]] - `calls` [EXTRACTED]
 - [[userSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/User_Management_Service
+#graphify/code #graphify/EXTRACTED #community/User_SharePoint_Service

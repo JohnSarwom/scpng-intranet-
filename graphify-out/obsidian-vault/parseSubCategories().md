@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\documentCategoriesService.ts"
 type: "code"
-community: "Module 68"
+community: "Community 68"
 location: "L151"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_68
+  - community/Community_68
 ---
 
 # parseSubCategories()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[documentCategoriesService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_68
+#graphify/code #graphify/EXTRACTED #community/Community_68

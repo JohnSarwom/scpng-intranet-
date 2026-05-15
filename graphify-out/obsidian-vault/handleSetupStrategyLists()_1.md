@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Unit.tsx"
 type: "code"
-community: "Module 56"
+community: "Community 55"
 location: "L395"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_56
+  - community/Community_55
 ---
 
 # handleSetupStrategyLists()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Unit.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_56
+#graphify/code #graphify/EXTRACTED #community/Community_55

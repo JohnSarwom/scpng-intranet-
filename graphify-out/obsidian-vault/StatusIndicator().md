@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\TrafficLightCard.tsx"
 type: "code"
-community: "Module 247"
+community: "Community 249"
 location: "L27"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_247
+  - community/Community_249
 ---
 
 # StatusIndicator()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TrafficLightCard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_247
+#graphify/code #graphify/EXTRACTED #community/Community_249

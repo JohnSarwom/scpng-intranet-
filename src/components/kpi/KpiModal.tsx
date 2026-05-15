@@ -7,7 +7,8 @@ import KpiInputBlock from './KpiInputBlock';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { PlusCircle, Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Loader2, Trash2, AlertTriangle, SendHorizonal } from 'lucide-react';
+import { Badge } from "@/components/ui/badge";
 import { KraStatus } from '@/types';
 import {
   AlertDialog,
@@ -39,6 +40,7 @@ interface KpiModalProps {
   isReadOnly?: boolean; // New prop for read-only view mode
   onDeleteKra?: (id: string | number) => Promise<void>;
   onDeleteKpi?: (id: string | number) => Promise<void>;
+  onSubmitForReview?: (kpiId: string | number, reviewerEmail: string) => Promise<void>;
 }
 
 const KpiModal: React.FC<KpiModalProps> = ({
@@ -58,6 +60,7 @@ const KpiModal: React.FC<KpiModalProps> = ({
   isReadOnly = false,
   onDeleteKra,
   onDeleteKpi,
+  onSubmitForReview,
 }) => {
   // Initialize state based on whether we are editing or adding
   const [formData, setFormData] = useState<Partial<Kra>>({});
@@ -267,6 +270,58 @@ const KpiModal: React.FC<KpiModalProps> = ({
     }
   };
 
+  const handleSubmitForReview = async () => {
+    if (!editingKpi?.kpi?.id) return;
+    const kpi = kpiBlocks[0];
+    if (!kpi) return;
+    setIsSubmitting(true);
+    try {
+      // Build the updated KPI with reviewStatus stamped, bypassing async setState
+      const updatedKpi = { ...kpi, reviewStatus: 'submitted' as const };
+      const { tempId, ...kpiRest } = updatedKpi;
+
+      // Build the complete KRA payload directly (mirrors handleSubmit logic)
+      const completeFormData = {
+        ...formData,
+        id: formData.id || kraData?.id || undefined,
+        kpis: [kpiRest],
+        unit: formData.unit,
+        department: formData.unit,
+        unitId: formData.unitId,
+        title: formData.title || 'Untitled KRA',
+        objective_id: formData.objective_id || (formData as any).objectiveId,
+        startDate: formData.startDate || '',
+        targetDate: formData.targetDate || '',
+        owner: formData.owner,
+        description: formData.description,
+        status: 'in-progress' as KraStatus,
+      };
+
+      await onSubmit(completeFormData as Kra);
+
+      // Update local state to reflect the new review status in the badge
+      setKpiBlocks([updatedKpi]);
+
+      // Fire the notification callback if wired up
+      if (onSubmitForReview && kpi.reviewAuthority) {
+        await onSubmitForReview(editingKpi.kpi.id, kpi.reviewAuthority);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const REVIEW_STATUS_BADGE: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+    draft:        { label: 'Draft',        variant: 'outline' },
+    submitted:    { label: 'Submitted',    variant: 'secondary' },
+    under_review: { label: 'Under Review', variant: 'secondary' },
+    approved:     { label: 'Approved',     variant: 'default' },
+    rejected:     { label: 'Rejected',     variant: 'destructive' },
+  };
+
+  const currentReviewStatus = kpiBlocks[0]?.reviewStatus;
+  const reviewBadge = currentReviewStatus ? REVIEW_STATUS_BADGE[currentReviewStatus] : null;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col dark:bg-gray-950 dark:border-white/10" container={container}>
@@ -341,12 +396,37 @@ const KpiModal: React.FC<KpiModalProps> = ({
         </div>
 
         {/* Footer remains fixed at the bottom */}
-        <DialogFooter className="mt-auto pt-4 border-t dark:border-white/10">
+        <DialogFooter className="mt-auto pt-4 border-t dark:border-white/10 flex-wrap gap-2">
+          {/* Review status badge (shown when editing an existing KPI) */}
+          {!isAddingNew && editingKpi && reviewBadge && (
+            <Badge variant={reviewBadge.variant} className="mr-auto self-center">
+              {reviewBadge.label}
+            </Badge>
+          )}
+
           <DialogClose asChild>
             <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting} className="dark:border-white/10 dark:hover:bg-gray-900">
               {isReadOnly ? 'Close' : 'Cancel'}
             </Button>
           </DialogClose>
+
+          {/* Submit for Review — shown only when editing an existing KPI not yet submitted/approved */}
+          {!isReadOnly && !isAddingNew && editingKpi && onSubmitForReview &&
+            currentReviewStatus !== 'submitted' &&
+            currentReviewStatus !== 'under_review' &&
+            currentReviewStatus !== 'approved' && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSubmitForReview}
+              disabled={isSubmitting}
+              className="border-blue-500 text-blue-600 hover:bg-blue-50 dark:border-blue-400 dark:text-blue-400 dark:hover:bg-blue-950/30"
+            >
+              <SendHorizonal className="mr-2 h-4 w-4" />
+              Submit for Review
+            </Button>
+          )}
+
           {!isReadOnly && (
             <Button type="button" onClick={() => handleSubmit()} disabled={isSubmitting} className="bg-intranet-primary hover:bg-intranet-secondary text-white shadow-lg">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

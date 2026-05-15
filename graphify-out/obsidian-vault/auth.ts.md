@@ -1,18 +1,17 @@
 ---
 source_file: "src\services\powerAutomate\auth.ts"
 type: "code"
-community: "Module 140"
+community: "Community 141"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_140
+  - community/Community_141
 ---
 
 # auth.ts
 
 ## Connections
 - [[PowerAutomateAuth]] - `contains` [EXTRACTED]
-- [[config.ts]] - `references` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_140
+#graphify/code #graphify/EXTRACTED #community/Community_141

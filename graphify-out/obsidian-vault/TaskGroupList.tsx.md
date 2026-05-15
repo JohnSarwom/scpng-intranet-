@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\TaskGroupList.tsx"
 type: "code"
-community: "Module 245"
+community: "Community 247"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_245
+  - community/Community_247
 ---
 
 # TaskGroupList.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[getIcon()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_245
+#graphify/code #graphify/EXTRACTED #community/Community_247

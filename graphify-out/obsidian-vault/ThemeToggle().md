@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\layout\ThemeToggle.tsx"
 type: "code"
-community: "Module 267"
+community: "Community 269"
 location: "L6"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_267
+  - community/Community_269
 ---
 
 # ThemeToggle()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ThemeToggle.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_267
+#graphify/code #graphify/EXTRACTED #community/Community_269

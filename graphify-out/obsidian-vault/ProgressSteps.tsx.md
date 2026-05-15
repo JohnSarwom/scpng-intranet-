@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\setup-wizard\components\ProgressSteps.tsx"
 type: "code"
-community: "Module 431"
+community: "Community 434"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_431
+  - graphify/EXTRACTED
+  - community/Community_434
 ---
 
 # ProgressSteps.tsx
 
-## Connections
-- [[types.ts_5]] - `imports_from` [INFERRED]
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_431
+#graphify/code #graphify/EXTRACTED #community/Community_434

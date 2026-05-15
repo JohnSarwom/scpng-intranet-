@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\AssetManagementNew.tsx"
 type: "code"
-community: "Asset Management UI"
-location: "L364"
+community: "Asset Management"
+location: "L365"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Asset_Management_UI
+  - community/Asset_Management
 ---
 
 # handleSeedDemoAssets()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AssetManagementNew.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Asset_Management_UI
+#graphify/code #graphify/EXTRACTED #community/Asset_Management

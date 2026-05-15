@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Apps.tsx"
 type: "code"
-community: "Module 344"
+community: "Community 346"
 location: "L5"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_344
+  - community/Community_346
 ---
 
 # Apps()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Apps.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_344
+#graphify/code #graphify/EXTRACTED #community/Community_346

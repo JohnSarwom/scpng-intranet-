@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\unit-tabs\KraDialog.tsx"
 type: "code"
-community: "Module 284"
+community: "Community 286"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_284
+  - community/Community_286
 ---
 
 # KraDialog.tsx
 
 ## Connections
-- [[KRAsTab.tsx]] - `references` [EXTRACTED]
 - [[handleSubmit()_10]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_284
+#graphify/code #graphify/EXTRACTED #community/Community_286

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useRiskState.ts"
 type: "code"
-community: "Module 323"
+community: "Community 325"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_323
+  - community/Community_325
 ---
 
 # useRiskState.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useRiskState()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_323
+#graphify/code #graphify/EXTRACTED #community/Community_325

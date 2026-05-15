@@ -1,19 +1,17 @@
 ---
 source_file: "src\components\analytics\WebsiteAnalyticsAIChat.tsx"
 type: "code"
-community: "Module 36"
+community: "Community 35"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_36
+  - community/Community_35
 ---
 
 # WebsiteAnalyticsAIChat.tsx
 
 ## Connections
-- [[WebsiteAnalytics.tsx]] - `imports_from` [INFERRED]
-- [[analyticsQuestions.ts]] - `references` [INFERRED]
 - [[fetchAiSettings()]] - `contains` [EXTRACTED]
 - [[handleClearChat()]] - `contains` [EXTRACTED]
 - [[handleCopy()]] - `contains` [EXTRACTED]
@@ -24,6 +22,5 @@ tags:
 - [[scrollToBottom()]] - `contains` [EXTRACTED]
 - [[serializeAnalyticsContext()]] - `contains` [EXTRACTED]
 - [[typeNextChar()]] - `contains` [EXTRACTED]
-- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_36
+#graphify/code #graphify/EXTRACTED #community/Community_35

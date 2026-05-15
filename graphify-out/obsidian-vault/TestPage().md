@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\TestPage.tsx"
 type: "code"
-community: "Module 350"
+community: "Community 353"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_350
+  - community/Community_353
 ---
 
 # TestPage()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[TestPage.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_350
+#graphify/code #graphify/EXTRACTED #community/Community_353

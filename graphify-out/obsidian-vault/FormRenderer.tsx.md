@@ -1,19 +1,17 @@
 ---
 source_file: "src\components\forms\FormRenderer.tsx"
 type: "code"
-community: "Module 255"
+community: "Community 257"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_255
+  - graphify/EXTRACTED
+  - community/Community_257
 ---
 
 # FormRenderer.tsx
 
 ## Connections
-- [[FillFormPage.tsx]] - `references` [INFERRED]
 - [[FormRenderer()]] - `contains` [EXTRACTED]
-- [[TestGround.tsx]] - `references` [INFERRED]
 
-#graphify/code #graphify/INFERRED #community/Module_255
+#graphify/code #graphify/EXTRACTED #community/Community_257

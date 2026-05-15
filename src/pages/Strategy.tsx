@@ -445,7 +445,7 @@ const Strategy = () => {
 
     const effectiveObjectives = baseObjectives.map((obj: any) => {
         // 1. Calculate progress directly from child unit-level objectives
-        const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || []);
+        const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || [], strategyData?.strategicKRAs || [], strategyData?.strategicInitiatives || []);
 
         // 2. CORPORATE PLAN 2026-2028: Check if this objective has new Strategic KRAs linked to it
         const newKRAs = (strategyData?.strategicKRAs || [])

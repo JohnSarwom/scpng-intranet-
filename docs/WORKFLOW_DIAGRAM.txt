@@ -1,0 +1,294 @@
+================================================================================
+                    LEAVE APPROVAL WORKFLOW — COMPLETE FLOW
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 1. EMPLOYEE SUBMITS LEAVE REQUEST                                         │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  SubmitLeaveRequest()
+        │
+        ├─→ Store in SharePoint (including EmployeeEmail ← FIX)
+        ├─→ Increment pending balance
+        │
+        ├─→ Send Email to EMPLOYEE: "Submission confirmation"
+        │
+        └─→ Send Email to MANAGER: "Action Required"
+               ├─ Request details (dates, days, division, unit)
+               ├─ [Approve button] → /leave-action?requestId=42&action=approve
+               └─ [Decline button] → /leave-action?requestId=42&action=decline
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 2. MANAGER APPROVES (Via Email Button OR Dashboard)                       │
+└──────────────────────────────────────────────────────────────────────────┘
+
+  OPTION A: Via Email Button
+  ──────────────────────────
+    Click [Approve] in email
+         │
+         ▼
+    /leave-action?requestId=42&action=approve
+         │
+         ├─→ Not logged in? → MSAL login (CustomNavigationClient handles redirect)
+         │   (NO full page reload, tokens stay intact)
+         │
+         ▼
+    LeaveActionPage renders
+         │
+         ├─→ Load request details
+         ├─→ Show approval confirmation
+         │
+         ▼
+    Click "Confirm Approval"
+         │
+         ▼
+    useApproveLeave() mutation
+         │
+         └─→ approveLeaveRequest()
+
+
+  OPTION B: Via Dashboard
+  ───────────────────────
+    Navigate to /hr-profiles?tab=leave-approvals
+         │
+         ▼
+    Click [Approve] button on request
+         │
+         ▼
+    useApproveLeave() mutation
+         │
+         └─→ approveLeaveRequest()
+
+
+  BOTH PATHS CONVERGE HERE:
+  ─────────────────────────
+    approveLeaveRequest()
+         │
+         ├─→ Update SharePoint: Stage = "Director Review"
+         │
+         ├─→ [EMPLOYEE NOTIFICATION] ← FIX: Now properly gated
+         │   IF emailCtx?.employeeEmail:
+         │       Send: "Manager Approved — forwarded to Director Review"
+         │
+         └─→ [NEXT-STAGE NOTIFICATION] ← FIX: Independent check
+             IF nextStage !== 'Approved' AND emailCtx:
+                 getApproverForStage(division, unit, 'Director Review')
+                     │
+                     ▼
+                 Send Email to DIRECTOR: "Action Required"
+                    ├─ Request details
+                    ├─ [Approve button] → /leave-action?requestId=42&action=approve
+                    └─ [Decline button] → /leave-action?requestId=42&action=decline
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 3. DIRECTOR APPROVES (Same pattern repeats)                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+    approveLeaveRequest()
+         │
+         ├─→ Update SharePoint: Stage = "HR Review"
+         │
+         ├─→ Send Email to EMPLOYEE: "Director Approved"
+         │
+         └─→ Send Email to HR: "Action Required"
+              ├─ [Approve] → /leave-action?requestId=42&action=approve
+              └─ [Decline] → /leave-action?requestId=42&action=decline
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 4. HR APPROVES (Final stage)                                              │
+└──────────────────────────────────────────────────────────────────────────┘
+
+    approveLeaveRequest()
+         │
+         ├─→ Update SharePoint: Stage = "Approved", Status = "Approved"
+         │
+         ├─→ Deduct leave balance automatically
+         │
+         ├─→ Send Email to EMPLOYEE: "Fully Approved — leave granted"
+         │
+         └─→ [NO next-stage notification — chain is complete]
+
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│ 5. DECLINE PATH (Can happen at any stage)                                 │
+└──────────────────────────────────────────────────────────────────────────┘
+
+    Click [Decline] button in email
+         │
+         ▼
+    /leave-action?requestId=42&action=decline
+         │
+         ├─→ Show request details
+         ├─→ Text field: "Reason for declining" (required)
+         │
+         ▼
+    Click "Confirm Decline"
+         │
+         ▼
+    useRejectLeave() mutation
+         │
+         └─→ rejectLeaveRequest()
+              │
+              ├─→ Update SharePoint: Status = "Rejected", Stage = "Rejected"
+              │
+              ├─→ Reverse pending balance (undo the increment from submission)
+              │
+              └─→ Send Email to EMPLOYEE: "Rejected"
+                   ├─ Reason displayed
+                   └─ [NO next-stage notification — chain is blocked]
+
+
+================================================================================
+                              KEY FIXES APPLIED
+================================================================================
+
+1. CUSTOM NAVIGATION CLIENT (CustomNavigationClient.ts)
+   ────────────────────────────────────────────────
+   Problem: Full page reloads during MSAL redirect lost React context
+   Fix:     Intercepts MSAL navigation, routes through React Router
+   Result:  Tokens stay intact, MSAL context preserved, smooth UX
+
+2. EMPLOYEE EMAIL PERSISTENCE (hrSharePointService.ts:633)
+   ────────────────────────────────────────────────────
+   Problem: EmployeeEmail never stored in SharePoint
+   Fix:     Added to itemData.fields on submission
+   Result:  Later approval steps can notify employee
+
+3. NOTIFICATION SPLIT (hrSharePointService.ts:868)
+   ──────────────────────────────────────────────
+   Problem: All emails gated behind employeeEmail check
+   Fix:     Split into two independent checks:
+            - Employee email: IF emailCtx?.employeeEmail
+            - Next approver: IF nextStage !== 'Approved' AND emailCtx
+   Result:  Chain continues even if employee email is missing
+
+4. EMAIL CONTEXT CONSTRUCTION (useLeaveApprovals.ts)
+   ────────────────────────────────────────────────
+   Problem: emailCtx undefined if employeeEmail missing
+   Fix:     Construct emailCtx based on division/unit availability
+   Result:  Approver lookup always has division/unit info
+
+5. EMAIL BUTTON URLs (hrEmailService.ts)
+   ───────────────────────────────────────
+   Problem: Single "Review & Action" button → full dashboard
+   Fix:     Two buttons → lightweight /leave-action page
+   Result:  One-click approval experience
+
+
+================================================================================
+                            NOTIFICATION MATRIX
+================================================================================
+
+Event                   Who Gets Email          Content
+─────────────────────────────────────────────────────────────────────────────
+Submit Leave            • Employee              Confirmation + next steps
+Submit Leave            • Manager               Action Required [Approve][Decline]
+Manager Approves        • Employee              Manager Approved (status update)
+Manager Approves        • Director              Action Required [Approve][Decline]
+Director Approves       • Employee              Director Approved (status update)
+Director Approves       • HR                    Action Required [Approve][Decline]
+HR Approves             • Employee              Fully Approved ✓ (leave granted)
+Reject (any stage)      • Employee              Rejected (with reason)
+─────────────────────────────────────────────────────────────────────────────
+
+Note: All notifications fire from EITHER email button OR dashboard action.
+      The approval entry point does NOT affect who receives emails.
+
+
+================================================================================
+                           AUTHENTICATION FLOW
+================================================================================
+
+Email Button Click
+       │
+       ├─→ /leave-action?requestId=42&action=approve
+       │
+       ├─→ ProtectedRoute checks: isAuthenticated?
+       │       │
+       │       ├─ YES → LeaveActionPage renders
+       │       │
+       │       └─ NO → Redirect to /login
+       │           │
+       │           └─→ User clicks "Sign in with Microsoft"
+       │               │
+       │               └─→ instance.loginRedirect()
+       │                   │
+       │                   ├─ MSAL records: "I was called from /login"
+       │                   ├─ Browser redirects to Microsoft login
+       │                   └─ User signs in
+       │
+       ├─ Microsoft redirects back to /
+       │   │
+       │   └─→ MsalAuthProvider initializes:
+       │       ├─ Calls handleRedirectPromise()
+       │       ├─ Processes auth code → stores tokens
+       │       ├─ CustomNavigationClient INTERCEPTS next navigation
+       │       └─ navigateToLoginRequestUrl: true → MSAL wants to go back to /login
+       │
+       ├─→ CustomNavigationClient.navigateInternal('/login')
+       │   │
+       │   └─→ Calls React Router's navigate('/login')
+       │       │
+       │       └─ [NO full page reload — React tree stays alive!]
+       │
+       ├─→ Login.tsx renders
+       │   │
+       │   └─→ useEffect sees isAuthenticated=true
+       │       │
+       │       └─→ reads sessionStorage['auth_return_to'] = "/leave-action?..."
+       │           │
+       │           └─→ navigate('/leave-action?requestId=42&action=approve')
+       │
+       └─→ LeaveActionPage renders with request details
+           │
+           └─→ User can now confirm the approval!
+
+KEY INSIGHT: CustomNavigationClient + navigateToLoginRequestUrl + sessionStorage
+             backup = deep-link preservation that survives Microsoft OAuth flow
+
+
+================================================================================
+                              ERROR HANDLING
+================================================================================
+
+Scenario                                 Handling
+─────────────────────────────────────────────────────────────────────────────
+Request already approved/rejected        LeaveActionPage: "Request not found"
+                                         Suggests: "View Leave Approvals"
+
+Missing division/unit for approver       Approver lookup fails (try-catch)
+lookup                                   Chain continues, approver doesn't get notified
+                                         (configure workflow approvers in admin)
+
+Missing employee email (old requests)    Employee doesn't get status update
+                                         Next approver STILL gets notified (chain ok)
+
+Network error during approval            LeaveActionPage: "Approval failed"
+                                         Approver can retry or use dashboard
+
+Invalid requestId in URL                 LeaveActionPage: "Request not found"
+                                         (typo in email link)
+
+Session expires mid-approval             useApproveLeave catch: "Please log in again"
+                                         (rare; MSAL refreshes tokens automatically)
+
+
+================================================================================
+                         TESTING KEY SCENARIOS
+================================================================================
+
+✓ Email button → Not logged in → Login → Returns to approval page (deep-link)
+✓ Email button → Already logged in → Skips login → Approval page (instant)
+✓ Dashboard approval → Next approver gets email with button (chain continues)
+✓ Email approval → Next approver gets email with button (chain continues)
+✓ Decline with empty reason → Button disabled (validation)
+✓ Old request without EmployeeEmail → Approver still notified (chain continues)
+✓ Approver not found for stage → Graceful fail, approver not notified (warn admin)
+
+See: docs/features/MSAL_DEEPLINK_FIX_AND_EMAIL_APPROVAL.md for full testing guide
+
+
+================================================================================

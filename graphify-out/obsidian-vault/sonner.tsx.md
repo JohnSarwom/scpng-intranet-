@@ -1,22 +1,17 @@
 ---
 source_file: "src\components\ui\sonner.tsx"
 type: "code"
-community: "Module 281"
+community: "Community 283"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_281
+  - graphify/EXTRACTED
+  - community/Community_283
 ---
 
 # sonner.tsx
 
 ## Connections
-- [[AddUserModal.tsx]] - `imports_from` [INFERRED]
-- [[DatabaseConnectionActions.tsx]] - `imports_from` [INFERRED]
-- [[DivisionReportsTab.tsx]] - `imports_from` [INFERRED]
-- [[EditUserModal.tsx]] - `imports_from` [INFERRED]
-- [[MicrosoftLoginButton.tsx]] - `imports_from` [INFERRED]
 - [[Toaster()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_281
+#graphify/code #graphify/EXTRACTED #community/Community_283

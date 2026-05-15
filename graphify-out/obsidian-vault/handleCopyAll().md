@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Contacts.tsx"
 type: "code"
-community: "Module 161"
+community: "Community 162"
 location: "L71"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_161
+  - community/Community_162
 ---
 
 # handleCopyAll()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Contacts.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_161
+#graphify/code #graphify/EXTRACTED #community/Community_162

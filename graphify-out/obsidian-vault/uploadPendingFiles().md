@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\TaskDialog.tsx"
 type: "code"
-community: "Task Dialog"
+community: "Community 27"
 location: "L316"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Task_Dialog
+  - community/Community_27
 ---
 
 # uploadPendingFiles()
@@ -16,4 +16,4 @@ tags:
 - [[handleSubmit()_12]] - `calls` [EXTRACTED]
 - [[sanitizeFolderName()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Task_Dialog
+#graphify/code #graphify/EXTRACTED #community/Community_27

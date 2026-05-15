@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useDivisionData.ts"
 type: "code"
-community: "Module 299"
+community: "Community 300"
 location: "L49"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_299
+  - community/Community_300
 ---
 
 # useDivisionData()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useDivisionData.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_299
+#graphify/code #graphify/EXTRACTED #community/Community_300

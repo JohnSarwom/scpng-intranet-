@@ -1,19 +1,17 @@
 ---
 source_file: "src\hooks\useTaskGroupPreferences.ts"
 type: "code"
-community: "Module 329"
+community: "Community 331"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_329
+  - community/Community_331
 ---
 
 # useTaskGroupPreferences.ts
 
 ## Connections
-- [[graphService.ts]] - `imports_from` [EXTRACTED]
-- [[sharePointOpsService.ts]] - `imports_from` [EXTRACTED]
 - [[useTaskGroupPreferences()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_329
+#graphify/code #graphify/EXTRACTED #community/Community_331

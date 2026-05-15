@@ -1,18 +1,17 @@
 ---
 source_file: "src\integrations\microsoft\msalService.ts"
 type: "code"
-community: "Module 32"
+community: "Community 31"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_32
+  - community/Community_31
 ---
 
 # msalService.ts
 
 ## Connections
-- [[MicrosoftLoginButton.tsx]] - `imports_from` [INFERRED]
 - [[callMsGraphApi()]] - `contains` [EXTRACTED]
 - [[diagnoseMsalIssues()]] - `contains` [EXTRACTED]
 - [[getAccessToken()]] - `contains` [EXTRACTED]
@@ -25,4 +24,4 @@ tags:
 - [[logout()]] - `contains` [EXTRACTED]
 - [[setMsalInstance()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_32
+#graphify/code #graphify/EXTRACTED #community/Community_31

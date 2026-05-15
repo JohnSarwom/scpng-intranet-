@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\KRAsTab.tsx"
 type: "code"
-community: "KRA/KPI Tab"
+community: "KRAs Tab"
 location: "L503"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/KRA/KPI_Tab
+  - community/KRAs_Tab
 ---
 
 # handleOpenEditKraModal()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KRAsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/KRA/KPI_Tab
+#graphify/code #graphify/EXTRACTED #community/KRAs_Tab

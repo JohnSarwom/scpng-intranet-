@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\hrSharePointService.ts"
 type: "code"
-community: "HR Service"
+community: "HR SharePoint Service"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/HR_Service
+  - community/HR_SharePoint_Service
 ---
 
 # hrSharePointService.ts
@@ -15,8 +15,5 @@ tags:
 - [[HRSharePointService]] - `contains` [EXTRACTED]
 - [[createHRService()]] - `contains` [EXTRACTED]
 - [[getHRServiceInstance()]] - `contains` [EXTRACTED]
-- [[useHRService.ts]] - `imports_from` [EXTRACTED]
-- [[useLeaveBalances.ts]] - `imports_from` [EXTRACTED]
-- [[useLeaveRequests.ts]] - `imports_from` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/HR_Service
+#graphify/code #graphify/EXTRACTED #community/HR_SharePoint_Service

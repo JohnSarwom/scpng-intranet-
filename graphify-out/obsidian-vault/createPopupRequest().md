@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\msalConfig.ts"
 type: "code"
-community: "Module 133"
+community: "Community 134"
 location: "L109"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_133
+  - community/Community_134
 ---
 
 # createPopupRequest()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[msalConfig.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_133
+#graphify/code #graphify/EXTRACTED #community/Community_134

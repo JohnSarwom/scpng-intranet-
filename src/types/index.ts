@@ -30,6 +30,8 @@ export interface Risk {
   division_id?: string;
   project_id?: string;
   project_name?: string;
+  kpi_id?: string | number | null;
+  kra_id?: string | number | null;
 }
 
 export interface KPI {
@@ -344,6 +346,10 @@ export interface Objective {
 }
 
 export type KraStatus = 'on-track' | 'at-risk' | 'off-track' | 'completed' | 'pending';
+export type KpiLevel = 'director' | 'manager' | 'staff';
+export type KpiReviewStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
+export type KpiReportingFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
+
 export interface Kpi {
   tempId?: string;
   id: string | number;
@@ -364,9 +370,20 @@ export interface Kpi {
   unit?: string;
   progress?: number;
   costAssociated?: number;
-  calculationType?: 'manual' | 'checklist';
+  calculationType?: 'manual' | 'checklist' | 'task-completion';
   checklist?: ChecklistItem[];
+  // Governance fields (Framework §5.1)
+  level?: KpiLevel;
+  owner?: User;
+  dataSource?: string;
+  reportingFrequency?: KpiReportingFrequency;
+  reviewAuthority?: string;
+  weight?: number;
+  // Review workflow (Framework §5.3)
+  reviewStatus?: KpiReviewStatus;
+  reviewNote?: string;
 }
+
 export interface Kra {
   id: string | number;
   title: string;
@@ -388,6 +405,10 @@ export interface Kra {
   createdByEmail?: string;
   unitObjectives?: { title: string } | null;
   assignees?: User[];
+  // Role-level tagging (Framework §4.3–4.5)
+  level?: KpiLevel;
+  // Bridge: manager KRA operationalizes a director's KPI (Framework §4.5)
+  parentKpiId?: string | number | null;
 }
 
 export interface IAnnouncement {

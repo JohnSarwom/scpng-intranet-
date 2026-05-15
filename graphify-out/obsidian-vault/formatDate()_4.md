@@ -1,18 +1,17 @@
 ---
-source_file: "src\components\unit-tabs\ReportsTab.tsx"
+source_file: "src\components\unit-tabs\ProjectsTab.tsx"
 type: "code"
-community: "Reports Tab"
-location: "L366"
+community: "Community 41"
+location: "L183"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Reports_Tab
+  - community/Community_41
 ---
 
 # formatDate()
 
 ## Connections
-- [[ReportPreview()]] - `calls` [EXTRACTED]
-- [[ReportsTab.tsx]] - `contains` [EXTRACTED]
+- [[ProjectsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Reports_Tab
+#graphify/code #graphify/EXTRACTED #community/Community_41

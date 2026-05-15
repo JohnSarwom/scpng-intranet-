@@ -1,24 +1,17 @@
 ---
 source_file: "src\pages\TestGround.tsx"
 type: "code"
-community: "TestGround Admin"
+community: "TestGround Dev Page"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/TestGround_Admin
+  - community/TestGround_Dev_Page
 ---
 
 # TestGround.tsx
 
 ## Connections
-- [[AssetCard.tsx]] - `references` [INFERRED]
-- [[DecommissionedAssetTableHeader.tsx]] - `references` [INFERRED]
-- [[FormRenderer.tsx]] - `references` [INFERRED]
-- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
-- [[PageLayout.tsx]] - `references` [INFERRED]
-- [[SharePointExplorer.tsx]] - `references` [INFERRED]
-- [[StatusBadge.tsx]] - `references` [INFERRED]
 - [[async()_3]] - `contains` [EXTRACTED]
 - [[handleClearMockData()]] - `contains` [EXTRACTED]
 - [[handleCopy()_5]] - `contains` [EXTRACTED]
@@ -28,6 +21,7 @@ tags:
 - [[handleDeleteDocs()]] - `contains` [EXTRACTED]
 - [[handleDeleteReportFlow()]] - `contains` [EXTRACTED]
 - [[handleDeployReportFlow()]] - `contains` [EXTRACTED]
+- [[handleDropFacebookUrlColumns()]] - `contains` [EXTRACTED]
 - [[handleEnsureAssigneesColumn()]] - `contains` [EXTRACTED]
 - [[handleEnsureCompletionColumn()]] - `contains` [EXTRACTED]
 - [[handleEnsureDocsList()]] - `contains` [EXTRACTED]
@@ -41,6 +35,7 @@ tags:
 - [[handleMigrateStrategyData()]] - `contains` [EXTRACTED]
 - [[handlePurgeAndResetOperations()]] - `contains` [EXTRACTED]
 - [[handlePurgeDemoData()]] - `contains` [EXTRACTED]
+- [[handleReseedScpngFramework()]] - `contains` [EXTRACTED]
 - [[handleResetAndSeedProjects()]] - `contains` [EXTRACTED]
 - [[handleResetStrategyProgress()]] - `contains` [EXTRACTED]
 - [[handleSeedAssetSubLists()]] - `contains` [EXTRACTED]
@@ -58,6 +53,7 @@ tags:
 - [[handleSetupDocs()]] - `contains` [EXTRACTED]
 - [[handleSetupDocumentCategories()]] - `contains` [EXTRACTED]
 - [[handleSetupEmployeeProfiles()]] - `contains` [EXTRACTED]
+- [[handleSetupFacebookAnalytics()]] - `contains` [EXTRACTED]
 - [[handleSetupFormsEngine()]] - `contains` [EXTRACTED]
 - [[handleSetupITRequestList()]] - `contains` [EXTRACTED]
 - [[handleSetupMarketLists()]] - `contains` [EXTRACTED]
@@ -71,10 +67,6 @@ tags:
 - [[handleSetupStrategyLists()]] - `contains` [EXTRACTED]
 - [[handleSetupTaskGroups()]] - `contains` [EXTRACTED]
 - [[handleUploadMockData()]] - `contains` [EXTRACTED]
-- [[input.tsx]] - `references` [INFERRED]
 - [[loadRecentITRequests()]] - `contains` [EXTRACTED]
-- [[separator.tsx]] - `references` [INFERRED]
-- [[use-toast.ts]] - `references` [INFERRED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/TestGround_Admin
+#graphify/code #graphify/EXTRACTED #community/TestGround_Dev_Page

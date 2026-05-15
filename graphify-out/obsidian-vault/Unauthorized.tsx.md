@@ -1,19 +1,17 @@
 ---
 source_file: "src\pages\Unauthorized.tsx"
 type: "code"
-community: "Module 354"
+community: "Community 357"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_354
+  - graphify/EXTRACTED
+  - community/Community_357
 ---
 
 # Unauthorized.tsx
 
 ## Connections
-- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
 - [[handleRefresh()_1]] - `contains` [EXTRACTED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/INFERRED #community/Module_354
+#graphify/code #graphify/EXTRACTED #community/Community_357

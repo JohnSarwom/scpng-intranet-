@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\assets\filters\FilterGroup.tsx"
 type: "code"
-community: "Module 227"
+community: "Community 229"
 location: "L35"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_227
+  - community/Community_229
 ---
 
 # FilterGroup()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[FilterGroup.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_227
+#graphify/code #graphify/EXTRACTED #community/Community_229

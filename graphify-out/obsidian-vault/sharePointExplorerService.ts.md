@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\sharePointExplorerService.ts"
 type: "code"
-community: "SharePoint Explorer Service"
+community: "Community 25"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Explorer_Service
+  - community/Community_25
 ---
 
 # sharePointExplorerService.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[SharePointExplorerService]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer_Service
+#graphify/code #graphify/EXTRACTED #community/Community_25

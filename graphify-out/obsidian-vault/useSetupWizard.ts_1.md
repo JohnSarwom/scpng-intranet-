@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useSetupWizard.ts"
 type: "code"
-community: "Module 182"
+community: "Community 183"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_182
+  - community/Community_183
 ---
 
 # useSetupWizard.ts
 
 ## Connections
-- [[types.ts_3]] - `imports_from` [INFERRED]
 - [[useSetupWizard()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_182
+#graphify/code #graphify/EXTRACTED #community/Community_183

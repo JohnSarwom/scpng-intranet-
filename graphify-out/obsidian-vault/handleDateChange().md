@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\kpi\KraFormSection.tsx"
 type: "code"
-community: "Module 264"
+community: "Community 266"
 location: "L78"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_264
+  - community/Community_266
 ---
 
 # handleDateChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KraFormSection.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_264
+#graphify/code #graphify/EXTRACTED #community/Community_266

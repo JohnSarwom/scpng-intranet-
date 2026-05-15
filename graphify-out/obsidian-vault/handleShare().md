@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\meeting\ShareMeetingModal.tsx"
 type: "code"
-community: "Module 268"
+community: "Community 270"
 location: "L47"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_268
+  - community/Community_270
 ---
 
 # handleShare()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ShareMeetingModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_268
+#graphify/code #graphify/EXTRACTED #community/Community_270

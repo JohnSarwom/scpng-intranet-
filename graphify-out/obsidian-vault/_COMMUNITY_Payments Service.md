@@ -12,7 +12,7 @@ members: 17
 ## Members
 - [[.addPayment()]] - code - src\services\paymentsSharePointService.ts
 - [[.approvePayment()]] - code - src\services\paymentsSharePointService.ts
-- [[.constructor()_14]] - code - src\services\paymentsSharePointService.ts
+- [[.constructor()_17]] - code - src\services\paymentsSharePointService.ts
 - [[.deletePayment()]] - code - src\services\paymentsSharePointService.ts
 - [[.filterPaymentsByRole()]] - code - src\services\paymentsSharePointService.ts
 - [[.getListColumns()_2]] - code - src\services\paymentsSharePointService.ts
@@ -34,9 +34,3 @@ members: 17
 TABLE source_file, type FROM #community/Payments_Service
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 320]]
-
-## Top bridge nodes
-- [[paymentsSharePointService.ts]] - degree 2, connects to 1 community

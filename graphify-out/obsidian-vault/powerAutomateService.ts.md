@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\powerAutomateService.ts"
 type: "code"
-community: "Power Automate Service"
+community: "Community 24"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Power_Automate_Service
+  - community/Community_24
 ---
 
 # powerAutomateService.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PowerAutomateService]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Power_Automate_Service
+#graphify/code #graphify/EXTRACTED #community/Community_24

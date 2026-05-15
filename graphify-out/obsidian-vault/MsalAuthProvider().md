@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\MsalProvider.tsx"
 type: "code"
-community: "Module 199"
+community: "Community 200"
 location: "L41"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_199
+  - community/Community_200
 ---
 
 # MsalAuthProvider()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[MsalProvider.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_199
+#graphify/code #graphify/EXTRACTED #community/Community_200

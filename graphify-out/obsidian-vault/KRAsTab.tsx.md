@@ -1,23 +1,20 @@
 ---
 source_file: "src\components\unit-tabs\KRAsTab.tsx"
 type: "code"
-community: "KRA/KPI Tab"
+community: "KRAs Tab"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/KRA/KPI_Tab
+  - community/KRAs_Tab
 ---
 
 # KRAsTab.tsx
 
 ## Connections
-- [[KpiModal.tsx]] - `references` [EXTRACTED]
-- [[KraDialog.tsx]] - `references` [EXTRACTED]
-- [[Unit.tsx]] - `references` [INFERRED]
 - [[confirmDeleteKra()]] - `contains` [EXTRACTED]
 - [[formatCurrency()]] - `contains` [EXTRACTED]
-- [[formatDate()_2]] - `contains` [EXTRACTED]
+- [[formatDate()_3]] - `contains` [EXTRACTED]
 - [[getKpiStatusVariant()]] - `contains` [EXTRACTED]
 - [[getQuarter()_1]] - `contains` [EXTRACTED]
 - [[handleCloseKpiModal()]] - `contains` [EXTRACTED]
@@ -37,8 +34,5 @@ tags:
 - [[handleSaveObjective()]] - `contains` [EXTRACTED]
 - [[mapStatusToDbFormat()]] - `contains` [EXTRACTED]
 - [[toggleFullscreen()]] - `contains` [EXTRACTED]
-- [[useSharePointKPIs()]] - `calls` [EXTRACTED]
-- [[useSharePointKRAs()]] - `calls` [EXTRACTED]
-- [[useSharePointObjectives()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/KRA/KPI_Tab
+#graphify/code #graphify/EXTRACTED #community/KRAs_Tab

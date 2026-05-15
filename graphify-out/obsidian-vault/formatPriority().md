@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\mockDataMapper.ts"
 type: "code"
-community: "Module 113"
+community: "Community 113"
 location: "L130"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_113
+  - community/Community_113
 ---
 
 # formatPriority()
@@ -15,4 +15,4 @@ tags:
 - [[mapTaskToSharePoint()]] - `calls` [EXTRACTED]
 - [[mockDataMapper.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_113
+#graphify/code #graphify/EXTRACTED #community/Community_113

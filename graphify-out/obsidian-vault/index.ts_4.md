@@ -1,17 +1,14 @@
 ---
 source_file: "src\modules\licensing\hooks\index.ts"
 type: "code"
-community: "Module 531"
+community: "Community 534"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_531
+  - graphify/EXTRACTED
+  - community/Community_534
 ---
 
 # index.ts
 
-## Connections
-- [[index.ts_4]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_531
+#graphify/code #graphify/EXTRACTED #community/Community_534

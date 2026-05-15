@@ -1,19 +1,19 @@
 ---
 source_file: "src\services\userSharePointService.ts"
 type: "code"
-community: "User Management Service"
+community: "User SharePoint Service"
 location: "L34"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/User_Management_Service
+  - community/User_SharePoint_Service
 ---
 
 # UserSharePointService
 
 ## Connections
 - [[.addUser()]] - `method` [EXTRACTED]
-- [[.constructor()_24]] - `method` [EXTRACTED]
+- [[.constructor()_27]] - `method` [EXTRACTED]
 - [[.createGroup()]] - `method` [EXTRACTED]
 - [[.deleteGroup()]] - `method` [EXTRACTED]
 - [[.deleteUser()]] - `method` [EXTRACTED]
@@ -27,4 +27,4 @@ tags:
 - [[.updateUser()]] - `method` [EXTRACTED]
 - [[userSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/User_Management_Service
+#graphify/code #graphify/EXTRACTED #community/User_SharePoint_Service

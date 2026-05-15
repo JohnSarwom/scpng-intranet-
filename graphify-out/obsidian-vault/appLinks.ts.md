@@ -1,17 +1,14 @@
 ---
 source_file: "src\config\appLinks.ts"
 type: "code"
-community: "Module 500"
+community: "Community 503"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_500
+  - graphify/EXTRACTED
+  - community/Community_503
 ---
 
 # appLinks.ts
 
-## Connections
-- [[apps.ts]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_500
+#graphify/code #graphify/EXTRACTED #community/Community_503

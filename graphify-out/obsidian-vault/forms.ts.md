@@ -1,21 +1,14 @@
 ---
 source_file: "src\types\forms.ts"
 type: "code"
-community: "Module 546"
+community: "Community 549"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_546
+  - graphify/EXTRACTED
+  - community/Community_549
 ---
 
 # forms.ts
 
-## Connections
-- [[GenericPaperForm.tsx]] - `imports_from` [INFERRED]
-- [[ITRequestPaper.tsx]] - `imports_from` [INFERRED]
-- [[index.ts_5]] - `contains` [INFERRED]
-- [[useForms()]] - `calls` [INFERRED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_546
+#graphify/code #graphify/EXTRACTED #community/Community_549

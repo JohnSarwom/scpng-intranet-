@@ -1,18 +1,18 @@
 ---
 source_file: "src\services\hrSharePointService.ts"
 type: "code"
-community: "HR Service"
+community: "HR SharePoint Service"
 location: "L42"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/HR_Service
+  - community/HR_SharePoint_Service
 ---
 
 # HRSharePointService
 
 ## Connections
-- [[.constructor()_9]] - `method` [EXTRACTED]
+- [[.constructor()_11]] - `method` [EXTRACTED]
 - [[.createEmployee()]] - `method` [EXTRACTED]
 - [[.createLeaveBalance()]] - `method` [EXTRACTED]
 - [[.deleteAllData()]] - `method` [EXTRACTED]
@@ -38,4 +38,4 @@ tags:
 - [[.updateEmployee()]] - `method` [EXTRACTED]
 - [[hrSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/HR_Service
+#graphify/code #graphify/EXTRACTED #community/HR_SharePoint_Service

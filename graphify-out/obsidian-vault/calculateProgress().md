@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ChecklistSection.tsx"
 type: "code"
-community: "Module 91"
+community: "Community 91"
 location: "L57"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_91
+  - community/Community_91
 ---
 
 # calculateProgress()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ChecklistSection.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_91
+#graphify/code #graphify/EXTRACTED #community/Community_91

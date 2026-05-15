@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Login.tsx"
 type: "code"
-community: "Module 208"
+community: "Community 210"
 location: "L20"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_208
+  - community/Community_210
 ---
 
 # handleMicrosoftLogin()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Login.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_208
+#graphify/code #graphify/EXTRACTED #community/Community_210

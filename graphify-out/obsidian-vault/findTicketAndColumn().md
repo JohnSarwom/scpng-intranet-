@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\TicketManager.tsx"
 type: "code"
-community: "Ticket Manager"
-location: "L828"
+community: "Ticket Manager Kanban"
+location: "L834"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Ticket_Manager
+  - community/Ticket_Manager_Kanban
 ---
 
 # findTicketAndColumn()
@@ -19,4 +19,4 @@ tags:
 - [[handleDragStart()]] - `calls` [EXTRACTED]
 - [[handleEditTicket()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Ticket_Manager
+#graphify/code #graphify/EXTRACTED #community/Ticket_Manager_Kanban

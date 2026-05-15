@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\TicketCard.tsx"
 type: "code"
-community: "Module 52"
+community: "Community 51"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_52
+  - community/Community_51
 ---
 
 # TicketCard.tsx
@@ -21,4 +21,4 @@ tags:
 - [[handleStatusClick()]] - `contains` [EXTRACTED]
 - [[handleToggleComplete()_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_52
+#graphify/code #graphify/EXTRACTED #community/Community_51

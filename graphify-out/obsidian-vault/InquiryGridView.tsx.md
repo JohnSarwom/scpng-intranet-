@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\ticketing\InquiryGridView.tsx"
 type: "code"
-community: "Module 448"
+community: "Community 451"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_448
+  - graphify/EXTRACTED
+  - community/Community_451
 ---
 
 # InquiryGridView.tsx
 
-## Connections
-- [[GeneralInquiries.tsx]] - `imports_from` [INFERRED]
-- [[InquiryCard.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_448
+#graphify/code #graphify/EXTRACTED #community/Community_451

@@ -1,18 +1,17 @@
 ---
-source_file: "src\pages\Documents.tsx"
+source_file: "src\lib\utils.ts"
 type: "code"
-community: "Document Management"
-location: "L1236"
+community: "Community 85"
+location: "L8"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Document_Management
+  - community/Community_85
 ---
 
 # formatDate()
 
 ## Connections
-- [[Documents.tsx]] - `contains` [EXTRACTED]
-- [[formatFileSize()_1]] - `calls` [EXTRACTED]
+- [[utils.ts_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Document_Management
+#graphify/code #graphify/EXTRACTED #community/Community_85

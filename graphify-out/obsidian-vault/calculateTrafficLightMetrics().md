@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\dashboardUtils.ts"
 type: "code"
-community: "Module 143"
+community: "Community 144"
 location: "L72"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_143
+  - community/Community_144
 ---
 
 # calculateTrafficLightMetrics()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[dashboardUtils.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_143
+#graphify/code #graphify/EXTRACTED #community/Community_144

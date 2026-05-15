@@ -20,6 +20,7 @@ import {
   Calendar, Upload, FileText, Award, TrendingUp, History, Trash2, Plus, Camera
 } from 'lucide-react';
 import { useHRService } from '@/hooks/useHRService';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { EmployeeProfile, EmploymentStatus, EmploymentType, LeaveBalance, LeaveRequest, EmployeeDocument, Training, PerformanceReview, EmploymentHistory } from '@/types/hr';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,8 +38,21 @@ import {
 const EditEmployeeProfile: React.FC = () => {
   const { employeeId } = useParams<{ employeeId: string }>();
   const navigate = useNavigate();
-  const { fetchEmployeeProfile, updateEmployee, isInitialized } = useHRService();
+  const {
+    fetchEmployeeProfile,
+    updateEmployee,
+    createLeaveBalance,
+    updateLeaveBalance,
+    isInitialized,
+  } = useHRService();
+  const { isAdmin, hasPermission } = useRoleBasedAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const canManageLeaveBalances =
+    isAdmin ||
+    hasPermission('hr', 'write') ||
+    hasPermission('hr', 'edit') ||
+    hasPermission('hr_profiles', 'write') ||
+    hasPermission('hr_profiles', 'edit');
 
   const [profile, setProfile] = useState<EmployeeProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -656,6 +670,11 @@ const EditEmployeeProfile: React.FC = () => {
               leaveBalances={leaveBalances}
               leaveRequests={leaveRequests}
               employeeId={profile.employeeId}
+              canManageLeaveBalances={canManageLeaveBalances}
+              onCreateLeaveBalance={createLeaveBalance}
+              onUpdateLeaveBalance={updateLeaveBalance}
+              onLocalBalancesChange={setLeaveBalances}
+              onRefresh={loadProfile}
             />
           </TabsContent>
 
@@ -752,21 +771,171 @@ const EditEmployeeProfile: React.FC = () => {
 };
 
 // Leave Management Section Component
+const LEAVE_TYPES = [
+  'Annual Leave',
+  'Sick Leave',
+  'Compassionate Leave',
+  'Carers Leave',
+  'Leave Without Pay',
+  'Study Leave',
+  'Maternity Leave',
+  'Leave For Breast Feeding',
+  'Paternity Leave',
+  'Recreational Leave',
+];
+
+interface LeaveBalanceFormState {
+  leaveType: string;
+  year: string;
+  entitlement: string;
+  used: string;
+  pending: string;
+}
+
 const LeaveManagementSection: React.FC<{
   leaveBalances: LeaveBalance[];
   leaveRequests: LeaveRequest[];
   employeeId: string;
-}> = ({ leaveBalances, leaveRequests, employeeId }) => {
+  canManageLeaveBalances: boolean;
+  onCreateLeaveBalance: (
+    employeeId: string,
+    leaveType: string,
+    entitlement: number,
+    year: number,
+    used?: number,
+    pending?: number
+  ) => Promise<unknown>;
+  onUpdateLeaveBalance: (
+    itemId: string,
+    data: {
+      leaveType: string;
+      year: number;
+      entitlement: number;
+      used: number;
+      pending: number;
+      accrualRate?: number;
+      lastAccrualDate?: string;
+    }
+  ) => Promise<unknown>;
+  onLocalBalancesChange: React.Dispatch<React.SetStateAction<LeaveBalance[]>>;
+  onRefresh: () => Promise<void>;
+}> = ({
+  leaveBalances,
+  leaveRequests,
+  employeeId,
+  canManageLeaveBalances,
+  onCreateLeaveBalance,
+  onUpdateLeaveBalance,
+  onLocalBalancesChange,
+  onRefresh,
+}) => {
+  const [balanceDialogOpen, setBalanceDialogOpen] = useState(false);
+  const [editingBalance, setEditingBalance] = useState<LeaveBalance | null>(null);
+  const [isSavingBalance, setIsSavingBalance] = useState(false);
+  const [balanceForm, setBalanceForm] = useState<LeaveBalanceFormState>({
+    leaveType: 'Annual Leave',
+    year: new Date().getFullYear().toString(),
+    entitlement: '20',
+    used: '0',
+    pending: '0',
+  });
+
+  const openAddBalanceDialog = () => {
+    setEditingBalance(null);
+    setBalanceForm({
+      leaveType: 'Annual Leave',
+      year: new Date().getFullYear().toString(),
+      entitlement: '20',
+      used: '0',
+      pending: '0',
+    });
+    setBalanceDialogOpen(true);
+  };
+
+  const openEditBalanceDialog = (balance: LeaveBalance) => {
+    setEditingBalance(balance);
+    setBalanceForm({
+      leaveType: balance.leaveType,
+      year: String(balance.year || new Date().getFullYear()),
+      entitlement: String(balance.entitlement ?? 0),
+      used: String(balance.used ?? 0),
+      pending: String(balance.pending ?? 0),
+    });
+    setBalanceDialogOpen(true);
+  };
+
+  const parseNumber = (value: string, label: string) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      throw new Error(`${label} must be a valid zero-or-higher number.`);
+    }
+    return parsed;
+  };
+
+  const handleSaveBalance = async () => {
+    try {
+      const year = parseInt(balanceForm.year, 10);
+      if (!Number.isFinite(year) || year < 2000) {
+        throw new Error('Year must be valid.');
+      }
+
+      const entitlement = parseNumber(balanceForm.entitlement, 'Entitlement');
+      const used = parseNumber(balanceForm.used, 'Used');
+      const pending = parseNumber(balanceForm.pending, 'Pending');
+
+      setIsSavingBalance(true);
+      if (editingBalance) {
+        await onUpdateLeaveBalance(String(editingBalance.id), {
+          leaveType: balanceForm.leaveType,
+          year,
+          entitlement,
+          used,
+          pending,
+          accrualRate: editingBalance.accrualRate,
+          lastAccrualDate: editingBalance.lastAccrualDate,
+        });
+        onLocalBalancesChange((prev) =>
+          prev.map((balance) =>
+            String(balance.id) === String(editingBalance.id)
+              ? {
+                  ...balance,
+                  leaveType: balanceForm.leaveType as LeaveBalance['leaveType'],
+                  year,
+                  entitlement,
+                  used,
+                  pending,
+                  available: entitlement - used - pending,
+                }
+              : balance,
+          ),
+        );
+        toast.success('Leave balance updated');
+      } else {
+        await onCreateLeaveBalance(employeeId, balanceForm.leaveType, entitlement, year, used, pending);
+        toast.success('Leave balance added');
+      }
+
+      setBalanceDialogOpen(false);
+      await onRefresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to save leave balance');
+    } finally {
+      setIsSavingBalance(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Leave Balances</CardTitle>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Balance
-            </Button>
+            {canManageLeaveBalances && (
+              <Button type="button" size="sm" onClick={openAddBalanceDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Balance
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -791,7 +960,16 @@ const LeaveManagementSection: React.FC<{
                     <TableCell className="text-right">{balance.used} days</TableCell>
                     <TableCell className="text-right font-semibold">{balance.available} days</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">Edit</Button>
+                      {canManageLeaveBalances && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openEditBalanceDialog(balance)}
+                        >
+                          Edit
+                        </Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -802,6 +980,95 @@ const LeaveManagementSection: React.FC<{
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={balanceDialogOpen} onOpenChange={setBalanceDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{editingBalance ? 'Edit Leave Balance' : 'Add Leave Balance'}</DialogTitle>
+            <DialogDescription>
+              Set entitlement and current usage for this employee. Available days are calculated from entitlement minus used and pending days.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+            <div className="md:col-span-2">
+              <Label htmlFor="leaveType">Leave Type</Label>
+              <Select
+                value={balanceForm.leaveType}
+                onValueChange={(value) => setBalanceForm((prev) => ({ ...prev, leaveType: value }))}
+              >
+                <SelectTrigger id="leaveType">
+                  <SelectValue placeholder="Select leave type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {LEAVE_TYPES.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="leaveYear">Year</Label>
+              <Input
+                id="leaveYear"
+                type="number"
+                value={balanceForm.year}
+                onChange={(event) => setBalanceForm((prev) => ({ ...prev, year: event.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="leaveEntitlement">Entitlement</Label>
+              <Input
+                id="leaveEntitlement"
+                type="number"
+                min="0"
+                step="0.5"
+                value={balanceForm.entitlement}
+                onChange={(event) => setBalanceForm((prev) => ({ ...prev, entitlement: event.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="leaveUsed">Used</Label>
+              <Input
+                id="leaveUsed"
+                type="number"
+                min="0"
+                step="0.5"
+                value={balanceForm.used}
+                onChange={(event) => setBalanceForm((prev) => ({ ...prev, used: event.target.value }))}
+              />
+            </div>
+            <div>
+              <Label htmlFor="leavePending">Pending</Label>
+              <Input
+                id="leavePending"
+                type="number"
+                min="0"
+                step="0.5"
+                value={balanceForm.pending}
+                onChange={(event) => setBalanceForm((prev) => ({ ...prev, pending: event.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setBalanceDialogOpen(false)}
+              disabled={isSavingBalance}
+            >
+              Cancel
+            </Button>
+            <Button type="button" onClick={handleSaveBalance} disabled={isSavingBalance}>
+              {isSavingBalance ? 'Saving...' : 'Save Balance'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -859,7 +1126,7 @@ const DocumentsManagementSection: React.FC<{
             <FileText className="h-5 w-5" />
             Documents
           </CardTitle>
-          <Button size="sm">
+          <Button type="button" size="sm">
             <Upload className="h-4 w-4 mr-2" />
             Upload Document
           </Button>
@@ -886,8 +1153,8 @@ const DocumentsManagementSection: React.FC<{
                   <TableCell>{doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">View</Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm">View</Button>
+                      <Button type="button" variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -915,7 +1182,7 @@ const TrainingManagementSection: React.FC<{
             <Award className="h-5 w-5" />
             Training & Certifications
           </CardTitle>
-          <Button size="sm">
+          <Button type="button" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add Training
           </Button>
@@ -948,8 +1215,8 @@ const TrainingManagementSection: React.FC<{
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">Edit</Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm">Edit</Button>
+                      <Button type="button" variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -977,7 +1244,7 @@ const PerformanceManagementSection: React.FC<{
             <TrendingUp className="h-5 w-5" />
             Performance Reviews
           </CardTitle>
-          <Button size="sm">
+          <Button type="button" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add Review
           </Button>
@@ -1006,9 +1273,9 @@ const PerformanceManagementSection: React.FC<{
                     </Badge>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">View Details</Button>
-                    <Button variant="ghost" size="sm">Edit</Button>
-                    <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                    <Button type="button" variant="outline" size="sm">View Details</Button>
+                    <Button type="button" variant="ghost" size="sm">Edit</Button>
+                    <Button type="button" variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1035,7 +1302,7 @@ const EmploymentHistorySection: React.FC<{
             <History className="h-5 w-5" />
             Employment History
           </CardTitle>
-          <Button size="sm">
+          <Button type="button" size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add Entry
           </Button>
@@ -1064,8 +1331,8 @@ const EmploymentHistorySection: React.FC<{
                   <TableCell className="max-w-xs truncate">{entry.reason || '-'}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button variant="ghost" size="sm">Edit</Button>
-                      <Button variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="ghost" size="sm">Edit</Button>
+                      <Button type="button" variant="ghost" size="sm"><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </TableCell>
                 </TableRow>

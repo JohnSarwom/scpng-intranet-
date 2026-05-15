@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\PaymentsPage.tsx"
 type: "code"
-community: "Module 348"
+community: "Community 351"
 location: "L25"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_348
+  - community/Community_351
 ---
 
 # handleAddPayment()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PaymentsPage.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_348
+#graphify/code #graphify/EXTRACTED #community/Community_351

@@ -19,7 +19,21 @@
       "Bash(xargs grep -l \"group\\\\|Group\\\\|role\\\\|Role\")",
       "Bash(grep -r \"division\\\\|Division\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
       "Bash(grep -r \"division_memberships\\\\|user_roles\\\\|group_access\" /c/Users/IT_UNIT/Desktop/Coding/scpng-intranet/db/*.sql)",
-      "Bash(python -c ':*)"
+      "Bash(python -c ':*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\IT_UNIT\")",
+      "Bash(start \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\graphify-out\\\\graph.html\")",
+      "Bash(start \"\" \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\graphify-out\\\\obsidian-vault\")",
+      "PowerShell(python -c \"import graphify; print\\(dir\\(graphify\\)\\)\")",
+      "Bash(start \"\" \"c:\\\\Users\\\\IT_UNIT\\\\Desktop\\\\Coding\\\\scpng-intranet\\\\graphify-out\\\\wiki\")",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react'\\); ['GitBranch','Network','Share2','GitMerge','Waypoints','Milestone','Settings2','Sliders'].forEach\\(k => console.log\\(k, !!l[k]\\)\\)\")",
+      "Bash(node -e \"const p = require\\('./package.json'\\); const deps = {...p.dependencies,...p.devDependencies}; ['html2canvas','jspdf','@react-pdf/renderer','puppeteer'].forEach\\(k => console.log\\(k, !!deps[k]\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/html2canvas/package.json'\\).version\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/jspdf/package.json'\\).version\\)\")",
+      "Bash(node -e \"require\\('./node_modules/mjml-browser'\\)\")",
+      "Bash(node -e \"const m = require\\('mjml-browser'\\); console.log\\('ok', typeof m.default || typeof m\\)\")",
+      "Bash(node -e \"const m = require\\('mjml-browser'\\); console.log\\('ok', typeof m\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const p=JSON.parse\\(d\\); console.log\\('main:', p.main, 'module:', p.module, 'browser:', p.browser, 'exports:', JSON.stringify\\(p.exports\\).slice\\(0,200\\)\\);\")"
     ],
     "deny": [],
     "ask": []

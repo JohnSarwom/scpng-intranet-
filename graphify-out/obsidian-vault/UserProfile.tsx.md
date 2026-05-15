@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\UserProfile.tsx"
 type: "code"
-community: "Module 248"
+community: "Community 250"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_248
+  - community/Community_250
 ---
 
 # UserProfile.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[UserProfile()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_248
+#graphify/code #graphify/EXTRACTED #community/Community_250

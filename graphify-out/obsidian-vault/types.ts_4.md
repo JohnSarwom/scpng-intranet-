@@ -1,17 +1,14 @@
 ---
 source_file: "src\modules\regulatory\types.ts"
 type: "code"
-community: "Module 533"
+community: "Community 536"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_533
+  - graphify/EXTRACTED
+  - community/Community_536
 ---
 
 # types.ts
 
-## Connections
-- [[constants.ts_1]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_533
+#graphify/code #graphify/EXTRACTED #community/Community_536

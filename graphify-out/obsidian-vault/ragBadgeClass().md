@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\OfficerProfileModal.tsx"
 type: "code"
-community: "Module 126"
+community: "Community 127"
 location: "L66"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_126
+  - community/Community_127
 ---
 
 # ragBadgeClass()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[OfficerProfileModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_126
+#graphify/code #graphify/EXTRACTED #community/Community_127

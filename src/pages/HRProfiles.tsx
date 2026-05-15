@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -52,9 +53,17 @@ import {
 import { Trash2 } from 'lucide-react';
 
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import LeaveApprovalDashboard from '@/components/hr/LeaveApprovalDashboard';
+import LeaveAnalytics from '@/components/hr/LeaveAnalytics';
+import WorkflowAdmin from '@/components/hr/WorkflowAdmin';
+import { ClipboardCheck, GitBranch } from 'lucide-react';
 
 const HRProfiles: React.FC = () => {
   const { hasPermission } = useRoleBasedAuth();
+  const [searchParams] = useSearchParams();
+  const urlTab = searchParams.get('tab') ?? 'employees';
+  const autoRequestId = searchParams.get('requestId') ?? undefined;
+  const [activeTab, setActiveTab] = useState(urlTab);
   const [showImporter, setShowImporter] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -339,6 +348,34 @@ const HRProfiles: React.FC = () => {
           </div>
         )}
 
+        {/* Page tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-2">
+            <TabsTrigger value="employees" className="gap-2">
+              <Users className="h-4 w-4" />
+              Employees
+            </TabsTrigger>
+            <TabsTrigger value="leave-approvals" className="gap-2">
+              <ClipboardCheck className="h-4 w-4" />
+              Leave Approvals
+            </TabsTrigger>
+            {hasPermission('hr_profiles', 'write') && (
+              <>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Leave Analytics
+                </TabsTrigger>
+                <TabsTrigger value="workflow" className="gap-2">
+                  <GitBranch className="h-4 w-4" />
+                  Workflow
+                </TabsTrigger>
+              </>
+            )}
+          </TabsList>
+
+          {/* ── Employees tab ── */}
+          <TabsContent value="employees" className="space-y-6 mt-0">
+
         {/* Statistics Cards */}
         {renderStatisticsCards()}
 
@@ -489,6 +526,29 @@ const HRProfiles: React.FC = () => {
             </p>
           </div>
         )}
+
+          </TabsContent>
+
+          {/* ── Leave Analytics tab ── */}
+          {hasPermission('hr_profiles', 'write') && (
+            <TabsContent value="analytics" className="mt-0">
+              <LeaveAnalytics />
+            </TabsContent>
+          )}
+
+          {/* ── Leave Approvals tab — visible to all HR-accessible users (managers, directors, HR) ── */}
+          <TabsContent value="leave-approvals" className="mt-0">
+            <LeaveApprovalDashboard autoRequestId={autoRequestId} />
+          </TabsContent>
+
+          {/* ── Workflow Admin tab ── */}
+          {hasPermission('hr_profiles', 'write') && (
+            <TabsContent value="workflow" className="mt-0">
+              <WorkflowAdmin />
+            </TabsContent>
+          )}
+
+        </Tabs>
       </div>
 
       {/* Employee Profile Modal */}

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\auth\AuthTroubleshooter.tsx"
 type: "code"
-community: "Module 147"
+community: "Community 147"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_147
+  - community/Community_147
 ---
 
 # AuthTroubleshooter.tsx
@@ -16,4 +16,4 @@ tags:
 - [[runDiagnostics()]] - `contains` [EXTRACTED]
 - [[tryPopupLogin()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_147
+#graphify/code #graphify/EXTRACTED #community/Community_147

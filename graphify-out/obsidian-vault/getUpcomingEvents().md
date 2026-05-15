@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\calendarService.ts"
 type: "code"
-community: "Module 67"
+community: "Community 67"
 location: "L269"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_67
+  - community/Community_67
 ---
 
 # getUpcomingEvents()
@@ -15,4 +15,4 @@ tags:
 - [[calendarService.ts]] - `contains` [EXTRACTED]
 - [[fetchCalendarEvents()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_67
+#graphify/code #graphify/EXTRACTED #community/Community_67

@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useStaffMembers.ts"
 type: "code"
-community: "Module 327"
+community: "Community 329"
 location: "L12"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_327
+  - community/Community_329
 ---
 
 # useStaffMembers()
 
 ## Connections
-- [[AssetManagementNew.tsx]] - `calls` [INFERRED]
 - [[useStaffMembers.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_327
+#graphify/code #graphify/EXTRACTED #community/Community_329

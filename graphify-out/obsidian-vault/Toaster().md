@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ui\sonner.tsx"
 type: "code"
-community: "Module 281"
+community: "Community 283"
 location: "L6"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_281
+  - community/Community_283
 ---
 
 # Toaster()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[sonner.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_281
+#graphify/code #graphify/EXTRACTED #community/Community_283

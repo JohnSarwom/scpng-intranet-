@@ -1,21 +1,21 @@
 ---
 source_file: "src\services\sharePointExplorerService.ts"
 type: "code"
-community: "SharePoint Explorer Service"
+community: "Community 25"
 location: "L33"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Explorer_Service
+  - community/Community_25
 ---
 
 # SharePointExplorerService
 
 ## Connections
-- [[.constructor()_17]] - `method` [EXTRACTED]
+- [[.constructor()_20]] - `method` [EXTRACTED]
 - [[.createColumn()]] - `method` [EXTRACTED]
 - [[.createItem()]] - `method` [EXTRACTED]
-- [[.createList()_1]] - `method` [EXTRACTED]
+- [[.createList()_2]] - `method` [EXTRACTED]
 - [[.deleteColumn()]] - `method` [EXTRACTED]
 - [[.deleteItem()]] - `method` [EXTRACTED]
 - [[.deleteList()]] - `method` [EXTRACTED]
@@ -26,4 +26,4 @@ tags:
 - [[.updateItem()]] - `method` [EXTRACTED]
 - [[sharePointExplorerService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer_Service
+#graphify/code #graphify/EXTRACTED #community/Community_25

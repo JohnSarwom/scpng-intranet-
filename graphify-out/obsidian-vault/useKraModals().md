@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useKraModals.ts"
 type: "code"
-community: "Module 310"
+community: "Community 312"
 location: "L3"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_310
+  - community/Community_312
 ---
 
 # useKraModals()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useKraModals.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_310
+#graphify/code #graphify/EXTRACTED #community/Community_312

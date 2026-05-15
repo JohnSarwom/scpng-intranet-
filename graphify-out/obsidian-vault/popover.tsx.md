@@ -1,20 +1,14 @@
 ---
 source_file: "src\components\ui\popover.tsx"
 type: "code"
-community: "Module 473"
+community: "Community 476"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_473
+  - graphify/EXTRACTED
+  - community/Community_476
 ---
 
 # popover.tsx
 
-## Connections
-- [[DatePicker.tsx]] - `imports_from` [INFERRED]
-- [[DateRangePicker.tsx]] - `imports_from` [INFERRED]
-- [[EditRiskModal.tsx]] - `imports_from` [INFERRED]
-- [[utils.ts_1]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_473
+#graphify/code #graphify/EXTRACTED #community/Community_476

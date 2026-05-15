@@ -1,17 +1,14 @@
 ---
 source_file: "src\constants\paymentConstants.ts"
 type: "code"
-community: "Module 506"
+community: "Community 509"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_506
+  - graphify/EXTRACTED
+  - community/Community_509
 ---
 
 # paymentConstants.ts
 
-## Connections
-- [[payment.types.ts]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_506
+#graphify/code #graphify/EXTRACTED #community/Community_509

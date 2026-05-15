@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\UnitModal.tsx"
 type: "code"
-community: "Module 105"
+community: "Community 105"
 location: "L142"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_105
+  - community/Community_105
 ---
 
 # handleNestedChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[UnitModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_105
+#graphify/code #graphify/EXTRACTED #community/Community_105

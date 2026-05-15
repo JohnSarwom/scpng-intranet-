@@ -1,17 +1,14 @@
 ---
 source_file: "src\modules\regulatory\components\regulatoryQuestions.ts"
 type: "code"
-community: "Module 536"
+community: "Community 539"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_536
+  - graphify/EXTRACTED
+  - community/Community_539
 ---
 
 # regulatoryQuestions.ts
 
-## Connections
-- [[RegulatoryAIChat.tsx]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_536
+#graphify/code #graphify/EXTRACTED #community/Community_539

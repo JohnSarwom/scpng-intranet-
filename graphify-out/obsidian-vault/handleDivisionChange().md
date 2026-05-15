@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\StaffByDivisionList.tsx"
 type: "code"
-community: "Module 215"
+community: "Community 217"
 location: "L26"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_215
+  - community/Community_217
 ---
 
 # handleDivisionChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[StaffByDivisionList.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_215
+#graphify/code #graphify/EXTRACTED #community/Community_217

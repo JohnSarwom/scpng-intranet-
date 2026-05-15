@@ -1,20 +1,18 @@
 ---
 source_file: "src\hooks\useSupabaseAuth.tsx"
 type: "code"
-community: "Module 197"
+community: "Community 198"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_197
+  - graphify/EXTRACTED
+  - community/Community_198
 ---
 
 # useSupabaseAuth.tsx
 
 ## Connections
-- [[PersonalKPICards.tsx]] - `imports_from` [INFERRED]
-- [[PersonalKPIStats.tsx]] - `imports_from` [INFERRED]
 - [[SupabaseAuthProvider()]] - `contains` [EXTRACTED]
 - [[useSupabaseAuth()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_197
+#graphify/code #graphify/EXTRACTED #community/Community_198

@@ -1,19 +1,17 @@
 ---
 source_file: "src\components\custom\TradingViewTicker.tsx"
 type: "code"
-community: "Module 236"
+community: "Community 238"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_236
+  - graphify/EXTRACTED
+  - community/Community_238
 ---
 
 # TradingViewTicker.tsx
 
 ## Connections
-- [[Index.tsx]] - `imports_from` [INFERRED]
-- [[News.tsx]] - `references` [INFERRED]
 - [[TradingViewTicker()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/INFERRED #community/Module_236
+#graphify/code #graphify/EXTRACTED #community/Community_238

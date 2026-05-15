@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\photoCacheService.ts"
 type: "code"
-community: "Module 111"
+community: "Community 111"
 location: "L11"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_111
+  - community/Community_111
 ---
 
 # PhotoCacheService
@@ -18,4 +18,4 @@ tags:
 - [[.putPhoto()]] - `method` [EXTRACTED]
 - [[photoCacheService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_111
+#graphify/code #graphify/EXTRACTED #community/Community_111

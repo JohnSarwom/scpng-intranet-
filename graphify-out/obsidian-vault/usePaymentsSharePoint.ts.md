@@ -1,20 +1,17 @@
 ---
 source_file: "src\hooks\usePaymentsSharePoint.ts"
 type: "code"
-community: "Module 320"
+community: "Community 322"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_320
+  - community/Community_322
 ---
 
 # usePaymentsSharePoint.ts
 
 ## Connections
-- [[PaymentsPage.tsx]] - `calls` [INFERRED]
-- [[graphService.ts]] - `imports_from` [EXTRACTED]
-- [[paymentsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[usePaymentsSharePoint()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_320
+#graphify/code #graphify/EXTRACTED #community/Community_322

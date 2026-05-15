@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\appsSharePointService.ts"
 type: "code"
-community: "Applications Service"
+community: "Community 20"
 location: "L31"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Applications_Service
+  - community/Community_20
 ---
 
 # AppsSharePointService
@@ -27,4 +27,4 @@ tags:
 - [[.uploadAppImage()]] - `method` [EXTRACTED]
 - [[appsSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Applications_Service
+#graphify/code #graphify/EXTRACTED #community/Community_20

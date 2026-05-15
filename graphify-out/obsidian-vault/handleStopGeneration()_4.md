@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\AIHub.tsx"
 type: "code"
-community: "AI Hub Chat"
+community: "AI Hub"
 location: "L1298"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/AI_Hub_Chat
+  - community/AI_Hub
 ---
 
 # handleStopGeneration()
@@ -15,4 +15,4 @@ tags:
 - [[AIHub.tsx]] - `contains` [EXTRACTED]
 - [[handleSendChatMessage()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/AI_Hub_Chat
+#graphify/code #graphify/EXTRACTED #community/AI_Hub

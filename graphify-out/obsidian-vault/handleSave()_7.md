@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\StrategySetupWizard.tsx"
 type: "code"
-community: "Module 152"
+community: "Community 152"
 location: "L159"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_152
+  - community/Community_152
 ---
 
 # handleSave()
@@ -15,4 +15,4 @@ tags:
 - [[StrategySetupWizard.tsx]] - `contains` [EXTRACTED]
 - [[handleNext()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_152
+#graphify/code #graphify/EXTRACTED #community/Community_152

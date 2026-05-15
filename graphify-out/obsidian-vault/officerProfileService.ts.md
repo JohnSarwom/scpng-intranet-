@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\officerProfileService.ts"
 type: "code"
-community: "Module 73"
+community: "Community 72"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_73
+  - community/Community_72
 ---
 
 # officerProfileService.ts
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[OfficerProfileService]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_73
+#graphify/code #graphify/EXTRACTED #community/Community_72

@@ -15,7 +15,8 @@ const microsoftAuthConfig = {
     "Sites.ReadWrite.All",
     "Calendars.Read",
     "Calendars.ReadWrite",
-    "Calendars.Read.Shared"
+    "Calendars.Read.Shared",
+    "Mail.Send"
   ],
   // HARDCODED APPROVED URI - this MUST match exactly what's in Azure AD
   redirectUri: typeof window !== 'undefined' ? window.location.origin : 'https://localhost:3000',

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\LaunchCountdown.tsx"
 type: "code"
-community: "Module 121"
+community: "Community 122"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_121
+  - community/Community_122
 ---
 
 # LaunchCountdown.tsx
@@ -16,6 +16,5 @@ tags:
 - [[TimeUnit()]] - `contains` [EXTRACTED]
 - [[formatTimeLeft()]] - `contains` [EXTRACTED]
 - [[pad()]] - `contains` [EXTRACTED]
-- [[useCountdown.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_121
+#graphify/code #graphify/EXTRACTED #community/Community_122

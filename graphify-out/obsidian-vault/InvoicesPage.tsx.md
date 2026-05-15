@@ -1,20 +1,17 @@
 ---
 source_file: "src\components\assets\InvoicesPage.tsx"
 type: "code"
-community: "Module 225"
+community: "Community 227"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_225
+  - graphify/EXTRACTED
+  - community/Community_227
 ---
 
 # InvoicesPage.tsx
 
 ## Connections
-- [[AdminAssetsPage.tsx]] - `references` [INFERRED]
 - [[InvoicesPage()]] - `contains` [EXTRACTED]
-- [[useAssetSubSharePoint()]] - `calls` [INFERRED]
-- [[useAssetsSharePoint()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/INFERRED #community/Module_225
+#graphify/code #graphify/EXTRACTED #community/Community_227

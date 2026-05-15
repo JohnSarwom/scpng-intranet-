@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,10 @@ import { FormField } from './FormField';
 import { Clock, Save, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  getDateRangePairs,
+  isBeforeDateValue,
+} from './formDateRangeUtils';
 
 interface FormRendererProps {
   template: FormTemplate;
@@ -22,6 +26,9 @@ interface FormRendererProps {
   onCancel?: () => void;
   className?: string;
   showProgress?: boolean;
+  showSuccessToast?: boolean;
+  showErrorToast?: boolean;
+  resetOnSuccess?: boolean;
 }
 
 export const FormRenderer: React.FC<FormRendererProps> = ({
@@ -33,7 +40,10 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   onSave,
   onCancel,
   className,
-  showProgress = true
+  showProgress = true,
+  showSuccessToast = false,
+  showErrorToast = false,
+  resetOnSuccess = true
 }) => {
   const { toast } = useToast();
   const [currentSection, setCurrentSection] = useState(0);
@@ -41,18 +51,46 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const {
     handleSubmit,
     watch,
     trigger,
-    formState: { errors, isDirty, isValid },
+    formState: { errors, isDirty },
     getValues,
-    reset
+    reset,
+    setValue,
+    clearErrors
   } = useFormContext();
 
   // Watch form data for auto-save functionality
   const watchedData = watch();
+  const allVisibleFields = useMemo(
+    () => visibleSections.flatMap(section => section.fields),
+    [visibleSections],
+  );
+  const dateRangePairs = useMemo(
+    () => getDateRangePairs(allVisibleFields),
+    [allVisibleFields],
+  );
+
+  useEffect(() => {
+    dateRangePairs.forEach(({ start, end }) => {
+      const startValue = watchedData[start];
+      const endValue = watchedData[end];
+      if (!startValue) return;
+
+      if (!endValue || isBeforeDateValue(endValue, startValue)) {
+        setValue(end, startValue, {
+          shouldDirty: true,
+          shouldTouch: Boolean(endValue),
+          shouldValidate: true,
+        });
+        clearErrors(end);
+      }
+    });
+  }, [dateRangePairs, watchedData, setValue, clearErrors]);
 
   useEffect(() => {
     const requestAccessType = watchedData['requestAccessType'];
@@ -69,7 +107,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
           setVisibleSections([baseSections[0], accessSection, baseSections[1]]);
         }
       } else if (requestAccessType === 'other') {
-        // 'Other' — skip both equipment and access sections entirely
+        // 'Other' - skip both equipment and access sections entirely
         setVisibleSections([baseSections[0], baseSections[1]]);
       } else {
         setVisibleSections(template.sections);
@@ -157,24 +195,32 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
 
     setIsSubmitting(true);
     setSubmitError(null);
+    setHasSubmitted(false);
 
     try {
       await onSubmit(data);
-      toast({
-        title: "Form submitted successfully",
-        description: "Your form has been submitted for review.",
-        duration: 5000
-      });
-      reset(); // Reset form after successful submission
+      if (showSuccessToast) {
+        toast({
+          title: "Form submitted successfully",
+          description: "Your form has been submitted for review.",
+          duration: 5000
+        });
+      }
+      if (resetOnSuccess) {
+        reset();
+      }
+      setHasSubmitted(true);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to submit form';
       setSubmitError(errorMessage);
-      toast({
-        title: "Submission failed",
-        description: errorMessage,
-        variant: "destructive",
-        duration: 5000
-      });
+      if (showErrorToast) {
+        toast({
+          title: "Submission failed",
+          description: errorMessage,
+          variant: "destructive",
+          duration: 5000
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -257,6 +303,68 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
   const isFirstSection = currentSection === 0;
   const isLastSection = currentSection === visibleSections.length - 1;
   const canProceed = mode === 'fill' && !isSubmitting;
+  const hasVisibleErrors = Object.keys(errors).length > 0;
+  const currentSectionFields = currentSectionData.fields.filter(shouldShowField);
+  const getFieldErrorMessage = (fieldName: string) => {
+    const fieldError = errors[fieldName] as { message?: unknown } | undefined;
+    return typeof fieldError?.message === 'string' ? fieldError.message : null;
+  };
+  const getFieldErrorType = (fieldName: string) => {
+    const fieldError = errors[fieldName] as { type?: unknown } | undefined;
+    return typeof fieldError?.type === 'string' ? fieldError.type : null;
+  };
+  const currentRangePairs = getDateRangePairs(currentSectionFields);
+  const rangeAlertByEndName = new Map<string, string>();
+  const suppressedRangeErrorFields = new Set<string>();
+
+  currentRangePairs.forEach(({ start, end }) => {
+    const startMessage = getFieldErrorMessage(start);
+    const endMessage = getFieldErrorMessage(end);
+    const isSharedRangeError = Boolean(
+      startMessage &&
+      endMessage &&
+      startMessage === endMessage &&
+      (getFieldErrorType(start) === 'overlap' ||
+        getFieldErrorType(end) === 'overlap' ||
+        startMessage.length > 80),
+    );
+
+    if (isSharedRangeError && endMessage) {
+      rangeAlertByEndName.set(end, endMessage);
+      suppressedRangeErrorFields.add(start);
+      suppressedRangeErrorFields.add(end);
+    }
+  });
+
+  if (hasSubmitted && mode === 'fill') {
+    return (
+      <div className={cn("max-w-4xl mx-auto", className)}>
+        <Card className="dark:bg-gray-800 dark:border-white/10">
+          <CardContent className="flex flex-col items-center justify-center gap-4 py-14 text-center">
+            <CheckCircle2 className="h-14 w-14 text-green-600" />
+            <div>
+              <h2 className="text-2xl font-semibold dark:text-gray-100">Form submitted</h2>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Your request has been submitted successfully. You can submit another response when needed.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                reset();
+                setSubmitError(null);
+                setHasSubmitted(false);
+                setCurrentSection(0);
+              }}
+            >
+              Submit Another Response
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("max-w-4xl mx-auto space-y-6", className)}>
@@ -279,13 +387,12 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit(onSubmitForm)}>
             <div className="grid gap-6">
-              {currentSectionData.fields
-                .filter(shouldShowField)
-                .map((field) => (
+              {currentSectionFields.map((field) => (
+                <React.Fragment key={field.id}>
                   <FormField
-                    key={field.id}
                     field={field}
                     disabled={mode === 'readonly'}
+                    suppressError={suppressedRangeErrorFields.has(field.name)}
                     className={cn(
                       field.width === 'half' && "md:col-span-1",
                       field.width === 'third' && "md:col-span-1",
@@ -293,7 +400,16 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
                       "col-span-2"
                     )}
                   />
-                ))}
+                  {rangeAlertByEndName.has(field.name) && (
+                    <Alert className="col-span-2 border-[#D32F2F]/40 bg-[#FEF2F2] text-[#991B1B] dark:bg-red-950/30 dark:text-red-200">
+                      <AlertCircle className="h-4 w-4 !text-[#D32F2F]" />
+                      <AlertDescription className="font-medium text-[#991B1B] dark:text-red-100">
+                        {rangeAlertByEndName.get(field.name)}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </React.Fragment>
+              ))}
             </div>
           </form>
         </CardContent>
@@ -362,7 +478,7 @@ export const FormRenderer: React.FC<FormRendererProps> = ({
               <Button
                 type="submit"
                 onClick={handleSubmit(onSubmitForm)}
-                disabled={isSubmitting || !isValid}
+                disabled={isSubmitting || hasVisibleErrors}
               >
                 {isSubmitting ? (
                   <>

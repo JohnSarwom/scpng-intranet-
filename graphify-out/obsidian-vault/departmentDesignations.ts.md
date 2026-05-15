@@ -1,12 +1,12 @@
 ---
 source_file: "src\utils\departmentDesignations.ts"
 type: "code"
-community: "Module 212"
+community: "Community 214"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_212
+  - community/Community_214
 ---
 
 # departmentDesignations.ts
@@ -15,4 +15,4 @@ tags:
 - [[getDirectorDesignation()]] - `contains` [EXTRACTED]
 - [[getManagerDesignation()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_212
+#graphify/code #graphify/EXTRACTED #community/Community_214

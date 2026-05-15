@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\unit-tabs\KRAsTab.tsx"
 type: "code"
-community: "KRA/KPI Tab"
+community: "KRAs Tab"
 location: "L902"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/KRA/KPI_Tab
+  - community/KRAs_Tab
 ---
 
 # handleSaveObjective()
@@ -15,4 +15,4 @@ tags:
 - [[KRAsTab.tsx]] - `contains` [EXTRACTED]
 - [[handleCloseObjectiveModal()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/KRA/KPI_Tab
+#graphify/code #graphify/EXTRACTED #community/KRAs_Tab

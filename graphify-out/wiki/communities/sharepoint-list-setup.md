@@ -1,0 +1,141 @@
+# SharePoint List Setup
+
+**Community 0** · 102 nodes · cohesion 0.04
+
+## Nodes
+
+- **SharePointListSetupService** (`src\services\sharePointListSetupService.ts`) — degree 101
+- **.addConfigData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.addLookupColumn()** (`src\services\sharePointListSetupService.ts`) — degree 17
+- **.addObjectivesSampleData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.addOperationsSampleData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.addPillarsData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.addSampleData()** (`src\services\sharePointListSetupService.ts`) — degree 6
+- **.checkExistingLists()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.clearMockPerformanceData()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.constructor()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.createAllLists()** (`src\services\sharePointListSetupService.ts`) — degree 8
+- **.createAssetInvoicesList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createAssetMaintenanceList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createComponentVisibilityList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.createCustomContactsList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.createDivisionalAlignmentList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createDocumentCategoriesList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.createEmployeeProfilesList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createFormGroupsList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createFormRegistrationsList()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.createInternalAppSettingsList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.createKpisList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createKrasList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createList()** (`src\services\sharePointListSetupService.ts`) — degree 10
+- **.createMarketCompaniesList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createMarketDataLists()** (`src\services\sharePointListSetupService.ts`) — degree 5
+- **.createMarketPriceHistoryList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createMarketSettingsList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createMeetingMinutesDraftsLibrary()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createMeetingMinutesRegistryList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createOperationsLists()** (`src\services\sharePointListSetupService.ts`) — degree 11
+- **.createOrgHierarchyList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createProjectsList()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.createRisksList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createSharedDocsSetup()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createSharedDocumentsList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createStrategicGoalsList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createStrategicInitiativesList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createStrategicKRAsList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createStrategicObjectivesList()** (`src\services\sharePointListSetupService.ts`) — degree 6
+- **.createStrategicPillarsList()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.createStrategyConfigList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createStrategyDivisionsList()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.createStrategyMilestonesList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createStrategyRisksList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createStrategyUnitsList()** (`src\services\sharePointListSetupService.ts`) — degree 5
+- **.createTaskGroupsList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.createTasksList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.createUnitObjectivesList()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.createViewSettingsList()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.deleteMarketDataLists()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.deleteOperationsLists()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.deleteSharedDocsSetup()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.deleteStrategyHubEngine()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.deleteStrategyLists()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.ensureAssigneesColumn()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.ensureColumn()** (`src\services\sharePointListSetupService.ts`) — degree 9
+- **.ensureMultiline()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.ensureSharedDocsColumns()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.ensureTaskColumns()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.generatePriceHistory()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.getSiteUserMap()** (`src\services\sharePointListSetupService.ts`) — degree 5
+- **.populateEmployeeProfiles()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.purgeAllDemoData()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.purgeAndResetOperations()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.recreateProjectsListOnly()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.resetStrategicProgress()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.resolveFieldName()** (`src\services\sharePointListSetupService.ts`) — degree 6
+- **.seedMaintenanceAndInvoices()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.seedMarketData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedMarketSettings()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedOfficerOperationalData()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.seedOfficerProfilesList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.seedOrgHierarchyData()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedProjectsData()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.seedRandomCompletionDates()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.seedStrategyDivisionsAndUnits()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.seedStrategyHubAlignment()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedStrategyHubConfig()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedStrategyHubMilestones()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedStrategyHubObjectives()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.seedStrategyHubPillars()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedStrategyHubRisks()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedStrategyHubUnitObjectives()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.seedTenDemoAssetsForEachUser()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.seedTenDemoTasksForEachUser()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.setupCorporatePlanLists()** (`src\services\sharePointListSetupService.ts`) — degree 5
+- **.setupFormsEngine()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.setupITRequestList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.setupMeetingMinutesInfrastructure()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.setupOfficerProfilesList()** (`src\services\sharePointListSetupService.ts`) — degree 1
+- **.setupStrategicObjectivesStandalone()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.setupStrategyDivisionsAndUnitsLists()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.setupStrategyHubEngine()** (`src\services\sharePointListSetupService.ts`) — degree 16
+- **.setupStrategyOrgHierarchy()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.setupTaskGroupsList()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **.setupWebsiteFeedbackResources()** (`src\services\sharePointListSetupService.ts`) — degree 2
+- **.uploadMockKPIs()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.uploadMockKRAs()** (`src\services\sharePointListSetupService.ts`) — degree 4
+- **.uploadMockTasks()** (`src\services\sharePointListSetupService.ts`) — degree 5
+- **.verifyOperationsSchema()** (`src\services\sharePointListSetupService.ts`) — degree 3
+- **sharePointListSetupService.ts** (`src\services\sharePointListSetupService.ts`) — degree 1
+
+## Internal Edges
+
+- sharePointListSetupService.ts --contains-> SharePointListSetupService [EXTRACTED]
+- SharePointListSetupService --method-> .constructor() [EXTRACTED]
+- SharePointListSetupService --method-> .createAllLists() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategyConfigList() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategicPillarsList() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategyDivisionsList() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategyUnitsList() [EXTRACTED]
+- SharePointListSetupService --method-> .setupStrategyDivisionsAndUnitsLists() [EXTRACTED]
+- SharePointListSetupService --method-> .seedStrategyDivisionsAndUnits() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategicObjectivesList() [EXTRACTED]
+- SharePointListSetupService --method-> .createList() [EXTRACTED]
+- SharePointListSetupService --method-> .createUnitObjectivesList() [EXTRACTED]
+- SharePointListSetupService --method-> .addLookupColumn() [EXTRACTED]
+- SharePointListSetupService --method-> .addSampleData() [EXTRACTED]
+- SharePointListSetupService --method-> .addConfigData() [EXTRACTED]
+- SharePointListSetupService --method-> .addPillarsData() [EXTRACTED]
+- SharePointListSetupService --method-> .addObjectivesSampleData() [EXTRACTED]
+- SharePointListSetupService --method-> .deleteStrategyLists() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategicGoalsList() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategicKRAsList() [EXTRACTED]
+- SharePointListSetupService --method-> .createStrategicInitiativesList() [EXTRACTED]
+- SharePointListSetupService --method-> .setupCorporatePlanLists() [EXTRACTED]
+- SharePointListSetupService --method-> .checkExistingLists() [EXTRACTED]
+- SharePointListSetupService --method-> .ensureAssigneesColumn() [EXTRACTED]
+- SharePointListSetupService --method-> .ensureTaskColumns() [EXTRACTED]
+- SharePointListSetupService --method-> .seedRandomCompletionDates() [EXTRACTED]
+- SharePointListSetupService --method-> .createOperationsLists() [EXTRACTED]
+- SharePointListSetupService --method-> .setupFormsEngine() [EXTRACTED]
+- SharePointListSetupService --method-> .setupITRequestList() [EXTRACTED]
+- SharePointListSetupService --method-> .createFormGroupsList() [EXTRACTED]

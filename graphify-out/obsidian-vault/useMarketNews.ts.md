@@ -1,20 +1,19 @@
 ---
 source_file: "src\hooks\useMarketNews.ts"
 type: "code"
-community: "Module 157"
+community: "Community 158"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_157
+  - community/Community_158
 ---
 
 # useMarketNews.ts
 
 ## Connections
-- [[MarketData.tsx]] - `calls` [INFERRED]
 - [[useCompanyNews()]] - `contains` [EXTRACTED]
 - [[useHighPriorityNews()]] - `contains` [EXTRACTED]
 - [[useMarketNews()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_157
+#graphify/code #graphify/EXTRACTED #community/Community_158

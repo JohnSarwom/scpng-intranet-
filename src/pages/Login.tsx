@@ -1,65 +1,48 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, logger } from '@/lib/supabaseClient';
+import { logger } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { LogIn, Loader2, AlertCircle } from 'lucide-react';
-
-// MSAL Imports
-import { useMsal } from "@azure/msal-react";
-import { InteractionStatus, type AccountInfo } from "@azure/msal-browser"; // To check interaction status, Add AccountInfo type
-import { loginRequest } from '@/integrations/microsoft/msalConfig'; // Import scopes from centralized config
+import { Loader2, AlertCircle } from 'lucide-react';
+import { useMsal, useIsAuthenticated } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
+import { loginRequest } from '@/integrations/microsoft/msalConfig';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { instance, inProgress } = useMsal(); // Get MSAL instance and interaction status
-  const [msalLoading, setMsalLoading] = useState(false); // Specific loading for MSAL interaction
+  const { instance, inProgress } = useMsal();
+  const isAuthenticated = useIsAuthenticated();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleMicrosoftLogin = async () => {
-    if (inProgress !== InteractionStatus.None || msalLoading) {
-      logger.info('MSAL interaction already in progress or loading.');
-      return;
+  // Fallback: if the user lands on /login already authenticated (e.g. MSAL navigated back
+  // here after a redirect), send them to the saved target via React Router (no page reload).
+  useEffect(() => {
+    if (isAuthenticated && inProgress === InteractionStatus.None) {
+      const target = sessionStorage.getItem('auth_return_to') ?? '/';
+      sessionStorage.removeItem('auth_return_to');
+      const dest = (target && target !== '/login') ? target : '/';
+      navigate(dest, { replace: true });
     }
-    setMsalLoading(true);
+  }, [isAuthenticated, inProgress]);
+
+  const handleMicrosoftLogin = async () => {
+    if (inProgress !== InteractionStatus.None || isRedirecting) return;
+    setIsRedirecting(true);
     setError(null);
-    logger.info('Initiating MSAL loginPopup');
 
     try {
-      const msalResponse = await instance.loginPopup(loginRequest);
-      logger.success('MSAL login successful', { username: msalResponse.account?.username });
-
-      // Navigate immediately after successful MSAL login
-      if (msalResponse.account) {
-        const account = msalResponse.account;
-        toast.success("Signed in successfully via Microsoft");
-
-        // --- Simple Login Confirmation (Edge Function disabled for efficiency) --- 
-        if (account.username) {
-          // console.log(`[Login Page] ✅ MSAL login successful for: ${account.username}`);
-          // Edge Function disabled - role-based auth handles all logging and RBAC
-        } else {
-          // console.warn('[Login Page] MSAL username missing, cannot invoke log function.');
-        }
-        // --- End Invoke Edge Function ---
-
-        navigate('/', { replace: true }); // Navigate to the main app
-      } else {
-        logger.error('MSAL login succeeded but account info was missing.');
-        setError('Authentication failed: Missing account information from Microsoft.');
-      }
+      // loginRedirect navigates the full page to Microsoft — the promise never resolves.
+      // After auth, Microsoft redirects back to the app root, MsalProvider processes the
+      // tokens, and AppRoutes navigates to the saved auth_return_to target.
+      await instance.loginRedirect({
+        ...loginRequest,
+        redirectUri: window.location.origin + '/',
+      });
     } catch (msalError: any) {
-      logger.error('MSAL loginPopup error', msalError);
-      if (msalError.errorCode === 'user_cancelled') {
-        setError('Microsoft sign-in was cancelled.');
-      } else if (msalError.errorCode === 'popup_window_error') {
-        setError('Popup window blocked or closed. Please allow popups for this site.');
-      } else {
-        setError(msalError.message || 'An error occurred during Microsoft sign-in.');
-      }
-    } finally {
-      setMsalLoading(false);
+      logger.error('MSAL loginRedirect error', msalError);
+      setIsRedirecting(false);
+      setError(msalError.message || 'An error occurred during Microsoft sign-in.');
     }
   };
 
@@ -96,9 +79,9 @@ export default function Login() {
             variant="outline"
             className="w-full mt-6 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2"
             onClick={handleMicrosoftLogin}
-            disabled={inProgress !== InteractionStatus.None || msalLoading}
+            disabled={inProgress !== InteractionStatus.None || isRedirecting}
           >
-            {msalLoading || inProgress !== InteractionStatus.None ? (
+            {isRedirecting || inProgress !== InteractionStatus.None ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <svg className="h-5 w-5" viewBox="0 0 21 21" aria-hidden="true"><path fill="#f25022" d="M1 1h9v9H1z" /><path fill="#00a4ef" d="M1 11h9v9H1z" /><path fill="#7fba00" d="M11 1h9v9h-9z" /><path fill="#ffb900" d="M11 11h9v9h-9z" /></svg>

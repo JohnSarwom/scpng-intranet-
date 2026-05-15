@@ -1,19 +1,18 @@
 ---
 source_file: "src\components\ticketing\MailAndPackages.tsx"
 type: "code"
-community: "Module 185"
+community: "Community 186"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_185
+  - community/Community_186
 ---
 
 # MailAndPackages.tsx
 
 ## Connections
-- [[Tickets.tsx]] - `references` [INFERRED]
 - [[getInitials()_2]] - `contains` [EXTRACTED]
 - [[renderListItem()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_185
+#graphify/code #graphify/EXTRACTED #community/Community_186

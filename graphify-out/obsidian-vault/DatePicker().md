@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ui\date-picker.tsx"
 type: "code"
-community: "Module 277"
+community: "Community 279"
 location: "L19"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_277
+  - community/Community_279
 ---
 
 # DatePicker()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[date-picker.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_277
+#graphify/code #graphify/EXTRACTED #community/Community_279

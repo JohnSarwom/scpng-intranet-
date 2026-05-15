@@ -15,11 +15,18 @@ import {
   HRCase,
   EmploymentHistory,
   AuditLogEntry,
+  ApprovalAttachment,
+  ApprovalHistoryEntry,
   HRStatistics,
   DocumentUploadData,
   LeaveRequestSubmission,
   EmployeeFormData,
+  WorkflowApprover,
+  WorkflowStage,
+  EmailTemplate,
+  EmailTemplateStage,
 } from '@/types/hr';
+import { sendLeaveEmail, sendApproverNotification } from '@/services/hrEmailService';
 
 const SITE_PATH = '/sites/scpngintranet';
 const SITE_DOMAIN = 'scpng1.sharepoint.com';
@@ -35,6 +42,8 @@ const LISTS = {
   HR_CASES: 'HR_Cases',
   EMPLOYMENT_HISTORY: 'HR_EmploymentHistory',
   AUDIT_LOG: 'HR_AuditLog',
+  WORKFLOW_APPROVERS: 'HR_WorkflowApprovers',
+  EMAIL_TEMPLATES: 'HR_EmailTemplates',
 };
 
 const LIBRARY_NAME = 'HR_Documents';
@@ -111,8 +120,9 @@ export class HRSharePointService {
   }
 
   /**
-   * Helper: Fetch items from list and filter by EmployeeID client-side
-   * This avoids SharePoint's indexed column requirement for filters
+   * Fetch items from a list filtered by EmployeeID server-side.
+   * The Prefer header allows filtering on non-indexed columns without a hard 403.
+   * Handles pagination automatically so callers always get the full result set.
    */
   private async getItemsByEmployeeId(
     listName: string,
@@ -123,23 +133,32 @@ export class HRSharePointService {
 
     try {
       const listId = this.getListId(listName);
-      let query = this.client
-        .api(`/sites/${this.siteId}/lists/${listId}/items`)
-        .expand('fields');
+      const safeId = employeeId.replace(/'/g, "''");
 
-      const response = await query.get();
+      let odata = `fields/EmployeeID eq '${safeId}'`;
+      if (additionalFilter === 'fields/IsActive eq true') {
+        odata += ` and fields/IsActive eq true`;
+      }
 
-      // Client-side filtering for flexibility
-      return response.value.filter((item: any) => {
-        const matchesEmployee = item.fields.EmployeeID === employeeId;
-        if (!additionalFilter) return matchesEmployee;
+      const all: any[] = [];
+      let nextLink: string | undefined;
 
-        if (additionalFilter.includes('IsActive eq true')) {
-          return matchesEmployee && item.fields.IsActive === true;
-        }
+      do {
+        const req = nextLink
+          ? this.client.api(nextLink)
+          : this.client
+              .api(`/sites/${this.siteId}/lists/${listId}/items`)
+              .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+              .expand('fields')
+              .filter(odata)
+              .top(500);
 
-        return matchesEmployee;
-      });
+        const response = await req.get();
+        all.push(...response.value);
+        nextLink = response['@odata.nextLink'];
+      } while (nextLink);
+
+      return all;
     } catch (error) {
       console.error(`❌ Error fetching items from ${listName}:`, error);
       throw error;
@@ -258,11 +277,13 @@ export class HRSharePointService {
       const listId = this.getListId(LISTS.EMPLOYEES);
 
       // Filter by Email
+      // Sanitize email to prevent OData injection: escape single quotes by doubling them
+      const safeEmail = email.replace(/'/g, "''");
       const response = await this.client
         .api(`/sites/${this.siteId}/lists/${listId}/items`)
         .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
         .expand('fields')
-        .filter(`fields/Email eq '${email}'`)
+        .filter(`fields/Email eq '${safeEmail}'`)
         .get();
 
       if (response.value && response.value.length > 0) {
@@ -361,7 +382,7 @@ export class HRSharePointService {
         .post(itemData);
 
       // Log audit entry
-      await this.logAudit(employeeId, 'Employee', 'Created', undefined, undefined, JSON.stringify(data));
+      await this.logAudit(employeeId, 'Employee', 'Created', undefined, undefined, undefined, JSON.stringify(data));
 
       return this.mapSharePointEmployee(response.fields);
     } catch (error) {
@@ -418,7 +439,9 @@ export class HRSharePointService {
     employeeId: string,
     leaveType: string,
     entitlement: number,
-    year: number
+    year: number,
+    used: number = 0,
+    pending: number = 0
   ): Promise<void> {
     if (!this.siteId) await this.initialize();
 
@@ -431,8 +454,8 @@ export class HRSharePointService {
           LeaveType: leaveType,
           Year: year.toString(), // Schema: Text
           Entitlement: entitlement.toString(), // Schema: Text
-          Used: '0', // Schema: Text
-          Pending: '0', // Schema: Text
+          Used: used.toString(), // Schema: Text
+          Pending: pending.toString(), // Schema: Text
           AccrualRate: '0', // Schema: Text
           LastAccrualDate: new Date().toISOString(),
         },
@@ -443,6 +466,44 @@ export class HRSharePointService {
         .post(itemData);
     } catch (error) {
       console.error('❌ Error creating leave balance:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update an employee leave balance row.
+   */
+  async updateLeaveBalance(
+    itemId: string,
+    data: {
+      leaveType: string;
+      year: number;
+      entitlement: number;
+      used: number;
+      pending: number;
+      accrualRate?: number;
+      lastAccrualDate?: string;
+    }
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      const listId = this.getListId(LISTS.LEAVE_BALANCES);
+      await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+        .patch({
+          fields: {
+            LeaveType: data.leaveType,
+            Year: data.year.toString(),
+            Entitlement: data.entitlement.toString(),
+            Used: data.used.toString(),
+            Pending: data.pending.toString(),
+            AccrualRate: (data.accrualRate ?? 0).toString(),
+            LastAccrualDate: data.lastAccrualDate ?? new Date().toISOString(),
+          },
+        });
+    } catch (error) {
+      console.error('❌ Error updating leave balance:', error);
       throw error;
     }
   }
@@ -507,29 +568,7 @@ export class HRSharePointService {
         return dateB - dateA;
       });
 
-      return sorted.map((item: any) => ({
-        id: item.id,
-        employeeId: item.fields.EmployeeID,
-        leaveType: item.fields.Type_of_leave,
-        startDate: item.fields.Start_Date,
-        endDate: item.fields.End_Date,
-        daysRequested: item.fields.TotalLeaveDays || 0,
-        reason: item.fields.Reason,
-        status: item.fields.ApprovalStatus || 'Pending',
-        stage: item.fields.Stage || 'Submitted',
-        currentStep: parseInt(item.fields.CurrentStep || '1'),
-        approverManager: item.fields.Approver_Manager,
-        approverDirector: item.fields.Approver_Director,
-        approverHR: item.fields.Approver_HR,
-        approvedBy: item.fields.ApprovedBy,
-        approvedDate: item.fields.ApprovedDate,
-        // Map to actual SharePoint column names (with spaces and underscores)
-        managerApprovedDate: item.fields['Manager Approval Date'] || item.fields.Manager_Approval_Date || item.fields.ManagerApprovalDate,
-        directorApprovedDate: item.fields['Director Approval Date'] || item.fields.Director_Approval_Date || item.fields.DirectorApprovalDate,
-        hrApprovedDate: item.fields['HR Approval Date'] || item.fields.HR_Approval_Date || item.fields.HRApprovalDate,
-        comments: item.fields.HRRemarks,
-        createdDate: item.fields.Created,
-      }));
+      return sorted.map((item: any) => this.mapLeaveRequestItem(item));
     } catch (error) {
       console.error('❌ Error fetching leave requests:', error);
       return [];
@@ -537,39 +576,283 @@ export class HRSharePointService {
   }
 
   /**
-   * Submit leave request
+   * Get a single leave request by SharePoint item ID.
+   * Used by email deep links so terminal and pending requests can be
+   * distinguished without relying on the pending approvals list.
    */
-  async submitLeaveRequest(data: LeaveRequestSubmission): Promise<LeaveRequest> {
+  async getLeaveRequestById(itemId: string): Promise<LeaveRequest | null> {
     if (!this.siteId) await this.initialize();
 
     try {
       const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const item = await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+        .expand('fields')
+        .get();
+
+      return this.mapLeaveRequestItem(item);
+    } catch (error: any) {
+      const status = error?.statusCode ?? error?.status;
+      const code = String(error?.code ?? '').toLowerCase();
+      if (status === 404 || code.includes('itemnotfound')) {
+        return null;
+      }
+
+      console.error('❌ Error fetching leave request by ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Submit leave request
+   */
+  /**
+   * Post a new leave item, auto-creating any unrecognised columns and retrying.
+   */
+  private async postLeaveItem(
+    listId: string,
+    fields: Record<string, unknown>,
+  ): Promise<any> {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        return await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items`)
+          .post({ fields });
+      } catch (err: any) {
+        const match = (err?.message ?? '').match(/Field '([^']+)' is not recognized/);
+        if (!match) throw err;
+        const missingCol = match[1];
+        const columnDefinition = ['ApprovalHistory', 'ApprovalAttachments'].includes(missingCol)
+          ? { name: missingCol, text: { allowMultipleLines: true } }
+          : { name: missingCol, text: {} };
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/columns`)
+          .post(columnDefinition)
+          .catch(() => {});
+      }
+    }
+    return await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items`)
+      .post({ fields });
+  }
+
+  /**
+   * Patch a leave request item, auto-creating any unrecognised columns and retrying.
+   * SharePoint rejects writes to columns that don't exist yet; this helper catches
+   * that error, creates the missing column, and retries up to 10 times so every
+   * field in the payload is guaranteed to land even on a fresh list.
+   */
+  private async patchLeaveItem(
+    listId: string,
+    itemId: string,
+    fields: Record<string, unknown>,
+  ): Promise<void> {
+    let remaining = { ...fields };
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+          .patch({ fields: remaining });
+        return; // success
+      } catch (err: any) {
+        const match = (err?.message ?? '').match(/Field '([^']+)' is not recognized/);
+        if (!match) throw err; // unrelated error - rethrow
+        const missingCol = match[1];
+        // Create the missing column then retry the full payload
+        const columnDefinition = ['ApprovalHistory', 'ApprovalAttachments'].includes(missingCol)
+          ? { name: missingCol, text: { allowMultipleLines: true } }
+          : { name: missingCol, text: {} };
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/columns`)
+          .post(columnDefinition)
+          .catch(() => { /* already exists */ });
+      }
+    }
+    // Final attempt after exhausting retries
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+      .patch({ fields: remaining });
+  }
+
+  private parseJsonField<T>(value: unknown, fallback: T): T {
+    if (!value || typeof value !== 'string') return fallback;
+    try {
+      return JSON.parse(value) as T;
+    } catch {
+      return fallback;
+    }
+  }
+
+  private createApprovalHistoryEntry(params: {
+    stage: string;
+    action: ApprovalHistoryEntry['action'];
+    actorName: string;
+    actorEmail?: string;
+    comments?: string;
+    attachments?: ApprovalAttachment[];
+    fromStage?: string;
+    toStage?: string;
+  }): ApprovalHistoryEntry {
+    return {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      stage: params.stage,
+      action: params.action,
+      actorName: params.actorName,
+      actorEmail: params.actorEmail,
+      comments: params.comments,
+      attachments: params.attachments,
+      fromStage: params.fromStage,
+      toStage: params.toStage,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  private async getLeaveItemFields(listId: string, itemId: string): Promise<Record<string, any>> {
+    const item = await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+      .expand('fields')
+      .get();
+    return item.fields ?? {};
+  }
+
+  private buildApprovalMetadataFields(
+    fields: Record<string, any>,
+    entry: ApprovalHistoryEntry,
+    attachments: ApprovalAttachment[] = [],
+  ): Record<string, string> {
+    const history = this.parseJsonField<ApprovalHistoryEntry[]>(
+      fields.ApprovalHistory,
+      [],
+    );
+    const existingAttachments = this.parseJsonField<ApprovalAttachment[]>(
+      fields.ApprovalAttachments,
+      [],
+    );
+
+    return {
+      ApprovalHistory: JSON.stringify([...history, entry]),
+      ApprovalAttachments: JSON.stringify([...existingAttachments, ...attachments]),
+    };
+  }
+
+  private sameEmail(a?: string, b?: string): boolean {
+    return !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+  }
+
+  private async resolveLeaveStageAvoidingSelf(
+    requestedStage: WorkflowStage,
+    employeeEmail: string | undefined,
+    division: string,
+    unit: string,
+  ): Promise<{ stage: WorkflowStage; step: string; approver: WorkflowApprover | null; skippedStages: WorkflowStage[] }> {
+    const ordered: WorkflowStage[] = ['Manager Review', 'Director Review', 'HR Review'];
+    let startIndex = ordered.indexOf(requestedStage);
+    if (startIndex < 0) startIndex = 0;
+
+    const skippedStages: WorkflowStage[] = [];
+
+    for (let i = startIndex; i < ordered.length; i++) {
+      const stage = ordered[i];
+      const approver = await this.getApproverForStage(division, unit, stage);
+      const managerApprover = stage === 'Director Review'
+        ? await this.getApproverForStage(division, unit, 'Manager Review')
+        : null;
+      const shouldSkipDirector =
+        stage === 'Director Review' &&
+        requestedStage === 'Director Review' &&
+        managerApprover?.skipDirectorReview;
+
+      if (shouldSkipDirector || this.sameEmail(approver?.approverEmail, employeeEmail)) {
+        skippedStages.push(stage);
+        continue;
+      }
+
+      return {
+        stage,
+        step: String(i + 2),
+        approver,
+        skippedStages,
+      };
+    }
+
+    throw new Error('No valid approver found. The requester cannot approve their own leave request.');
+  }
+
+  async submitLeaveRequest(data: LeaveRequestSubmission): Promise<LeaveRequest> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      // Reject submissions with no leave type
+      if (!data.leaveType || data.leaveType === 'N/A') {
+        throw new Error('A leave type must be selected before submitting.');
+      }
+
+      // Check for overlapping active requests before creating
+      const existing = await this.getLeaveRequests(data.employeeId);
+      const reqStart = new Date(data.startDate);
+      const reqEnd = new Date(data.endDate);
+      const conflict = existing.find(req => {
+        if (['Rejected', 'Declined', 'Cancelled'].includes(req.status)) return false;
+        const existStart = new Date(req.startDate);
+        const existEnd = new Date(req.endDate);
+        return reqStart <= existEnd && reqEnd >= existStart;
+      });
+      if (conflict) {
+        throw new Error(
+          `An active leave request already covers overlapping dates (${conflict.startDate} - ${conflict.endDate}, ID: ${conflict.id}). ` +
+          `Please cancel it before submitting a new request for the same period.`
+        );
+      }
+
+      const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const initialRouting = await this.resolveLeaveStageAvoidingSelf(
+        'Manager Review',
+        data.employeeEmail,
+        data.division ?? '',
+        data.unit ?? '',
+      ).catch(() => ({
+        stage: 'Manager Review' as WorkflowStage,
+        step: '2',
+        approver: null,
+        skippedStages: [],
+      }));
+
+      const submissionHistory = this.createApprovalHistoryEntry({
+        stage: 'Submitted',
+        action: initialRouting.skippedStages.length ? 'Escalated' : 'Submitted',
+        actorName: data.name ?? data.employeeId,
+        actorEmail: data.employeeEmail,
+        comments: initialRouting.skippedStages.length
+          ? `Submitted and routed to ${initialRouting.stage} because ${initialRouting.skippedStages.join(', ')} was skipped.`
+          : 'Submitted leave application.',
+        fromStage: 'Submitted',
+        toStage: initialRouting.stage,
+      });
 
       const itemData = {
         fields: {
           EmployeeID: data.employeeId,
           Name: data.name,
+          EmployeeEmail: data.employeeEmail ?? '',
           Division: data.division,
           Unit: data.unit,
           Type_of_leave: data.leaveType,
           Start_Date: data.startDate,
           End_Date: data.endDate,
           Reason: data.reason,
-          Signature: data.signature,
-          Stage: 'Manager Review',
-          CurrentStep: '2', // Schema defines this as Text
+          Stage: initialRouting.stage,
+          CurrentStep: initialRouting.step, // Schema defines this as Text
           Request_ID: `REQ-${data.employeeId}-${Date.now()}`,
           Submission_Date: new Date().toISOString().split('T')[0],
-          TotalLeaveDays: data.daysRequested, // Mapped from schema
-          ApprovalStatus: 'Pending', // Mapped from schema
+          TotalLeaveDays: data.daysRequested,
+          ApprovalStatus: 'Pending',
+          ApprovalHistory: JSON.stringify([submissionHistory]),
         },
       };
 
-      const response = await this.client
-        .api(`/sites/${this.siteId}/lists/${listId}/items`)
-        .post(itemData);
+      const response = await this.postLeaveItem(listId, itemData.fields);
 
-      return {
+      const leaveRequest: LeaveRequest = {
         id: response.id,
         employeeId: response.fields.EmployeeID,
         leaveType: response.fields.Type_of_leave,
@@ -580,9 +863,548 @@ export class HRSharePointService {
         status: response.fields.ApprovalStatus,
         stage: response.fields.Stage,
         currentStep: parseInt(response.fields.CurrentStep || '0'),
+        createdDate: response.fields.Created,
       };
+
+      // Increment pending balance so available days reflect the in-flight request
+      try {
+        const year = new Date().getFullYear();
+        await this.incrementPendingBalance(data.employeeId, data.leaveType, data.daysRequested, year);
+      } catch (e) {
+        console.warn('⚠️ Could not increment pending balance after submission:', e);
+      }
+
+      await this.logAudit(data.employeeId, 'Leave', 'Created', data.employeeId,
+        'Stage', undefined, initialRouting.stage);
+
+      // Send submission confirmation to employee
+      if (data.employeeEmail) {
+        sendLeaveEmail(this.client, {
+          to: data.employeeEmail,
+          employeeName: data.name ?? data.employeeId,
+          leaveType: data.leaveType,
+          startDate: data.startDate,
+          endDate: data.endDate,
+          days: data.daysRequested,
+          division: data.division,
+          unit: data.unit,
+          stage: 'Submission',
+        });
+      }
+
+      // Notify the manager (Stage 1 approver) so they can act from email
+      try {
+        const approver = initialRouting.approver ?? await this.getApproverForStage(
+          data.division ?? '', data.unit ?? '', initialRouting.stage
+        );
+        if (approver?.approverEmail) {
+          sendApproverNotification(this.client, {
+            to: approver.approverEmail,
+            approverName: approver.approverName,
+            employeeName: data.name ?? data.employeeId,
+            leaveType: data.leaveType,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            days: data.daysRequested,
+            stage: initialRouting.stage,
+            division: data.division,
+            unit: data.unit,
+            requestId: leaveRequest.id,
+            appUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+          });
+        }
+      } catch {
+        // Approver lookup failed - skip notification gracefully
+      }
+
+      return leaveRequest;
     } catch (error) {
       console.error('❌ Error submitting leave request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Increment the Pending days for an employee's leave balance.
+   * Called when a request is submitted so available = entitlement - used - pending
+   * reflects in-flight requests immediately.
+   */
+  async incrementPendingBalance(
+    employeeId: string,
+    leaveType: string,
+    daysToAdd: number,
+    year: number
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const balances = await this.getLeaveBalances(employeeId);
+    const balance = balances.find(
+      b =>
+        b.leaveType.toLowerCase() === leaveType.toLowerCase() &&
+        (b.year === year || b.year === 0)
+    );
+
+    if (!balance) return; // No matching balance row - skip silently
+
+    const newPending = balance.pending + daysToAdd;
+    const listId = this.getListId(LISTS.LEAVE_BALANCES);
+
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items/${balance.id}`)
+      .patch({ fields: { Pending: String(newPending) } });
+  }
+
+  /**
+   * Fetch all leave requests that are currently in-flight (not terminal).
+   * Used by the Approver Dashboard to list actionable requests.
+   * Pass filterStage to scope to a specific approval stage.
+   */
+  async getAllPendingLeaveRequests(filterStage?: string): Promise<LeaveRequest[]> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const response = await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+        .expand('fields')
+        .top(500)
+        .get();
+
+      const TERMINAL = ['Approved', 'Rejected', 'Declined', 'Cancelled'];
+
+      let items: any[] = response.value;
+
+      if (filterStage) {
+        items = items.filter((item: any) => item.fields.Stage === filterStage);
+      } else {
+        items = items.filter((item: any) => !TERMINAL.includes(item.fields.ApprovalStatus));
+      }
+
+      return items
+        .sort((a: any, b: any) =>
+          new Date(a.fields.Created).getTime() - new Date(b.fields.Created).getTime()
+        )
+        .map((item: any) => this.mapLeaveRequestItem(item));
+    } catch (error) {
+      console.error('❌ Error fetching all pending leave requests:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch every leave request for the central approval history view.
+   * Access should be restricted by the caller to HR users or configured approvers.
+   */
+  async getAllLeaveRequests(): Promise<LeaveRequest[]> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const all: any[] = [];
+      let nextLink: string | undefined;
+
+      do {
+        const req = nextLink
+          ? this.client.api(nextLink)
+          : this.client
+              .api(`/sites/${this.siteId}/lists/${listId}/items`)
+              .expand('fields')
+              .top(500);
+
+        const response = await req.get();
+        all.push(...response.value);
+        nextLink = response['@odata.nextLink'];
+      } while (nextLink);
+
+      return all
+        .sort((a: any, b: any) =>
+          new Date(b.fields.Created).getTime() - new Date(a.fields.Created).getTime()
+        )
+        .map((item: any) => this.mapLeaveRequestItem(item));
+    } catch (error) {
+      console.error('❌ Error fetching all leave requests:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Approve a leave request, advancing it to the next workflow stage.
+   * On final HR approval, balance is deducted automatically.
+   */
+  async approveLeaveRequest(
+    itemId: string,
+    currentStage: string,
+    approverName: string,
+    approverEmail: string,
+    employeeId: string,
+    leaveType: string,
+    daysRequested: number,
+    comments?: string,
+    attachments?: ApprovalAttachment[],
+    emailCtx?: {
+      employeeEmail: string;
+      employeeName: string;
+      startDate: string;
+      endDate: string;
+      division?: string;
+      unit?: string;
+    }
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+    const existingFields = await this.getLeaveItemFields(listId, itemId);
+    const employeeEmail = emailCtx?.employeeEmail || existingFields.EmployeeEmail || '';
+    if (this.sameEmail(approverEmail, employeeEmail)) {
+      throw new Error('You cannot approve your own request. It must be routed to a higher-level approver.');
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    const updateFields: Record<string, string> = {};
+    let nextStage: string;
+    let nextStep: string;
+
+    switch (currentStage) {
+      case 'Manager Review':
+        updateFields['Approver_Manager'] = approverName;
+        updateFields['Manager_Approval_Date'] = today;
+        {
+          const resolved = await this.resolveLeaveStageAvoidingSelf(
+            'Director Review',
+            employeeEmail,
+            emailCtx?.division ?? existingFields.Division ?? '',
+            emailCtx?.unit ?? existingFields.Unit ?? '',
+          );
+          nextStage = resolved.stage;
+          nextStep = resolved.step;
+        }
+        break;
+      case 'Director Review':
+        updateFields['Approver_Director'] = approverName;
+        updateFields['Director_Approval_Date'] = today;
+        {
+          const resolved = await this.resolveLeaveStageAvoidingSelf(
+            'HR Review',
+            employeeEmail,
+            emailCtx?.division ?? existingFields.Division ?? '',
+            emailCtx?.unit ?? existingFields.Unit ?? '',
+          );
+          nextStage = resolved.stage;
+          nextStep = resolved.step;
+        }
+        break;
+      case 'HR Review':
+        nextStage = 'Approved';
+        nextStep = '5';
+        updateFields['Approver_HR'] = approverName;
+        updateFields['HR_Approval_Date'] = today;
+        updateFields['ApprovalStatus'] = 'Approved';
+        updateFields['ApprovedBy'] = approverName;
+        updateFields['ApprovedDate'] = today;
+        break;
+      default:
+        throw new Error(`Cannot approve a request at stage: "${currentStage}"`);
+    }
+
+    updateFields['Stage'] = nextStage;
+    updateFields['CurrentStep'] = nextStep;
+    if (comments) updateFields['HRRemarks'] = comments;
+    Object.assign(
+      updateFields,
+      this.buildApprovalMetadataFields(
+        existingFields,
+        this.createApprovalHistoryEntry({
+          stage: currentStage,
+          action: 'Approved',
+          actorName: approverName,
+          actorEmail: approverEmail,
+          comments,
+          attachments,
+          fromStage: currentStage,
+          toStage: nextStage,
+        }),
+        attachments ?? [],
+      ),
+    );
+
+    await this.patchLeaveItem(listId, itemId, updateFields);
+
+    // Final approval: deduct balance
+    if (nextStage === 'Approved') {
+      try {
+        const year = new Date().getFullYear();
+        await this.deductLeaveBalance(employeeId, leaveType, daysRequested, year);
+      } catch (e) {
+        console.error('⚠️ Balance deduction failed post-approval:', e);
+        // Don't block - approval already recorded; HR can correct manually
+      }
+    }
+
+    await this.logAudit(employeeId, 'Leave', 'Updated', approverEmail,
+      'Stage', currentStage, nextStage);
+
+    // --- Employee status email (requires their stored email address) ---
+    if (emailCtx?.employeeEmail) {
+      const stageMap: Record<string, 'Manager Approved' | 'Director Approved' | 'Fully Approved'> = {
+        'Manager Review': 'Manager Approved',
+        'Director Review': 'Director Approved',
+        'HR Review': 'Fully Approved',
+      };
+      const emailStage = stageMap[currentStage];
+      if (emailStage) {
+        sendLeaveEmail(this.client, {
+          to: emailCtx.employeeEmail,
+          employeeName: emailCtx.employeeName,
+          leaveType,
+          startDate: emailCtx.startDate,
+          endDate: emailCtx.endDate,
+          days: daysRequested,
+          division: emailCtx.division,
+          unit: emailCtx.unit,
+          stage: emailStage,
+          approverName,
+        });
+      }
+    }
+
+    // --- Next-stage approver notification (always fires, regardless of employee email) ---
+    // This ensures the chain continues whether the action came from the dashboard or email.
+    if (nextStage !== 'Approved' && emailCtx) {
+      try {
+        const nextApprover = await this.getApproverForStage(
+          emailCtx.division ?? '', emailCtx.unit ?? '', nextStage as any
+        );
+        if (nextApprover?.approverEmail) {
+          sendApproverNotification(this.client, {
+            to: nextApprover.approverEmail,
+            approverName: nextApprover.approverName,
+            employeeName: emailCtx.employeeName,
+            leaveType,
+            startDate: emailCtx.startDate,
+            endDate: emailCtx.endDate,
+            days: daysRequested,
+            stage: nextStage,
+            division: emailCtx.division,
+            unit: emailCtx.unit,
+            requestId: itemId,
+            appUrl: typeof window !== 'undefined' ? window.location.origin : undefined,
+          });
+        }
+      } catch {
+        // Approver lookup failed - skip notification gracefully
+      }
+    }
+  }
+
+  /**
+   * Reject a leave request at any approval stage.
+   * Requires a reason. Reverses the pending balance that was incremented on submission.
+   */
+  async rejectLeaveRequest(
+    itemId: string,
+    currentStage: string,
+    approverName: string,
+    approverEmail: string,
+    employeeId: string,
+    reason: string,
+    leaveType: string,
+    daysRequested: number,
+    attachments?: ApprovalAttachment[],
+    emailCtx?: {
+      employeeEmail: string;
+      employeeName: string;
+      startDate: string;
+      endDate: string;
+      division?: string;
+      unit?: string;
+    }
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+    const existingFields = await this.getLeaveItemFields(listId, itemId);
+    const employeeEmail = emailCtx?.employeeEmail || existingFields.EmployeeEmail || '';
+    if (this.sameEmail(approverEmail, employeeEmail)) {
+      throw new Error('You cannot reject your own request. It must be routed to a higher-level approver.');
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    await this.patchLeaveItem(listId, itemId, {
+      ApprovalStatus: 'Rejected',
+      Stage: 'Rejected',
+      HRRemarks: reason,
+      ApprovedBy: approverName,
+      ApprovedDate: today,
+      ...this.buildApprovalMetadataFields(
+        existingFields,
+        this.createApprovalHistoryEntry({
+          stage: currentStage,
+          action: 'Rejected',
+          actorName: approverName,
+          actorEmail: approverEmail,
+          comments: reason,
+          attachments,
+          fromStage: currentStage,
+          toStage: 'Rejected',
+        }),
+        attachments ?? [],
+      ),
+    });
+
+    // Reverse the pending balance that was incremented when the request was submitted
+    try {
+      const year = new Date().getFullYear();
+      const balances = await this.getLeaveBalances(employeeId);
+      const balance = balances.find(
+        b =>
+          b.leaveType.toLowerCase() === leaveType.toLowerCase() &&
+          (b.year === year || b.year === 0)
+      );
+      if (balance) {
+        const newPending = Math.max(0, balance.pending - daysRequested);
+        const balListId = this.getListId(LISTS.LEAVE_BALANCES);
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${balListId}/items/${balance.id}`)
+          .patch({ fields: { Pending: String(newPending) } });
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not reverse pending balance on rejection:', e);
+    }
+
+    await this.logAudit(employeeId, 'Leave', 'Updated', approverEmail,
+      'ApprovalStatus', currentStage, 'Rejected');
+
+    if (emailCtx?.employeeEmail) {
+      sendLeaveEmail(this.client, {
+        to: emailCtx.employeeEmail,
+        employeeName: emailCtx.employeeName,
+        leaveType,
+        startDate: emailCtx.startDate,
+        endDate: emailCtx.endDate,
+        days: daysRequested,
+        division: emailCtx.division,
+        unit: emailCtx.unit,
+        stage: 'Rejected',
+        approverName,
+        rejectionReason: reason,
+      });
+    }
+  }
+
+  /**
+   * Cancel a pending leave request (employee self-service).
+   * Only requests in Pending/Manager Review/Director Review stage can be cancelled.
+   * Reverses the pending balance increment.
+   */
+  async cancelLeaveRequest(
+    itemId: string,
+    employeeId: string,
+    leaveType: string,
+    daysRequested: number,
+    cancellerEmail: string
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+    const existingFields = await this.getLeaveItemFields(listId, itemId);
+
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+      .patch({
+        fields: {
+          ApprovalStatus: 'Cancelled',
+          Stage: 'Cancelled',
+          ...this.buildApprovalMetadataFields(
+            existingFields,
+            this.createApprovalHistoryEntry({
+              stage: existingFields.Stage ?? 'Submitted',
+              action: 'Cancelled',
+              actorName: cancellerEmail || employeeId,
+              actorEmail: cancellerEmail,
+              comments: 'Request cancelled by applicant.',
+              fromStage: existingFields.Stage,
+              toStage: 'Cancelled',
+            }),
+          ),
+        },
+      });
+
+    // Reverse the pending balance that was incremented on submission
+    try {
+      const year = new Date().getFullYear();
+      const balances = await this.getLeaveBalances(employeeId);
+      const balance = balances.find(
+        b =>
+          b.leaveType.toLowerCase() === leaveType.toLowerCase() &&
+          (b.year === year || b.year === 0)
+      );
+      if (balance) {
+        const newPending = Math.max(0, balance.pending - daysRequested);
+        const balListId = this.getListId(LISTS.LEAVE_BALANCES);
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${balListId}/items/${balance.id}`)
+          .patch({ fields: { Pending: String(newPending) } });
+      }
+    } catch (e) {
+      console.warn('⚠️ Could not reverse pending balance on cancellation:', e);
+    }
+
+    await this.logAudit(employeeId, 'Leave', 'Updated', cancellerEmail,
+      'ApprovalStatus', 'Pending', 'Cancelled');
+  }
+
+  /**
+   * Deduct approved leave days from an employee's balance.
+   * Called when HR marks a request Approved (fallback if Power Automate flow is not deployed).
+   * Simultaneously reduces Used and clears the matching Pending amount.
+   */
+  async deductLeaveBalance(
+    employeeId: string,
+    leaveType: string,
+    daysToDeduct: number,
+    year: number
+  ): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const balances = await this.getLeaveBalances(employeeId);
+    // Match on leave type case-insensitively; fall back to any year if year=0
+    const balance = balances.find(
+      b =>
+        b.leaveType.toLowerCase() === leaveType.toLowerCase() &&
+        (b.year === year || b.year === 0)
+    );
+
+    if (!balance) {
+      throw new Error(
+        `No leave balance found for employee ${employeeId} - type: "${leaveType}", year: ${year}.`
+      );
+    }
+
+    const newUsed = balance.used + daysToDeduct;
+    if (newUsed > balance.entitlement) {
+      throw new Error(
+        `Deducting ${daysToDeduct} day(s) would exceed the entitlement of ${balance.entitlement}. ` +
+        `Currently used: ${balance.used}.`
+      );
+    }
+
+    // Reduce pending by the same amount (min 0) since the request is now approved
+    const newPending = Math.max(0, balance.pending - daysToDeduct);
+
+    try {
+      const listId = this.getListId(LISTS.LEAVE_BALANCES);
+      await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items/${balance.id}`)
+        .patch({
+          fields: {
+            Used: String(newUsed),
+            Pending: String(newPending),
+          },
+        });
+    } catch (error) {
+      console.error('❌ Error deducting leave balance:', error);
       throw error;
     }
   }
@@ -806,10 +1628,16 @@ export class HRSharePointService {
    */
 
   /**
-   * Delete ALL data from all HR lists
-   * WARNING: This is destructive and cannot be undone
+   * Delete ALL data from all HR lists.
+   * WARNING: Permanently destructive. Caller must pass callerIsAdmin=true after
+   * verifying the user has admin role via useRoleBasedAuth().isAdmin.
    */
-  async deleteAllData(): Promise<void> {
+  async deleteAllData(callerIsAdmin: boolean = false): Promise<void> {
+    if (!callerIsAdmin) {
+      throw new Error(
+        'deleteAllData requires admin privileges. Verify the caller has admin role before passing callerIsAdmin: true.'
+      );
+    }
     if (!this.siteId) await this.initialize();
 
     try {
@@ -903,6 +1731,7 @@ export class HRSharePointService {
     employeeId: string,
     entityType: string,
     action: string,
+    changedBy?: string,
     fieldChanged?: string,
     oldValue?: string,
     newValue?: string
@@ -917,9 +1746,11 @@ export class HRSharePointService {
           EmployeeID: employeeId,
           EntityType: entityType,
           Action: action,
+          ChangedBy: changedBy,
           FieldChanged: fieldChanged,
           OldValue: oldValue,
           NewValue: newValue,
+          ChangedDate: new Date().toISOString(),
         },
       };
 
@@ -937,6 +1768,56 @@ export class HRSharePointService {
    * HELPER METHODS
    * ==========================================
    */
+
+  /**
+   * Map a raw SharePoint list item to a LeaveRequest object.
+   * Centralised so both getLeaveRequests and getAllPendingLeaveRequests stay in sync.
+   */
+  private mapLeaveRequestItem(item: any): LeaveRequest {
+    return {
+      id: item.id,
+      employeeId: item.fields.EmployeeID,
+      employeeName: item.fields.Name,
+      leaveType: item.fields.Type_of_leave,
+      startDate: item.fields.Start_Date,
+      endDate: item.fields.End_Date,
+      daysRequested: item.fields.TotalLeaveDays || 0,
+      reason: item.fields.Reason,
+      status: item.fields.ApprovalStatus || 'Pending',
+      stage: item.fields.Stage || 'Submitted',
+      currentStep: parseInt(item.fields.CurrentStep || '1'),
+      approverManager: item.fields.Approver_Manager,
+      approverDirector: item.fields.Approver_Director,
+      approverHR: item.fields.Approver_HR,
+      approvedBy: item.fields.ApprovedBy,
+      approvedDate: item.fields.ApprovedDate,
+      managerApprovedDate:
+        item.fields['Manager Approval Date'] ||
+        item.fields.Manager_Approval_Date ||
+        item.fields.ManagerApprovalDate,
+      directorApprovedDate:
+        item.fields['Director Approval Date'] ||
+        item.fields.Director_Approval_Date ||
+        item.fields.DirectorApprovalDate,
+      hrApprovedDate:
+        item.fields['HR Approval Date'] ||
+        item.fields.HR_Approval_Date ||
+        item.fields.HRApprovalDate,
+      comments: item.fields.HRRemarks,
+      approvalHistory: this.parseJsonField<ApprovalHistoryEntry[]>(
+        item.fields.ApprovalHistory,
+        [],
+      ),
+      attachments: this.parseJsonField<ApprovalAttachment[]>(
+        item.fields.ApprovalAttachments,
+        [],
+      ),
+      createdDate: item.fields.Created,
+      employeeEmail: item.fields.EmployeeEmail ?? item.fields.Email ?? '',
+      division: item.fields.Division,
+      unit: item.fields.Unit,
+    };
+  }
 
   /**
    * Map SharePoint fields to Employee object
@@ -978,6 +1859,238 @@ export class HRSharePointService {
       createdBy: fields.CreatedBy,
       modifiedBy: fields.ModifiedBy,
     };
+  }
+
+  // =========================================================================
+  // WORKFLOW ADMIN - Approvers
+  // =========================================================================
+
+  /**
+   * Creates the HR_WorkflowApprovers and HR_EmailTemplates lists if they
+   * don't already exist. Call once from the admin setup button.
+   */
+  async setupWorkflowLists(): Promise<void> {
+    if (!this.siteId) await this.initialize();
+
+    const ensureList = async (displayName: string, columns: object[]) => {
+      try {
+        // Check if it already exists
+        const existing = await this.client
+          .api(`/sites/${this.siteId}/lists`)
+          .filter(`displayName eq '${displayName}'`)
+          .get();
+        if (existing.value?.length > 0) {
+          console.log(`✅ List already exists: ${displayName}`);
+          return existing.value[0].id as string;
+        }
+
+        // Create
+        const created = await this.client
+          .api(`/sites/${this.siteId}/lists`)
+          .post({ displayName, list: { template: 'genericList' } });
+
+        const listId = created.id as string;
+
+        for (const col of columns) {
+          await this.client
+            .api(`/sites/${this.siteId}/lists/${listId}/columns`)
+            .post(col);
+        }
+
+        console.log(`✅ Created list: ${displayName}`);
+        return listId;
+      } catch (err) {
+        console.error(`❌ Error ensuring list ${displayName}:`, err);
+        throw err;
+      }
+    };
+
+    await ensureList(LISTS.WORKFLOW_APPROVERS, [
+      { name: 'Unit',                  text: {} },
+      { name: 'Stage',                 text: {} },
+      { name: 'ApproverName',          text: {} },
+      { name: 'ApproverEmail',         text: {} },
+      { name: 'SkipDirectorReview',    boolean: {} },
+    ]);
+
+    await ensureList(LISTS.EMAIL_TEMPLATES, [
+      { name: 'Subject', text: {} },
+      { name: 'Body',    text: { allowMultipleLines: true } },
+    ]);
+
+    // Re-load list IDs so new lists are registered
+    await this.loadListIds();
+  }
+
+  /** Fetch all workflow approver assignments. */
+  async getWorkflowApprovers(): Promise<WorkflowApprover[]> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      const listId = this.getListId(LISTS.WORKFLOW_APPROVERS);
+      const all: any[] = [];
+      let nextLink: string | undefined;
+
+      do {
+        const req = nextLink
+          ? this.client.api(nextLink)
+          : this.client
+              .api(`/sites/${this.siteId}/lists/${listId}/items`)
+              .expand('fields')
+              .top(500);
+        const res = await req.get();
+        all.push(...res.value);
+        nextLink = res['@odata.nextLink'];
+      } while (nextLink);
+
+      return all.map(item => ({
+        id: item.id,
+        division: item.fields.Title ?? '',
+        unit: item.fields.Unit ?? '',
+        stage: item.fields.Stage as WorkflowStage,
+        approverName: item.fields.ApproverName ?? '',
+        approverEmail: item.fields.ApproverEmail ?? '',
+        skipDirectorReview: item.fields.SkipDirectorReview ?? false,
+      }));
+    } catch (err) {
+      console.error('❌ Error fetching workflow approvers:', err);
+      throw err;
+    }
+  }
+
+  /** Create or update a single approver row. Pass id to update, omit to create. */
+  async saveWorkflowApprover(data: WorkflowApprover): Promise<WorkflowApprover> {
+    if (!this.siteId) await this.initialize();
+
+    // Auto-create the list on first use
+    if (!this.listIds.has(LISTS.WORKFLOW_APPROVERS)) {
+      await this.setupWorkflowLists();
+    }
+
+    const fields = {
+      Title: data.division,
+      Unit: data.unit,
+      Stage: data.stage,
+      ApproverName: data.approverName,
+      ApproverEmail: data.approverEmail,
+      SkipDirectorReview: data.skipDirectorReview ?? false,
+    };
+
+    try {
+      const listId = this.getListId(LISTS.WORKFLOW_APPROVERS);
+
+      if (data.id) {
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items/${data.id}/fields`)
+          .patch(fields);
+        return { ...data };
+      } else {
+        const created = await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items`)
+          .post({ fields });
+        return { ...data, id: created.id };
+      }
+    } catch (err) {
+      console.error('❌ Error saving workflow approver:', err);
+      throw err;
+    }
+  }
+
+  /** Delete a workflow approver row by SharePoint item id. */
+  async deleteWorkflowApprover(itemId: string): Promise<void> {
+    if (!this.siteId) await this.initialize();
+    try {
+      const listId = this.getListId(LISTS.WORKFLOW_APPROVERS);
+      await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
+        .delete();
+    } catch (err) {
+      console.error('❌ Error deleting workflow approver:', err);
+      throw err;
+    }
+  }
+
+  /**
+   * Look up the approver for a given division+unit+stage.
+   * Used inside approveLeaveRequest when dynamic routing is enabled.
+   */
+  async getApproverForStage(
+    division: string,
+    unit: string,
+    stage: WorkflowStage,
+  ): Promise<WorkflowApprover | null> {
+    const all = await this.getWorkflowApprovers();
+    return (
+      all.find(
+        a =>
+          a.division === division &&
+          a.unit === unit &&
+          a.stage === stage,
+      ) ?? null
+    );
+  }
+
+  // =========================================================================
+  // WORKFLOW ADMIN - Email Templates
+  // =========================================================================
+
+  /** Fetch all email templates (one per stage). */
+  async getEmailTemplates(): Promise<EmailTemplate[]> {
+    if (!this.siteId) await this.initialize();
+
+    try {
+      const listId = this.getListId(LISTS.EMAIL_TEMPLATES);
+      const res = await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+        .expand('fields')
+        .top(20)
+        .get();
+
+      return (res.value ?? []).map((item: any) => ({
+        id: item.id,
+        stage: item.fields.Title as EmailTemplateStage,
+        subject: item.fields.Subject ?? '',
+        body: item.fields.Body ?? '',
+      }));
+    } catch (err) {
+      console.error('❌ Error fetching email templates:', err);
+      throw err;
+    }
+  }
+
+  /** Create or update an email template. Title = stage name; pass id to update. */
+  async saveEmailTemplate(data: EmailTemplate): Promise<EmailTemplate> {
+    if (!this.siteId) await this.initialize();
+
+    // Auto-create the list on first use
+    if (!this.listIds.has(LISTS.EMAIL_TEMPLATES)) {
+      await this.setupWorkflowLists();
+    }
+
+    const fields = {
+      Title: data.stage,
+      Subject: data.subject,
+      Body: data.body,
+    };
+
+    try {
+      const listId = this.getListId(LISTS.EMAIL_TEMPLATES);
+
+      if (data.id) {
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items/${data.id}/fields`)
+          .patch(fields);
+        return { ...data };
+      } else {
+        const created = await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items`)
+          .post({ fields });
+        return { ...data, id: created.id };
+      }
+    } catch (err) {
+      console.error('❌ Error saving email template:', err);
+      throw err;
+    }
   }
 }
 

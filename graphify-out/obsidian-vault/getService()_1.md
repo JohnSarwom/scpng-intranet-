@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\UATFeedbackTab.tsx"
 type: "code"
-community: "Module 116"
+community: "Community 116"
 location: "L60"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_116
+  - community/Community_116
 ---
 
 # getService()
@@ -17,4 +17,4 @@ tags:
 - [[handleStatusChange()]] - `calls` [EXTRACTED]
 - [[load()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_116
+#graphify/code #graphify/EXTRACTED #community/Community_116

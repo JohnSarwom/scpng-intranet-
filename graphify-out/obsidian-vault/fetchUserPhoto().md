@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\layout\PageLayout.tsx"
 type: "code"
-community: "Module 151"
+community: "Community 151"
 location: "L55"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_151
+  - community/Community_151
 ---
 
 # fetchUserPhoto()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[PageLayout.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_151
+#graphify/code #graphify/EXTRACTED #community/Community_151

@@ -10,20 +10,27 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FormField as FormFieldType } from '@/types/forms';
-import { CalendarIcon, Upload, X } from 'lucide-react';
+import { AlertCircle, CalendarIcon, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import {
+  getDateRangeStartName,
+  parseDateValue,
+  toDateInputValue,
+} from './formDateRangeUtils';
 
 interface FormFieldProps {
   field: FormFieldType;
   disabled?: boolean;
   className?: string;
+  suppressError?: boolean;
 }
 
 export const FormField: React.FC<FormFieldProps> = ({
   field,
   disabled = false,
-  className
+  className,
+  suppressError = false
 }) => {
   const {
     control,
@@ -33,7 +40,13 @@ export const FormField: React.FC<FormFieldProps> = ({
   } = useFormContext();
 
   const error = errors[field.name]?.message as string;
-  const currentValue = watch(field.name);
+  const watchedValues = watch();
+  const availableFieldNames = Array.from(new Set([...Object.keys(watchedValues ?? {}), field.name]));
+  const rangeStartName = getDateRangeStartName(field.name, availableFieldNames);
+  const rangeStartValue = rangeStartName ? watchedValues?.[rangeStartName] : undefined;
+  const rangeMinInputValue = rangeStartValue
+    ? toDateInputValue(rangeStartValue, field.type)
+    : field.min?.toString();
 
   // Helper to generate field ID
   const fieldId = `field-${field.id}`;
@@ -64,10 +77,11 @@ export const FormField: React.FC<FormFieldProps> = ({
 
   // Render error message
   const renderError = () => {
-    if (!error) return null;
+    if (!error || suppressError) return null;
     return (
-      <p className="text-xs text-destructive mt-1">
-        {error}
+      <p className="mt-1.5 flex items-start gap-1.5 text-xs font-medium leading-relaxed text-[#D32F2F]">
+        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+        <span>{error}</span>
       </p>
     );
   };
@@ -77,7 +91,7 @@ export const FormField: React.FC<FormFieldProps> = ({
     const commonProps = {
       id: fieldId,
       disabled: disabled || field.disabled || field.readonly,
-      className: cn(error && "border-destructive")
+      className: cn(error && "border-[#D32F2F] focus-visible:ring-[#D32F2F]/30")
     };
 
     switch (field.type) {
@@ -343,38 +357,49 @@ export const FormField: React.FC<FormFieldProps> = ({
             rules={{
               required: field.required ? `${field.label} is required` : false
             }}
-            render={({ field: formField }) => (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formField.value && "text-muted-foreground",
-                      commonProps.className,
-                      "dark:bg-white/5 dark:border-white/10 dark:text-gray-100 hover:dark:bg-white/10"
-                    )}
-                    disabled={commonProps.disabled}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formField.value ? (
-                      format(new Date(formField.value), "PPP")
-                    ) : (
-                      <span>{field.placeholder || "Pick a date"}</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formField.value ? new Date(formField.value) : undefined}
-                    onSelect={(date) => formField.onChange(date?.toISOString())}
-                    initialFocus
-                    disabled={commonProps.disabled}
-                  />
-                </PopoverContent>
-              </Popover>
-            )}
+            render={({ field: formField }) => {
+              const minDate = parseDateValue(rangeMinInputValue);
+              const minDay = minDate
+                ? new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())
+                : null;
+
+              return (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formField.value && "text-muted-foreground",
+                        commonProps.className,
+                        "dark:bg-white/5 dark:border-white/10 dark:text-gray-100 hover:dark:bg-white/10"
+                      )}
+                      disabled={commonProps.disabled}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formField.value ? (
+                        format(new Date(formField.value), "PPP")
+                      ) : (
+                        <span>{field.placeholder || "Pick a date"}</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={formField.value ? new Date(formField.value) : undefined}
+                      onSelect={(date) => formField.onChange(date?.toISOString())}
+                      initialFocus
+                      disabled={
+                        commonProps.disabled
+                          ? true
+                          : (date) => Boolean(minDay && date < minDay)
+                      }
+                    />
+                  </PopoverContent>
+                </Popover>
+              );
+            }}
           />
         );
 
@@ -409,7 +434,7 @@ export const FormField: React.FC<FormFieldProps> = ({
             }}
             render={({ field: { onChange, value, name, ref } }) => {
               // Ensure value is a string and in the correct format for the input
-              const displayValue = value ? new Date(value).toISOString().slice(0, 16) : '';
+              const displayValue = value ? toDateInputValue(value, field.type) ?? '' : '';
               return (
                 <Input
                   {...commonProps}
@@ -417,6 +442,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                   ref={ref}
                   value={displayValue}
                   type="datetime-local"
+                  min={rangeMinInputValue}
                   placeholder={field.placeholder}
                   className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
                   onChange={(e) => {

@@ -1,19 +1,19 @@
 ---
 source_file: "src\services\unitService.ts"
 type: "code"
-community: "Module 40"
+community: "Community 39"
 location: "L4"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_40
+  - community/Community_39
 ---
 
 # UnitService
 
 ## Connections
 - [[.addUnit()]] - `method` [EXTRACTED]
-- [[.constructor()_23]] - `method` [EXTRACTED]
+- [[.constructor()_26]] - `method` [EXTRACTED]
 - [[.deleteUnit()]] - `method` [EXTRACTED]
 - [[.getUnits()]] - `method` [EXTRACTED]
 - [[.initialize()_16]] - `method` [EXTRACTED]
@@ -23,4 +23,4 @@ tags:
 - [[.updateUnit()]] - `method` [EXTRACTED]
 - [[unitService.ts_1]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_40
+#graphify/code #graphify/EXTRACTED #community/Community_39

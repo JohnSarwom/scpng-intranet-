@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useSupabaseAuth.tsx"
 type: "code"
-community: "Module 197"
+community: "Community 198"
 location: "L44"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_197
+  - community/Community_198
 ---
 
 # SupabaseAuthProvider()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useSupabaseAuth.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_197
+#graphify/code #graphify/EXTRACTED #community/Community_198

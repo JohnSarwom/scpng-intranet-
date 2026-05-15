@@ -1,17 +1,17 @@
 ---
-source_file: "src\lib\utils.ts"
+source_file: "src\components\unit-tabs\RisksTab.tsx"
 type: "code"
-community: "Module 107"
-location: "L8"
+community: "Community 64"
+location: "L158"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_107
+  - community/Community_64
 ---
 
 # formatDate()
 
 ## Connections
-- [[utils.ts_1]] - `contains` [EXTRACTED]
+- [[RisksTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_107
+#graphify/code #graphify/EXTRACTED #community/Community_64

@@ -1,23 +1,17 @@
 ---
 source_file: "src\hooks\useSharePointOps.ts"
 type: "code"
-community: "Module 39"
+community: "Community 38"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_39
+  - community/Community_38
 ---
 
 # useSharePointOps.ts
 
 ## Connections
-- [[OrganizationalOverview.tsx]] - `imports_from` [INFERRED]
-- [[PersonalKPICards.tsx]] - `imports_from` [INFERRED]
-- [[PersonalKPIStats.tsx]] - `imports_from` [INFERRED]
-- [[graphService.ts]] - `imports_from` [EXTRACTED]
-- [[sharePointListSetupService.ts]] - `imports_from` [EXTRACTED]
-- [[sharePointOpsService.ts]] - `imports_from` [EXTRACTED]
 - [[useOpsService()]] - `contains` [EXTRACTED]
 - [[useSharePointCustomContacts()]] - `contains` [EXTRACTED]
 - [[useSharePointKPIs()]] - `contains` [EXTRACTED]
@@ -29,4 +23,4 @@ tags:
 - [[useSharePointTaskGroups()]] - `contains` [EXTRACTED]
 - [[useSharePointTasks()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_39
+#graphify/code #graphify/EXTRACTED #community/Community_38

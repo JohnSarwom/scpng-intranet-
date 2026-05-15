@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\apps\AddAppModal.tsx"
 type: "code"
-community: "Module 95"
+community: "Community 95"
 location: "L85"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_95
+  - community/Community_95
 ---
 
 # handleTitleChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AddAppModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_95
+#graphify/code #graphify/EXTRACTED #community/Community_95

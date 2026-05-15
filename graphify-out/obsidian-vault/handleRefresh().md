@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\HRProfiles.tsx"
 type: "code"
-community: "Module 86"
+community: "Community 86"
 location: "L110"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_86
+  - community/Community_86
 ---
 
 # handleRefresh()
@@ -16,4 +16,4 @@ tags:
 - [[loadEmployees()]] - `calls` [EXTRACTED]
 - [[loadStatistics()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_86
+#graphify/code #graphify/EXTRACTED #community/Community_86

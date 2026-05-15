@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\RegulatoryAIChat.tsx"
 type: "code"
-community: "Module 34"
+community: "Community 33"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_34
+  - community/Community_33
 ---
 
 # RegulatoryAIChat.tsx
@@ -20,10 +20,8 @@ tags:
 - [[handleScroll()_5]] - `contains` [EXTRACTED]
 - [[handleSend()_3]] - `contains` [EXTRACTED]
 - [[handleStopGeneration()_3]] - `contains` [EXTRACTED]
-- [[regulatoryQuestions.ts]] - `references` [INFERRED]
 - [[scrollToBottom()_4]] - `contains` [EXTRACTED]
 - [[serializeRegulatoryContext()]] - `contains` [EXTRACTED]
 - [[typeNextChar()_3]] - `contains` [EXTRACTED]
-- [[useMicrosoftGraph()]] - `calls` [INFERRED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_34
+#graphify/code #graphify/EXTRACTED #community/Community_33

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\kpi\KpiModal.tsx"
 type: "code"
-community: "Module 99"
+community: "Community 99"
 location: "L177"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_99
+  - community/Community_99
 ---
 
 # handleRemoveKpi()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KpiModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_99
+#graphify/code #graphify/EXTRACTED #community/Community_99

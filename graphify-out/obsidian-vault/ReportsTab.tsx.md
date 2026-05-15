@@ -19,7 +19,7 @@ tags:
 - [[filterKRAs()]] - `contains` [EXTRACTED]
 - [[filterObjectives()]] - `contains` [EXTRACTED]
 - [[filterTasks()]] - `contains` [EXTRACTED]
-- [[formatDate()_4]] - `contains` [EXTRACTED]
+- [[formatDate()_5]] - `contains` [EXTRACTED]
 - [[getDateRange()]] - `contains` [EXTRACTED]
 - [[handleCopyMetadata()]] - `contains` [EXTRACTED]
 - [[handleDeleteSchedule()]] - `contains` [EXTRACTED]
@@ -34,6 +34,5 @@ tags:
 - [[toggleAll()]] - `contains` [EXTRACTED]
 - [[toggleCategory()]] - `contains` [EXTRACTED]
 - [[toggleScheduleCategory()]] - `contains` [EXTRACTED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
 #graphify/code #graphify/EXTRACTED #community/Reports_Tab

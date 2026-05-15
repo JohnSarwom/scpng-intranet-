@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\AssetManagementNew.tsx"
 type: "code"
-community: "Asset Management UI"
-location: "L293"
+community: "Asset Management"
+location: "L294"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Asset_Management_UI
+  - community/Asset_Management
 ---
 
 # handleSort()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[AssetManagementNew.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Asset_Management_UI
+#graphify/code #graphify/EXTRACTED #community/Asset_Management

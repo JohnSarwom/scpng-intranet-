@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\notifications\NotificationPanel.tsx"
 type: "code"
-community: "Module 124"
+community: "Community 125"
 location: "L56"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_124
+  - community/Community_125
 ---
 
 # handleClick()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[NotificationPanel.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_124
+#graphify/code #graphify/EXTRACTED #community/Community_125

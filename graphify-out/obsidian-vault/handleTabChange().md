@@ -1,12 +1,12 @@
 ---
 source_file: "src\pages\Admin.tsx"
 type: "code"
-community: "Module 45"
+community: "Community 44"
 location: "L48"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_45
+  - community/Community_44
 ---
 
 # handleTabChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[Admin.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_45
+#graphify/code #graphify/EXTRACTED #community/Community_44

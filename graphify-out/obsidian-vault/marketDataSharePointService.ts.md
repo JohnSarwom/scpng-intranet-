@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\marketDataSharePointService.ts"
 type: "code"
-community: "Market Data Service"
+community: "Community 21"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Market_Data_Service
+  - community/Community_21
 ---
 
 # marketDataSharePointService.ts
@@ -27,4 +27,4 @@ tags:
 - [[transformSettings()]] - `contains` [EXTRACTED]
 - [[updateCompanyColors()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Market_Data_Service
+#graphify/code #graphify/EXTRACTED #community/Community_21

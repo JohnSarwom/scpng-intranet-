@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\forms\GenericPaperForm.tsx"
 type: "code"
-community: "Module 419"
+community: "Community 422"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_419
+  - graphify/EXTRACTED
+  - community/Community_422
 ---
 
 # GenericPaperForm.tsx
 
-## Connections
-- [[forms.ts]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_419
+#graphify/code #graphify/EXTRACTED #community/Community_422

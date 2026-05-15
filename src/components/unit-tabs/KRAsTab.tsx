@@ -32,7 +32,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 
-import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2, Eye, Settings, XCircle } from 'lucide-react';
+import { Edit, Plus, Trash2, MessageSquare, ChevronDown, Maximize2, Minimize2, Eye, Settings, XCircle, CheckCheck } from 'lucide-react';
 import StatusBadge from '@/components/common/StatusBadge';
 import { calculateObjectiveStatus, calculateStrategicProgress } from '@/utils/kpiUtils';
 import KRATimelineTab from '@/components/KRATimelineTab';
@@ -189,6 +189,7 @@ interface KRAsTabProps {
   strategicObjectives?: { id: string | number; title: string; deliverables?: string[] }[];
   canEdit?: boolean;
   onEditTask?: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
+  onSubmitForReview?: (kpiId: string | number, reviewerEmail: string) => Promise<void>;
 }
 
 export interface KRAsTabHandle {
@@ -214,7 +215,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   onDeleteKpi,
   strategicObjectives = [],
   canEdit = false,
-  onEditTask
+  onEditTask,
+  onSubmitForReview,
 }, ref) => {
   useImperativeHandle(ref, () => ({
     handleOpenAddKraModal,
@@ -226,7 +228,6 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   const { user } = useSupabaseAuth();
   const isStaff = userContext?.role === 'staff_member';
   const [isKpiModalOpen, setIsKpiModalOpen] = useState(false);
-  const [viewScope, setViewScope] = useState<'my' | 'department' | 'organization'>('my');
   const [isFullScreen, setIsFullScreen] = useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
@@ -247,11 +248,6 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  // Enforce "My" scope permanently
-  React.useEffect(() => {
-    setViewScope('my');
   }, []);
 
   const [timelineViewMode, setTimelineViewMode] = useState<'quarters' | 'months' | 'weeks'>('quarters');
@@ -566,6 +562,38 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
     setIsKpiModalOpen(false);
     setEditingKra(undefined);
     setEditingKpiDetails(undefined);
+  };
+
+  const REVIEW_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+    draft: { label: 'Draft', className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400' },
+    submitted: { label: 'Submitted', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
+    under_review: { label: 'In Review', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
+    approved: { label: 'Approved', className: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
+    rejected: { label: 'Rejected', className: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' },
+  };
+
+  const [rejectingKpi, setRejectingKpi] = useState<Kpi | null>(null);
+  const [rejectNote, setRejectNote] = useState('');
+
+  const handleApproveKpi = async (kpi: Kpi) => {
+    try {
+      await onSaveKpi({ id: kpi.id, reviewStatus: 'approved' } as Partial<Kpi>);
+      toast({ title: 'KPI Approved', description: `${kpi.name} has been approved.` });
+    } catch {
+      toast({ title: 'Error', description: 'Failed to approve KPI.', variant: 'destructive' });
+    }
+  };
+
+  const handleConfirmRejectKpi = async () => {
+    if (!rejectingKpi) return;
+    try {
+      await onSaveKpi({ id: rejectingKpi.id, reviewStatus: 'rejected', reviewNote: rejectNote } as Partial<Kpi>);
+      toast({ title: 'KPI Returned', description: `${rejectingKpi.name} has been returned for revision.` });
+      setRejectingKpi(null);
+      setRejectNote('');
+    } catch {
+      toast({ title: 'Error', description: 'Failed to reject KPI.', variant: 'destructive' });
+    }
   };
 
   const mapStatusToDbFormat = (status: string): string => {
@@ -1064,6 +1092,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                         <PremiumTableHead className="min-w-[80px] text-right">Target</PremiumTableHead>
                         <PremiumTableHead className="min-w-[80px] text-right">Actual</PremiumTableHead>
                         <PremiumTableHead className="min-w-[100px]">KPI Status</PremiumTableHead>
+                        <PremiumTableHead className="min-w-[100px]">Review</PremiumTableHead>
                         <PremiumTableHead className="min-w-[100px] text-right">Cost (K)</PremiumTableHead>
                         <PremiumTableHead className="min-w-[120px]">Assignees</PremiumTableHead>
                         <PremiumTableHead className="min-w-[150px]">Comments</PremiumTableHead>
@@ -1138,6 +1167,13 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                               <PremiumTableCell className="align-top whitespace-nowrap border-b dark:border-white/10 py-4">
                                 {kpi?.status ? <StatusBadge status={kpi.status} /> : <span className="text-muted-foreground dark:text-gray-500">-</span>}
                               </PremiumTableCell>
+                              <PremiumTableCell className="align-top whitespace-nowrap border-b dark:border-white/10 py-4">
+                                {kpi?.reviewStatus && REVIEW_STATUS_CONFIG[kpi.reviewStatus] ? (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${REVIEW_STATUS_CONFIG[kpi.reviewStatus].className}`}>
+                                    {REVIEW_STATUS_CONFIG[kpi.reviewStatus].label}
+                                  </span>
+                                ) : <span className="text-muted-foreground dark:text-gray-500 text-xs">-</span>}
+                              </PremiumTableCell>
                               <PremiumTableCell className="align-top text-sm text-right font-mono tabular-nums border-b dark:border-white/10 dark:text-gray-300 py-4">
                                 {kpi?.cost ? `K ${Number(kpi.cost).toLocaleString()}` : <span className="text-muted-foreground dark:text-gray-500">-</span>}
                               </PremiumTableCell>
@@ -1188,6 +1224,42 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                 <div className="flex justify-end items-center space-x-1">
                                   {canEdit ? (
                                     <>
+                                      {kpi && kpi.id && kpi.name !== '-' && (kpi.reviewStatus === 'submitted' || kpi.reviewStatus === 'under_review') && (
+                                        <>
+                                          <TooltipProvider delayDuration={100}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="p-1 h-8 w-8 text-green-600 hover:text-green-700 dark:text-green-500 dark:hover:bg-gray-800"
+                                                  onClick={() => handleApproveKpi(kpi)}
+                                                  aria-label="Approve KPI"
+                                                >
+                                                  <CheckCheck className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Approve KPI</TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                          <TooltipProvider delayDuration={100}>
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="p-1 h-8 w-8 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:bg-gray-800"
+                                                  onClick={() => { setRejectingKpi(kpi); setRejectNote(''); }}
+                                                  aria-label="Reject KPI"
+                                                >
+                                                  <XCircle className="h-4 w-4" />
+                                                </Button>
+                                              </TooltipTrigger>
+                                              <TooltipContent className="dark:bg-gray-950 dark:border-white/10">Reject KPI</TooltipContent>
+                                            </Tooltip>
+                                          </TooltipProvider>
+                                        </>
+                                      )}
                                       {kpi && kpi.id && kpi.name !== '-' && (
                                         <TooltipProvider delayDuration={100}>
                                           <Tooltip>
@@ -1401,7 +1473,37 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
           isReadOnly={!canEdit}
           onDeleteKra={onDeleteKra}
           onDeleteKpi={onDeleteKpi}
+          onSubmitForReview={onSubmitForReview}
         />
+
+        <Dialog open={!!rejectingKpi} onOpenChange={(open) => { if (!open) { setRejectingKpi(null); setRejectNote(''); } }}>
+          <DialogContent className="sm:max-w-md dark:bg-gray-900 dark:border-white/10">
+            <DialogHeader>
+              <DialogTitle className="dark:text-gray-100">Reject KPI</DialogTitle>
+              <DialogDescription className="dark:text-gray-400">
+                Provide a reason for rejection. This note will be visible to the KPI owner.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-4">
+              <Label className="dark:text-gray-300">Rejection Note</Label>
+              <Textarea
+                value={rejectNote}
+                onChange={(e) => setRejectNote(e.target.value)}
+                placeholder="Explain what needs to be revised..."
+                rows={4}
+                className="dark:bg-gray-800 dark:border-white/10"
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setRejectingKpi(null); setRejectNote(''); }} className="dark:border-white/10 dark:hover:bg-gray-700">
+                Cancel
+              </Button>
+              <Button onClick={handleConfirmRejectKpi} className="bg-red-600 hover:bg-red-700 text-white" disabled={!rejectNote.trim()}>
+                Reject KPI
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={isObjectiveModalOpen} onOpenChange={handleCloseObjectiveModal}>
           <DialogContent className="sm:max-w-3xl dark:bg-gray-950 dark:border-white/10 p-0" container={isFullScreen ? containerRef.current : null}>

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\setup-wizard\components\ErrorBoundary.tsx"
 type: "code"
-community: "Module 100"
+community: "Community 100"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_100
+  - community/Community_100
 ---
 
 # ErrorBoundary.tsx
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[ErrorBoundary]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_100
+#graphify/code #graphify/EXTRACTED #community/Community_100

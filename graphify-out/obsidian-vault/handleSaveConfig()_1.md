@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\database\MicrosoftAPIConfig.tsx"
 type: "code"
-community: "Module 93"
+community: "Community 93"
 location: "L93"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_93
+  - community/Community_93
 ---
 
 # handleSaveConfig()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[MicrosoftAPIConfig.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_93
+#graphify/code #graphify/EXTRACTED #community/Community_93

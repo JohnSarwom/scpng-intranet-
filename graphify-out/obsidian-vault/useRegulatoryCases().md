@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useRegulatoryCases.ts"
 type: "code"
-community: "Module 322"
+community: "Community 324"
 location: "L7"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_322
+  - community/Community_324
 ---
 
 # useRegulatoryCases()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useRegulatoryCases.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_322
+#graphify/code #graphify/EXTRACTED #community/Community_324

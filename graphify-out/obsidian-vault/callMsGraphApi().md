@@ -1,12 +1,12 @@
 ---
 source_file: "src\integrations\microsoft\msalService.ts"
 type: "code"
-community: "Module 32"
+community: "Community 31"
 location: "L182"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_32
+  - community/Community_31
 ---
 
 # callMsGraphApi()
@@ -15,4 +15,4 @@ tags:
 - [[getAccessToken()]] - `calls` [EXTRACTED]
 - [[msalService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_32
+#graphify/code #graphify/EXTRACTED #community/Community_31

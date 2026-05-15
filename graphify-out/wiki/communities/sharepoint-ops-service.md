@@ -1,0 +1,137 @@
+# SharePoint Ops Service
+
+**Community 1** · 98 nodes · cohesion 0.03
+
+## Nodes
+
+- **resetOpsServiceCache()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **SharePointOpsService** (`src\services\sharePointOpsService.ts`) — degree 96
+- **.activateWorkPlan()** (`src\services\sharePointOpsService.ts`) — degree 5
+- **.addComponentVisibilitySetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.addCustomContact()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.addKPI()** (`src\services\sharePointOpsService.ts`) — degree 5
+- **.addKRA()** (`src\services\sharePointOpsService.ts`) — degree 4
+- **.addNotification()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.addObjective()** (`src\services\sharePointOpsService.ts`) — degree 4
+- **.addProject()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.addTask()** (`src\services\sharePointOpsService.ts`) — degree 6
+- **.addTaskGroup()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.addViewSetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.addWorkPlan()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.buildWorkPlanFields()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.calculateNextSendAt()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.clearCountdown()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.constructor()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.createReportSchedulesList()** (`src\services\sharePointOpsService.ts`) — degree 6
+- **.createReportsList()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.debugListColumns()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteComponentVisibilitySetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteCustomContact()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteKPI()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteKRA()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteObjective()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteProject()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteReportSchedule()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.deleteTask()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.deleteTaskGroup()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.deleteWorkPlan()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.ensureAssigneesColumnOnKRAs()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.ensureAssigneeViewMapColumn()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.ensureCustomDateColumns()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.ensureNotificationsList()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.ensureOwnerEmailColumn()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.escapeHtml()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.getAllReportSchedules()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.getBucketIdFromTags()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.getComponentVisibilitySettings()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getCountdownStartTime()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getCustomContacts()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getKPIs()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getKRAs()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getNotifications()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.getObjectives()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getOrCreateAssignedToMeGroup()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.getProjects()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getReports()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.getReportSchedule()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.getRisks()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getTaskGroups()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.getTasks()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getUnreadNotificationCount()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.getViewSettings()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.getWorkPlans()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.initializationPromise()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.initialize()** (`src\services\sharePointOpsService.ts`) — degree 8
+- **.listIds()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.mapKPI()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapKRA()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapNotification()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.mapObjective()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapPriorityForSharePoint()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapProject()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapReport()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.mapRisk()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.mapStatusForSharePoint()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapTask()** (`src\services\sharePointOpsService.ts`) — degree 5
+- **.mapTaskGroup()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.mapWorkPlan()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.markAllNotificationsRead()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.markNotificationRead()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.notifyAssignment()** (`src\services\sharePointOpsService.ts`) — degree 4
+- **.notifyComment()** (`src\services\sharePointOpsService.ts`) — degree 4
+- **.parseAssignees()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.resolveListIds()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.saveReport()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.saveReportSchedule()** (`src\services\sharePointOpsService.ts`) — degree 5
+- **.sendEmailNotification()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.setCountdownStartTime()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.siteId()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.syncKPIChecklistFromTasks()** (`src\services\sharePointOpsService.ts`) — degree 6
+- **.syncKRAProgress()** (`src\services\sharePointOpsService.ts`) — degree 6
+- **.syncObjectiveProgress()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.syncWorkPlanToSharePoint()** (`src\services\sharePointOpsService.ts`) — degree 8
+- **.updateComponentVisibilitySetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.updateCustomContact()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.updateGenericViewSetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.updateKPI()** (`src\services\sharePointOpsService.ts`) — degree 4
+- **.updateKRA()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.updateObjective()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.updateTagsWithBucketId()** (`src\services\sharePointOpsService.ts`) — degree 3
+- **.updateTask()** (`src\services\sharePointOpsService.ts`) — degree 6
+- **.updateTaskGroup()** (`src\services\sharePointOpsService.ts`) — degree 2
+- **.updateViewSetting()** (`src\services\sharePointOpsService.ts`) — degree 1
+- **.updateWorkPlan()** (`src\services\sharePointOpsService.ts`) — degree 5
+- **sharePointOpsService.ts** (`src\services\sharePointOpsService.ts`) — degree 2
+
+## Internal Edges
+
+- sharePointOpsService.ts --contains-> resetOpsServiceCache() [EXTRACTED]
+- sharePointOpsService.ts --contains-> SharePointOpsService [EXTRACTED]
+- SharePointOpsService --method-> .siteId() [EXTRACTED]
+- SharePointOpsService --method-> .listIds() [EXTRACTED]
+- SharePointOpsService --method-> .initializationPromise() [EXTRACTED]
+- SharePointOpsService --method-> .constructor() [EXTRACTED]
+- SharePointOpsService --method-> .initialize() [EXTRACTED]
+- SharePointOpsService --method-> .resolveListIds() [EXTRACTED]
+- SharePointOpsService --method-> .ensureAssigneesColumnOnKRAs() [EXTRACTED]
+- SharePointOpsService --method-> .ensureAssigneeViewMapColumn() [EXTRACTED]
+- SharePointOpsService --method-> .escapeHtml() [EXTRACTED]
+- SharePointOpsService --method-> .ensureOwnerEmailColumn() [EXTRACTED]
+- SharePointOpsService --method-> .ensureCustomDateColumns() [EXTRACTED]
+- SharePointOpsService --method-> .getObjectives() [EXTRACTED]
+- SharePointOpsService --method-> .addObjective() [EXTRACTED]
+- SharePointOpsService --method-> .updateObjective() [EXTRACTED]
+- SharePointOpsService --method-> .deleteObjective() [EXTRACTED]
+- SharePointOpsService --method-> .getKRAs() [EXTRACTED]
+- SharePointOpsService --method-> .getKPIs() [EXTRACTED]
+- SharePointOpsService --method-> .getProjects() [EXTRACTED]
+- SharePointOpsService --method-> .getTasks() [EXTRACTED]
+- SharePointOpsService --method-> .addTask() [EXTRACTED]
+- SharePointOpsService --method-> .updateTask() [EXTRACTED]
+- SharePointOpsService --method-> .deleteTask() [EXTRACTED]
+- SharePointOpsService --method-> .mapStatusForSharePoint() [EXTRACTED]
+- SharePointOpsService --method-> .mapPriorityForSharePoint() [EXTRACTED]
+- SharePointOpsService --method-> .getBucketIdFromTags() [EXTRACTED]
+- SharePointOpsService --method-> .updateTagsWithBucketId() [EXTRACTED]
+- SharePointOpsService --method-> .getRisks() [EXTRACTED]
+- SharePointOpsService --method-> .getViewSettings() [EXTRACTED]

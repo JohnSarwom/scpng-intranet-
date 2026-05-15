@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\division\analytics\DivisionAIChat.tsx"
 type: "code"
-community: "Module 37"
+community: "Community 36"
 location: "L443"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_37
+  - community/Community_36
 ---
 
 # handleCopy()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DivisionAIChat.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_37
+#graphify/code #graphify/EXTRACTED #community/Community_36

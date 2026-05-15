@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useDivisionMetrics.ts"
 type: "code"
-community: "Module 300"
+community: "Community 301"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_300
+  - community/Community_301
 ---
 
 # useDivisionMetrics.ts
 
 ## Connections
-- [[Division.tsx]] - `imports_from` [INFERRED]
 - [[useDivisionMetrics()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_300
+#graphify/code #graphify/EXTRACTED #community/Community_301

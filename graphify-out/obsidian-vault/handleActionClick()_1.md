@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\InquiryCard.tsx"
 type: "code"
-community: "Module 273"
+community: "Community 275"
 location: "L63"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_273
+  - community/Community_275
 ---
 
 # handleActionClick()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[InquiryCard.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_273
+#graphify/code #graphify/EXTRACTED #community/Community_275

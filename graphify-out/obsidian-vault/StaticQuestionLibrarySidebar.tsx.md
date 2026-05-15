@@ -1,17 +1,14 @@
 ---
 source_file: "src\components\shared\ai-chat\StaticQuestionLibrarySidebar.tsx"
 type: "code"
-community: "Module 437"
+community: "Community 440"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_437
+  - graphify/EXTRACTED
+  - community/Community_440
 ---
 
 # StaticQuestionLibrarySidebar.tsx
 
-## Connections
-- [[index.ts_1]] - `contains` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_437
+#graphify/code #graphify/EXTRACTED #community/Community_440

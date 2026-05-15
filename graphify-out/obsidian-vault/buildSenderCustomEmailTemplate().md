@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\powerAutomate\templates\senderEmail.ts"
 type: "code"
-community: "Module 164"
+community: "Community 165"
 location: "L178"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_164
+  - community/Community_165
 ---
 
 # buildSenderCustomEmailTemplate()
@@ -15,4 +15,4 @@ tags:
 - [[R()]] - `calls` [EXTRACTED]
 - [[senderEmail.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_164
+#graphify/code #graphify/EXTRACTED #community/Community_165

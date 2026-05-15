@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useNoticeBoard.ts"
 type: "code"
-community: "Module 317"
+community: "Community 319"
 location: "L8"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_317
+  - community/Community_319
 ---
 
 # useNoticeBoard()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useNoticeBoard.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_317
+#graphify/code #graphify/EXTRACTED #community/Community_319

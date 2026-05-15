@@ -1,18 +1,17 @@
 ---
 source_file: "src\components\forms\TrainingRequestPage.tsx"
 type: "code"
-community: "Module 258"
+community: "Community 260"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_258
+  - community/Community_260
 ---
 
 # TrainingRequestPage.tsx
 
 ## Connections
-- [[FillFormPage.tsx]] - `references` [INFERRED]
 - [[TrainingRequestPage()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_258
+#graphify/code #graphify/EXTRACTED #community/Community_260

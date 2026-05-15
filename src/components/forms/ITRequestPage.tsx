@@ -27,8 +27,7 @@ const ITRequestPage: React.FC = () => {
 
   const handleFormSubmit = async (data: Record<string, any>) => {
     if (!currentUserContact) {
-      toast.error('Could not find your contact information. Please try again.');
-      return;
+      throw new Error('Could not find your contact information. Please try again.');
     }
 
     const userData = {
@@ -57,16 +56,16 @@ const ITRequestPage: React.FC = () => {
       );
 
       if (result) {
-        toast.success('IT Request submitted successfully!');
         setIsSuccessfullySubmitted(true);
-        form.reset();
         localStorage.removeItem(`form_draft_${itRequestTemplate.id}`);
       } else {
-        toast.error('Failed to submit IT Request. Please try again.');
+        throw new Error('Failed to submit IT Request. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting to SharePoint:', error);
-      toast.error('An error occurred while submitting the form.');
+      throw error instanceof Error
+        ? error
+        : new Error('An error occurred while submitting the form.');
     }
   };
 

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\OrgStructureManagement.tsx"
 type: "code"
-community: "Module 76"
+community: "Community 75"
 location: "L55"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_76
+  - community/Community_75
 ---
 
 # handleDelete()
@@ -15,4 +15,4 @@ tags:
 - [[OrgStructureManagement.tsx]] - `contains` [EXTRACTED]
 - [[getService()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_76
+#graphify/code #graphify/EXTRACTED #community/Community_75

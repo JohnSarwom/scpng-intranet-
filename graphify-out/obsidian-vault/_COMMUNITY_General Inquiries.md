@@ -32,11 +32,3 @@ members: 15
 TABLE source_file, type FROM #community/General_Inquiries
 SORT file.name ASC
 ```
-
-## Connections to other communities
-- 1 edge to [[_COMMUNITY_Module 447]]
-- 1 edge to [[_COMMUNITY_Module 448]]
-- 1 edge to [[_COMMUNITY_Module 351]]
-
-## Top bridge nodes
-- [[GeneralInquiries.tsx]] - degree 17, connects to 3 communities

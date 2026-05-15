@@ -1,22 +1,14 @@
 ---
 source_file: "src\components\documents\AddCategoryDialog.tsx"
 type: "code"
-community: "Module 414"
+community: "Community 417"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_414
+  - graphify/EXTRACTED
+  - community/Community_417
 ---
 
 # AddCategoryDialog.tsx
 
-## Connections
-- [[Documents.tsx]] - `references` [INFERRED]
-- [[button.tsx]] - `imports_from` [INFERRED]
-- [[dialog.tsx]] - `imports_from` [INFERRED]
-- [[input.tsx]] - `imports_from` [INFERRED]
-- [[label.tsx]] - `imports_from` [INFERRED]
-- [[textarea.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_414
+#graphify/code #graphify/EXTRACTED #community/Community_417

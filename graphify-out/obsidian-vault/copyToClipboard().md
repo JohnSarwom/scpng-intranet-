@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\UserDialogs.tsx"
 type: "code"
-community: "Module 168"
+community: "Community 169"
 location: "L29"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_168
+  - community/Community_169
 ---
 
 # copyToClipboard()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[UserDialogs.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_168
+#graphify/code #graphify/EXTRACTED #community/Community_169

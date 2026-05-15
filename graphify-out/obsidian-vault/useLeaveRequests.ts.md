@@ -1,20 +1,17 @@
 ---
 source_file: "src\hooks\useLeaveRequests.ts"
 type: "code"
-community: "Module 313"
+community: "Community 315"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_313
+  - community/Community_315
 ---
 
 # useLeaveRequests.ts
 
 ## Connections
-- [[LeaveApplicationPage.tsx]] - `calls` [INFERRED]
-- [[graphService.ts]] - `imports_from` [EXTRACTED]
-- [[hrSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useLeaveRequests()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_313
+#graphify/code #graphify/EXTRACTED #community/Community_315

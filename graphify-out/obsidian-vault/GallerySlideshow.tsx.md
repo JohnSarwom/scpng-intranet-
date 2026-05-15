@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\GallerySlideshow.tsx"
 type: "code"
-community: "Module 148"
+community: "Community 148"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_148
+  - community/Community_148
 ---
 
 # GallerySlideshow.tsx
@@ -16,4 +16,4 @@ tags:
 - [[handleImageClick()]] - `contains` [EXTRACTED]
 - [[shuffleArray()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_148
+#graphify/code #graphify/EXTRACTED #community/Community_148

@@ -72,11 +72,10 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
 
   // Redirect to login if no user found (unauthenticated)
   if (!user) {
-    // If showAccessDenied is explicitly true, we might want to show it, 
-    // BUT for standard "not logged in" state, redirecting to login is usually preferred 
-    // over "Access Denied" which implies "Logged in but no permission".
-    // Turning off "Access Denied" card for simple unauthenticated state.
-
+    const returnTo = `${location.pathname}${location.search}`;
+    if (returnTo !== '/' && returnTo !== '/login') {
+      sessionStorage.setItem('auth_return_to', returnTo);
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

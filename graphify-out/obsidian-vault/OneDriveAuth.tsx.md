@@ -1,18 +1,14 @@
 ---
 source_file: "src\components\setup-wizard\components\OneDriveAuth.tsx"
 type: "code"
-community: "Module 429"
+community: "Community 432"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_429
+  - graphify/EXTRACTED
+  - community/Community_432
 ---
 
 # OneDriveAuth.tsx
 
-## Connections
-- [[button.tsx]] - `imports_from` [INFERRED]
-- [[card.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_429
+#graphify/code #graphify/EXTRACTED #community/Community_432

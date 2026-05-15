@@ -1,19 +1,18 @@
 ---
 source_file: "src\contexts\EmployeesContext.tsx"
 type: "code"
-community: "Module 190"
+community: "Community 191"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_190
+  - community/Community_191
 ---
 
 # EmployeesContext.tsx
 
 ## Connections
-- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
 - [[EmployeesProvider()]] - `contains` [EXTRACTED]
 - [[useEmployees()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_190
+#graphify/code #graphify/EXTRACTED #community/Community_191

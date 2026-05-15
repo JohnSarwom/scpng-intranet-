@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\OrgChart.tsx"
 type: "code"
-community: "Module 104"
+community: "Community 104"
 location: "L513"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_104
+  - community/Community_104
 ---
 
 # orderWeight()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[OrgChart.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_104
+#graphify/code #graphify/EXTRACTED #community/Community_104

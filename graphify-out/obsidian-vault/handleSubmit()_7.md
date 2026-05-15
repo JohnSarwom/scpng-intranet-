@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\strategy\EditStrategicObjectiveModal.tsx"
 type: "code"
-community: "Module 82"
+community: "Community 81"
 location: "L135"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_82
+  - community/Community_81
 ---
 
 # handleSubmit()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[EditStrategicObjectiveModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_82
+#graphify/code #graphify/EXTRACTED #community/Community_81

@@ -1,12 +1,12 @@
 ---
 source_file: "src\modules\regulatory\components\KPIBar.tsx"
 type: "code"
-community: "Module 342"
+community: "Community 344"
 location: "L10"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_342
+  - community/Community_344
 ---
 
 # KPIBar()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[KPIBar.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_342
+#graphify/code #graphify/EXTRACTED #community/Community_344

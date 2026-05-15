@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\dashboard\CalendarEventModal.tsx"
 type: "code"
-community: "Module 96"
+community: "Community 96"
 location: "L154"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_96
+  - community/Community_96
 ---
 
 # getDuration()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[CalendarEventModal.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_96
+#graphify/code #graphify/EXTRACTED #community/Community_96

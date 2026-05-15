@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\ticketing\MailPackageDialog.tsx"
 type: "code"
-community: "Module 127"
+community: "Community 128"
 location: "L90"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_127
+  - community/Community_128
 ---
 
 # handleChange()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[MailPackageDialog.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_127
+#graphify/code #graphify/EXTRACTED #community/Community_128

@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\DocumentPermissionsTab.tsx"
 type: "code"
-community: "Module 114"
+community: "Community 114"
 location: "L47"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_114
+  - community/Community_114
 ---
 
 # hasDocAction()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[DocumentPermissionsTab.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_114
+#graphify/code #graphify/EXTRACTED #community/Community_114

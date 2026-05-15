@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\admin\SharePointExplorer.tsx"
 type: "code"
-community: "SharePoint Explorer UI"
+community: "SharePoint Explorer"
 location: "L142"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/SharePoint_Explorer_UI
+  - community/SharePoint_Explorer
 ---
 
 # handleDeleteList()
@@ -15,4 +15,4 @@ tags:
 - [[SharePointExplorer.tsx]] - `contains` [EXTRACTED]
 - [[loadLists()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer_UI
+#graphify/code #graphify/EXTRACTED #community/SharePoint_Explorer

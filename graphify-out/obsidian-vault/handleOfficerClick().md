@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\division\tabs\DivisionUnitsTab.tsx"
 type: "code"
-community: "Module 97"
+community: "Community 97"
 location: "L327"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_97
+  - community/Community_97
 ---
 
 # handleOfficerClick()
@@ -15,4 +15,4 @@ tags:
 - [[DivisionUnitsTab.tsx]] - `contains` [EXTRACTED]
 - [[computeOfficerStats()]] - `calls` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_97
+#graphify/code #graphify/EXTRACTED #community/Community_97

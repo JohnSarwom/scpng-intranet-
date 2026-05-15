@@ -1,18 +1,17 @@
 ---
 source_file: "src\hooks\useAssetState.ts"
 type: "code"
-community: "Module 292"
+community: "Community 293"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_292
+  - community/Community_293
 ---
 
 # useAssetState.ts
 
 ## Connections
-- [[assetsSharePointService.ts]] - `imports_from` [EXTRACTED]
 - [[useAssetState()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_292
+#graphify/code #graphify/EXTRACTED #community/Community_293

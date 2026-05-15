@@ -197,7 +197,7 @@ const PrintableLeaveForm: React.FC<PrintableLeaveFormProps> = ({
           background-color: white;
         }
 
-        .signature-line {
+        .form-line {
           border-bottom: 1px dotted #000;
           display: inline-block;
           min-width: 150px;
@@ -312,26 +312,13 @@ const PrintableLeaveForm: React.FC<PrintableLeaveFormProps> = ({
         </tbody>
       </table>
 
-      <table className="leave-table">
-        <tbody>
-          <tr>
-            <td style={{ width: '50%' }}>
-              <strong>SIGNATURE OFFICER:</strong> <span className="signature-line">{application.employeeName || ''}</span>
-            </td>
-            <td style={{ width: '50%' }}>
-              <strong>DATE:</strong> {application.createdDate ? format(new Date(application.createdDate), 'dd/MM/yyyy') : ''}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
       {/* Section B: Manager Approval */}
       <div className="section-title">B) FOR MANAGER</div>
       <table className="leave-table">
         <tbody>
           <tr>
             <td style={{ width: '50%', padding: '2px 6px' }}>
-              <div><strong>SIGNATURE FOR MANAGER:</strong></div>
+              <div><strong>MANAGER:</strong></div>
               <div style={{ marginTop: '2px' }}>
                 {isManagerApproved && application.approverManager ? application.approverManager : ''}
               </div>
@@ -360,7 +347,7 @@ const PrintableLeaveForm: React.FC<PrintableLeaveFormProps> = ({
         <tbody>
           <tr>
             <td style={{ width: '50%', padding: '2px 6px' }}>
-              <div><strong>SIGNATURE FOR DIRECTOR:</strong></div>
+              <div><strong>DIRECTOR:</strong></div>
               <div style={{ marginTop: '2px' }}>
                 {isDirectorApproved && application.approverDirector ? application.approverDirector : ''}
               </div>
@@ -447,17 +434,12 @@ const PrintableLeaveForm: React.FC<PrintableLeaveFormProps> = ({
             </td>
             <td style={{ width: '40%', verticalAlign: 'bottom', padding: '6px', fontSize: '8pt' }}>
               <div style={{ marginBottom: '6px' }}>
-                <strong>HR DELEGATE:</strong> <span className="signature-line" style={{ minWidth: '120px' }}>
-                  {isHRApproved && application.approverHR ? application.approverHR : ''}
-                </span>
-              </div>
-              <div style={{ marginBottom: '6px' }}>
-                <strong>SIGNATURE:</strong> <span className="signature-line" style={{ minWidth: '130px' }}>
+                <strong>HR DELEGATE:</strong> <span className="form-line" style={{ minWidth: '120px' }}>
                   {isHRApproved && application.approverHR ? application.approverHR : ''}
                 </span>
               </div>
               <div>
-                <strong>DATE:</strong> <span className="signature-line" style={{ minWidth: '150px' }}>
+                <strong>DATE:</strong> <span className="form-line" style={{ minWidth: '150px' }}>
                   {isHRApproved && application.hrApprovedDate
                     ? format(new Date(application.hrApprovedDate), 'dd/MM/yyyy')
                     : ''}

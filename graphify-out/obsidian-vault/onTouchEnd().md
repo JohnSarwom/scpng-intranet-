@@ -1,12 +1,12 @@
 ---
 source_file: "src\components\gallery\GalleryLightbox.tsx"
 type: "code"
-community: "Module 98"
+community: "Community 98"
 location: "L100"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_98
+  - community/Community_98
 ---
 
 # onTouchEnd()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[GalleryLightbox.tsx]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_98
+#graphify/code #graphify/EXTRACTED #community/Community_98

@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useStaffByDepartment.ts"
 type: "code"
-community: "Module 196"
+community: "Community 197"
 location: "L9"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_196
+  - community/Community_197
 ---
 
 # isServiceAccount()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useStaffByDepartment.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_196
+#graphify/code #graphify/EXTRACTED #community/Community_197

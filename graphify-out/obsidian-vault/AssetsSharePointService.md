@@ -1,12 +1,12 @@
 ---
 source_file: "src\services\assetsSharePointService.ts"
 type: "code"
-community: "Assets Service"
+community: "Community 22"
 location: "L51"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Assets_Service
+  - community/Community_22
 ---
 
 # AssetsSharePointService
@@ -26,4 +26,4 @@ tags:
 - [[.updateAsset()]] - `method` [EXTRACTED]
 - [[assetsSharePointService.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Assets_Service
+#graphify/code #graphify/EXTRACTED #community/Community_22

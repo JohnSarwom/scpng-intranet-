@@ -34,6 +34,7 @@ interface AddDocumentModalProps {
     type: 'file' | 'link';
   }) => void;
   initialCategory?: string;
+  initialSubCategory?: string;
   availableCategories: string[];
   subCategoryMap?: Record<string, string[]>;
 }
@@ -43,6 +44,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
   onOpenChange,
   onShare,
   initialCategory,
+  initialSubCategory,
   availableCategories = [],
   subCategoryMap = {},
 }) => {
@@ -63,7 +65,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
     if (isOpen) {
       const currentInitialCategory = initialCategory || (availableCategories.length > 0 ? availableCategories[0] : '');
       setSelectedCategory(currentInitialCategory);
-      setSelectedSubCategory(null);
+      setSelectedSubCategory(initialSubCategory || null);
       setMode('file');
     } else {
       setTitle('');
@@ -74,7 +76,7 @@ const AddDocumentModal: React.FC<AddDocumentModalProps> = ({
       setFileError(null);
       setSelectedSubCategory(null);
     }
-  }, [isOpen, initialCategory, availableCategories]);
+  }, [isOpen, initialCategory, initialSubCategory, availableCategories]);
 
   // ... (handleFileChange, handleShareClick remain same)
 

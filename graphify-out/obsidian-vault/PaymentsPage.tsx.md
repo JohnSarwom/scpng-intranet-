@@ -1,25 +1,17 @@
 ---
 source_file: "src\pages\PaymentsPage.tsx"
 type: "code"
-community: "Module 348"
+community: "Community 351"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_348
+  - graphify/EXTRACTED
+  - community/Community_351
 ---
 
 # PaymentsPage.tsx
 
 ## Connections
-- [[AddPaymentModal.tsx]] - `references` [INFERRED]
-- [[AssetsTab.tsx]] - `references` [INFERRED]
-- [[MicrosoftLoginButton.tsx]] - `references` [INFERRED]
-- [[PageLayout.tsx]] - `references` [INFERRED]
-- [[PaymentRecords.tsx]] - `references` [INFERRED]
 - [[handleAddPayment()]] - `contains` [EXTRACTED]
-- [[useAssetsSharePoint()]] - `calls` [INFERRED]
-- [[usePaymentsSharePoint.ts]] - `calls` [INFERRED]
-- [[useRoleBasedAuth.ts]] - `calls` [INFERRED]
 
-#graphify/code #graphify/INFERRED #community/Module_348
+#graphify/code #graphify/EXTRACTED #community/Community_351

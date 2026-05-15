@@ -1,20 +1,19 @@
 ---
 source_file: "src\components\unit-tabs\ProjectsTab.tsx"
 type: "code"
-community: "Module 42"
+community: "Community 41"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_42
+  - community/Community_41
 ---
 
 # ProjectsTab.tsx
 
 ## Connections
-- [[Unit.tsx]] - `references` [INFERRED]
 - [[formatCurrency()_1]] - `contains` [EXTRACTED]
-- [[formatDate()_3]] - `contains` [EXTRACTED]
+- [[formatDate()_4]] - `contains` [EXTRACTED]
 - [[getInitials()_3]] - `contains` [EXTRACTED]
 - [[getManagerName()]] - `contains` [EXTRACTED]
 - [[getStatusBadge()]] - `contains` [EXTRACTED]
@@ -23,4 +22,4 @@ tags:
 - [[handleEdit()_2]] - `contains` [EXTRACTED]
 - [[handleOpenAddModal()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_42
+#graphify/code #graphify/EXTRACTED #community/Community_41

@@ -1,17 +1,14 @@
 ---
 source_file: "src\services\powerAutomate\config.ts"
 type: "code"
-community: "Module 540"
+community: "Community 543"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_540
+  - graphify/EXTRACTED
+  - community/Community_543
 ---
 
 # config.ts
 
-## Connections
-- [[auth.ts]] - `references` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_540
+#graphify/code #graphify/EXTRACTED #community/Community_543

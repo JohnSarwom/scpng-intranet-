@@ -1,20 +1,14 @@
 ---
 source_file: "src\components\assets\table\TableActions.tsx"
 type: "code"
-community: "Module 373"
+community: "Community 376"
 location: "L1"
 tags:
   - graphify/code
-  - graphify/INFERRED
-  - community/Module_373
+  - graphify/EXTRACTED
+  - community/Community_376
 ---
 
 # TableActions.tsx
 
-## Connections
-- [[assetsSharePointService.ts]] - `imports_from` [INFERRED]
-- [[button.tsx]] - `imports_from` [INFERRED]
-- [[dropdown-menu.tsx]] - `imports_from` [INFERRED]
-- [[tooltip-wrapper.tsx]] - `imports_from` [INFERRED]
-
-#graphify/code #graphify/INFERRED #community/Module_373
+#graphify/code #graphify/EXTRACTED #community/Community_376

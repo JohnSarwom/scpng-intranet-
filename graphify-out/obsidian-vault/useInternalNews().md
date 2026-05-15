@@ -1,12 +1,12 @@
 ---
 source_file: "src\hooks\useInternalNews.ts"
 type: "code"
-community: "Module 309"
+community: "Community 311"
 location: "L101"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_309
+  - community/Community_311
 ---
 
 # useInternalNews()
@@ -14,4 +14,4 @@ tags:
 ## Connections
 - [[useInternalNews.ts]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_309
+#graphify/code #graphify/EXTRACTED #community/Community_311

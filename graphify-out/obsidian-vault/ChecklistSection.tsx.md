@@ -1,25 +1,21 @@
 ---
 source_file: "src\components\ChecklistSection.tsx"
 type: "code"
-community: "Module 91"
+community: "Community 91"
 location: "L1"
 tags:
   - graphify/code
   - graphify/EXTRACTED
-  - community/Module_91
+  - community/Community_91
 ---
 
 # ChecklistSection.tsx
 
 ## Connections
-- [[AddProjectModal.tsx]] - `imports_from` [INFERRED]
-- [[AddTaskModal.tsx]] - `imports_from` [INFERRED]
-- [[EditRiskModal.tsx]] - `imports_from` [INFERRED]
-- [[EditTaskModal.tsx]] - `imports_from` [INFERRED]
 - [[calculateProgress()]] - `contains` [EXTRACTED]
 - [[handleAddItem()]] - `contains` [EXTRACTED]
 - [[handleDeleteItem()]] - `contains` [EXTRACTED]
 - [[handleKeyDown()]] - `contains` [EXTRACTED]
 - [[handleToggleCheck()]] - `contains` [EXTRACTED]
 
-#graphify/code #graphify/EXTRACTED #community/Module_91
+#graphify/code #graphify/EXTRACTED #community/Community_91

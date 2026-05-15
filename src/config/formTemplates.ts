@@ -175,6 +175,40 @@ const hrApprovalSteps = [
   }
 ];
 
+// Matches the actual 3-stage leave workflow:
+// Manager Review → Director Review → HR Review
+const leaveApprovalSteps = [
+  {
+    id: 'manager_review',
+    order: 1,
+    title: 'Manager Review',
+    approverRole: 'manager',
+    required: true,
+    allowDelegation: true,
+    timeoutDays: 3,
+    escalationRole: 'director',
+  },
+  {
+    id: 'director_review',
+    order: 2,
+    title: 'Director Review',
+    approverRole: 'director',
+    required: true,
+    allowDelegation: false,
+    timeoutDays: 5,
+    escalationRole: 'hr_manager',
+  },
+  {
+    id: 'hr_review',
+    order: 3,
+    title: 'HR Review',
+    approverRole: 'hr_manager',
+    required: true,
+    allowDelegation: false,
+    timeoutDays: 2,
+  },
+];
+
 // Leave Application Form Template
 export const leaveApplicationTemplate: FormTemplate = {
   id: 'leave-application',
@@ -242,26 +276,40 @@ export const leaveApplicationTemplate: FormTemplate = {
           { value: 'LEAVE FOR BREAST FEEDING', label: 'LEAVE FOR BREAST FEEDING' },
           { value: 'PATERNITY LEAVE', label: 'PATERNITY LEAVE' },
           { value: 'RECREATIONAL LEAVE', label: 'RECREATIONAL LEAVE' }
-        ], true),
-        createTextField('signatureOfficer', 'SIGNATURE OFFICER', true)
+        ], true)
       ]
     }
   ],
 
   workflowEnabled: true,
-  approvalSteps: hrApprovalSteps,
+  approvalSteps: leaveApprovalSteps,
 
   notifications: [
     {
       trigger: 'submission',
-      recipients: ['supervisor', 'hr_manager'],
-      template: 'leave_application_submitted'
+      recipients: ['manager'],
+      template: 'leave_application_submitted',
+    },
+    {
+      trigger: 'manager_approved',
+      recipients: ['director'],
+      template: 'leave_application_director_review',
+    },
+    {
+      trigger: 'director_approved',
+      recipients: ['hr_manager'],
+      template: 'leave_application_hr_review',
     },
     {
       trigger: 'approval',
       recipients: ['submitter'],
-      template: 'leave_application_approved'
-    }
+      template: 'leave_application_approved',
+    },
+    {
+      trigger: 'rejection',
+      recipients: ['submitter'],
+      template: 'leave_application_rejected',
+    },
   ],
 
   createdBy: 'system',
