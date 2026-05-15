@@ -5,6 +5,7 @@
  */
 
 import { Client } from '@microsoft/microsoft-graph-client';
+import { buildAssetProfileUrl, generateAssetQrDataUrl } from '@/utils/assetQr';
 
 const SITE_PATH = '/sites/scpngintranet';
 const SITE_DOMAIN = 'scpng1.sharepoint.com';
@@ -13,6 +14,7 @@ const ASSETS_LIST_NAME = 'Assets';
 // Asset type definition matching your Supabase structure
 export interface Asset {
   id?: string;
+  sharepoint_item_id?: string;
   name: string;
   type: string;
   brand?: string;
@@ -38,6 +40,7 @@ export interface Asset {
   admin_comments?: string;
   invoice_url?: string;
   barcode_url?: string;
+  qr_code_url?: string;
   image_url?: string;
   is_deleted?: boolean;
   deleted_at?: string;
@@ -90,6 +93,8 @@ export class AssetsSharePointService {
       this.listId = lists.value[0].id;
       console.log('✅ [AssetsSharePointService] Assets List ID obtained:', this.listId);
 
+      await this.ensureAssetQrColumns();
+
       // Debug: List all columns to verify internal names
       await this.getListColumns();
 
@@ -97,6 +102,47 @@ export class AssetsSharePointService {
     } catch (error) {
       console.error('❌ [AssetsSharePointService] Initialization failed:', error);
       throw error;
+    }
+  }
+
+  private async ensureAssetQrColumns(): Promise<void> {
+    if (!this.siteId || !this.listId) return;
+
+    await this.ensureColumn('QRCodeURL', { text: {} });
+  }
+
+  private async ensureColumn(columnName: string, columnDef: any): Promise<boolean> {
+    if (!this.siteId || !this.listId) return false;
+
+    try {
+      const columns = await this.client
+        .api(`/sites/${this.siteId}/lists/${this.listId}/columns`)
+        .select('name,displayName')
+        .get();
+
+      const exists = columns.value?.find((column: any) =>
+        column.name === columnName || column.displayName === columnName
+      );
+
+      if (exists) {
+        console.log(`✅ [SCHEMA] Column '${columnName}' exists`);
+        return true;
+      }
+
+      console.log(`⚠️ [SCHEMA] Column '${columnName}' missing. Creating...`);
+      await this.client
+        .api(`/sites/${this.siteId}/lists/${this.listId}/columns`)
+        .post({
+          name: columnName,
+          displayName: columnName,
+          ...columnDef,
+        });
+
+      console.log(`✅ [SCHEMA] Column '${columnName}' created`);
+      return true;
+    } catch (error) {
+      console.error(`❌ [SCHEMA] Failed to ensure column '${columnName}':`, error);
+      return false;
     }
   }
 
@@ -153,6 +199,7 @@ export class AssetsSharePointService {
       // URLs
       'invoice_url': 'InvoiceURL',             // Single line of text
       'barcode_url': 'BarcodeURL',             // Single line of text
+      'qr_code_url': 'QRCodeURL',              // Single line of text
       'image_url': 'ImageURL',                 // Single line of text (changed from Hyperlink)
 
       // Soft Delete
@@ -222,6 +269,7 @@ export class AssetsSharePointService {
 
     const asset: Asset = {
       id: fields.AssetID?.toString() || spItem.id?.toString(),
+      sharepoint_item_id: spItem.id?.toString(),
       name: fields.Title || '',
       type: fields.Types || '',                          // Internal name is "Types" (see screenshot URL)
       brand: fields.Brand,
@@ -247,6 +295,7 @@ export class AssetsSharePointService {
       admin_comments: fields.AdminComments,
       invoice_url: fields.InvoiceURL,
       barcode_url: fields.BarcodeURL,
+      qr_code_url: fields.QRCodeURL,
       image_url: fields.ImageURL || '', // ImageURL is now a text field
       is_deleted: fields.IsDeleted || false,
       deleted_at: fields.DeletedAt,
@@ -304,6 +353,206 @@ export class AssetsSharePointService {
       console.error('❌ [DEBUG] Error fetching columns:', error);
       throw error;
     }
+  }
+
+  private buildQrPayload(asset: Asset): string {
+    return buildAssetProfileUrl(asset);
+  }
+
+  private sanitizeFileName(value: string): string {
+    return value.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'asset';
+  }
+
+  private escapeODataString(value: string): string {
+    return value.replace(/'/g, "''");
+  }
+
+  private dataUrlToBlob(dataUrl: string): Blob {
+    const [metadata, base64] = dataUrl.split(',');
+    const mimeType = metadata.match(/data:(.*);base64/)?.[1] || 'image/png';
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new Blob([bytes], { type: mimeType });
+  }
+
+  private async withRetry<T>(operation: () => Promise<T>, attempts: number = 3): Promise<T> {
+    let lastError: unknown;
+
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        if (attempt === attempts) break;
+        await new Promise((resolve) => setTimeout(resolve, attempt * 750));
+      }
+    }
+
+    throw lastError;
+  }
+
+  private async getAssetUploadDrive(): Promise<{ siteId: string; driveId: string; driveName: string }> {
+    if (!this.siteId) await this.initialize();
+    if (!this.siteId) throw new Error('SharePoint site is not initialized.');
+
+    const drives = await this.withRetry(() => this.client.api(`/sites/${this.siteId}/drives`).get());
+    const targetDrive = drives.value?.find((drive: any) =>
+      drive.name === 'Asset Images' || drive.name === 'AssetImages'
+    ) || drives.value?.find((drive: any) => drive.name === 'Documents');
+
+    if (!targetDrive) {
+      throw new Error('Could not find Asset Images or Documents library for QR code uploads.');
+    }
+
+    return {
+      siteId: this.siteId,
+      driveId: targetDrive.id,
+      driveName: targetDrive.name,
+    };
+  }
+
+  private async ensureDriveFolder(driveId: string, folderPath: string): Promise<void> {
+    if (!this.siteId) throw new Error('SharePoint site is not initialized.');
+
+    const segments = folderPath.split('/').filter(Boolean);
+    let currentPath = '';
+
+    for (const segment of segments) {
+      const parentPath = currentPath;
+      currentPath = `${currentPath}/${segment}`;
+
+      try {
+        await this.client.api(`/sites/${this.siteId}/drives/${driveId}/root:${currentPath}`).get();
+      } catch (error: any) {
+        if (error.statusCode !== 404) throw error;
+
+        const createEndpoint = parentPath
+          ? `/sites/${this.siteId}/drives/${driveId}/root:${parentPath}:/children`
+          : `/sites/${this.siteId}/drives/${driveId}/root/children`;
+
+        await this.client.api(createEndpoint).post({
+          name: segment,
+          folder: {},
+          '@microsoft.graph.conflictBehavior': 'fail',
+        });
+      }
+    }
+  }
+
+  private async uploadQrCodeImage(asset: Asset): Promise<string> {
+    const assetId = asset.id || asset.name;
+    const fileName = `${this.sanitizeFileName(assetId)}.png`;
+    const folderPath = '/Assets/QR-Codes';
+    const { siteId, driveId, driveName } = await this.getAssetUploadDrive();
+
+    await this.ensureDriveFolder(driveId, folderPath);
+
+    const qrDataUrl = await generateAssetQrDataUrl(asset);
+    const qrBlob = this.dataUrlToBlob(qrDataUrl);
+
+    console.log('📦 [QR CODE] Uploading QR image', { driveName, folderPath, fileName });
+    const uploaded = await this.client
+      .api(`/sites/${siteId}/drives/${driveId}/root:${folderPath}/${fileName}:/content`)
+      .put(qrBlob);
+
+    return uploaded.webUrl;
+  }
+
+  private async resolveSharePointItemId(asset: Asset): Promise<string> {
+    if (asset.sharepoint_item_id) {
+      return asset.sharepoint_item_id;
+    }
+
+    if (!this.siteId || !this.listId) await this.initialize();
+
+    const candidateId = asset.id || '';
+    if (/^\d+$/.test(candidateId)) {
+      return candidateId;
+    }
+
+    if (!candidateId) {
+      throw new Error('Cannot resolve SharePoint item because this asset has no ID.');
+    }
+
+    const response = await this.client
+      .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
+      .filter(`fields/AssetID eq '${this.escapeODataString(candidateId)}'`)
+      .expand('fields')
+      .top(1)
+      .get();
+
+    const item = response.value?.[0];
+    if (!item?.id) {
+      throw new Error(`Could not find SharePoint item for asset ID ${candidateId}.`);
+    }
+
+    return item.id.toString();
+  }
+
+  async ensureAssetQrCode(asset: Asset, forceRegenerate: boolean = false): Promise<Asset> {
+    if (asset.qr_code_url && !forceRegenerate) {
+      return asset;
+    }
+
+    if (!this.siteId || !this.listId) await this.initialize();
+
+    const itemId = await this.resolveSharePointItemId(asset);
+    const qrCodeUrl = await this.uploadQrCodeImage(asset);
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${this.listId}/items/${itemId}`)
+      .patch({
+        fields: {
+          QRCodeURL: qrCodeUrl,
+        },
+      });
+
+    const updatedAsset = await this.getAssetById(itemId);
+    return updatedAsset || { ...asset, qr_code_url: qrCodeUrl };
+  }
+
+  async getAssetByAssetId(assetId: string): Promise<Asset | null> {
+    if (!this.siteId || !this.listId) await this.initialize();
+
+    try {
+      if (/^\d+$/.test(assetId)) {
+        return this.getAssetById(assetId);
+      }
+
+      const response = await this.client
+        .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
+        .filter(`fields/AssetID eq '${this.escapeODataString(assetId)}'`)
+        .expand('fields')
+        .top(1)
+        .get();
+
+      const item = response.value?.[0];
+      return item ? this.mapFromSharePointFields(item) : null;
+    } catch (error) {
+      console.error(`❌ [GET ASSET] Error fetching asset by AssetID ${assetId}:`, error);
+      return null;
+    }
+  }
+
+  async getAssetQrCodeImageObjectUrl(asset: Asset): Promise<string> {
+    const assetId = asset.id || asset.name;
+    if (!assetId) {
+      throw new Error('Cannot load QR code image because this asset has no ID.');
+    }
+
+    const fileName = `${this.sanitizeFileName(assetId)}.png`;
+    const folderPath = '/Assets/QR-Codes';
+    const { siteId, driveId } = await this.getAssetUploadDrive();
+    const blob = await this.client
+      .api(`/sites/${siteId}/drives/${driveId}/root:${folderPath}/${fileName}:/content`)
+      .responseType('blob' as any)
+      .get();
+
+    return URL.createObjectURL(blob);
   }
 
   /**
@@ -474,7 +723,14 @@ export class AssetsSharePointService {
         .expand('fields')
         .get();
 
-      const createdAsset = this.mapFromSharePointFields(finalItem);
+      let createdAsset = this.mapFromSharePointFields(finalItem);
+
+      try {
+        createdAsset = await this.ensureAssetQrCode(createdAsset);
+        console.log(`   QR Code URL: ${createdAsset.qr_code_url || '(none)'}`);
+      } catch (qrError) {
+        console.warn('   ⚠️ Asset created, but QR code generation failed:', qrError);
+      }
 
       console.log('\n✅ [ADD ASSET] Asset creation complete!');
       console.log(`   SharePoint Item ID: ${response.id}`);

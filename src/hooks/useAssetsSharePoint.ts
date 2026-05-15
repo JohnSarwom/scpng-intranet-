@@ -214,11 +214,74 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     }
   });
 
+  /**
+   * React Query: Generate missing asset QR code image
+   */
+  const ensureQrCodeMutation = useMutation({
+    mutationFn: async (asset: Asset) => {
+      let currentService = service;
+      if (!currentService) {
+        currentService = await initializeService();
+      }
+      return currentService.ensureAssetQrCode(asset);
+    },
+    onSuccess: (updatedAsset) => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      toast({
+        title: 'QR Code Ready',
+        description: `${updatedAsset.name} now has a QR code image.`,
+      });
+    },
+    onError: (err: unknown) => {
+      const error = err instanceof Error ? err : new Error('Unknown error');
+      toast({
+        title: 'Error Generating QR Code',
+        description: error.message || 'Failed to generate QR code.',
+        variant: 'destructive',
+      });
+    }
+  });
+
   // Wrappers to match original interface
   const addAsset = useCallback((assetData: Partial<Asset>) => addAssetMutation.mutateAsync(assetData), [addAssetMutation]);
   const updateAsset = useCallback((id: string, updates: Partial<Asset>) => updateAssetMutation.mutateAsync({ id, updates }), [updateAssetMutation]);
   const deleteAsset = useCallback((id: string) => deleteAssetMutation.mutateAsync(id), [deleteAssetMutation]);
   const restoreAsset = useCallback((id: string) => restoreAssetMutation.mutateAsync(id), [restoreAssetMutation]);
+  const ensureQrCode = useCallback((asset: Asset, forceRegenerate: boolean = false) => {
+    if (forceRegenerate) {
+      return (async () => {
+        let currentService = service;
+        if (!currentService) {
+          currentService = await initializeService();
+        }
+        const updatedAsset = await currentService.ensureAssetQrCode(asset, true);
+        queryClient.invalidateQueries({ queryKey: ['assets'] });
+        toast({
+          title: 'QR Code Updated',
+          description: `${updatedAsset.name} now points to the asset profile page.`,
+        });
+        return updatedAsset;
+      })();
+    }
+
+    return ensureQrCodeMutation.mutateAsync(asset);
+  }, [ensureQrCodeMutation, initializeService, queryClient, service, toast]);
+
+  const getQrCodeImageSrc = useCallback(async (asset: Asset) => {
+    let currentService = service;
+    if (!currentService) {
+      currentService = await initializeService();
+    }
+    return currentService.getAssetQrCodeImageObjectUrl(asset);
+  }, [initializeService, service]);
+
+  const getAssetByAssetId = useCallback(async (assetId: string) => {
+    let currentService = service;
+    if (!currentService) {
+      currentService = await initializeService();
+    }
+    return currentService.getAssetByAssetId(assetId);
+  }, [initializeService, service]);
 
   return {
     // Data
@@ -231,6 +294,9 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     update: updateAsset,
     remove: deleteAsset,
     restore: restoreAsset,
+    ensureQrCode,
+    getQrCodeImageSrc,
+    getAssetByAssetId,
     refresh: refreshAssets,
 
     // Service instance (for advanced usage if needed)

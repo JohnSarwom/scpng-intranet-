@@ -3937,6 +3937,7 @@ export class SharePointListSetupService {
                 { name: 'Division', text: {} },
                 { name: 'DivisionID', text: {} },
                 { name: 'PurchaseCost', text: {} }, // Note: Purchasing data stored as text in this schema
+                { name: 'QRCodeURL', text: {} },
                 { name: 'IsDeleted', boolean: {} },
                 { name: 'Description', text: { allowMultipleLines: true } },
                 { name: 'IsMockData', boolean: {} }

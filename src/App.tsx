@@ -30,10 +30,13 @@ import Division from "./pages/Division";
 import Calendar from "./pages/Calendar";
 import Gallery from "./pages/Gallery";
 import Login from "./pages/Login";
+import LeaveActionPage from "./pages/LeaveActionPage";
 import NotFound from "./pages/NotFound";
 import Unauthorized from "./pages/Unauthorized";
 import Notes from "./pages/Notes";
 import AssetManagementNew from './pages/AssetManagementNew';
+import AssetProfilePage from './pages/AssetProfilePage';
+import AssetPublicProfilePage from './pages/AssetPublicProfilePage';
 import Tickets from './pages/Tickets';
 import AdminAssetsPage from './pages/AdminAssetsPage';
 import UILibrary from './pages/UILibrary';
@@ -41,6 +44,7 @@ import { SupabaseAuthProvider } from '@/hooks/useSupabaseAuth';
 import LicensingRegistry from './pages/LicensingRegistry';
 import Forms from './pages/Forms';
 import FillFormPage from './pages/FillFormPage';
+import Approvals from './pages/Approvals';
 import EditEmployeeProfile from './pages/EditEmployeeProfile';
 import PaymentsPage from './pages/PaymentsPage';
 import Apps from './pages/Apps';
@@ -57,6 +61,7 @@ import MeetingMinutes from './pages/MeetingMinutes';
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { MsalAuthProvider } from '@/integrations/microsoft/MsalProvider';
+import AppLoadingShell from '@/components/layout/AppLoadingShell';
 
 const CACHE_VERSION = 'v1'; // Bump when SharePoint data schema changes
 
@@ -88,16 +93,16 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   // Show loading indicator while MSAL is initializing or interacting
   if (inProgress !== InteractionStatus.None) {
     logger.info('ProtectedRoute: MSAL in progress...', { status: inProgress });
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppLoadingShell message="Checking your Microsoft session..." />;
   }
 
   // If MSAL is idle and user is NOT authenticated, redirect to login
   if (!isAuthenticated) {
     logger.warn('ProtectedRoute: MSAL user not authenticated, redirecting to login.', { from: location.pathname });
+    const returnTo = `${location.pathname}${location.search}`;
+    if (returnTo !== '/' && returnTo !== '/login') {
+      sessionStorage.setItem('auth_return_to', returnTo);
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
@@ -133,8 +138,12 @@ const AssetsPageRoute = () => {
 const AppRoutes = () => {
   return (
     <Routes>
+      <Route path="/asset-public" element={<AssetPublicProfilePage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
+      {/* Email action deep-link - requires MSAL auth, no role needed */}
+      <Route path="/leave-action" element={<ProtectedRoute><LeaveActionPage /></ProtectedRoute>} />
 
       {/* Basic authenticated routes */}
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -186,6 +195,12 @@ const AppRoutes = () => {
         <RoleProtectedRoute requiredPermissions={[{ resource: 'forms', action: 'read' }]}>
           <FillFormPage />
         </RoleProtectedRoute>
+      } />
+
+      <Route path="/approvals" element={
+        <ProtectedRoute>
+          <Approvals />
+        </ProtectedRoute>
       } />
 
       {/* Adjusted to allow full access to all authenticated users */}
@@ -304,6 +319,12 @@ const AppRoutes = () => {
         </RoleProtectedRoute>
       } />
 
+      <Route path="/asset-view/:assetId" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'assets', action: 'read' }]}>
+          <AssetProfilePage />
+        </RoleProtectedRoute>
+      } />
+
       {/* Payments management */}
       <Route path="/payments" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'payments', action: 'read' }]}>
@@ -329,11 +350,7 @@ const AppContent = () => {
   const { inProgress } = useMsal();
 
   if (inProgress !== InteractionStatus.None) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <AppLoadingShell message="Finishing authentication..." />;
   }
 
   return (
@@ -354,9 +371,7 @@ const AppContent = () => {
             <Toaster />
             <Sonner />
             <SlideshowProvider>
-              <BrowserRouter>
-                <AppRoutes />
-              </BrowserRouter>
+              <AppRoutes />
             </SlideshowProvider>
           </EmployeesProvider>
         </TooltipProvider>
@@ -365,13 +380,37 @@ const AppContent = () => {
   );
 }
 
-// Top-level App component wrapper to handle MSAL initialization state
+const AuthenticatedApp = () => (
+    <SupabaseAuthProvider>
+      <MsalAuthProvider>
+        <AppContent />
+      </MsalAuthProvider>
+    </SupabaseAuthProvider>
+);
+
+const AppRouter = () => {
+  const location = useLocation();
+  const isPublicAssetRoute = location.pathname === '/asset-public';
+
+  if (isPublicAssetRoute) {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="light">
+        <TooltipProvider>
+          <AppRoutes />
+        </TooltipProvider>
+      </ThemeProvider>
+    );
+  }
+
+  return <AuthenticatedApp />;
+};
+
+// BrowserRouter wraps everything so MsalAuthProvider (which registers
+// CustomNavigationClient via useNavigate) is inside a Router context.
 const App = () => (
-  <SupabaseAuthProvider>
-    <MsalAuthProvider>
-      <AppContent />
-    </MsalAuthProvider>
-  </SupabaseAuthProvider>
+  <BrowserRouter>
+    <AppRouter />
+  </BrowserRouter>
 );
 
 export default App;

@@ -82,6 +82,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     add: addAsset,
     update: editAsset,
     remove: deleteAsset,
+    ensureQrCode,
+    getQrCodeImageSrc,
     refresh: refreshAssets,
   } = useAssetsSharePoint();
 
@@ -339,9 +341,11 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   const handleSaveEdit = async (updatedAssetData: Partial<Asset>) => {
     if (!activeModal.asset) return;
+    const itemId = activeModal.asset.sharepoint_item_id || activeModal.asset.id;
+    if (!itemId) return;
     try {
       const dataToSave = loggedInUserEmail ? { ...updatedAssetData, last_updated_by: loggedInUserEmail } : updatedAssetData;
-      await editAsset(activeModal.asset.id, dataToSave);
+      await editAsset(itemId, dataToSave);
       toast({ title: "Asset Updated", description: "Asset details have been updated." });
       handleCloseModals();
     } catch (err) {
@@ -352,8 +356,10 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
 
   const handleConfirmDelete = async () => {
     if (!activeModal.asset) return;
+    const itemId = activeModal.asset.sharepoint_item_id || activeModal.asset.id;
+    if (!itemId) return;
     try {
-      await deleteAsset(activeModal.asset.id);
+      await deleteAsset(itemId);
       toast({ title: "Asset Deleted", description: "Asset has been removed successfully." });
       handleCloseModals();
     } catch (err) {
@@ -1494,6 +1500,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
             asset={activeModal.type === 'info' ? activeModal.asset : null}
             isOpen={activeModal.type === 'info'}
             onClose={handleCloseModals}
+            onGenerateQRCode={ensureQrCode}
+            getQRCodeImageSrc={getQrCodeImageSrc}
           />
         </CardContent>
       </Card>

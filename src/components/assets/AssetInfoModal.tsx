@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,15 +8,19 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Building, CalendarDays, ShieldAlert, Clock, Info, Activity, Box, Package } from "lucide-react";
+import { Briefcase, Building, CalendarDays, ShieldAlert, Info, Activity, Box, Package, QrCode, Printer, Loader2, RefreshCw } from "lucide-react";
 import { Asset } from '@/services/assetsSharePointService';
 import { cn, formatDate, formatCurrency } from '@/lib/utils';
 import { DialogFooter } from "@/components/ui/dialog";
+import { useToast } from '@/hooks/use-toast';
+import { generateAssetQrDataUrl } from '@/utils/assetQr';
 
 interface AssetInfoModalProps {
   asset: Asset | null;
   isOpen: boolean;
   onClose: () => void;
+  onGenerateQRCode?: (asset: Asset, forceRegenerate?: boolean) => Promise<Asset>;
+  getQRCodeImageSrc?: (asset: Asset) => Promise<string>;
 }
 
 // Helper function for condition badge styling (similar to AssetCard)
@@ -53,10 +57,167 @@ const InfoRow = ({ label, value, icon: Icon }: { label: string, value: React.Rea
   </div>
 );
 
-const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose }) => {
-  if (!asset) {
+const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose, onGenerateQRCode, getQRCodeImageSrc }) => {
+  const { toast } = useToast();
+  const [displayAsset, setDisplayAsset] = useState<Asset | null>(asset);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
+  const [qrImageSrc, setQrImageSrc] = useState('');
+  const [isLoadingQrImage, setIsLoadingQrImage] = useState(false);
+  const [qrRefreshKey, setQrRefreshKey] = useState(0);
+
+  useEffect(() => {
+    setDisplayAsset(asset);
+  }, [asset]);
+
+  const currentAsset = displayAsset || asset;
+
+  useEffect(() => {
+    let objectUrl = '';
+    let isMounted = true;
+
+    if (!currentAsset?.qr_code_url) {
+      setQrImageSrc('');
+      setIsLoadingQrImage(false);
+      return;
+    }
+
+    setIsLoadingQrImage(true);
+    generateAssetQrDataUrl(currentAsset)
+      .then((src) => {
+        if (!isMounted) return;
+        setQrImageSrc(src);
+      })
+      .catch((error) => {
+        console.warn('Failed to render QR code locally:', error);
+        if (isMounted) setQrImageSrc('');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoadingQrImage(false);
+      });
+
+    return () => {
+      isMounted = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [currentAsset?.id, currentAsset?.sharepoint_item_id, currentAsset?.qr_code_url, qrRefreshKey]);
+
+  if (!asset || !currentAsset) {
     return null;
   }
+
+  const handleGenerateQRCode = async (forceRegenerate: boolean = false) => {
+    if (!onGenerateQRCode || !currentAsset) return;
+
+    setIsGeneratingQr(true);
+    try {
+      const updatedAsset = await onGenerateQRCode(currentAsset, forceRegenerate);
+      setDisplayAsset(updatedAsset);
+      setQrRefreshKey((key) => key + 1);
+    } catch (error) {
+      toast({
+        title: 'QR Code Error',
+        description: error instanceof Error ? error.message : 'Could not generate the asset QR code.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  };
+
+  const handlePrintQRCode = () => {
+    if (!qrImageSrc) return;
+
+    const printWindow = window.open('', '_blank', 'width=420,height=640');
+    if (!printWindow) {
+      toast({
+        title: 'Print Blocked',
+        description: 'Please allow pop-ups so the QR label can open for printing.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const escapeHtml = (value: string) => value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Asset QR Label - ${escapeHtml(currentAsset.id || currentAsset.name || 'Asset')}</title>
+          <style>
+            * { box-sizing: border-box; }
+            body {
+              margin: 0;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-family: Arial, sans-serif;
+              color: #111827;
+              background: #ffffff;
+            }
+            .label {
+              width: 320px;
+              border: 1px solid #111827;
+              padding: 18px;
+              text-align: center;
+            }
+            .org {
+              font-size: 12px;
+              font-weight: 700;
+              letter-spacing: 0.08em;
+              text-transform: uppercase;
+              margin-bottom: 10px;
+            }
+            img {
+              width: 210px;
+              height: 210px;
+              object-fit: contain;
+              margin: 8px auto 12px;
+              display: block;
+            }
+            .name {
+              font-size: 18px;
+              font-weight: 700;
+              line-height: 1.25;
+              margin-bottom: 8px;
+            }
+            .meta {
+              font-size: 12px;
+              line-height: 1.5;
+              overflow-wrap: anywhere;
+            }
+            @media print {
+              body { min-height: auto; }
+              .label { page-break-inside: avoid; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="label">
+            <div class="org">SCPNG Asset Registry</div>
+            <img src="${escapeHtml(qrImageSrc)}" alt="Asset QR Code" />
+            <div class="name">${escapeHtml(currentAsset.name || 'Unnamed Asset')}</div>
+            <div class="meta">Asset ID: ${escapeHtml(currentAsset.id || 'N/A')}</div>
+            <div class="meta">Type: ${escapeHtml(currentAsset.type || 'N/A')}</div>
+            ${currentAsset.serial_number ? `<div class="meta">Serial: ${escapeHtml(currentAsset.serial_number)}</div>` : ''}
+          </div>
+          <script>
+            window.addEventListener('load', () => {
+              window.focus();
+              window.print();
+            });
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -124,6 +285,60 @@ const AssetInfoModal: React.FC<AssetInfoModalProps> = ({ asset, isOpen, onClose 
           </div>
 
           <div className="space-y-6">
+            <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
+              <div className="px-4 py-2 bg-muted/40 font-medium text-sm text-foreground flex items-center gap-2 border-b">
+                <QrCode className="h-4 w-4 text-primary/70" />
+                Asset QR Code
+              </div>
+              <div className="p-4 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="h-32 w-32 rounded-md border bg-white p-2 flex items-center justify-center">
+                    {isLoadingQrImage ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground/60" />
+                    ) : qrImageSrc ? (
+                      <img
+                        src={qrImageSrc}
+                        alt={`${currentAsset.name || 'Asset'} QR code`}
+                        className="h-full w-full object-contain"
+                      />
+                    ) : (
+                      <QrCode className="h-12 w-12 text-muted-foreground/50" />
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">
+                      {currentAsset.qr_code_url ? 'QR image saved to SharePoint' : 'No QR image saved yet'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {currentAsset.qr_code_url ? 'Use this code for asset labels and scanning.' : 'Generate one to save the image against this asset.'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {!currentAsset.qr_code_url && onGenerateQRCode && (
+                    <Button type="button" variant="outline" onClick={() => handleGenerateQRCode(false)} disabled={isGeneratingQr}>
+                      {isGeneratingQr ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                      Generate
+                    </Button>
+                  )}
+                  {currentAsset.qr_code_url && (
+                    <>
+                      {onGenerateQRCode && (
+                        <Button type="button" variant="outline" onClick={() => handleGenerateQRCode(true)} disabled={isGeneratingQr}>
+                          {isGeneratingQr ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                          Regenerate
+                        </Button>
+                      )}
+                      <Button type="button" variant="outline" onClick={handlePrintQRCode} disabled={!qrImageSrc || isLoadingQrImage}>
+                        <Printer className="mr-2 h-4 w-4" />
+                        Print QR
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="bg-card border rounded-lg overflow-hidden shadow-sm">
               <div className="px-4 py-2 bg-muted/40 font-medium text-sm text-foreground flex items-center gap-2 border-b">
                 <Box className="h-4 w-4 text-primary/70" />
