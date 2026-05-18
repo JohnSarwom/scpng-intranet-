@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, X, Calendar, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import SharePointGalleryImage from './SharePointGalleryImage';
 
 // ── Types ──────────────────────────────────────────────────
 interface LightboxPhoto {
@@ -188,8 +189,8 @@ const GalleryLightbox: React.FC<GalleryLightboxProps> = ({
                       transition={{ duration: 0.55, ease: [0.77, 0, 0.175, 1] }}
                       onClick={() => !isActive && go(i)}
                     >
-                      <img
-                        src={p.image_url}
+                      <SharePointGalleryImage
+                        photo={p as any}
                         alt={p.caption || ''}
                         className="w-full block rounded-2xl"
                         style={{

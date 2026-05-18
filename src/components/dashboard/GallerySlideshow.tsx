@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { galleryService, GalleryPhoto } from '@/integrations/supabase/galleryService';
-import { getGraphClient } from '@/services/graphService';
-import { clearGalleryImageUrlCache, getGalleryPhotoDisplayUrl, resolveGalleryDataImageUrls } from '@/services/gallerySharePointImageService';
+import { clearGalleryImageUrlCache } from '@/services/gallerySharePointImageService';
+import SharePointGalleryImage from '@/components/gallery/SharePointGalleryImage';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useMsal } from '@azure/msal-react';
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -17,26 +16,25 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return shuffled;
 };
 
+const MotionSharePointGalleryImage = motion(SharePointGalleryImage);
+
 const GallerySlideshow = () => {
     const [images, setImages] = useState<GalleryPhoto[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const navigate = useNavigate();
-    const { instance: msalInstance } = useMsal();
 
     useEffect(() => {
         const fetchImages = async () => {
             try {
                 const data = await galleryService.getGalleryData();
-                const graphClient = await getGraphClient(msalInstance);
-                const displayData = await resolveGalleryDataImageUrls(graphClient, data);
                 const allImages: GalleryPhoto[] = [];
                 // Sort years descending to ensure newest images are first
-                const years = Object.keys(displayData).sort().reverse();
+                const years = Object.keys(data).sort().reverse();
 
                 years.forEach(year => {
-                    displayData[year].forEach(event => {
+                    data[year].forEach(event => {
                         if (event.images && event.images.length > 0) {
                             allImages.push(...event.images);
                         }
@@ -55,7 +53,7 @@ const GallerySlideshow = () => {
 
         fetchImages();
         return () => clearGalleryImageUrlCache();
-    }, [msalInstance]);
+    }, []);
 
     useEffect(() => {
         if (images.length <= 1) return;
@@ -100,9 +98,9 @@ const GallerySlideshow = () => {
         >
             <AnimatePresence mode="wait">
                 {!imageError ? (
-                    <motion.img
+                    <MotionSharePointGalleryImage
                         key={currentImage.id}
-                        src={getGalleryPhotoDisplayUrl(currentImage)}
+                        photo={currentImage}
                         alt={currentImage.caption || "Gallery Image"}
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1 }}

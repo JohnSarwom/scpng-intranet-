@@ -84,7 +84,13 @@ const extractAssetLibraryPath = (url: string): string | null => {
   }
 };
 
-const fetchGalleryObjectUrl = async (client: Client, imageUrl: string): Promise<string | null> => {
+export const resolveGalleryPhotoImageUrl = async (
+  client: Client | null,
+  photo: Pick<GalleryPhotoWithDisplayUrl, 'image_url' | 'sharepoint_url' | 'display_url'>
+): Promise<string | null> => {
+  if (!client) return null;
+
+  const imageUrl = photo.display_url || photo.sharepoint_url || photo.image_url;
   if (!imageUrl || isBlobUrl(imageUrl) || !imageUrl.includes(SITE_DOMAIN)) {
     return null;
   }
@@ -156,7 +162,7 @@ export const resolveGalleryDataImageUrls = async (client: Client | null, data: G
   const resolvedPhotos = new Map<string, GalleryPhotoWithDisplayUrl>();
 
   await mapWithConcurrency(photos, 6, async photo => {
-    const displayUrl = await fetchGalleryObjectUrl(client, photo.sharepoint_url || photo.image_url);
+    const displayUrl = await resolveGalleryPhotoImageUrl(client, photo);
     resolvedPhotos.set(photo.id, displayUrl ? { ...photo, display_url: displayUrl } : photo);
   });
 

@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useLocation } from 'react-router-dom';
-import { useMsal } from '@azure/msal-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,9 +20,9 @@ import AddPhotoModal from '@/components/gallery/AddPhotoModal';
 import EditPhotoModal from '@/components/gallery/EditPhotoModal';
 import GalleryLightbox from '@/components/gallery/GalleryLightbox';
 import GalleryDebug from '@/components/gallery/GalleryDebug';
+import SharePointGalleryImage from '@/components/gallery/SharePointGalleryImage';
 import { galleryService, type GalleryEventWithPhotos, type GalleryData, type GalleryPhoto } from '@/integrations/supabase/galleryService';
-import { getGraphClient } from '@/services/graphService';
-import { clearGalleryImageUrlCache, getGalleryPhotoDisplayUrl, resolveGalleryDataImageUrls } from '@/services/gallerySharePointImageService';
+import { clearGalleryImageUrlCache, getGalleryPhotoDisplayUrl } from '@/services/gallerySharePointImageService';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
@@ -44,6 +43,7 @@ const VirtualizedEventGrid = ({
   openEditModal,
   openDeleteConfirm,
   isAdmin,
+  onPhotoDisplayUrlResolved,
 }: {
   event: GalleryEventWithPhotos;
   isSelectMode: boolean;
@@ -53,6 +53,7 @@ const VirtualizedEventGrid = ({
   openEditModal: (photo: GalleryPhoto, e: React.MouseEvent) => void;
   openDeleteConfirm: (image: GalleryImage, e: React.MouseEvent) => void;
   isAdmin: boolean;
+  onPhotoDisplayUrlResolved: (photoId: string, displayUrl: string) => void;
 }) => {
   const getColumns = () => (window.innerWidth >= 1024 ? 4 : window.innerWidth >= 768 ? 3 : 2);
   const [columns, setColumns] = useState(getColumns());
@@ -126,11 +127,12 @@ const VirtualizedEventGrid = ({
                       className={`aspect-square relative rounded-lg overflow-hidden ${isSelectMode && isSelected ? 'ring-2 ring-primary ring-offset-2' : ''
                         }`}
                     >
-                      <img
-                        src={getGalleryPhotoDisplayUrl(image)}
+                      <SharePointGalleryImage
+                        photo={image}
                         alt={image.caption || `Photo from ${event.title}`}
                         className="object-cover w-full h-full rounded-lg"
                         loading="lazy"
+                        onResolved={onPhotoDisplayUrlResolved}
                       />
                       {isSelectMode && (
                         <div className="absolute top-2 left-2 z-10">
@@ -203,7 +205,6 @@ const Gallery = () => {
   const [isConfirmEventDeleteDialogOpen, setIsConfirmEventDeleteDialogOpen] = useState(false);
   const tabsContentRef = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const location = useLocation();
-  const { instance: msalInstance } = useMsal();
   const { isAdmin } = useRoleBasedAuth();
 
   // Load gallery data
@@ -213,10 +214,8 @@ const Gallery = () => {
     try {
       // console.log('Loading gallery data...');
       const data = await galleryService.getGalleryData();
-      const graphClient = await getGraphClient(msalInstance);
-      const displayData = await resolveGalleryDataImageUrls(graphClient, data);
       // console.log('Gallery data loaded:', data);
-      setGalleryData(displayData);
+      setGalleryData(data);
 
       // Check for imageId in URL params after data is loaded
       const params = new URLSearchParams(location.search);
@@ -229,8 +228,8 @@ const Gallery = () => {
         let foundIndex = -1;
         let foundYear: string | undefined = undefined;
 
-        for (const year in displayData) {
-          for (const event of displayData[year]) {
+        for (const year in data) {
+          for (const event of data[year]) {
             const index = event.images.findIndex(img => img.id === imageId);
             if (index !== -1) {
               foundImage = {
@@ -264,7 +263,7 @@ const Gallery = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [location.search, msalInstance]);
+  }, [location.search]);
 
   useEffect(() => {
     loadGalleryData();
@@ -276,6 +275,31 @@ const Gallery = () => {
     setCurrentEvent(event);
     setImageIndex(index);
   };
+
+  const handlePhotoDisplayUrlResolved = useCallback((photoId: string, displayUrl: string) => {
+    setGalleryData(prevData => {
+      const nextData = { ...prevData };
+      for (const year in nextData) {
+        nextData[year] = nextData[year].map(event => ({
+          ...event,
+          images: event.images.map(photo =>
+            photo.id === photoId ? ({ ...photo, display_url: displayUrl } as GalleryPhoto) : photo
+          ),
+        }));
+      }
+      return nextData;
+    });
+
+    setCurrentEvent(prevEvent => {
+      if (!prevEvent?.images.some(photo => photo.id === photoId)) return prevEvent;
+      return {
+        ...prevEvent,
+        images: prevEvent.images.map(photo =>
+          photo.id === photoId ? ({ ...photo, display_url: displayUrl } as GalleryPhoto) : photo
+        ),
+      };
+    });
+  }, []);
 
   const navigateImage = (direction: 'prev' | 'next') => {
     if (!currentEvent) return;
@@ -676,6 +700,7 @@ const Gallery = () => {
                     openEditModal={openEditModal}
                     openDeleteConfirm={openDeleteConfirm}
                     isAdmin={isAdmin}
+                    onPhotoDisplayUrlResolved={handlePhotoDisplayUrlResolved}
                   />
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
