@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { galleryService, GalleryPhoto } from '@/integrations/supabase/galleryService';
+import { getGraphClient } from '@/services/graphService';
+import { clearGalleryImageUrlCache, getGalleryPhotoDisplayUrl, resolveGalleryDataImageUrls } from '@/services/gallerySharePointImageService';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMsal } from '@azure/msal-react';
 
 // Fisher-Yates shuffle algorithm
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -20,17 +23,20 @@ const GallerySlideshow = () => {
     const [loading, setLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
     const navigate = useNavigate();
+    const { instance: msalInstance } = useMsal();
 
     useEffect(() => {
         const fetchImages = async () => {
             try {
                 const data = await galleryService.getGalleryData();
+                const graphClient = await getGraphClient(msalInstance);
+                const displayData = await resolveGalleryDataImageUrls(graphClient, data);
                 const allImages: GalleryPhoto[] = [];
                 // Sort years descending to ensure newest images are first
-                const years = Object.keys(data).sort().reverse();
+                const years = Object.keys(displayData).sort().reverse();
 
                 years.forEach(year => {
-                    data[year].forEach(event => {
+                    displayData[year].forEach(event => {
                         if (event.images && event.images.length > 0) {
                             allImages.push(...event.images);
                         }
@@ -48,7 +54,8 @@ const GallerySlideshow = () => {
         };
 
         fetchImages();
-    }, []);
+        return () => clearGalleryImageUrlCache();
+    }, [msalInstance]);
 
     useEffect(() => {
         if (images.length <= 1) return;
@@ -95,7 +102,7 @@ const GallerySlideshow = () => {
                 {!imageError ? (
                     <motion.img
                         key={currentImage.id}
-                        src={currentImage.image_url}
+                        src={getGalleryPhotoDisplayUrl(currentImage)}
                         alt={currentImage.caption || "Gallery Image"}
                         initial={{ opacity: 0, scale: 1.05 }}
                         animate={{ opacity: 1, scale: 1 }}

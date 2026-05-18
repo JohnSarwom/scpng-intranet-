@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useLocation } from 'react-router-dom';
+import { useMsal } from '@azure/msal-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +22,8 @@ import EditPhotoModal from '@/components/gallery/EditPhotoModal';
 import GalleryLightbox from '@/components/gallery/GalleryLightbox';
 import GalleryDebug from '@/components/gallery/GalleryDebug';
 import { galleryService, type GalleryEventWithPhotos, type GalleryData, type GalleryPhoto } from '@/integrations/supabase/galleryService';
+import { getGraphClient } from '@/services/graphService';
+import { clearGalleryImageUrlCache, getGalleryPhotoDisplayUrl, resolveGalleryDataImageUrls } from '@/services/gallerySharePointImageService';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
@@ -99,7 +102,7 @@ const VirtualizedEventGrid = ({
             {rowImages.map((image, index) => {
               const galleryImage = {
                 id: image.id,
-                url: image.image_url,
+                url: getGalleryPhotoDisplayUrl(image),
                 caption: image.caption || '',
               };
               const isSelected = selectedPhotos.has(image.id);
@@ -124,7 +127,7 @@ const VirtualizedEventGrid = ({
                         }`}
                     >
                       <img
-                        src={image.image_url}
+                        src={getGalleryPhotoDisplayUrl(image)}
                         alt={image.caption || `Photo from ${event.title}`}
                         className="object-cover w-full h-full rounded-lg"
                         loading="lazy"
@@ -200,6 +203,7 @@ const Gallery = () => {
   const [isConfirmEventDeleteDialogOpen, setIsConfirmEventDeleteDialogOpen] = useState(false);
   const tabsContentRef = useRef<Map<string, HTMLDivElement | null>>(new Map());
   const location = useLocation();
+  const { instance: msalInstance } = useMsal();
   const { isAdmin } = useRoleBasedAuth();
 
   // Load gallery data
@@ -209,8 +213,10 @@ const Gallery = () => {
     try {
       // console.log('Loading gallery data...');
       const data = await galleryService.getGalleryData();
+      const graphClient = await getGraphClient(msalInstance);
+      const displayData = await resolveGalleryDataImageUrls(graphClient, data);
       // console.log('Gallery data loaded:', data);
-      setGalleryData(data);
+      setGalleryData(displayData);
 
       // Check for imageId in URL params after data is loaded
       const params = new URLSearchParams(location.search);
@@ -223,13 +229,13 @@ const Gallery = () => {
         let foundIndex = -1;
         let foundYear: string | undefined = undefined;
 
-        for (const year in data) {
-          for (const event of data[year]) {
+        for (const year in displayData) {
+          for (const event of displayData[year]) {
             const index = event.images.findIndex(img => img.id === imageId);
             if (index !== -1) {
               foundImage = {
                 id: event.images[index].id,
-                url: event.images[index].image_url,
+                url: getGalleryPhotoDisplayUrl(event.images[index]),
                 caption: event.images[index].caption || ''
               };
               foundEvent = event;
@@ -258,11 +264,12 @@ const Gallery = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [location.search]);
+  }, [location.search, msalInstance]);
 
   useEffect(() => {
     loadGalleryData();
-  }, []);
+    return () => clearGalleryImageUrlCache();
+  }, [loadGalleryData]);
 
   const handleImageClick = (image: GalleryImage, event: GalleryEventWithPhotos, index: number) => {
     setSelectedImage(image);
@@ -276,7 +283,7 @@ const Gallery = () => {
     // Convert the photos to the expected format
     const images = currentEvent.images.map(photo => ({
       id: photo.id,
-      url: photo.image_url,
+      url: getGalleryPhotoDisplayUrl(photo),
       caption: photo.caption || ''
     }));
 
@@ -302,7 +309,11 @@ const Gallery = () => {
           const imageIndex = event.images.findIndex(img => img.id === updatedPhoto.id);
           if (imageIndex > -1) {
             const updatedImages = [...event.images];
-            updatedImages[imageIndex] = { ...updatedImages[imageIndex], ...updatedPhoto };
+            updatedImages[imageIndex] = {
+              ...updatedImages[imageIndex],
+              ...updatedPhoto,
+              display_url: getGalleryPhotoDisplayUrl(updatedImages[imageIndex]),
+            } as GalleryPhoto;
             return { ...event, images: updatedImages };
           }
           return event;
@@ -684,6 +695,7 @@ const Gallery = () => {
         onClose={() => setSelectedImage(null)}
         photos={currentEvent?.images.map(photo => ({
           ...photo,
+          image_url: getGalleryPhotoDisplayUrl(photo),
           // Mapping for UI metadata display
           author: 'SCPNG Office',
           initials: 'SC',
@@ -698,7 +710,7 @@ const Gallery = () => {
           if (fullPhoto) openEditModal(fullPhoto, { stopPropagation: () => {} } as React.MouseEvent);
         }}
         onDelete={(photo) => {
-          const galleryImg = { id: photo.id, url: photo.image_url, caption: photo.caption || '' };
+          const galleryImg = { id: photo.id, url: getGalleryPhotoDisplayUrl(photo), caption: photo.caption || '' };
           openDeleteConfirm(galleryImg, { stopPropagation: () => {} } as React.MouseEvent);
         }}
       />
