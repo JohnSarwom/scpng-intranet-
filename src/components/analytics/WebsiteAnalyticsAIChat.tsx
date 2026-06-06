@@ -159,7 +159,7 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
 
     const [apiKey, setApiKey] = useState('');
     const [isConfigLoading, setIsConfigLoading] = useState(true);
-    const modelName = 'gemini-2.0-flash';
+    const modelName = 'gemini-2.5-flash';
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -484,7 +484,7 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
             abortControllerRef.current = controller;
 
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${effectiveApiKey.trim()}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveApiKey.trim()}`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

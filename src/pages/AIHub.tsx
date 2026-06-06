@@ -1001,7 +1001,7 @@ const AIHub = () => {
   const [lastUpdatedBy, setLastUpdatedBy] = useState<string | null>(null);
 
   const [isConfigLoading, setIsConfigLoading] = useState(true);
-  const [modelName, setModelName] = useState('gemini-2.0-flash');
+  const [modelName, setModelName] = useState('gemini-2.5-flash');
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -1461,7 +1461,7 @@ const AIHub = () => {
       // logger.info('[AIHub Chat] Sending message to Gemini API directly...', { mode: currentMode?.title });
 
       const cleanApiKey = effectiveApiKey.trim();
-      const targetModel = modelName || 'gemini-1.5-flash';
+      const targetModel = modelName || 'gemini-2.5-flash';
       let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${cleanApiKey}`;
 
       // Create new AbortController for this request

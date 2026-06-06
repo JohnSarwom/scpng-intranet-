@@ -28,7 +28,7 @@ const GEMINI_API_KEY = PROPS.getProperty('GEMINI_API_KEY');
 function _getSpreadsheet() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
-const GEMINI_URL     = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent';
+const GEMINI_URL     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
 const QUEUE_HEADERS = [
   'RunId', 'UserEmail', 'UserName', 'ManagerEmail', 'Unit', 'Division',
