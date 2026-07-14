@@ -9,6 +9,7 @@ interface LeaveApplicationTrackerProps {
     dates: {
         submitted?: string;
         managerAction?: string;
+        ceoAction?: string;
         directorAction?: string;
         hrAction?: string;
     };
@@ -17,9 +18,10 @@ interface LeaveApplicationTrackerProps {
 const STAGES = [
     { id: 'Submitted',       label: 'Submitted',        step: 1, dateKey: 'submitted'      },
     { id: 'Manager Review',  label: 'Manager Review',   step: 2, dateKey: 'managerAction'  },
-    { id: 'Director Review', label: 'Director Review',  step: 3, dateKey: 'directorAction' },
-    { id: 'HR Review',       label: 'HR Review',        step: 4, dateKey: 'hrAction'       },
-    { id: 'Approved',        label: 'Completed',        step: 5, dateKey: 'hrAction'       },
+    { id: 'CEO Review',      label: 'CEO Review',       step: 3, dateKey: 'ceoAction'      },
+    { id: 'Director Review', label: 'Director Review',  step: 4, dateKey: 'directorAction' },
+    { id: 'HR Review',       label: 'HR Review',        step: 5, dateKey: 'hrAction'       },
+    { id: 'Approved',        label: 'Completed',        step: 6, dateKey: 'hrAction'       },
 ] as const;
 
 type DateKey = typeof STAGES[number]['dateKey'];

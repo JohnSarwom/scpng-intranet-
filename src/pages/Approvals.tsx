@@ -51,11 +51,13 @@ interface ActionDialogState {
   files: File[];
 }
 
-const PENDING_STAGES = ['Manager Review', 'Director Review', 'HR Review'];
+const PENDING_STAGES = ['Manager Review', 'CEO Review', 'Director Review', 'HR Review'];
+const ALLOW_SELF_LEAVE_APPROVAL_TESTING = true;
 
 const STAGE_TONE: Record<string, string> = {
   Submitted: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
   'Manager Review': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  'CEO Review': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300',
   'Director Review': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300',
   'HR Review': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   Approved: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
@@ -92,6 +94,59 @@ const fmtDateTime = (value?: string) => {
 const sameEmail = (a?: string, b?: string) =>
   !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
 
+const ORG_NAME_ALIASES: Record<string, string> = {
+  'legal division': 'legal services division',
+  'legal unit': 'legal advisory unit',
+  'research and publication division': 'research & publication division',
+  'licensing & supervision division': 'licensing, market & supervision division',
+  'licensing market & supervision division': 'licensing, market & supervision division',
+  'hr unit': 'human resource unit',
+  'human resources unit': 'human resource unit',
+  'executive division': 'office of the chairman',
+};
+
+const normalizeOrgName = (value?: string) => {
+  const aliased = ORG_NAME_ALIASES[String(value ?? '').trim().toLowerCase()] ?? String(value ?? '');
+  return aliased
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\bservices?\b/g, 'service')
+    .replace(/\bhuman resources?\b/g, 'human resource')
+    .replace(/\bpublication\b/g, 'publication')
+    .trim();
+};
+
+const orgNameMatches = (configured?: string, requested?: string) => {
+  const configuredKey = normalizeOrgName(configured);
+  return (
+    configuredKey === normalizeOrgName(requested) ||
+    configuredKey === 'all' ||
+    configuredKey === 'any' ||
+    configuredKey === '*'
+  );
+};
+
+const isAssignedWorkflowApprover = (
+  approver: {
+    approverEmail?: string;
+    delegateEmail?: string;
+    escalationEmail?: string;
+    executiveFallbackEmail?: string;
+  },
+  request: LeaveRequest,
+  currentEmail: string,
+) => {
+  if (!ALLOW_SELF_LEAVE_APPROVAL_TESTING && sameEmail(request.employeeEmail, currentEmail)) return false;
+  const primaryIsRequester = sameEmail(approver.approverEmail, request.employeeEmail);
+  const candidates = !ALLOW_SELF_LEAVE_APPROVAL_TESTING && primaryIsRequester
+    ? [approver.escalationEmail, approver.executiveFallbackEmail, approver.delegateEmail]
+    : [approver.approverEmail, approver.delegateEmail, approver.escalationEmail, approver.executiveFallbackEmail];
+
+  return candidates.some(email => sameEmail(email, currentEmail));
+};
+
 const isTerminal = (request: LeaveRequest) =>
   ['Approved', 'Rejected', 'Declined', 'Cancelled'].includes(request.status) ||
   ['Approved', 'Rejected', 'Cancelled'].includes(request.stage ?? '');
@@ -120,6 +175,17 @@ const buildFallbackHistory = (request: LeaveRequest): ApprovalHistoryEntry[] => 
       actorName: request.approverManager ?? 'Manager',
       toStage: 'Director Review',
       createdAt: request.managerApprovedDate,
+    });
+  }
+
+  if (request.ceoApprovedDate) {
+    entries.push({
+      id: `${request.id}-ceo`,
+      stage: 'CEO Review',
+      action: 'Approved',
+      actorName: request.approverCEO ?? 'CEO',
+      toStage: 'HR Review',
+      createdAt: request.ceoApprovedDate,
     });
   }
 
@@ -157,7 +223,7 @@ const stageProgress = (request: LeaveRequest) => {
   if (request.status === 'Rejected' || stage === 'Rejected') return 100;
   if (stage === 'Approved') return 100;
   const index = ['Submitted', ...PENDING_STAGES, 'Approved'].indexOf(stage);
-  return Math.max(0, index) * 25;
+  return Math.max(0, index) * 20;
 };
 
 const RequestSummary: React.FC<{ request: LeaveRequest; selected: boolean; onSelect: () => void }> = ({
@@ -291,6 +357,7 @@ const RequestDetail: React.FC<{
             <div className="flex justify-between text-xs text-muted-foreground mb-2">
               <span>Submitted</span>
               <span>Manager</span>
+              <span>CEO</span>
               <span>Director</span>
               <span>HR</span>
               <span>Closed</span>
@@ -381,7 +448,12 @@ const Approvals: React.FC = () => {
 
   const { data: workflowApprovers = [] } = useWorkflowApprovers();
   const isConfiguredApprover = workflowApprovers.some((approver) =>
-    sameEmail(approver.approverEmail, currentEmail),
+    [
+      approver.approverEmail,
+      approver.delegateEmail,
+      approver.escalationEmail,
+      approver.executiveFallbackEmail,
+    ].some(email => sameEmail(email, currentEmail)),
   );
   const canViewApproverWorkspace =
     isAdmin ||
@@ -445,17 +517,16 @@ const Approvals: React.FC = () => {
   }, [filteredRequests, selectedId]);
 
   const isStageApprover = (request: LeaveRequest) => {
-    if (isAdmin || hasPermission('approvals', 'write') || hasPermission('hr', 'write')) return true;
     return workflowApprovers.some((approver) =>
-      sameEmail(approver.approverEmail, currentEmail) &&
       approver.stage === request.stage &&
-      (!approver.division || approver.division === request.division) &&
-      (!approver.unit || approver.unit === request.unit),
+      (!approver.division || orgNameMatches(approver.division, request.division)) &&
+      (!approver.unit || orgNameMatches(approver.unit, request.unit)) &&
+      isAssignedWorkflowApprover(approver, request, currentEmail),
     );
   };
 
   const selfActionBlocked = selectedRequest
-    ? sameEmail(selectedRequest.employeeEmail, currentEmail)
+    ? !ALLOW_SELF_LEAVE_APPROVAL_TESTING && sameEmail(selectedRequest.employeeEmail, currentEmail)
     : false;
 
   const canActOnSelected = selectedRequest

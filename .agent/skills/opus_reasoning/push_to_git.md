@@ -1,3 +1,3 @@
 git add .
-git commit -m "KPI Scroll update 3"
+git commit -m "Gallery Image Update 3"
 git push origin main

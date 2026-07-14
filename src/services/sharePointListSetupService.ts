@@ -4246,6 +4246,315 @@ export class SharePointListSetupService {
     }
 
     /**
+     * Set up Time and Attendance SharePoint lists and seed default settings.
+     */
+    async setupTimeAttendanceLists(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('[Setup] Starting Time and Attendance list setup...');
+
+        const details: any = {
+            settings: null,
+            records: null,
+            exceptions: null,
+            auditLog: null,
+            settingsSeed: null,
+        };
+
+        try {
+            details.settings = await this.createAttendanceSettingsList();
+            details.records = await this.createAttendanceRecordsList();
+            details.exceptions = await this.createAttendanceExceptionsList();
+            details.auditLog = await this.createAttendanceAuditLogList();
+            details.settingsSeed = await this.seedAttendanceSettings();
+
+            return {
+                success: true,
+                message: 'Time and Attendance SharePoint lists are ready.',
+                details,
+            };
+        } catch (error: any) {
+            console.error('[Setup] Time and Attendance setup failed:', error);
+            return {
+                success: false,
+                message: `Time and Attendance setup failed: ${error.message}`,
+                details: error,
+            };
+        }
+    }
+
+    async createAttendanceSettingsList(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            const list = await this.createAttendanceListWithColumns(
+                'HR_AttendanceSettings',
+                'Time and Attendance policy settings, network settings, and notification configuration',
+                [
+                    { name: 'SettingKey', text: {} },
+                    { name: 'SettingValue', text: {} },
+                    { name: 'SettingValueLong', text: { allowMultipleLines: true } },
+                    { name: 'SettingType', choice: { choices: ['Time', 'Number', 'Boolean', 'Text', 'Json', 'Email', 'IPRange'] } },
+                    { name: 'Category', choice: { choices: ['Policy', 'Network', 'Notification', 'Reporting', 'Security'] } },
+                    { name: 'IsActive', boolean: {} },
+                    { name: 'Description', text: { allowMultipleLines: true } },
+                    { name: 'LastUpdatedBy', text: {} },
+                    { name: 'LastUpdatedDateTime', dateTime: {} },
+                ]
+            );
+
+            return { success: true, message: 'HR_AttendanceSettings ready.', details: list };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    async createAttendanceRecordsList(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            const list = await this.createAttendanceListWithColumns(
+                'HR_AttendanceRecords',
+                'Daily staff clock-in, clock-out, status, overtime, and network validation records',
+                [
+                    { name: 'AttendanceID', text: {} },
+                    { name: 'AttendanceDate', dateTime: { format: 'dateOnly' } },
+                    { name: 'AttendanceDateKey', text: {} },
+                    { name: 'EmployeeID', text: {} },
+                    { name: 'EmployeeName', text: {} },
+                    { name: 'EmployeeEmail', text: {} },
+                    { name: 'Division', text: {} },
+                    { name: 'Unit', text: {} },
+                    { name: 'SupervisorName', text: {} },
+                    { name: 'SupervisorEmail', text: {} },
+                    { name: 'ClockInTime', dateTime: {} },
+                    { name: 'ClockOutTime', dateTime: {} },
+                    { name: 'ClockInSource', choice: { choices: ['Intranet', 'PowerAutomate', 'HRCorrection', 'SystemImport'] } },
+                    { name: 'ClockOutSource', choice: { choices: ['Intranet', 'PowerAutomate', 'HRCorrection', 'SystemImport'] } },
+                    { name: 'Status', choice: { choices: ['NotStarted', 'ClockedIn', 'ClockedOut', 'Late', 'Absent', 'MissingClockIn', 'MissingClockOut', 'EarlyDeparture', 'Overtime', 'Incomplete', 'Corrected'] } },
+                    { name: 'IsLate', boolean: {} },
+                    { name: 'LateMinutes', number: { decimalPlaces: 'none' } },
+                    { name: 'IsEarlyDeparture', boolean: {} },
+                    { name: 'EarlyDepartureMinutes', number: { decimalPlaces: 'none' } },
+                    { name: 'IsOvertime', boolean: {} },
+                    { name: 'OvertimeMinutes', number: { decimalPlaces: 'none' } },
+                    { name: 'TotalMinutes', number: { decimalPlaces: 'none' } },
+                    { name: 'TotalHours', number: { decimalPlaces: 'two' } },
+                    { name: 'ClockOutRequired', boolean: {} },
+                    { name: 'NetworkCheckRequired', boolean: {} },
+                    { name: 'NetworkCheckPassed', boolean: {} },
+                    { name: 'NetworkCheckProvider', text: {} },
+                    { name: 'DetectedPublicIP', text: {} },
+                    { name: 'ExpectedOfficeIP', text: {} },
+                    { name: 'InternalNetworkRange', text: {} },
+                    { name: 'DeviceUserAgent', text: { allowMultipleLines: true } },
+                    { name: 'TimeZone', text: {} },
+                    { name: 'IsManuallyCorrected', boolean: {} },
+                    { name: 'CorrectionReason', text: { allowMultipleLines: true } },
+                    { name: 'CorrectionBy', text: {} },
+                    { name: 'CorrectionDateTime', dateTime: {} },
+                    { name: 'ExceptionStatus', choice: { choices: ['None', 'Pending', 'Approved', 'Rejected', 'Resolved'] } },
+                    { name: 'Notes', text: { allowMultipleLines: true } },
+                ]
+            );
+
+            return { success: true, message: 'HR_AttendanceRecords ready.', details: list };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    async createAttendanceExceptionsList(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            const list = await this.createAttendanceListWithColumns(
+                'HR_AttendanceExceptions',
+                'Attendance exception reasons, review status, and correction requests',
+                [
+                    { name: 'ExceptionID', text: {} },
+                    { name: 'AttendanceID', text: {} },
+                    { name: 'AttendanceDate', dateTime: { format: 'dateOnly' } },
+                    { name: 'EmployeeID', text: {} },
+                    { name: 'EmployeeName', text: {} },
+                    { name: 'EmployeeEmail', text: {} },
+                    { name: 'Division', text: {} },
+                    { name: 'Unit', text: {} },
+                    { name: 'SupervisorEmail', text: {} },
+                    { name: 'ExceptionType', choice: { choices: ['MissedClockIn', 'MissedClockOut', 'Absent', 'EarlyDeparture', 'ManualCorrection', 'SystemError', 'OfficialDuty', 'Other'] } },
+                    { name: 'ReasonCategory', choice: { choices: ['ForgotToClockIn', 'ForgotToClockOut', 'Traffic', 'VehicleIssue', 'OfficialDuty', 'SystemIssue', 'Medical', 'Transport', 'ApprovedLeave', 'Other'] } },
+                    { name: 'ReasonDetails', text: { allowMultipleLines: true } },
+                    { name: 'ReviewRequired', boolean: {} },
+                    { name: 'ReviewStatus', choice: { choices: ['NotRequired', 'Pending', 'Approved', 'Rejected', 'Resolved'] } },
+                    { name: 'ReviewedByName', text: {} },
+                    { name: 'ReviewedByEmail', text: {} },
+                    { name: 'ReviewedDateTime', dateTime: {} },
+                    { name: 'ReviewComments', text: { allowMultipleLines: true } },
+                    { name: 'EscalationStatus', choice: { choices: ['None', 'Pending', 'Escalated', 'Resolved'] } },
+                    { name: 'EscalatedTo', text: {} },
+                    { name: 'EscalatedDateTime', dateTime: {} },
+                    { name: 'AttachmentRequired', boolean: {} },
+                    { name: 'HasAttachment', boolean: {} },
+                ]
+            );
+
+            return { success: true, message: 'HR_AttendanceExceptions ready.', details: list };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    async createAttendanceAuditLogList(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            const list = await this.createAttendanceListWithColumns(
+                'HR_AttendanceAuditLog',
+                'Audit history for attendance actions, network checks, corrections, and system updates',
+                [
+                    { name: 'AuditID', text: {} },
+                    { name: 'AttendanceID', text: {} },
+                    { name: 'ExceptionID', text: {} },
+                    { name: 'ActionType', choice: { choices: ['ClockIn', 'ClockOut', 'ClockInBlockedNetwork', 'ClockOutBlockedNetwork', 'LateMarked', 'OvertimeMarked', 'MissingClockInMarked', 'MissingClockOutMarked', 'ExceptionCreated', 'ExceptionReviewed', 'RecordCorrected', 'SettingsChanged', 'NotificationSent', 'SystemJobRun'] } },
+                    { name: 'ActionDateTime', dateTime: {} },
+                    { name: 'ActorName', text: {} },
+                    { name: 'ActorEmail', text: {} },
+                    { name: 'ActorRole', choice: { choices: ['Employee', 'Supervisor', 'HR', 'Admin', 'System', 'PowerAutomate'] } },
+                    { name: 'EmployeeName', text: {} },
+                    { name: 'EmployeeEmail', text: {} },
+                    { name: 'Source', choice: { choices: ['Intranet', 'PowerAutomate', 'SharePoint', 'HRCorrection', 'System'] } },
+                    { name: 'OldValue', text: { allowMultipleLines: true } },
+                    { name: 'NewValue', text: { allowMultipleLines: true } },
+                    { name: 'NetworkCheckPassed', boolean: {} },
+                    { name: 'DetectedPublicIP', text: {} },
+                    { name: 'Details', text: { allowMultipleLines: true } },
+                ]
+            );
+
+            return { success: true, message: 'HR_AttendanceAuditLog ready.', details: list };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    async createAttendanceSchedulesList(): Promise<{ success: boolean; message: string; details: any }> {
+        try {
+            const list = await this.createAttendanceListWithColumns(
+                'HR_AttendanceSchedules',
+                'Optional Time and Attendance schedule assignments by employee, division, unit, or policy group',
+                [
+                    { name: 'ScheduleID', text: {} },
+                    { name: 'AppliesToType', choice: { choices: ['AllStaff', 'Division', 'Unit', 'Employee', 'PolicyGroup'] } },
+                    { name: 'AppliesToValue', text: {} },
+                    { name: 'StartTime', text: {} },
+                    { name: 'EndTime', text: {} },
+                    { name: 'GraceMinutes', number: { decimalPlaces: 'none' } },
+                    { name: 'ClockOutRequired', boolean: {} },
+                    { name: 'LunchTrackingEnabled', boolean: {} },
+                    { name: 'OvertimeEnabled', boolean: {} },
+                    { name: 'EffectiveFrom', dateTime: { format: 'dateOnly' } },
+                    { name: 'EffectiveTo', dateTime: { format: 'dateOnly' } },
+                    { name: 'IsActive', boolean: {} },
+                ]
+            );
+
+            return { success: true, message: 'HR_AttendanceSchedules ready.', details: list };
+        } catch (error: any) {
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    async seedAttendanceSettings(): Promise<{ success: boolean; message: string; details: any }> {
+        console.log('[Setup] Seeding Time and Attendance settings...');
+        try {
+            const listCheck = await this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .filter("displayName eq 'HR_AttendanceSettings'")
+                .select('id')
+                .get();
+
+            if (!listCheck.value || listCheck.value.length === 0) {
+                return { success: false, message: 'HR_AttendanceSettings list not found.', details: null };
+            }
+
+            const listId = listCheck.value[0].id;
+            const existingItems = await this.client
+                .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                .expand('fields')
+                .top(999)
+                .get();
+
+            const existingByKey = new Map<string, any>();
+            for (const item of existingItems.value || []) {
+                const key = item.fields?.SettingKey;
+                if (key) existingByKey.set(key, item);
+            }
+
+            const settings = [
+                { key: 'workday.start.time', value: '08:30', type: 'Time', category: 'Policy', description: 'Official workday start time.' },
+                { key: 'workday.end.time', value: '16:00', type: 'Time', category: 'Policy', description: 'Official workday end time.' },
+                { key: 'late.grace.minutes', value: '0', type: 'Number', category: 'Policy', description: 'No grace period for late arrivals.' },
+                { key: 'clockout.required', value: 'true', type: 'Boolean', category: 'Policy', description: 'Staff are required to clock out every workday.' },
+                { key: 'lunch.tracking.enabled', value: 'false', type: 'Boolean', category: 'Policy', description: 'Lunch breaks are not tracked in Phase 1.' },
+                { key: 'overtime.enabled', value: 'true', type: 'Boolean', category: 'Policy', description: 'Clock-out after 4:00 PM is recorded as overtime.' },
+                { key: 'attendance.network.required', value: 'true', type: 'Boolean', category: 'Network', description: 'Office network validation is required for attendance recording only.' },
+                { key: 'attendance.internal.network', value: '192.168.7.0/24', type: 'IPRange', category: 'Network', description: 'Internal office LAN reference.' },
+                { key: 'attendance.firewall.gateway', value: '192.168.7.1', type: 'Text', category: 'Network', description: 'Office firewall gateway.' },
+                { key: 'attendance.office.public.ip', value: '124.240.199.154', type: 'IPRange', category: 'Network', description: 'Confirmed office public internet egress IP.' },
+                { key: 'attendance.remote.allowed', value: 'false', type: 'Boolean', category: 'Security', description: 'Remote/VPN attendance recording is not allowed.' },
+                { key: 'late.approval.required', value: 'false', type: 'Boolean', category: 'Policy', description: 'Late arrivals are recorded without approval.' },
+                { key: 'missing.clockin.review.required', value: 'true', type: 'Boolean', category: 'Policy', description: 'Missed clock-in reasons require supervisor review with HR visibility.' },
+                { key: 'missing.clockout.review.required', value: 'true', type: 'Boolean', category: 'Policy', description: 'Missed clock-out reasons require supervisor review with HR visibility.' },
+                { key: 'daily.hr.summary.enabled', value: 'true', type: 'Boolean', category: 'Reporting', description: 'Daily HR attendance summary is enabled.' },
+                { key: 'notifications.daily.hr.recipient', value: 'tmondaya@scpng.gov.pg', type: 'Email', category: 'Notification', description: 'Thomas Mondaya, Senior HR Officer.' },
+                { key: 'notifications.ict.support.copy', value: 'jsarwom@scpng.gov.pg', type: 'Email', category: 'Notification', description: 'John Sarwom, ICT/Admin support copy.' },
+                { key: 'notifications.overtime.summary.enabled', value: 'true', type: 'Boolean', category: 'Notification', description: 'Separate overtime summary email is enabled.' },
+                { key: 'retention.years', value: '7', type: 'Number', category: 'Security', description: 'Attendance, exception, and audit records retention period.' },
+            ];
+
+            let created = 0;
+            let updated = 0;
+            const now = new Date().toISOString();
+
+            for (const setting of settings) {
+                const fields = {
+                    Title: setting.key,
+                    SettingKey: setting.key,
+                    SettingValue: setting.value,
+                    SettingType: setting.type,
+                    Category: setting.category,
+                    IsActive: true,
+                    Description: setting.description,
+                    LastUpdatedBy: 'SharePointListSetupService',
+                    LastUpdatedDateTime: now,
+                };
+
+                const existing = existingByKey.get(setting.key);
+                if (existing) {
+                    await this.client
+                        .api(`/sites/${this.siteId}/lists/${listId}/items/${existing.id}/fields`)
+                        .patch(fields);
+                    updated++;
+                } else {
+                    await this.client
+                        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                        .post({ fields });
+                    created++;
+                }
+            }
+
+            return {
+                success: true,
+                message: `Attendance settings seeded. Created ${created}, updated ${updated}.`,
+                details: { created, updated, total: settings.length },
+            };
+        } catch (error: any) {
+            console.error('[Setup] Failed to seed Time and Attendance settings:', error);
+            return { success: false, message: error.message, details: error };
+        }
+    }
+
+    private async createAttendanceListWithColumns(displayName: string, description: string, columns: any[]) {
+        const list = await this.createList(displayName, description, columns);
+
+        for (const column of columns) {
+            await this.ensureColumn(list.id, column.name, column);
+        }
+
+        return list;
+    }
+
+    /**
      * Auto-provision SharePoint resources for the Website Upgrade Feedback form.
      * Creates the submission list and screenshot document library if they don't already exist.
      * Safe to call on every page load — the createList helper skips creation if already present.

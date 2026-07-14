@@ -70,17 +70,18 @@ import { Employee } from '@/contexts/EmployeesContext';
 // ---------------------------------------------------------------------------
 
 const DIVISIONS_AND_UNITS: Record<string, string[]> = {
-  'Executive Division': ['Executive Unit', 'Secretariat Unit'],
-  'Corporate Services Division': ['Finance Unit', 'Human Resources Unit', 'IT Unit', 'Corporate Services Unit', 'Administrative Services'],
-  'Licensing Market & Supervision Division': ['Market Data Unit', 'Licensing Unit', 'Supervision Unit', 'Investigations Unit'],
+  'Office of the Chairman': ['Executive Division', 'Secretariat Unit'],
+  'Corporate Services Division': ['Finance Unit', 'Human Resource Unit', 'IT Unit', 'Corporate Services Unit', 'Administrative Services'],
+  'Licensing, Market & Supervision Division': ['Market Data Unit', 'Licensing Unit', 'Supervision Unit', 'Investigations Unit'],
   'Legal Services Division': ['Legal Advisory Unit'],
-  'Research & Publication Division': ['Research Unit', 'Media & Publication Unit'],
+  'Research & Publication Division': ['Research Unit', 'Publication Unit'],
 };
 
-const WORKFLOW_STAGES: WorkflowStage[] = ['Manager Review', 'Director Review', 'HR Review'];
+const WORKFLOW_STAGES: WorkflowStage[] = ['Manager Review', 'CEO Review', 'Director Review', 'HR Review'];
 
 const STAGE_COLORS: Record<WorkflowStage, string> = {
   'Manager Review':  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'CEO Review':      'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   'Director Review': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   'HR Review':       'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
 };
@@ -88,6 +89,7 @@ const STAGE_COLORS: Record<WorkflowStage, string> = {
 const EMAIL_STAGES: EmailTemplateStage[] = [
   'Submission',
   'Manager Approved',
+  'CEO Approved',
   'Director Approved',
   'Fully Approved',
   'Rejected',
@@ -113,6 +115,10 @@ const DEFAULT_TEMPLATES: Record<EmailTemplateStage, { subject: string; body: str
   'Manager Approved': {
     subject: 'Leave Request — Manager Approved ({{leaveType}})',
     body: `Dear {{employeeName}},\n\nYour {{leaveType}} leave request ({{startDate}} – {{endDate}}, {{days}} days) has been approved by your Manager and forwarded to the Director for review.\n\nRegards,\nHR Department`,
+  },
+  'CEO Approved': {
+    subject: 'Leave Request - CEO Approved ({{leaveType}})',
+    body: `Dear {{employeeName}},\n\nYour {{leaveType}} leave request ({{startDate}} - {{endDate}}, {{days}} days) has been approved by the CEO and forwarded to HR for final review.\n\nRegards,\nHR Department`,
   },
   'Director Approved': {
     subject: 'Leave Request — Director Approved ({{leaveType}})',
@@ -368,6 +374,13 @@ const ApproversPanel: React.FC = () => {
                                     <span className="text-xs text-muted-foreground dark:text-gray-500 truncate block">
                                       {row.approverEmail}
                                     </span>
+                                    {(row.delegateEmail || row.escalationEmail || row.executiveFallbackEmail) && (
+                                      <span className="text-[11px] text-muted-foreground dark:text-gray-500 truncate block">
+                                        {row.delegateEmail && `Delegate: ${row.delegateName || row.delegateEmail}`}
+                                        {row.escalationEmail && `${row.delegateEmail ? ' · ' : ''}Escalation: ${row.escalationName || row.escalationEmail}`}
+                                        {row.executiveFallbackEmail && `${row.delegateEmail || row.escalationEmail ? ' · ' : ''}Executive: ${row.executiveFallbackName || row.executiveFallbackEmail}`}
+                                      </span>
+                                    )}
                                   </div>
                                 ) : (
                                   <span className="text-muted-foreground dark:text-gray-500 italic text-xs">
@@ -414,7 +427,7 @@ const ApproversPanel: React.FC = () => {
         open={dialog.open}
         onOpenChange={open => !open && setDialog({ open: false, mode: 'add', data: {} })}
       >
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {dialog.mode === 'add' ? 'Add Approver' : 'Edit Approver'}
@@ -463,6 +476,65 @@ const ApproversPanel: React.FC = () => {
                 placeholder="Select a staff member above"
                 className="dark:bg-white/5 dark:border-white/10 bg-gray-50 cursor-default text-muted-foreground"
               />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 border-t pt-3 dark:border-white/10">
+              <div className="space-y-1">
+                <Label>Delegate approver</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Input
+                    value={dialog.data.delegateName ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, delegateName: e.target.value } }))}
+                    placeholder="Acting approver name"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                  <Input
+                    type="email"
+                    value={dialog.data.delegateEmail ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, delegateEmail: e.target.value } }))}
+                    placeholder="acting@example.com"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Escalation approver</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Input
+                    value={dialog.data.escalationName ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, escalationName: e.target.value } }))}
+                    placeholder="Higher authority name"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                  <Input
+                    type="email"
+                    value={dialog.data.escalationEmail ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, escalationEmail: e.target.value } }))}
+                    placeholder="higher.authority@example.com"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>Executive fallback</Label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <Input
+                    value={dialog.data.executiveFallbackName ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, executiveFallbackName: e.target.value } }))}
+                    placeholder="CEO/Board authority"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                  <Input
+                    type="email"
+                    value={dialog.data.executiveFallbackEmail ?? ''}
+                    onChange={e => setDialog(p => ({ ...p, data: { ...p.data, executiveFallbackEmail: e.target.value } }))}
+                    placeholder="executive@example.com"
+                    className="dark:bg-white/5 dark:border-white/10"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 

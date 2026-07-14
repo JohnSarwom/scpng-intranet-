@@ -1,0 +1,143 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title desc">
+  <title id="title">SCPNG leave approval workflow by division and unit</title>
+  <desc id="desc">Workflow diagram showing leave request submission, per division and unit approver lookup, manager review, optional director review, HR review, approval, rejection, cancellation, and email notifications.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#991b1b"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#166534"/>
+    </marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0f172a" flood-opacity="0.14"/>
+    </filter>
+    <style>
+      .page { fill: #f8fafc; }
+      .title { font: 700 36px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 18px Arial, Helvetica, sans-serif; fill: #475569; }
+      .lane-title { font: 700 20px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .box { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 14; filter: url(#shadow); }
+      .box-blue { fill: #eff6ff; stroke: #60a5fa; }
+      .box-purple { fill: #f5f3ff; stroke: #a78bfa; }
+      .box-amber { fill: #fffbeb; stroke: #f59e0b; }
+      .box-green { fill: #ecfdf5; stroke: #22c55e; }
+      .box-red { fill: #fef2f2; stroke: #ef4444; }
+      .box-slate { fill: #f1f5f9; stroke: #94a3b8; }
+      .box-text { font: 700 18px Arial, Helvetica, sans-serif; fill: #0f172a; }
+      .small { font: 400 14px Arial, Helvetica, sans-serif; fill: #475569; }
+      .tiny { font: 400 12px Arial, Helvetica, sans-serif; fill: #64748b; }
+      .label { font: 700 13px Arial, Helvetica, sans-serif; fill: #334155; }
+      .line { fill: none; stroke: #334155; stroke-width: 3; marker-end: url(#arrow); }
+      .line-green { fill: none; stroke: #166534; stroke-width: 3; marker-end: url(#arrow-green); }
+      .line-red { fill: none; stroke: #991b1b; stroke-width: 3; marker-end: url(#arrow-red); }
+      .line-dash { fill: none; stroke: #64748b; stroke-width: 3; stroke-dasharray: 9 7; marker-end: url(#arrow); }
+      .unit-pill { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; rx: 14; }
+      .note { fill: #fff7ed; stroke: #fdba74; stroke-width: 2; rx: 14; }
+    </style>
+  </defs>
+
+  <rect class="page" width="1600" height="1120"/>
+
+  <text x="70" y="70" class="title">Leave Approval Workflow by Division and Unit</text>
+  <text x="70" y="102" class="subtitle">All listed divisions and units use the same 3-stage workflow. The approver at each stage is looked up from HR_WorkflowApprovers using Division + Unit + Stage.</text>
+
+  <rect x="70" y="140" width="1460" height="140" class="box box-slate"/>
+  <text x="105" y="178" class="lane-title">Selectable divisions and units from the leave form</text>
+  <text x="105" y="209" class="small">Divisions: Corporate Services Division | Legal Division | Research and Publication Division | Licensing &amp; Supervision Division</text>
+  <text x="105" y="237" class="small">Units: IT Unit | HR Unit | Finance Unit | Supervision Unit | Licensing Unit | Marketing Unit | Investigations Unit | Legal Unit | Secretariat Unit</text>
+  <text x="105" y="263" class="tiny">Routing is not hard-coded to a person in the form. It depends on matching approver rows configured by HR admins.</text>
+
+  <rect x="70" y="335" width="260" height="100" class="box box-blue"/>
+  <text x="105" y="374" class="box-text">1. Employee submits</text>
+  <text x="105" y="404" class="small">Leave type, dates, days,</text>
+  <text x="105" y="426" class="small">division, unit, reason</text>
+
+  <rect x="410" y="322" width="300" height="126" class="box box-slate"/>
+  <text x="445" y="362" class="box-text">2. Validate request</text>
+  <text x="445" y="392" class="small">Required leave type</text>
+  <text x="445" y="414" class="small">No overlapping active leave</text>
+  <text x="445" y="436" class="small">Pending balance is increased</text>
+
+  <rect x="795" y="310" width="350" height="150" class="box box-amber"/>
+  <text x="830" y="350" class="box-text">3. Find first valid approver</text>
+  <text x="830" y="380" class="small">Lookup: Division + Unit + Stage</text>
+  <text x="830" y="402" class="small">Stage starts at Manager Review</text>
+  <text x="830" y="424" class="small">Self-approval is blocked</text>
+  <text x="830" y="446" class="small">May use delegate, escalation, fallback</text>
+
+  <rect x="1245" y="322" width="285" height="126" class="box box-blue"/>
+  <text x="1280" y="362" class="box-text">4. Notify approver</text>
+  <text x="1280" y="392" class="small">Email has Approve/Decline</text>
+  <text x="1280" y="414" class="small">Dashboard also shows request</text>
+  <text x="1280" y="436" class="small">Employee gets confirmation</text>
+
+  <path d="M330 385 L410 385" class="line"/>
+  <path d="M710 385 L795 385" class="line"/>
+  <path d="M1145 385 L1245 385" class="line"/>
+
+  <rect x="95" y="555" width="320" height="125" class="box box-blue"/>
+  <text x="130" y="595" class="box-text">Manager Review</text>
+  <text x="130" y="625" class="small">Configured per division/unit</text>
+  <text x="130" y="647" class="small">Can approve or reject</text>
+  <text x="130" y="669" class="small">May allow Director skip</text>
+
+  <rect x="515" y="555" width="320" height="125" class="box box-purple"/>
+  <text x="550" y="595" class="box-text">Director Review</text>
+  <text x="550" y="625" class="small">Configured per division/unit</text>
+  <text x="550" y="647" class="small">Can approve or reject</text>
+  <text x="550" y="669" class="small">Skipped if no valid approver</text>
+
+  <rect x="935" y="555" width="320" height="125" class="box box-amber"/>
+  <text x="970" y="595" class="box-text">HR Review</text>
+  <text x="970" y="625" class="small">Configured per division/unit</text>
+  <text x="970" y="647" class="small">Final approval point</text>
+  <text x="970" y="669" class="small">Deducts leave balance</text>
+
+  <rect x="1335" y="555" width="175" height="125" class="box box-green"/>
+  <text x="1370" y="595" class="box-text">Approved</text>
+  <text x="1370" y="625" class="small">Status closed</text>
+  <text x="1370" y="647" class="small">Employee emailed</text>
+  <text x="1370" y="669" class="small">Balance used</text>
+
+  <path d="M255 448 L255 555" class="line"/>
+  <path d="M415 618 L515 618" class="line"/>
+  <text x="436" y="603" class="label">approve</text>
+  <path d="M835 618 L935 618" class="line"/>
+  <text x="861" y="603" class="label">approve</text>
+  <path d="M1255 618 L1335 618" class="line-green"/>
+  <text x="1273" y="603" class="label">HR approve</text>
+
+  <path d="M270 680 C335 775, 775 775, 955 680" class="line-dash"/>
+  <text x="480" y="760" class="label">Director Review skipped when manager row says SkipDirectorReview, or no valid director approver exists</text>
+
+  <rect x="180" y="835" width="305" height="115" class="box box-red"/>
+  <text x="215" y="875" class="box-text">Rejected at any stage</text>
+  <text x="215" y="905" class="small">Reason required</text>
+  <text x="215" y="927" class="small">Pending balance is reversed</text>
+
+  <rect x="650" y="835" width="305" height="115" class="box box-red"/>
+  <text x="685" y="875" class="box-text">Cancelled by employee</text>
+  <text x="685" y="905" class="small">Allowed only while Pending</text>
+  <text x="685" y="927" class="small">Before Director/HR stages</text>
+
+  <rect x="1110" y="835" width="330" height="115" class="box box-slate"/>
+  <text x="1145" y="875" class="box-text">Audit and email trail</text>
+  <text x="1145" y="905" class="small">ApprovalHistory records action</text>
+  <text x="1145" y="927" class="small">Employee and next approver notified</text>
+
+  <path d="M255 680 C255 740, 315 780, 333 835" class="line-red"/>
+  <path d="M675 680 C675 740, 560 795, 425 835" class="line-red"/>
+  <path d="M1095 680 C1095 760, 750 790, 485 870" class="line-red"/>
+  <text x="92" y="745" class="label">reject</text>
+
+  <path d="M970 460 C970 508, 1095 508, 1095 555" class="line"/>
+  <path d="M1423 680 C1423 742, 1310 785, 1275 835" class="line"/>
+
+  <rect x="70" y="1000" width="1460" height="70" class="note"/>
+  <text x="105" y="1030" class="box-text">Important behavior</text>
+  <text x="310" y="1030" class="small">Only the resolved approver/delegate/escalation/fallback can act. If the requester is also the configured approver, routing skips to the next valid higher-level approver.</text>
+  <text x="310" y="1055" class="small">If no valid approver can be resolved anywhere in the chain, the request cannot be routed safely.</text>
+</svg>

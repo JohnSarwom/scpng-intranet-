@@ -134,15 +134,17 @@ export interface LeaveRequest {
   daysRequested: number;
   reason?: string;
   status: LeaveRequestStatus;
-  stage?: 'Submitted' | 'Manager Review' | 'Director Review' | 'HR Review' | 'Approved' | 'Rejected';
+  stage?: 'Submitted' | 'Manager Review' | 'CEO Review' | 'Director Review' | 'HR Review' | 'Approved' | 'Rejected';
   currentStep?: number;
   approverManager?: string;
+  approverCEO?: string;
   approverDirector?: string;
   approverHR?: string;
   approvedBy?: string;
   approvedByEmail?: string;
   approvedDate?: string;
   managerApprovedDate?: string; // Date when manager approved
+  ceoApprovedDate?: string; // Date when CEO approved
   directorApprovedDate?: string; // Date when director approved
   hrApprovedDate?: string; // Date when HR approved
   comments?: string;
@@ -422,6 +424,7 @@ export interface OffboardingProcess {
 
 export type WorkflowStage =
   | 'Manager Review'
+  | 'CEO Review'
   | 'Director Review'
   | 'HR Review';
 
@@ -436,12 +439,19 @@ export interface WorkflowApprover {
   stage: WorkflowStage;
   approverName: string;
   approverEmail: string;
+  delegateName?: string;
+  delegateEmail?: string;
+  escalationName?: string;
+  escalationEmail?: string;
+  executiveFallbackName?: string;
+  executiveFallbackEmail?: string;
   skipDirectorReview?: boolean; // only read from Manager Review row
 }
 
 export type EmailTemplateStage =
   | 'Submission'
   | 'Manager Approved'
+  | 'CEO Approved'
   | 'Director Approved'
   | 'Fully Approved'
   | 'Rejected';

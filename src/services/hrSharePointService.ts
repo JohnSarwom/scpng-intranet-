@@ -47,6 +47,40 @@ const LISTS = {
 };
 
 const LIBRARY_NAME = 'HR_Documents';
+const PENDING_WORKFLOW_STAGES: WorkflowStage[] = ['Manager Review', 'CEO Review', 'Director Review', 'HR Review'];
+const TERMINAL_LEAVE_STATUSES = ['Approved', 'Rejected', 'Declined', 'Cancelled'];
+const CEO_NAME = 'James Joshua';
+const CEO_EMAIL = 'jjoshua@scpng.gov.pg';
+const EXECUTIVE_DIVISION = 'Office of the Chairman';
+const EXECUTIVE_UNIT = 'Executive Division';
+const SECRETARIAT_UNIT = 'Secretariat Unit';
+const ALLOW_SELF_LEAVE_APPROVAL_TESTING = true;
+
+const WORKFLOW_NAME_ALIASES: Record<string, string> = {
+  'executive division': EXECUTIVE_DIVISION,
+  'office of the ceo': EXECUTIVE_DIVISION,
+  'office of the chairman': EXECUTIVE_DIVISION,
+  'legal division': 'Legal Services Division',
+  'legal services division': 'Legal Services Division',
+  'research and publication division': 'Research & Publication Division',
+  'research publication division': 'Research & Publication Division',
+  'research & publication division': 'Research & Publication Division',
+  'licensing & supervision division': 'Licensing, Market & Supervision Division',
+  'licensing market & supervision division': 'Licensing, Market & Supervision Division',
+  'licensing market supervision division': 'Licensing, Market & Supervision Division',
+  'licensing, market & supervision division': 'Licensing, Market & Supervision Division',
+  'hr unit': 'Human Resource Unit',
+  'human resources unit': 'Human Resource Unit',
+  'human resource unit': 'Human Resource Unit',
+  'legal unit': 'Legal Advisory Unit',
+  'legal advisory unit': 'Legal Advisory Unit',
+  'media & publication unit': 'Publication Unit',
+  'publication unit': 'Publication Unit',
+  'research unit': 'Research Unit',
+  'market data unit': 'Market Data Unit',
+  'executive unit': EXECUTIVE_UNIT,
+  'secretariat unit': SECRETARIAT_UNIT,
+};
 
 export class HRSharePointService {
   private client: Client;
@@ -544,25 +578,29 @@ export class HRSharePointService {
    */
   async getLeaveRequests(employeeId: string): Promise<LeaveRequest[]> {
     try {
-      // Use getItemsByEmployeeId but we need to override the field name since it's Payroll_Number now
       if (!this.siteId) await this.initialize();
 
       const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const safeId = employeeId.replace(/'/g, "''");
+      const all: any[] = [];
+      let nextLink: string | undefined;
 
-      // We can't use getItemsByEmployeeId directly because the field name changed
-      // So we implement the fetch logic here
-      const response = await this.client
-        .api(`/sites/${this.siteId}/lists/${listId}/items`)
-        .expand('fields')
-        .get();
+      do {
+        const req = nextLink
+          ? this.client.api(nextLink)
+          : this.client
+              .api(`/sites/${this.siteId}/lists/${listId}/items`)
+              .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+              .expand('fields')
+              .filter(`fields/EmployeeID eq '${safeId}'`)
+              .top(500);
 
-      // Filter by EmployeeID client-side
-      const items = response.value.filter((item: any) => {
-        return item.fields.EmployeeID === employeeId;
-      });
+        const response = await req.get();
+        all.push(...response.value);
+        nextLink = response['@odata.nextLink'];
+      } while (nextLink);
 
-      // Sort by start date descending (client-side)
-      const sorted = items.sort((a: any, b: any) => {
+      const sorted = all.sort((a: any, b: any) => {
         const dateA = new Date(a.fields.Start_Date).getTime();
         const dateB = new Date(b.fields.Start_Date).getTime();
         return dateB - dateA;
@@ -739,13 +777,201 @@ export class HRSharePointService {
     return !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
   }
 
+  private normalizeWorkflowName(value?: string): string {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+    const key = raw
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\s*,\s*/g, ', ')
+      .trim();
+    const alias = WORKFLOW_NAME_ALIASES[key] ?? raw;
+    return alias
+      .toLowerCase()
+      .replace(/&/g, 'and')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
+  private workflowNameMatches(configured?: string, requested?: string): boolean {
+    const requestedKey = this.normalizeWorkflowName(requested);
+    const configuredKey = this.normalizeWorkflowName(configured);
+    return (
+      configuredKey === requestedKey ||
+      configuredKey === 'all' ||
+      configuredKey === 'any' ||
+      configuredKey === '*'
+    );
+  }
+
+  private isExecutiveDivisionOrUnit(division?: string, unit?: string): boolean {
+    const divisionKey = this.normalizeWorkflowName(division);
+    const unitKey = this.normalizeWorkflowName(unit);
+    return (
+      divisionKey === this.normalizeWorkflowName(EXECUTIVE_DIVISION) ||
+      unitKey === this.normalizeWorkflowName(EXECUTIVE_UNIT) ||
+      unitKey === this.normalizeWorkflowName(SECRETARIAT_UNIT)
+    );
+  }
+
+  private async getOfficerProfileFieldsByEmail(email?: string): Promise<Record<string, any> | null> {
+    if (!email || !this.siteId) return null;
+
+    try {
+      const lists = await this.client
+        .api(`/sites/${this.siteId}/lists`)
+        .filter("displayName eq 'Strategy_Officer_Profiles'")
+        .select('id')
+        .get();
+      const listId = lists.value?.[0]?.id;
+      if (!listId) return null;
+
+      const safeEmail = email.replace(/'/g, "''");
+      const res = await this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+        .filter(`fields/Email eq '${safeEmail}'`)
+        .expand('fields')
+        .top(1)
+        .get();
+
+      return res.value?.[0]?.fields ?? null;
+    } catch (error) {
+      console.warn('Could not load officer profile for executive leave routing:', error);
+      return null;
+    }
+  }
+
+  private async shouldUseExecutiveLeaveRoute(data: {
+    employeeEmail?: string;
+    division?: string;
+    unit?: string;
+  }): Promise<boolean> {
+    if (this.isExecutiveDivisionOrUnit(data.division, data.unit)) return true;
+    if (this.sameEmail(data.employeeEmail, CEO_EMAIL)) return true;
+
+    const profile = await this.getOfficerProfileFieldsByEmail(data.employeeEmail);
+    if (!profile) return false;
+
+    const reportsToName = String(profile.ReportsToName ?? '').trim();
+    const reportsToTitle = String(profile.ReportsToTitle ?? '').trim().toLowerCase();
+    const jobTitle = String(profile.JobTitle ?? '').trim().toLowerCase();
+
+    return (
+      reportsToName.toLowerCase() === CEO_NAME.toLowerCase() ||
+      reportsToTitle.includes('ceo') ||
+      jobTitle.includes('chief executive officer') ||
+      this.isExecutiveDivisionOrUnit(profile.Division, profile.Unit)
+    );
+  }
+
+  private isPendingWorkflowStage(stage?: string): stage is WorkflowStage {
+    return PENDING_WORKFLOW_STAGES.includes(stage as WorkflowStage);
+  }
+
+  private workflowApproverCandidates(
+    approver: WorkflowApprover,
+    requesterEmail?: string,
+  ): Array<{ approverName: string; approverEmail: string }> {
+    const primary = {
+      approverName: approver.approverName,
+      approverEmail: approver.approverEmail,
+    };
+    const delegate = {
+      approverName: approver.delegateName ?? '',
+      approverEmail: approver.delegateEmail ?? '',
+    };
+    const escalation = {
+      approverName: approver.escalationName ?? '',
+      approverEmail: approver.escalationEmail ?? '',
+    };
+    const executiveFallback = {
+      approverName: approver.executiveFallbackName ?? '',
+      approverEmail: approver.executiveFallbackEmail ?? '',
+    };
+
+    const ordered = !ALLOW_SELF_LEAVE_APPROVAL_TESTING && this.sameEmail(primary.approverEmail, requesterEmail)
+      ? [escalation, executiveFallback, delegate]
+      : [primary, delegate, escalation, executiveFallback];
+
+    const seen = new Set<string>();
+    return ordered.filter(candidate => {
+      const email = candidate.approverEmail.trim().toLowerCase();
+      if (!email || seen.has(email)) return false;
+      if (!ALLOW_SELF_LEAVE_APPROVAL_TESTING && this.sameEmail(email, requesterEmail)) return false;
+      seen.add(email);
+      return true;
+    });
+  }
+
+  private resolveWorkflowApprover(
+    approver: WorkflowApprover,
+    requesterEmail?: string,
+    actingEmail?: string,
+  ): WorkflowApprover | null {
+    const candidate = this.workflowApproverCandidates(approver, requesterEmail)
+      .find(item => !actingEmail || this.sameEmail(item.approverEmail, actingEmail));
+
+    return candidate
+      ? {
+          ...approver,
+          approverName: candidate.approverName,
+          approverEmail: candidate.approverEmail,
+        }
+      : null;
+  }
+
+  private async assertLeaveActionAllowed(
+    fields: Record<string, any>,
+    approverEmail: string,
+    action: 'approve' | 'reject',
+  ): Promise<{
+    currentStage: WorkflowStage;
+    employeeEmail: string;
+    division: string;
+    unit: string;
+  }> {
+    const currentStage = fields.Stage;
+    const approvalStatus = fields.ApprovalStatus;
+    const employeeEmail = fields.EmployeeEmail || fields.Email || '';
+    const division = fields.Division || '';
+    const unit = fields.Unit || '';
+
+    if (!this.isPendingWorkflowStage(currentStage)) {
+      throw new Error(`Cannot ${action} a request at stage: "${currentStage || 'Not recorded'}"`);
+    }
+
+    if (TERMINAL_LEAVE_STATUSES.includes(approvalStatus)) {
+      throw new Error(`This request is already ${String(approvalStatus).toLowerCase()}.`);
+    }
+
+    if (!ALLOW_SELF_LEAVE_APPROVAL_TESTING && this.sameEmail(approverEmail, employeeEmail)) {
+      throw new Error(`You cannot ${action} your own request. It must be routed to a higher-level approver.`);
+    }
+
+    const configuredApprover = await this.getApproverForStage(division, unit, currentStage);
+    if (!configuredApprover) {
+      throw new Error(`No approver is configured for ${division || 'this division'} / ${unit || 'this unit'} at ${currentStage}.`);
+    }
+
+    const allowedApprover = this.resolveWorkflowApprover(configuredApprover, employeeEmail, approverEmail);
+    if (!allowedApprover) {
+      const effectiveApprover = this.resolveWorkflowApprover(configuredApprover, employeeEmail);
+      throw new Error(`Only ${effectiveApprover?.approverName || effectiveApprover?.approverEmail || 'a configured approver'} can ${action} this ${currentStage} request.`);
+    }
+
+    return { currentStage, employeeEmail, division, unit };
+  }
+
   private async resolveLeaveStageAvoidingSelf(
     requestedStage: WorkflowStage,
     employeeEmail: string | undefined,
     division: string,
     unit: string,
+    executiveRoute = false,
   ): Promise<{ stage: WorkflowStage; step: string; approver: WorkflowApprover | null; skippedStages: WorkflowStage[] }> {
-    const ordered: WorkflowStage[] = ['Manager Review', 'Director Review', 'HR Review'];
+    const ordered: WorkflowStage[] = executiveRoute
+      ? ['CEO Review', 'HR Review']
+      : ['Manager Review', 'Director Review', 'HR Review'];
     let startIndex = ordered.indexOf(requestedStage);
     if (startIndex < 0) startIndex = 0;
 
@@ -753,7 +979,10 @@ export class HRSharePointService {
 
     for (let i = startIndex; i < ordered.length; i++) {
       const stage = ordered[i];
-      const approver = await this.getApproverForStage(division, unit, stage);
+      const approverRow = await this.getApproverForStage(division, unit, stage);
+      const approver = approverRow
+        ? this.resolveWorkflowApprover(approverRow, employeeEmail)
+        : null;
       const managerApprover = stage === 'Director Review'
         ? await this.getApproverForStage(division, unit, 'Manager Review')
         : null;
@@ -762,14 +991,14 @@ export class HRSharePointService {
         requestedStage === 'Director Review' &&
         managerApprover?.skipDirectorReview;
 
-      if (shouldSkipDirector || this.sameEmail(approver?.approverEmail, employeeEmail)) {
+      if (shouldSkipDirector || !approver) {
         skippedStages.push(stage);
         continue;
       }
 
       return {
         stage,
-        step: String(i + 2),
+        step: stage === 'CEO Review' ? '2' : stage === 'HR Review' ? '4' : String(i + 2),
         approver,
         skippedStages,
       };
@@ -805,13 +1034,19 @@ export class HRSharePointService {
       }
 
       const listId = this.getListId(LISTS.LEAVE_REQUESTS);
+      const executiveRoute = await this.shouldUseExecutiveLeaveRoute({
+        employeeEmail: data.employeeEmail,
+        division: data.division,
+        unit: data.unit,
+      });
       const initialRouting = await this.resolveLeaveStageAvoidingSelf(
-        'Manager Review',
+        executiveRoute ? 'CEO Review' : 'Manager Review',
         data.employeeEmail,
         data.division ?? '',
         data.unit ?? '',
+        executiveRoute,
       ).catch(() => ({
-        stage: 'Manager Review' as WorkflowStage,
+        stage: (executiveRoute ? 'CEO Review' : 'Manager Review') as WorkflowStage,
         step: '2',
         approver: null,
         skippedStages: [],
@@ -894,9 +1129,12 @@ export class HRSharePointService {
 
       // Notify the manager (Stage 1 approver) so they can act from email
       try {
-        const approver = initialRouting.approver ?? await this.getApproverForStage(
+        const approverRow = initialRouting.approver ?? await this.getApproverForStage(
           data.division ?? '', data.unit ?? '', initialRouting.stage
         );
+        const approver = approverRow
+          ? this.resolveWorkflowApprover(approverRow, data.employeeEmail)
+          : null;
         if (approver?.approverEmail) {
           sendApproverNotification(this.client, {
             to: approver.approverEmail,
@@ -964,20 +1202,28 @@ export class HRSharePointService {
 
     try {
       const listId = this.getListId(LISTS.LEAVE_REQUESTS);
-      const response = await this.client
-        .api(`/sites/${this.siteId}/lists/${listId}/items`)
-        .expand('fields')
-        .top(500)
-        .get();
+      const all: any[] = [];
+      let nextLink: string | undefined;
 
-      const TERMINAL = ['Approved', 'Rejected', 'Declined', 'Cancelled'];
+      do {
+        const req = nextLink
+          ? this.client.api(nextLink)
+          : this.client
+              .api(`/sites/${this.siteId}/lists/${listId}/items`)
+              .expand('fields')
+              .top(500);
 
-      let items: any[] = response.value;
+        const response = await req.get();
+        all.push(...response.value);
+        nextLink = response['@odata.nextLink'];
+      } while (nextLink);
+
+      let items: any[] = all;
 
       if (filterStage) {
         items = items.filter((item: any) => item.fields.Stage === filterStage);
       } else {
-        items = items.filter((item: any) => !TERMINAL.includes(item.fields.ApprovalStatus));
+        items = items.filter((item: any) => !TERMINAL_LEAVE_STATUSES.includes(item.fields.ApprovalStatus));
       }
 
       return items
@@ -1054,10 +1300,11 @@ export class HRSharePointService {
 
     const listId = this.getListId(LISTS.LEAVE_REQUESTS);
     const existingFields = await this.getLeaveItemFields(listId, itemId);
-    const employeeEmail = emailCtx?.employeeEmail || existingFields.EmployeeEmail || '';
-    if (this.sameEmail(approverEmail, employeeEmail)) {
-      throw new Error('You cannot approve your own request. It must be routed to a higher-level approver.');
-    }
+    const actionContext = await this.assertLeaveActionAllowed(existingFields, approverEmail, 'approve');
+    const currentWorkflowStage = actionContext.currentStage;
+    const employeeEmail = actionContext.employeeEmail;
+    const division = emailCtx?.division ?? actionContext.division;
+    const unit = emailCtx?.unit ?? actionContext.unit;
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -1065,7 +1312,7 @@ export class HRSharePointService {
     let nextStage: string;
     let nextStep: string;
 
-    switch (currentStage) {
+    switch (currentWorkflowStage) {
       case 'Manager Review':
         updateFields['Approver_Manager'] = approverName;
         updateFields['Manager_Approval_Date'] = today;
@@ -1073,8 +1320,23 @@ export class HRSharePointService {
           const resolved = await this.resolveLeaveStageAvoidingSelf(
             'Director Review',
             employeeEmail,
-            emailCtx?.division ?? existingFields.Division ?? '',
-            emailCtx?.unit ?? existingFields.Unit ?? '',
+            division,
+            unit,
+          );
+          nextStage = resolved.stage;
+          nextStep = resolved.step;
+        }
+        break;
+      case 'CEO Review':
+        updateFields['Approver_CEO'] = approverName;
+        updateFields['CEO_Approval_Date'] = today;
+        {
+          const resolved = await this.resolveLeaveStageAvoidingSelf(
+            'HR Review',
+            employeeEmail,
+            division,
+            unit,
+            true,
           );
           nextStage = resolved.stage;
           nextStep = resolved.step;
@@ -1087,8 +1349,8 @@ export class HRSharePointService {
           const resolved = await this.resolveLeaveStageAvoidingSelf(
             'HR Review',
             employeeEmail,
-            emailCtx?.division ?? existingFields.Division ?? '',
-            emailCtx?.unit ?? existingFields.Unit ?? '',
+            division,
+            unit,
           );
           nextStage = resolved.stage;
           nextStep = resolved.step;
@@ -1104,24 +1366,30 @@ export class HRSharePointService {
         updateFields['ApprovedDate'] = today;
         break;
       default:
-        throw new Error(`Cannot approve a request at stage: "${currentStage}"`);
+        throw new Error(`Cannot approve a request at stage: "${currentWorkflowStage}"`);
     }
 
     updateFields['Stage'] = nextStage;
     updateFields['CurrentStep'] = nextStep;
     if (comments) updateFields['HRRemarks'] = comments;
+
+    if (nextStage === 'Approved') {
+      const year = new Date().getFullYear();
+      await this.deductLeaveBalance(employeeId, leaveType, daysRequested, year);
+    }
+
     Object.assign(
       updateFields,
       this.buildApprovalMetadataFields(
         existingFields,
         this.createApprovalHistoryEntry({
-          stage: currentStage,
+          stage: currentWorkflowStage,
           action: 'Approved',
           actorName: approverName,
           actorEmail: approverEmail,
           comments,
           attachments,
-          fromStage: currentStage,
+          fromStage: currentWorkflowStage,
           toStage: nextStage,
         }),
         attachments ?? [],
@@ -1130,28 +1398,18 @@ export class HRSharePointService {
 
     await this.patchLeaveItem(listId, itemId, updateFields);
 
-    // Final approval: deduct balance
-    if (nextStage === 'Approved') {
-      try {
-        const year = new Date().getFullYear();
-        await this.deductLeaveBalance(employeeId, leaveType, daysRequested, year);
-      } catch (e) {
-        console.error('⚠️ Balance deduction failed post-approval:', e);
-        // Don't block - approval already recorded; HR can correct manually
-      }
-    }
-
     await this.logAudit(employeeId, 'Leave', 'Updated', approverEmail,
-      'Stage', currentStage, nextStage);
+      'Stage', currentWorkflowStage, nextStage);
 
     // --- Employee status email (requires their stored email address) ---
     if (emailCtx?.employeeEmail) {
-      const stageMap: Record<string, 'Manager Approved' | 'Director Approved' | 'Fully Approved'> = {
+      const stageMap: Record<string, 'Manager Approved' | 'CEO Approved' | 'Director Approved' | 'Fully Approved'> = {
         'Manager Review': 'Manager Approved',
+        'CEO Review': 'CEO Approved',
         'Director Review': 'Director Approved',
         'HR Review': 'Fully Approved',
       };
-      const emailStage = stageMap[currentStage];
+      const emailStage = stageMap[currentWorkflowStage];
       if (emailStage) {
         sendLeaveEmail(this.client, {
           to: emailCtx.employeeEmail,
@@ -1172,9 +1430,12 @@ export class HRSharePointService {
     // This ensures the chain continues whether the action came from the dashboard or email.
     if (nextStage !== 'Approved' && emailCtx) {
       try {
-        const nextApprover = await this.getApproverForStage(
+        const nextApproverRow = await this.getApproverForStage(
           emailCtx.division ?? '', emailCtx.unit ?? '', nextStage as any
         );
+        const nextApprover = nextApproverRow
+          ? this.resolveWorkflowApprover(nextApproverRow, employeeEmail)
+          : null;
         if (nextApprover?.approverEmail) {
           sendApproverNotification(this.client, {
             to: nextApprover.approverEmail,
@@ -1224,10 +1485,8 @@ export class HRSharePointService {
 
     const listId = this.getListId(LISTS.LEAVE_REQUESTS);
     const existingFields = await this.getLeaveItemFields(listId, itemId);
-    const employeeEmail = emailCtx?.employeeEmail || existingFields.EmployeeEmail || '';
-    if (this.sameEmail(approverEmail, employeeEmail)) {
-      throw new Error('You cannot reject your own request. It must be routed to a higher-level approver.');
-    }
+    const actionContext = await this.assertLeaveActionAllowed(existingFields, approverEmail, 'reject');
+    const currentWorkflowStage = actionContext.currentStage;
 
     const today = new Date().toISOString().split('T')[0];
 
@@ -1240,13 +1499,13 @@ export class HRSharePointService {
       ...this.buildApprovalMetadataFields(
         existingFields,
         this.createApprovalHistoryEntry({
-          stage: currentStage,
+          stage: currentWorkflowStage,
           action: 'Rejected',
           actorName: approverName,
           actorEmail: approverEmail,
           comments: reason,
           attachments,
-          fromStage: currentStage,
+          fromStage: currentWorkflowStage,
           toStage: 'Rejected',
         }),
         attachments ?? [],
@@ -1274,7 +1533,7 @@ export class HRSharePointService {
     }
 
     await this.logAudit(employeeId, 'Leave', 'Updated', approverEmail,
-      'ApprovalStatus', currentStage, 'Rejected');
+      'ApprovalStatus', currentWorkflowStage, 'Rejected');
 
     if (emailCtx?.employeeEmail) {
       sendLeaveEmail(this.client, {
@@ -1309,6 +1568,26 @@ export class HRSharePointService {
 
     const listId = this.getListId(LISTS.LEAVE_REQUESTS);
     const existingFields = await this.getLeaveItemFields(listId, itemId);
+    const requestEmployeeId = String(existingFields.EmployeeID ?? '').trim();
+    const requestEmployeeEmail = String(existingFields.EmployeeEmail ?? existingFields.Email ?? '').trim();
+    const requestStatus = String(existingFields.ApprovalStatus ?? '').trim();
+    const requestStage = String(existingFields.Stage ?? '').trim();
+
+    if (requestEmployeeId !== String(employeeId).trim()) {
+      throw new Error('You can only cancel your own leave request.');
+    }
+
+    if (requestEmployeeEmail && !this.sameEmail(requestEmployeeEmail, cancellerEmail)) {
+      throw new Error('You can only cancel leave requests submitted under your account.');
+    }
+
+    if (TERMINAL_LEAVE_STATUSES.includes(requestStatus) || ['Director Review', 'HR Review', 'Approved', 'Rejected', 'Cancelled'].includes(requestStage)) {
+      throw new Error(`This leave request can no longer be cancelled at stage: ${requestStage || requestStatus || 'Unknown'}.`);
+    }
+
+    if (requestStatus && requestStatus !== 'Pending') {
+      throw new Error(`Only pending leave requests can be cancelled. Current status: ${requestStatus}.`);
+    }
 
     await this.client
       .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}`)
@@ -1787,6 +2066,7 @@ export class HRSharePointService {
       stage: item.fields.Stage || 'Submitted',
       currentStep: parseInt(item.fields.CurrentStep || '1'),
       approverManager: item.fields.Approver_Manager,
+      approverCEO: item.fields.Approver_CEO,
       approverDirector: item.fields.Approver_Director,
       approverHR: item.fields.Approver_HR,
       approvedBy: item.fields.ApprovedBy,
@@ -1795,6 +2075,10 @@ export class HRSharePointService {
         item.fields['Manager Approval Date'] ||
         item.fields.Manager_Approval_Date ||
         item.fields.ManagerApprovalDate,
+      ceoApprovedDate:
+        item.fields['CEO Approval Date'] ||
+        item.fields.CEO_Approval_Date ||
+        item.fields.CEOApprovalDate,
       directorApprovedDate:
         item.fields['Director Approval Date'] ||
         item.fields.Director_Approval_Date ||
@@ -1910,6 +2194,12 @@ export class HRSharePointService {
       { name: 'Stage',                 text: {} },
       { name: 'ApproverName',          text: {} },
       { name: 'ApproverEmail',         text: {} },
+      { name: 'DelegateName',          text: {} },
+      { name: 'DelegateEmail',         text: {} },
+      { name: 'EscalationName',        text: {} },
+      { name: 'EscalationEmail',       text: {} },
+      { name: 'ExecutiveFallbackName', text: {} },
+      { name: 'ExecutiveFallbackEmail', text: {} },
       { name: 'SkipDirectorReview',    boolean: {} },
     ]);
 
@@ -1950,12 +2240,75 @@ export class HRSharePointService {
         stage: item.fields.Stage as WorkflowStage,
         approverName: item.fields.ApproverName ?? '',
         approverEmail: item.fields.ApproverEmail ?? '',
+        delegateName: item.fields.DelegateName ?? '',
+        delegateEmail: item.fields.DelegateEmail ?? '',
+        escalationName: item.fields.EscalationName ?? '',
+        escalationEmail: item.fields.EscalationEmail ?? '',
+        executiveFallbackName: item.fields.ExecutiveFallbackName ?? '',
+        executiveFallbackEmail: item.fields.ExecutiveFallbackEmail ?? '',
         skipDirectorReview: item.fields.SkipDirectorReview ?? false,
       }));
     } catch (err) {
       console.error('❌ Error fetching workflow approvers:', err);
       throw err;
     }
+  }
+
+  private workflowApproverColumnDefinition(name: string): object {
+    return name === 'SkipDirectorReview'
+      ? { name, boolean: {} }
+      : { name, text: {} };
+  }
+
+  private async ensureWorkflowApproverColumn(listId: string, name: string): Promise<void> {
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/columns`)
+      .post(this.workflowApproverColumnDefinition(name))
+      .catch(() => {});
+  }
+
+  private async patchWorkflowApproverFields(
+    listId: string,
+    itemId: string | number,
+    fields: Record<string, unknown>,
+  ): Promise<void> {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}/fields`)
+          .patch(fields);
+        return;
+      } catch (err: any) {
+        const match = (err?.message ?? '').match(/Field '([^']+)' is not recognized/);
+        if (!match) throw err;
+        await this.ensureWorkflowApproverColumn(listId, match[1]);
+      }
+    }
+
+    await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items/${itemId}/fields`)
+      .patch(fields);
+  }
+
+  private async postWorkflowApproverFields(
+    listId: string,
+    fields: Record<string, unknown>,
+  ): Promise<any> {
+    for (let attempt = 0; attempt < 10; attempt++) {
+      try {
+        return await this.client
+          .api(`/sites/${this.siteId}/lists/${listId}/items`)
+          .post({ fields });
+      } catch (err: any) {
+        const match = (err?.message ?? '').match(/Field '([^']+)' is not recognized/);
+        if (!match) throw err;
+        await this.ensureWorkflowApproverColumn(listId, match[1]);
+      }
+    }
+
+    return await this.client
+      .api(`/sites/${this.siteId}/lists/${listId}/items`)
+      .post({ fields });
   }
 
   /** Create or update a single approver row. Pass id to update, omit to create. */
@@ -1973,6 +2326,12 @@ export class HRSharePointService {
       Stage: data.stage,
       ApproverName: data.approverName,
       ApproverEmail: data.approverEmail,
+      DelegateName: data.delegateName ?? '',
+      DelegateEmail: data.delegateEmail ?? '',
+      EscalationName: data.escalationName ?? '',
+      EscalationEmail: data.escalationEmail ?? '',
+      ExecutiveFallbackName: data.executiveFallbackName ?? '',
+      ExecutiveFallbackEmail: data.executiveFallbackEmail ?? '',
       SkipDirectorReview: data.skipDirectorReview ?? false,
     };
 
@@ -1980,14 +2339,10 @@ export class HRSharePointService {
       const listId = this.getListId(LISTS.WORKFLOW_APPROVERS);
 
       if (data.id) {
-        await this.client
-          .api(`/sites/${this.siteId}/lists/${listId}/items/${data.id}/fields`)
-          .patch(fields);
+        await this.patchWorkflowApproverFields(listId, data.id, fields);
         return { ...data };
       } else {
-        const created = await this.client
-          .api(`/sites/${this.siteId}/lists/${listId}/items`)
-          .post({ fields });
+        const created = await this.postWorkflowApproverFields(listId, fields);
         return { ...data, id: created.id };
       }
     } catch (err) {
@@ -2020,12 +2375,31 @@ export class HRSharePointService {
     stage: WorkflowStage,
   ): Promise<WorkflowApprover | null> {
     const all = await this.getWorkflowApprovers();
-    return (
-      all.find(
+    const stageRows = all.filter(a => a.stage === stage);
+    const exact = stageRows.find(
+      a =>
+        this.workflowNameMatches(a.division, division) &&
+        this.workflowNameMatches(a.unit, unit),
+    );
+    if (exact) return exact;
+
+    if (stage === 'CEO Review') {
+      const executiveFallback = stageRows.find(
         a =>
-          a.division === division &&
-          a.unit === unit &&
-          a.stage === stage,
+          this.workflowNameMatches(a.division, EXECUTIVE_DIVISION) &&
+          (
+            this.workflowNameMatches(a.unit, EXECUTIVE_UNIT) ||
+            this.workflowNameMatches(a.unit, SECRETARIAT_UNIT)
+          ),
+      );
+      if (executiveFallback) return executiveFallback;
+    }
+
+    return (
+      stageRows.find(
+        a =>
+          this.workflowNameMatches(a.division, 'All') &&
+          this.workflowNameMatches(a.unit, 'All'),
       ) ?? null
     );
   }

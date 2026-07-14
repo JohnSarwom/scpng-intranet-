@@ -122,11 +122,16 @@ export const useApproveLeave = (options: LeaveActionMutationOptions = {}) => {
     },
     onSuccess: (_data, vars) => {
       const isFullyApproved = vars.currentStage === 'HR Review';
+      const nextStageLabel = vars.currentStage === 'Manager Review'
+        ? 'Director Review'
+        : vars.currentStage === 'CEO Review'
+          ? 'HR Review'
+          : 'HR Review';
       if (showToasts) {
         toast.success(
           isFullyApproved
             ? 'Leave approved - balance deducted.'
-            : `Forwarded to ${vars.currentStage === 'Manager Review' ? 'Director' : 'HR'} Review.`
+            : `Forwarded to ${nextStageLabel}.`
         );
       }
       queryClient.invalidateQueries({ queryKey: ['hr', 'leave-approvals'] });

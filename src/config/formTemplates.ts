@@ -175,8 +175,9 @@ const hrApprovalSteps = [
   }
 ];
 
-// Matches the actual 3-stage leave workflow:
-// Manager Review → Director Review → HR Review
+// Matches the leave workflow:
+// Standard: Manager Review → Director Review → HR Review
+// Executive/direct CEO reports: CEO Review → HR Review
 const leaveApprovalSteps = [
   {
     id: 'manager_review',
@@ -189,8 +190,18 @@ const leaveApprovalSteps = [
     escalationRole: 'director',
   },
   {
-    id: 'director_review',
+    id: 'ceo_review',
     order: 2,
+    title: 'CEO Review',
+    approverRole: 'ceo',
+    required: true,
+    allowDelegation: true,
+    timeoutDays: 3,
+    escalationRole: 'hr_manager',
+  },
+  {
+    id: 'director_review',
+    order: 3,
     title: 'Director Review',
     approverRole: 'director',
     required: true,
@@ -200,7 +211,7 @@ const leaveApprovalSteps = [
   },
   {
     id: 'hr_review',
-    order: 3,
+    order: 4,
     title: 'HR Review',
     approverRole: 'hr_manager',
     required: true,
@@ -230,21 +241,25 @@ export const leaveApplicationTemplate: FormTemplate = {
         createTextField('payrollNumber', 'PAYROLL #'),
         createTextField('name', 'NAME', true),
         createSelectField('division', 'DIVISION', [
+          { value: 'Office of the Chairman', label: 'Office of the Chairman' },
           { value: 'Corporate Services Division', label: 'Corporate Services Division' },
-          { value: 'Legal Division', label: 'Legal Division' },
-          { value: 'Research and Publication Division', label: 'Research and Publication Division' },
-          { value: 'Licensing & Supervision Division', label: 'Licensing & Supervision Division' },
+          { value: 'Legal Services Division', label: 'Legal Services Division' },
+          { value: 'Research & Publication Division', label: 'Research & Publication Division' },
+          { value: 'Licensing, Market & Supervision Division', label: 'Licensing, Market & Supervision Division' },
         ], true),
         createSelectField('unit', 'UNIT', [
+          { value: 'Executive Division', label: 'Executive Division' },
+          { value: 'Secretariat Unit', label: 'Secretariat Unit' },
           { value: 'IT Unit', label: 'IT Unit' },
-          { value: 'HR Unit', label: 'HR Unit' },
+          { value: 'Human Resource Unit', label: 'Human Resource Unit' },
           { value: 'Finance Unit', label: 'Finance Unit' },
           { value: 'Supervision Unit', label: 'Supervision Unit' },
           { value: 'Licensing Unit', label: 'Licensing Unit' },
-          { value: 'Marketing Unit', label: 'Marketing Unit' },
+          { value: 'Market Data Unit', label: 'Market Data Unit' },
           { value: 'Investigations Unit', label: 'Investigations Unit' },
-          { value: 'Legal Unit', label: 'Legal Unit' },
-          { value: 'Secretariat Unit', label: 'Secretariat Unit' },
+          { value: 'Legal Advisory Unit', label: 'Legal Advisory Unit' },
+          { value: 'Research Unit', label: 'Research Unit' },
+          { value: 'Publication Unit', label: 'Publication Unit' },
         ], true),
         {
           id: 'absenceFrom',

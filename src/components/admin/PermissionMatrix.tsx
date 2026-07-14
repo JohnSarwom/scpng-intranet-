@@ -36,6 +36,15 @@ const RESOURCES = [
         ]
     },
     {
+        id: 'attendance',
+        label: 'Time & Attendance',
+        actions: [
+            { id: 'read', label: 'Open Attendance Page' },
+            { id: 'review', label: 'Supervisor Dashboard' },
+            { id: 'manage', label: 'HR/Admin Attendance Controls' },
+        ]
+    },
+    {
         id: 'payments',
         label: 'Payments',
         actions: [

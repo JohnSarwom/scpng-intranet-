@@ -5,7 +5,7 @@ import { Calendar, TrendingUp, Users, Clock, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useLeaveApprovals } from '@/hooks/useLeaveApprovals';
+import { useAllLeaveApprovals, useLeaveApprovals } from '@/hooks/useLeaveApprovals';
 import { listPNGPublicHolidays } from '@/utils/pngPublicHolidays';
 import { LeaveRequest } from '@/types/hr';
 
@@ -62,40 +62,42 @@ const StatCard: React.FC<{
 
 const LeaveAnalytics: React.FC = () => {
   const { data: allPending = [], isLoading } = useLeaveApprovals();
+  const { data: allLeaveRequests = [], isLoading: isLoadingHistory } = useAllLeaveApprovals();
   const today = startOfToday();
   const currentYear = today.getFullYear();
   const holidays = useMemo(() => listPNGPublicHolidays(currentYear), [currentYear]);
 
   // ── Pending queue counts by stage ──────────────────────────────────────
   const managerCount  = allPending.filter(r => r.stage === 'Manager Review').length;
+  const ceoCount      = allPending.filter(r => r.stage === 'CEO Review').length;
   const directorCount = allPending.filter(r => r.stage === 'Director Review').length;
   const hrCount       = allPending.filter(r => r.stage === 'HR Review').length;
   const totalPending  = allPending.length;
 
   // ── Requests currently active (approved, dates span today) ─────────────
   const currentlyOnLeave: LeaveRequest[] = useMemo(() =>
-    allPending.filter(r => {
+    allLeaveRequests.filter(r => {
       if (r.status !== 'Approved') return false;
       const s = safeDate(r.startDate);
       const e = safeDate(r.endDate);
       if (!s || !e) return false;
       return !isAfter(s, today) && !isBefore(e, today);
     }),
-    [allPending, today]
+    [allLeaveRequests, today]
   );
 
   // ── Upcoming approved leaves (start within next 14 days) ───────────────
   const upcoming: LeaveRequest[] = useMemo(() => {
     const cutoff = new Date(today);
     cutoff.setDate(cutoff.getDate() + 14);
-    return allPending
+    return allLeaveRequests
       .filter(r => {
         if (r.status !== 'Approved') return false;
         const s = safeDate(r.startDate);
         return s && isAfter(s, today) && isBefore(s, cutoff);
       })
       .sort((a, b) => (a.startDate > b.startDate ? 1 : -1));
-  }, [allPending, today]);
+  }, [allLeaveRequests, today]);
 
   // ── Pending requests by leave type (for bar chart) ─────────────────────
   const byType: { type: string; count: number; color: string }[] = useMemo(() => {
@@ -118,7 +120,7 @@ const LeaveAnalytics: React.FC = () => {
   const nextHoliday = holidays.find(h => h.date >= todayIso);
 
   // ── Loading skeleton ────────────────────────────────────────────────────
-  if (isLoading) {
+  if (isLoading || isLoadingHistory) {
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -256,6 +258,7 @@ const LeaveAnalytics: React.FC = () => {
           <CardContent className="space-y-3">
             {[
               { stage: 'Manager Review',  count: managerCount,  color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' },
+              { stage: 'CEO Review',      count: ceoCount,      color: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400' },
               { stage: 'Director Review', count: directorCount, color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' },
               { stage: 'HR Review',       count: hrCount,       color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' },
             ].map(({ stage, count, color }) => (

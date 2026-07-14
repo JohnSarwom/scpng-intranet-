@@ -56,6 +56,7 @@ import RegulatoryIntelligence from './pages/RegulatoryIntelligence';
 import WorkPlanBuilderPage from './pages/WorkPlanBuilderPage';
 import WebsiteAnalytics from './pages/WebsiteAnalytics';
 import MeetingMinutes from './pages/MeetingMinutes';
+import TimeAttendance from './pages/TimeAttendance';
 
 // MSAL Imports
 import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
@@ -203,6 +204,12 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
+      <Route path="/time-attendance" element={
+        <ProtectedRoute>
+          <TimeAttendance />
+        </ProtectedRoute>
+      } />
+
       {/* Adjusted to allow full access to all authenticated users */}
       <Route path="/ai-hub" element={
         <ProtectedRoute>
@@ -244,7 +251,6 @@ const AppRoutes = () => {
           <Strategy />
         </RoleProtectedRoute>
       } />
-
       <Route path="/test-ground" element={
         <ProtectedRoute>
           <TestGround />

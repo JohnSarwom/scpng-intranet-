@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import { CheckCircle2, XCircle, ChevronRight, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,21 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useLeaveApprovals, useApproveLeave, useRejectLeave } from '@/hooks/useLeaveApprovals';
 import { useGraphProfile } from '@/hooks/useGraphProfile';
+import { useWorkflowApprovers } from '@/hooks/useWorkflowAdmin';
 import { LeaveRequest } from '@/types/hr';
 
 const STAGE_LABELS: Record<string, string> = {
   'Manager Review': 'Manager',
+  'CEO Review': 'CEO',
   'Director Review': 'Director',
   'HR Review': 'HR',
 };
 
+const ALLOW_SELF_LEAVE_APPROVAL_TESTING = true;
+
 const STAGE_COLOR: Record<string, string> = {
   'Manager Review': 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  'CEO Review': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   'Director Review': 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400',
   'HR Review': 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
 };
@@ -43,8 +48,64 @@ interface Props {
 
 const STAGE_TO_TAB: Record<string, string> = {
   'Manager Review': 'manager',
+  'CEO Review': 'ceo',
   'Director Review': 'director',
   'HR Review': 'hr',
+};
+
+const sameEmail = (a?: string, b?: string) =>
+  !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+
+const ORG_NAME_ALIASES: Record<string, string> = {
+  'legal division': 'legal services division',
+  'legal unit': 'legal advisory unit',
+  'research and publication division': 'research & publication division',
+  'licensing & supervision division': 'licensing, market & supervision division',
+  'licensing market & supervision division': 'licensing, market & supervision division',
+  'hr unit': 'human resource unit',
+  'human resources unit': 'human resource unit',
+  'executive division': 'office of the chairman',
+};
+
+const normalizeOrgName = (value?: string) => {
+  const aliased = ORG_NAME_ALIASES[String(value ?? '').trim().toLowerCase()] ?? String(value ?? '');
+  return aliased
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\bservices?\b/g, 'service')
+    .replace(/\bhuman resources?\b/g, 'human resource')
+    .trim();
+};
+
+const orgNameMatches = (configured?: string, requested?: string) => {
+  const configuredKey = normalizeOrgName(configured);
+  return (
+    configuredKey === normalizeOrgName(requested) ||
+    configuredKey === 'all' ||
+    configuredKey === 'any' ||
+    configuredKey === '*'
+  );
+};
+
+const isAssignedApprover = (
+  approver: {
+    approverEmail?: string;
+    delegateEmail?: string;
+    escalationEmail?: string;
+    executiveFallbackEmail?: string;
+  },
+  request: LeaveRequest,
+  currentEmail: string,
+) => {
+  if (!ALLOW_SELF_LEAVE_APPROVAL_TESTING && sameEmail(request.employeeEmail, currentEmail)) return false;
+  const primaryIsRequester = sameEmail(approver.approverEmail, request.employeeEmail);
+  const candidates = !ALLOW_SELF_LEAVE_APPROVAL_TESTING && primaryIsRequester
+    ? [approver.escalationEmail, approver.executiveFallbackEmail, approver.delegateEmail]
+    : [approver.approverEmail, approver.delegateEmail, approver.escalationEmail, approver.executiveFallbackEmail];
+
+  return candidates.some(email => sameEmail(email, currentEmail));
 };
 
 const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
@@ -53,6 +114,7 @@ const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
   const approverEmail = profile?.mail ?? profile?.userPrincipalName ?? '';
 
   const { data: allPending = [], isLoading, isFetching } = useLeaveApprovals();
+  const { data: workflowApprovers = [], isLoading: isLoadingApprovers } = useWorkflowApprovers();
   const approveMutation = useApproveLeave();
   const rejectMutation = useRejectLeave();
 
@@ -67,26 +129,36 @@ const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
   const [activeStageTab, setActiveStageTab] = useState('manager');
   const highlightedRowRef = useRef<HTMLDivElement>(null);
 
-  const managerQueue = allPending.filter(r => r.stage === 'Manager Review');
-  const directorQueue = allPending.filter(r => r.stage === 'Director Review');
-  const hrQueue = allPending.filter(r => r.stage === 'HR Review');
+  const assignedPending = useMemo(() => allPending.filter(request =>
+    workflowApprovers.some(approver =>
+      approver.stage === request.stage &&
+      orgNameMatches(approver.division, request.division) &&
+      orgNameMatches(approver.unit, request.unit) &&
+      isAssignedApprover(approver, request, approverEmail)
+    )
+  ), [allPending, workflowApprovers, approverEmail]);
+
+  const managerQueue = assignedPending.filter(r => r.stage === 'Manager Review');
+  const ceoQueue = assignedPending.filter(r => r.stage === 'CEO Review');
+  const directorQueue = assignedPending.filter(r => r.stage === 'Director Review');
+  const hrQueue = assignedPending.filter(r => r.stage === 'HR Review');
 
   // When data loads and we have a deep-link ID, switch to the correct stage tab and scroll
   useEffect(() => {
-    if (!highlightedId || allPending.length === 0) return;
-    const target = allPending.find(r => String(r.id) === highlightedId);
+    if (!highlightedId || assignedPending.length === 0) return;
+    const target = assignedPending.find(r => String(r.id) === highlightedId);
     if (!target?.stage) return;
     const tab = STAGE_TO_TAB[target.stage];
     if (tab) setActiveStageTab(tab);
-  }, [highlightedId, allPending]);
+  }, [highlightedId, assignedPending]);
 
   useEffect(() => {
-    if (!highlightedId || isLoading) return;
+    if (!highlightedId || isLoading || isLoadingApprovers) return;
     const timer = setTimeout(() => {
       highlightedRowRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 150);
     return () => clearTimeout(timer);
-  }, [highlightedId, isLoading, activeStageTab]);
+  }, [highlightedId, isLoading, isLoadingApprovers, activeStageTab]);
 
   const handleApprove = (req: LeaveRequest) => {
     approveMutation.mutate({
@@ -259,7 +331,7 @@ const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
           )}
         </div>
 
-        {isLoading ? (
+        {isLoading || isLoadingApprovers ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
@@ -271,6 +343,14 @@ const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
                 {managerQueue.length > 0 && (
                   <Badge className="bg-blue-600 text-white text-[10px] px-1.5 py-0 min-w-[18px]">
                     {managerQueue.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="ceo" className="gap-2">
+                CEO Review
+                {ceoQueue.length > 0 && (
+                  <Badge className="bg-indigo-600 text-white text-[10px] px-1.5 py-0 min-w-[18px]">
+                    {ceoQueue.length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -294,6 +374,9 @@ const LeaveApprovalDashboard: React.FC<Props> = ({ autoRequestId }) => {
 
             <TabsContent value="manager">
               <QueueTab requests={managerQueue} label="Manager Review" />
+            </TabsContent>
+            <TabsContent value="ceo">
+              <QueueTab requests={ceoQueue} label="CEO Review" />
             </TabsContent>
             <TabsContent value="director">
               <QueueTab requests={directorQueue} label="Director Review" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,6 +35,34 @@ import { LeaveRequest } from '@/types/hr';
 const SHAREPOINT_SITEPATH = "/sites/scpngintranet";
 const SHAREPOINT_LIST_NAME = "Staff Leave Requests";
 const CLOSED_LEAVE_STATUSES = ['Rejected', 'Declined', 'Cancelled'];
+const TERMINAL_LEAVE_STATUSES = ['Approved', ...CLOSED_LEAVE_STATUSES];
+
+const getLeaveRequestGroup = (request: LeaveRequest) => {
+  if (request.status === 'Approved' || request.stage === 'Approved') return 'approved';
+  if (TERMINAL_LEAVE_STATUSES.includes(request.status) || ['Rejected', 'Cancelled'].includes(request.stage ?? '')) return 'closed';
+  return 'active';
+};
+
+const getCurrentHolderLabel = (request: LeaveRequest) => {
+  if (request.status === 'Approved' || request.stage === 'Approved') return 'Completed by HR';
+  if (CLOSED_LEAVE_STATUSES.includes(request.status) || ['Rejected', 'Cancelled'].includes(request.stage ?? '')) return 'Closed';
+
+  switch (request.stage) {
+    case 'Manager Review':
+      return 'Manager';
+    case 'CEO Review':
+      return 'CEO';
+    case 'Director Review':
+      return 'Director';
+    case 'HR Review':
+      return 'HR';
+    default:
+      return 'Pending routing';
+  }
+};
+
+const canCancelLeaveRequest = (request: LeaveRequest) =>
+  request.status === 'Pending' && ['Submitted', 'Manager Review'].includes(request.stage ?? 'Manager Review');
 
 const findOverlappingLeaveRequest = (
   applications: LeaveRequest[],
@@ -276,6 +304,117 @@ const LeaveApplicationPage: React.FC = () => {
     }
   };
 
+  const applicationGroups = useMemo(() => ({
+    active: myApplications.filter((app) => getLeaveRequestGroup(app) === 'active'),
+    approved: myApplications.filter((app) => getLeaveRequestGroup(app) === 'approved'),
+    closed: myApplications.filter((app) => getLeaveRequestGroup(app) === 'closed'),
+  }), [myApplications]);
+
+  const renderApplicationCards = (applications: LeaveRequest[], emptyMessage: string) => {
+    if (applications.length === 0) {
+      return (
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            {emptyMessage}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return applications.map((app) => {
+      const hasChanged = changedAppIds.has(String(app.id));
+      const currentHolder = getCurrentHolderLabel(app);
+
+      return (
+        <Card
+          key={app.id}
+          className={`overflow-hidden transition-all duration-300 dark:bg-gray-800 dark:border-white/10 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
+            }`}
+        >
+          <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 border-b dark:border-white/10 flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
+            <div>
+              <h3 className="font-semibold text-lg dark:text-gray-100">{app.leaveType} Leave</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-400">
+                Submitted on {app.createdDate ? format(new Date(app.createdDate), 'PPP') : 'Unknown'}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePrintApplication(app)}
+                className="flex items-center gap-2 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+              >
+                <Printer className="h-4 w-4" />
+                Print Form
+              </Button>
+              {canCancelLeaveRequest(app) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCancelTarget(app)}
+                  disabled={cancelMutation.isPending}
+                  className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/40 dark:hover:bg-red-900/20"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
+              <div className="text-right">
+                <div className="font-medium dark:text-gray-300">Request ID</div>
+                <div className="text-sm text-muted-foreground dark:text-gray-500">#{app.id}</div>
+              </div>
+            </div>
+          </div>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+              <div>
+                <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Duration</span>
+                <p className="mt-1 dark:text-gray-200">
+                  {format(new Date(app.startDate), 'MMM d, yyyy')} - {format(new Date(app.endDate), 'MMM d, yyyy')}
+                </p>
+                <p className="text-sm text-muted-foreground dark:text-gray-500">({app.daysRequested} days)</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Currently With</span>
+                <p className="mt-1 dark:text-gray-200">{currentHolder}</p>
+                <p className="text-sm text-muted-foreground dark:text-gray-500">{app.stage || 'Submitted'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Reason</span>
+                <p className="mt-1 dark:text-gray-200">{app.reason || 'No reason provided'}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Status</span>
+                <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                  ${app.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                    CLOSED_LEAVE_STATUSES.includes(app.status) ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                  {app.status}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t dark:border-white/10 pt-6">
+              <h4 className="text-sm font-medium text-muted-foreground dark:text-gray-500 mb-4">Application Progress</h4>
+              <LeaveApplicationTracker
+                currentStage={app.stage || 'Submitted'}
+                status={app.status}
+                dates={{
+                  submitted: app.createdDate,
+                  managerAction: app.managerApprovedDate,
+                  ceoAction: app.ceoApprovedDate,
+                  directorAction: app.directorApprovedDate,
+                  hrAction: app.hrApprovedDate,
+                }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    });
+  };
+
   return (
     <FormProvider {...methods}>
       <FormLayoutWrapper
@@ -354,91 +493,29 @@ const LeaveApplicationPage: React.FC = () => {
                   </CardContent>
                 </Card>
               ) : (
-                myApplications.map((app) => {
-                  const hasChanged = changedAppIds.has(app.id);
-                  return (
-                    <Card
-                      key={app.id}
-                      className={`overflow-hidden transition-all duration-300 dark:bg-gray-800 dark:border-white/10 ${hasChanged ? 'ring-2 ring-blue-500 shadow-lg animate-pulse' : ''
-                        }`}
-                    >
-                      <div className="bg-gray-50 dark:bg-white/5 px-6 py-4 border-b dark:border-white/10 flex justify-between items-center">
-                        <div>
-                          <h3 className="font-semibold text-lg dark:text-gray-100">{app.leaveType} Leave</h3>
-                          <p className="text-sm text-muted-foreground dark:text-gray-400">
-                            Submitted on {app.createdDate ? format(new Date(app.createdDate), 'PPP') : 'Unknown'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePrintApplication(app)}
-                            className="flex items-center gap-2 dark:bg-white/5 dark:border-white/10 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
-                          >
-                            <Printer className="h-4 w-4" />
-                            Print Form
-                          </Button>
-                          {/* Cancel only available while still pending / in early review */}
-                          {['Pending', 'Manager Review'].includes(app.status === 'Pending' ? 'Pending' : app.stage ?? '') && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCancelTarget(app)}
-                              disabled={cancelMutation.isPending}
-                              className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-900/40 dark:hover:bg-red-900/20"
-                            >
-                              <XCircle className="h-4 w-4" />
-                              Cancel
-                            </Button>
-                          )}
-                          <div className="text-right">
-                            <div className="font-medium dark:text-gray-300">Request ID</div>
-                            <div className="text-sm text-muted-foreground dark:text-gray-500">#{app.id}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <CardContent className="pt-6">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                          <div>
-                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Duration</span>
-                            <p className="mt-1 dark:text-gray-200">
-                              {format(new Date(app.startDate), 'MMM d, yyyy')} - {format(new Date(app.endDate), 'MMM d, yyyy')}
-                            </p>
-                            <p className="text-sm text-muted-foreground dark:text-gray-500">({app.daysRequested} days)</p>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Reason</span>
-                            <p className="mt-1 dark:text-gray-200">{app.reason || 'No reason provided'}</p>
-                          </div>
-                          <div>
-                            <span className="text-sm font-medium text-muted-foreground dark:text-gray-500">Status</span>
-                            <div className={`mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                          ${app.status === 'Approved' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
-                                app.status === 'Rejected' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
-                                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
-                              {app.status}
-                            </div>
-                          </div>
-                        </div>
+                <Tabs defaultValue="active" className="space-y-4">
+                  <TabsList className="dark:bg-gray-800 dark:border-white/10">
+                    <TabsTrigger value="active">
+                      Active ({applicationGroups.active.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="approved">
+                      Approved ({applicationGroups.approved.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="closed">
+                      Closed ({applicationGroups.closed.length})
+                    </TabsTrigger>
+                  </TabsList>
 
-                        <div className="border-t dark:border-white/10 pt-6">
-                          <h4 className="text-sm font-medium text-muted-foreground dark:text-gray-500 mb-4">Application Progress</h4>
-                          <LeaveApplicationTracker
-                            currentStage={app.stage || 'Submitted'}
-                            status={app.status}
-                            dates={{
-                              submitted: app.createdDate,
-                              managerAction: app.managerApprovedDate,
-                              directorAction: app.directorApprovedDate,
-                              hrAction: app.hrApprovedDate,
-                            }}
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })
+                  <TabsContent value="active" className="space-y-4">
+                    {renderApplicationCards(applicationGroups.active, 'No active leave applications.')}
+                  </TabsContent>
+                  <TabsContent value="approved" className="space-y-4">
+                    {renderApplicationCards(applicationGroups.approved, 'No approved leave applications yet.')}
+                  </TabsContent>
+                  <TabsContent value="closed" className="space-y-4">
+                    {renderApplicationCards(applicationGroups.closed, 'No cancelled or declined leave applications.')}
+                  </TabsContent>
+                </Tabs>
               )}
             </div>
           </>

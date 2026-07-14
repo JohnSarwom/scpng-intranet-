@@ -34,6 +34,7 @@ const SYSTEM_RESOURCES = [
   { id: 'divisions', label: 'Division Page' },
   { id: 'organization', label: 'Organization Chart' },
   { id: 'hr', label: 'HR Profiles' },
+  { id: 'attendance', label: 'Time & Attendance' },
   { id: 'reports', label: 'Reports' },
   { id: 'tickets', label: 'IT Tickets' },
   { id: 'licenses', label: 'Licensing Registry' },

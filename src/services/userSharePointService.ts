@@ -365,11 +365,8 @@ export class UserSharePointService {
                 Description: group.description || ''
             };
 
-            // Compress permissions: Convert { "home": ["read"] } -> ["home"]
-            const compressedPermissions = Object.keys(group.permissions || {});
-
             // Use dynamic column name
-            fields[this.permissionsColumnName] = JSON.stringify(compressedPermissions);
+            fields[this.permissionsColumnName] = JSON.stringify(group.permissions || {});
 
             const response = await this.client
                 .api(`/sites/${this.siteId}/lists/${this.groupsListId}/items`)
@@ -393,10 +390,7 @@ export class UserSharePointService {
                 Description: group.description || ''
             };
 
-            // Compress permissions: Convert { "home": ["read"] } -> ["home"]
-            const compressedPermissions = Object.keys(group.permissions || {});
-
-            fields[this.permissionsColumnName] = JSON.stringify(compressedPermissions);
+            fields[this.permissionsColumnName] = JSON.stringify(group.permissions || {});
 
             console.log('[UserSharePointService] Updating group with fields:', fields);
 

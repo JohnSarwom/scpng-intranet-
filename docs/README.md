@@ -17,6 +17,7 @@ Feature-specific documentation and business logic.
 - **[Admin Dashboard](modules/admin-dashboard.md)**: User, role, and permission management.
 - **[Task Registry](modules/task-registry/overview.md)**: Managing daily tasks and operational workflows.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.
+- **[Strategy Execution Roadmap](strategy-execution/README.md)**: Forward-looking roadmap for linking Strategic Goals, KRAs, KPIs, Tasks, progress indicators, Division/Unit tracking, and Reports.
 - **[Performance](modules/performance/)**: KRAs, KPIs, and Initiatives.
 - **[Leave Application](modules/leave-application/)**: Employee leave management system.
 - **[Meeting Minutes](modules/meeting-minutes/overview.md)**: In-browser meeting minutes generator with Word and PDF export.

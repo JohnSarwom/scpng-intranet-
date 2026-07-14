@@ -1,0 +1,437 @@
+# Fifth Sprint Execution Plan
+
+## Purpose
+
+This file defines the fifth implementation sprint for the strategy execution program. Sprint 4 protects the strategy execution chain at save time. Sprint 5 turns that chain into formal reporting, evidence, accountability, exports, and schedule visibility.
+
+The goal is to make reports prove execution, not merely summarize activity.
+
+## Sprint Objective
+
+Build the first graph-backed reporting and evidence layer by:
+
+- implementing Strategic Execution Traceability Report rows,
+- adding Division/Unit Progress Heatmap data,
+- exposing KRA/KPI evidence health,
+- surfacing unlinked records and diagnostics,
+- identifying overdue strategic tasks,
+- expanding CSV/export output to hierarchy rows,
+- and strengthening scheduled report scope and delivery visibility.
+
+## Target Backlog Items
+
+| Backlog ID | Priority | Sprint Treatment |
+| --- | --- | --- |
+| SE-501 | P1 | Implement Strategic Execution Traceability Report |
+| SE-502 | P1 | Implement Division/Unit Progress Heatmap |
+| SE-503 | P1 | Implement KRA/KPI Evidence Report |
+| SE-504 | P1 | Implement Unlinked Records Report |
+| SE-505 | P1 | Implement Overdue Strategic Tasks Report |
+| SE-507 | P1 | Expand CSV export to include hierarchy columns and metadata |
+| SE-508 | P2 | Strengthen scheduled report lifecycle and admin/audit visibility |
+| SE-604 | P1 | Add report validation scenarios for traceability, heatmap, exports, schedules, and role scopes |
+
+## Primary Code Areas
+
+| Area | Sprint Purpose |
+| --- | --- |
+| `src/components/unit-tabs/ReportsTab.tsx` | Main reporting UI, preview, metadata, category selection, generation, print, and CSV export |
+| `src/services/sharePointOpsService.ts` | Report saving, report schedule saving/loading, schedule lifecycle fields, and report records |
+| `src/services/strategyExecutionGraphService.ts` | Source of hierarchy rows, diagnostics, scope, and graph projections |
+| `src/utils/strategyProgressUtils.ts` | Source of report progress values, status bands, and calculation explanations |
+| `src/types/strategyExecution.ts` | Shared report, graph, diagnostic, progress, and scope contracts |
+| `src/utils/strategyReportUtils.ts` | Suggested new home for pure report row builders and CSV serializers |
+| `src/components/division/tabs/DivisionReportsTab.tsx` | Check for related Division reporting behavior and future consistency |
+
+## Reporting Principles
+
+### 1. Reports Must Show The Chain
+
+Every strategic report should expose the hierarchy behind the summary:
+
+```text
+Strategic Goal
+-> Organisational KRA / Key Deliverable
+-> Objective / Initiative
+-> Performance KRA
+-> KPI
+-> Task
+-> Evidence
+```
+
+Acceptance:
+
+- Reports do not stop at totals.
+- Traceability rows can show where each task and KPI contributes.
+- Missing links are visible as diagnostics, not hidden from the report.
+
+### 2. Reports Must State Scope
+
+Every report preview, saved report, and export should identify the active scope:
+
+```text
+Personal
+Unit
+Division
+Corporate
+Audit
+```
+
+Acceptance:
+
+- Role-scoped values are not mistaken for corporate totals.
+- Schedule configuration stores enough scope metadata to regenerate the same view.
+- Exports include scope fields.
+
+### 3. Reports Must Explain Progress
+
+Reports should identify how progress was calculated.
+
+Minimum explanation:
+
+- progress percentage,
+- status band,
+- calculation source,
+- child count,
+- completed child count where applicable,
+- generated timestamp.
+
+Acceptance:
+
+- A reader can tell whether progress came from manual, checklist, task-completion, weighted, average, cached, or no-linked-data logic.
+
+### 4. Evidence Health Is Separate From Completion
+
+Completion and evidence are related but not identical.
+
+Acceptance:
+
+- Completed work with evidence is reported as healthy.
+- Completed work without evidence is flagged as a governance warning.
+- Incomplete work with evidence can still show partial support.
+
+### 5. Exports Are Audit Artifacts
+
+CSV/export output should be usable outside the app for review and audit.
+
+Acceptance:
+
+- Exports include hierarchy rows, not only summary metrics.
+- Exports include metadata and generation context.
+- Exports preserve diagnostic and evidence counts.
+
+## Proposed Implementation Order
+
+### Step 1: Define Report Row Builders
+
+Suggested location:
+
+```text
+src/utils/strategyReportUtils.ts
+```
+
+Suggested builders:
+
+```ts
+buildTraceabilityRows(graph, progressResults)
+buildDivisionHeatmapRows(graph, progressResults)
+buildEvidenceRows(graph)
+buildUnlinkedRecordRows(graph)
+buildOverdueTaskRows(graph)
+buildOwnerAccountabilityRows(graph)
+serializeStrategyReportCsv(report)
+```
+
+Acceptance:
+
+- Report row logic is testable without React.
+- `ReportsTab.tsx` does not own graph traversal rules.
+- CSV export uses the same rows shown in preview.
+
+### Step 2: Add Report Metadata Contract
+
+Every generated report should include:
+
+- report title,
+- report type,
+- scope,
+- date range,
+- generated by,
+- generated at,
+- data source summary,
+- progress formula or source,
+- diagnostic count,
+- linkage health summary,
+- export timestamp where applicable.
+
+Acceptance:
+
+- Metadata appears in preview.
+- Metadata is saved with generated reports where supported.
+- Metadata is included in CSV export.
+
+### Step 3: Implement Traceability Report Preview
+
+Target:
+
+```text
+src/components/unit-tabs/ReportsTab.tsx
+```
+
+Minimum sections:
+
+- executive summary,
+- scope and metadata,
+- traceability rows,
+- diagnostics summary,
+- recommended next actions.
+
+Acceptance:
+
+- A Strategic Goal can be traced to Organisational KRA, Objective, Performance KRA, KPI, Task, and Evidence.
+- Report values match Strategy page values for the same scope and date range.
+- Broken chains appear in diagnostics.
+
+### Step 4: Implement Division/Unit Progress Heatmap
+
+Required row fields:
+
+- division,
+- unit,
+- progress,
+- status band,
+- objective count,
+- Performance KRA count,
+- KPI count,
+- task count,
+- overdue task count,
+- diagnostic count,
+- no-linked-data count.
+
+Acceptance:
+
+- Heatmap values match Division/Unit hierarchy bars.
+- No-linked-data units are visually distinct from low-progress units.
+- Scope is visible.
+
+### Step 5: Implement Evidence And Overdue Sections
+
+Evidence section should show:
+
+- KPI,
+- linked task,
+- completion status,
+- completion date,
+- evidence count,
+- evidence type where available,
+- owner/assignee,
+- governance warning if complete without evidence.
+
+Overdue section should show:
+
+- task,
+- due date,
+- days overdue where practical,
+- owner/assignee,
+- KPI,
+- Performance KRA,
+- Unit,
+- Division,
+- next action.
+
+Acceptance:
+
+- Completed work without evidence is flagged.
+- Overdue strategic tasks are grouped or filterable by owner, unit, and division.
+- Evidence and overdue rows use the same hierarchy path as traceability rows.
+
+### Step 6: Implement Unlinked Records Report
+
+Rows should include:
+
+- record type,
+- record ID,
+- title,
+- current parent ID where available,
+- missing relationship,
+- severity,
+- recommended action,
+- owner or responsible scope where available.
+
+Acceptance:
+
+- Tasks without KPI, KPIs without KRA, KRAs without objective, objectives without goal, and divisions with no execution data are visible.
+- Diagnostics align with graph service output.
+- Admin/audit users can use the report as a cleanup queue.
+
+### Step 7: Expand CSV Export
+
+Minimum CSV columns:
+
+- Scope.
+- Strategic Goal.
+- Organisational KRA / Key Deliverable.
+- Division.
+- Unit.
+- Objective / Initiative.
+- Performance KRA.
+- KPI.
+- Task.
+- Owner/assignee.
+- Progress.
+- Status band.
+- Calculation source.
+- Due date.
+- Completion date.
+- Evidence count.
+- Diagnostic count.
+- Next action.
+
+Acceptance:
+
+- CSV export contains hierarchy rows.
+- CSV export includes metadata rows or metadata columns.
+- Exported totals match preview totals.
+
+### Step 8: Strengthen Schedule Lifecycle Visibility
+
+Target areas:
+
+- schedule creation/edit form,
+- schedule list,
+- schedule save/load service methods,
+- admin/audit schedule visibility where available.
+
+Schedule fields to display:
+
+- scope,
+- recipient,
+- optional manager/CC,
+- frequency,
+- date range mode,
+- last sent,
+- next send,
+- delivery status,
+- delivery error,
+- active/inactive state.
+
+Acceptance:
+
+- Users can tell whether a schedule is active and when it should send next.
+- Failed schedules are visible to admin/audit users.
+- Schedule metadata is distinct from report delivery status.
+
+### Step 9: Add Report Validation Tests
+
+Minimum scenarios:
+
+- generate traceability report for complete chain,
+- generate traceability report with broken KPI link,
+- generate Division/Unit heatmap and compare against Strategy page values,
+- generate evidence report with completed work missing evidence,
+- generate overdue strategic task report,
+- generate unlinked records report,
+- export CSV with hierarchy rows,
+- save schedule with Unit scope,
+- save schedule with Division scope,
+- verify admin/audit visibility of failed schedules.
+
+Verification commands:
+
+```bash
+npm run test
+npm run lint
+npm run build
+```
+
+Use browser validation for report preview, CSV export, schedule save/edit, and failed schedule visibility.
+
+## Report UX Requirements
+
+### Preview Layout
+
+Report preview should show:
+
+- clear title,
+- report type,
+- scope,
+- date range,
+- generated timestamp,
+- summary metrics,
+- primary rows,
+- diagnostics,
+- next actions.
+
+The preview should remain useful before export. Export should not be the only way to understand the report.
+
+### Exception Panels
+
+Reports should include exception panels for:
+
+- broken linkage,
+- no linked data,
+- completed work without evidence,
+- overdue strategic work,
+- failed schedules where schedule views are enabled,
+- cached/calculated progress variance.
+
+### Export Behavior
+
+Export should:
+
+- respect selected scope and date range,
+- include hierarchy rows,
+- include metadata,
+- include diagnostics,
+- preserve official naming labels,
+- avoid silently dropping rows due to pagination.
+
+## Sprint 5 Acceptance Criteria
+
+The sprint is complete when:
+
+- Strategic Execution Traceability Report preview exists.
+- Division/Unit Progress Heatmap uses graph/progress values.
+- Evidence and overdue strategic task sections exist.
+- Unlinked Records Report exposes graph diagnostics.
+- CSV export includes hierarchy rows and metadata.
+- Report previews and exports state scope, date range, generated time, and calculation source.
+- Scheduled reports display last sent, next send, delivery status, and failure state where data exists.
+- Report values match Strategy page and Division/Unit hierarchy for the same scope/date.
+- `npm run test`, `npm run lint`, and `npm run build` pass or documented failures are triaged.
+- Browser validation confirms report preview, export, and schedule flows.
+
+## Risks And Mitigations
+
+| Risk | Mitigation |
+| --- | --- |
+| Reports become too dense for normal users | Use report type tabs/sections and keep executive summary first |
+| CSV logic drifts from preview logic | Build preview and export from the same row builders |
+| Evidence data is incomplete | Show evidence health as known/unknown/missing rather than pretending certainty |
+| Schedule delivery depends on external automation | Separate schedule metadata from delivery status and expose failures clearly |
+| Role scope affects report totals | Put scope in report metadata and export columns |
+| Large reports hit paging limits | Use paged/scoped queries and validate with large datasets |
+
+## Out Of Scope For Sprint 5
+
+- Full admin/audit governance dashboard.
+- Automated delivery worker implementation if it does not already exist.
+- Word/PDF report export.
+- Full production data cleanup.
+- KPI review governance workflow redesign.
+- Final UAT rollout.
+
+## Handoff Notes For Sprint 6
+
+Sprint 6 should focus on governance, audit, rollout, and hardening:
+
+- KPI review governance report,
+- owner accountability report,
+- progress variance report,
+- admin/audit schedule dashboard,
+- diagnostic cleanup workflow,
+- UAT scripts,
+- release readiness checklist,
+- and post-release monitoring.
+
+Sprint 6 should also decide which diagnostics become mandatory cleanup blockers before production rollout.

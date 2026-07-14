@@ -23,6 +23,7 @@ import {
     ClipboardList,
     FilePlus,
     ClipboardCheck,
+    CalendarClock,
     LucideIcon
 } from 'lucide-react';
 
@@ -50,6 +51,7 @@ export const mainNavItems: NavItem[] = [
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
     { icon: FormInput, path: '/forms', label: 'Forms', resource: 'forms' },
     { icon: ClipboardCheck, path: '/approvals', label: 'Approvals', resource: null },
+    { icon: CalendarClock, path: '/time-attendance', label: 'Attendance', resource: null },
     { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: null },
     { icon: GalleryHorizontal, path: '/gallery', label: 'Gallery', resource: 'gallery' },
     { icon: Users, path: '/contacts', label: 'Contacts', resource: 'contacts' },

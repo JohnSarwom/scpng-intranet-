@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
+import StrategyGraphDebugPanel from '@/components/strategy/StrategyGraphDebugPanel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -2405,6 +2406,9 @@ const TestGround = () => {
                 </div>
 
                 <Separator />
+
+                {/* Strategy Execution Graph — read-only debug (Phase 3) */}
+                <StrategyGraphDebugPanel />
 
                 {/* User Info Card */}
                 <Card>

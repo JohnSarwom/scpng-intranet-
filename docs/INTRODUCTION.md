@@ -20,6 +20,7 @@ Welcome to the SCPNG Intranet technical documentation. This guide provides a str
   - **[Unit Tabs Implementation](modules/task-registry/unit-tabs.md)**: Technical spec for `src/components/unit-tabs/`.
 - **[Performance Management](modules/performance/)**: Initiatives, KRAs, and KPIs.
 - **[Leave Management](modules/leave-application/)**: Leave application and approval workflows.
+- **[Time and Attendance](time-attendance/00-master-toc.md)**: Attendance architecture, requirements, SharePoint storage, Power Automate workflows, and rollout plan.
 
 ### 3. 🎨 [UI & Component Library](ui/)
 *Reusable design system and premium components.*

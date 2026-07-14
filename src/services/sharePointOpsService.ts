@@ -16,6 +16,7 @@ interface Report {
 }
 import { Logger } from '@/utils/logger';
 import { WorkPlan, WorkPlanGoal } from '@/types/division.types';
+import { normalizeLookupNumber, normalizeLookupString } from '@/utils/sharePointLookupUtils';
 
 // Configuration for SharePoint Lists
 const OPS_CONFIG = {
@@ -619,8 +620,8 @@ export class SharePointOpsService {
                 AssigneeViewMap: task.assigneeViewMap ? JSON.stringify(task.assigneeViewMap) : undefined,
                 AttachmentsJSON: task.attachments ? JSON.stringify(task.attachments) : undefined,
                 // Lookups
-                RelatedKRALookupId: task.kra_id ? Number(task.kra_id) : null,
-                RelatedKPILookupId: task.kpi_id ? Number(task.kpi_id) : null,
+                RelatedKRALookupId: normalizeLookupNumber(task.kra_id),
+                RelatedKPILookupId: normalizeLookupNumber(task.kpi_id),
                 // Write group ID to TaskGroup lookup only (Projects lookup targets a different list)
                 RelatedTaskGroupLookupId: numericGroupId
             }
@@ -649,8 +650,9 @@ export class SharePointOpsService {
         }
 
         // Sync KPI checklist if task is linked to a KPI
-        if (task.kpi_id) {
-            await this.syncKPIChecklistFromTasks(task.kpi_id.toString(), { id: response.id, status: payload.fields.Status });
+        const linkedKpiId = normalizeLookupString(task.kpi_id);
+        if (linkedKpiId) {
+            await this.syncKPIChecklistFromTasks(linkedKpiId, { id: response.id, status: payload.fields.Status });
         }
 
         return this.mapTask(response);
@@ -714,8 +716,8 @@ export class SharePointOpsService {
         }
 
         // Lookups
-        if (task.kra_id !== undefined) fields.RelatedKRALookupId = task.kra_id ? Number(task.kra_id) : null;
-        if (task.kpi_id !== undefined) fields.RelatedKPILookupId = task.kpi_id ? Number(task.kpi_id) : null;
+        if (task.kra_id !== undefined) fields.RelatedKRALookupId = normalizeLookupNumber(task.kra_id);
+        if (task.kpi_id !== undefined) fields.RelatedKPILookupId = normalizeLookupNumber(task.kpi_id);
         // Also handle explicit groupId updates
         if (task.groupId !== undefined && task.projectId === undefined) {
             const numericGroupId = task.groupId ? Number(task.groupId) : null;
@@ -755,7 +757,7 @@ export class SharePointOpsService {
 
         // Sync KPI checklist(s) after task update
         const newKpiId = task.kpi_id !== undefined
-            ? (task.kpi_id ? String(task.kpi_id) : null)
+            ? normalizeLookupString(task.kpi_id)
             : oldKpiId;
 
         // If KPI linkage changed, sync both old and new KPIs
@@ -1121,10 +1123,10 @@ export class SharePointOpsService {
                 Status: ['completed', 'done', 'closed'].includes(kra.status?.toLowerCase() || '') ? 'Closed' : (kra.status === 'in-progress' ? 'In Progress' : 'Open'),
                 Progress: kra.progress ?? 0,
                 Description: kra.description,
-                UnitObjectiveLookupId: kra.objective_id ? Number(kra.objective_id) : null,
+                UnitObjectiveLookupId: normalizeLookupNumber(kra.objective_id),
                 Assignees: mergedAssignees.length > 0 ? JSON.stringify(mergedAssignees) : undefined,
                 Level: (kra as any).level || null,
-                ParentKpiId: (kra as any).parentKpiId ? String((kra as any).parentKpiId) : null,
+                ParentKpiId: normalizeLookupString((kra as any).parentKpiId),
             }
         };
 
@@ -1163,9 +1165,9 @@ export class SharePointOpsService {
         if (kra.status !== undefined) fields.Status = ['completed', 'done', 'closed'].includes(kra.status?.toLowerCase() || '') ? 'Closed' : (kra.status === 'in-progress' ? 'In Progress' : 'Open');
         if (kra.progress !== undefined) fields.Progress = kra.progress;
         if (kra.description !== undefined) fields.Description = kra.description;
-        if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = kra.objective_id ? Number(kra.objective_id) : null;
+        if (kra.objective_id !== undefined) fields.UnitObjectiveLookupId = normalizeLookupNumber(kra.objective_id);
         if ((kra as any).level !== undefined) fields.Level = (kra as any).level;
-        if ((kra as any).parentKpiId !== undefined) fields.ParentKpiId = (kra as any).parentKpiId ? String((kra as any).parentKpiId) : null;
+        if ((kra as any).parentKpiId !== undefined) fields.ParentKpiId = normalizeLookupString((kra as any).parentKpiId);
         // Rebuild Assignees JSON with owner embedded (same logic as addKRA).
         // Regular assignees get their own entries (no isOwner flag).
         // Owner gets a separate entry with isOwner:true.
@@ -1229,7 +1231,7 @@ export class SharePointOpsService {
                 Description: kpi.description,
                 StartDate: kpi.startDate ? new Date(kpi.startDate).toISOString() : null,
                 EndDate: kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null, // targetDate maps to EndDate
-                RelatedKRALookupId: kpi.kra_id ? Number(kpi.kra_id) : null,
+                RelatedKRALookupId: normalizeLookupNumber(kpi.kra_id),
                 CalculationType: kpi.calculationType || 'manual',
                 ChecklistJSON: kpi.checklist ? JSON.stringify(kpi.checklist) : undefined,
                 // Governance fields
@@ -1254,8 +1256,9 @@ export class SharePointOpsService {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`).post(payload);
 
             // Sync KRA progress if linked
-            if (kpi.kra_id) {
-                await this.syncKRAProgress(kpi.kra_id.toString());
+            const linkedKraId = normalizeLookupString(kpi.kra_id);
+            if (linkedKraId) {
+                await this.syncKRAProgress(linkedKraId);
             }
 
             return this.mapKPI(response);
@@ -1271,6 +1274,20 @@ export class SharePointOpsService {
     async updateKPI(id: string, kpi: Partial<Kpi>): Promise<Kpi> {
         if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
         const fields: any = {};
+        let previousKraId: string | null = null;
+
+        if (kpi.kra_id !== undefined) {
+            try {
+                const currentKpi = await this.client
+                    .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`)
+                    .expand('fields')
+                    .get();
+                previousKraId = normalizeLookupString(currentKpi.fields?.RelatedKRALookupId);
+            } catch (e) {
+                console.warn(`[SP Ops] Could not fetch previous KRA ID for KPI ${id} before update`, e);
+            }
+        }
+
         if (kpi.name !== undefined) fields.Title = kpi.name;
         if (kpi.metric !== undefined) fields.Metric = kpi.metric;
         if (kpi.target !== undefined) fields.TargetValue = kpi.target;
@@ -1280,6 +1297,7 @@ export class SharePointOpsService {
         if (kpi.description !== undefined) fields.Description = kpi.description;
         if (kpi.startDate !== undefined) fields.StartDate = kpi.startDate ? new Date(kpi.startDate).toISOString() : null;
         if (kpi.targetDate !== undefined) fields.EndDate = kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null;
+        if (kpi.kra_id !== undefined) fields.RelatedKRALookupId = normalizeLookupNumber(kpi.kra_id);
         if (kpi.calculationType !== undefined) fields.CalculationType = kpi.calculationType;
         if (kpi.checklist !== undefined) fields.ChecklistJSON = JSON.stringify(kpi.checklist);
 
@@ -1299,15 +1317,19 @@ export class SharePointOpsService {
             const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).patch({ fields });
 
             // Sync KRA progress if linked (either passed in this update or already known)
-            if (kpi.kra_id) {
-                await this.syncKRAProgress(kpi.kra_id.toString());
+            const newKraId = kpi.kra_id !== undefined ? normalizeLookupString(kpi.kra_id) : null;
+            if (previousKraId && previousKraId !== newKraId) {
+                await this.syncKRAProgress(previousKraId);
+            }
+            if (newKraId) {
+                await this.syncKRAProgress(newKraId);
             } else {
                 // Fetch the KPI to find its KRA ID if not provided in payload
                 try {
                     const currentKpi = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).expand('fields').get();
-                    const kraId = currentKpi.fields?.RelatedKRALookupId;
+                    const kraId = normalizeLookupString(currentKpi.fields?.RelatedKRALookupId);
                     if (kraId) {
-                        await this.syncKRAProgress(kraId.toString());
+                        await this.syncKRAProgress(kraId);
                     }
                 } catch (e) {
                     console.warn(`[SP Ops] Could not fetch KRA ID for KPI ${id} sync`, e);
@@ -1440,8 +1462,11 @@ export class SharePointOpsService {
                 ChecklistJSON: JSON.stringify(checklist),
             };
 
-            // Auto-set calculationType to checklist when tasks are linked
-            if (linkedTasks.length > 0) {
+            const currentCalculationType = String(kpiFields.CalculationType || '').toLowerCase();
+
+            // Preserve task-completion as its own KPI mode. Task-linked checklist items
+            // can support the UI, but they must not silently convert the KPI to checklist.
+            if (linkedTasks.length > 0 && currentCalculationType !== 'task-completion') {
                 updateFields.CalculationType = 'checklist';
             }
 

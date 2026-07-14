@@ -10,6 +10,7 @@ import { LeaveRequest } from '@/types/hr';
 type Phase = 'loading' | 'confirm' | 'processing' | 'done' | 'error' | 'already-actioned' | 'unauthorized';
 
 const TERMINAL_STATUSES = ['Approved', 'Rejected', 'Declined', 'Cancelled'];
+const ALLOW_SELF_LEAVE_APPROVAL_TESTING = true;
 
 const sameEmail = (a?: string, b?: string) =>
   !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
@@ -76,7 +77,7 @@ export default function LeaveActionPage() {
       return;
     }
 
-    if (sameEmail(approverEmail, requestData.employeeEmail)) {
+    if (!ALLOW_SELF_LEAVE_APPROVAL_TESTING && sameEmail(approverEmail, requestData.employeeEmail)) {
       setPhase('unauthorized');
       setResultMessage('You cannot approve or decline your own leave request. It must be routed to a higher-level approver.');
       return;

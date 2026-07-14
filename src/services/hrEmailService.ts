@@ -49,6 +49,15 @@ const LOGO = 'https://scpng.gov.pg/wp-content/uploads/2021/10/SCPNG-OFFICIAL-LOG
 // Helpers
 // ---------------------------------------------------------------------------
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function fmt(d: string): string {
   try {
     return new Date(d).toLocaleDateString('en-PG', {
@@ -63,8 +72,8 @@ function fmt(d: string): string {
 function buildDetailRows(rows: [string, string][]): string {
   return rows.map(([label, value], i) => `
         <tr bgcolor="${i % 2 === 1 ? '#fdf8f8' : '#ffffff'}">
-          <td width="140" style="font-size:12px;color:#9a7070;padding:9px 16px;vertical-align:middle;font-family:Arial,sans-serif;border-bottom:1px solid #f0e4e6;">${label}</td>
-          <td style="font-size:13px;color:#2a0008;font-weight:bold;padding:9px 16px;vertical-align:middle;font-family:Arial,sans-serif;border-bottom:1px solid #f0e4e6;">${value}</td>
+          <td width="140" style="font-size:12px;color:#9a7070;padding:9px 16px;vertical-align:middle;font-family:Arial,sans-serif;border-bottom:1px solid #f0e4e6;">${escapeHtml(label)}</td>
+          <td style="font-size:13px;color:#2a0008;font-weight:bold;padding:9px 16px;vertical-align:middle;font-family:Arial,sans-serif;border-bottom:1px solid #f0e4e6;">${escapeHtml(value)}</td>
         </tr>`).join('');
 }
 
@@ -99,15 +108,23 @@ function stageConfig(p: LeaveEmailParams): StageConfig {
         subject: `Leave Request Update — Forwarded to Director Review`,
         statusText: 'Director Review',
         statusBg: '#eff6ff', statusColor: '#1e3a5f', statusBorder: '#3b82f6', dotBg: '#3b82f6',
-        bodyHtml: `Your leave request has been <strong>approved by your Manager</strong>${approverName ? ` (${approverName})` : ''} and forwarded to the Director for review.`,
+        bodyHtml: `Your leave request has been <strong>approved by your Manager</strong>${approverName ? ` (${escapeHtml(approverName)})` : ''} and forwarded to the Director for review.`,
         closing: 'You will be notified once the Director has reviewed your request.',
+      };
+    case 'CEO Approved':
+      return {
+        subject: `Leave Request Update — Forwarded to HR Review`,
+        statusText: 'HR Review',
+        statusBg: '#f5f3ff', statusColor: '#4a1d96', statusBorder: '#8b5cf6', dotBg: '#8b5cf6',
+        bodyHtml: `Your leave request has been <strong>approved by the CEO</strong>${approverName ? ` (${escapeHtml(approverName)})` : ''} and forwarded to HR for final review.`,
+        closing: 'You will be notified once HR has completed the final review.',
       };
     case 'Director Approved':
       return {
         subject: `Leave Request Update — Forwarded to HR Review`,
         statusText: 'HR Review',
         statusBg: '#f5f3ff', statusColor: '#4a1d96', statusBorder: '#8b5cf6', dotBg: '#8b5cf6',
-        bodyHtml: `Your leave request has been <strong>approved by the Director</strong>${approverName ? ` (${approverName})` : ''} and forwarded to HR for final review.`,
+        bodyHtml: `Your leave request has been <strong>approved by the Director</strong>${approverName ? ` (${escapeHtml(approverName)})` : ''} and forwarded to HR for final review.`,
         closing: 'You will be notified once HR has completed the final review.',
       };
     case 'Fully Approved':
@@ -123,7 +140,7 @@ function stageConfig(p: LeaveEmailParams): StageConfig {
         subject: `Leave Request Declined — ${leaveType}`,
         statusText: 'Declined',
         statusBg: '#fef2f2', statusColor: '#7f1d1d', statusBorder: '#ef4444', dotBg: '#ef4444',
-        bodyHtml: `We regret to inform you that your leave request has been <strong>declined</strong>${approverName ? ` by ${approverName}` : ''}.${rejectionReason ? `<br><br><strong>Reason:</strong> ${rejectionReason}` : ''}`,
+        bodyHtml: `We regret to inform you that your leave request has been <strong>declined</strong>${approverName ? ` by ${escapeHtml(approverName)}` : ''}.${rejectionReason ? `<br><br><strong>Reason:</strong> ${escapeHtml(rejectionReason)}` : ''}`,
         closing: 'If you have any questions, please contact your Manager or HR directly.',
       };
   }
@@ -209,7 +226,7 @@ function buildEmailHtml(opts: {
           <td bgcolor="#ffffff" style="background-color:#ffffff;padding:24px 28px 20px;">
 
             <!-- Greeting -->
-            <p style="margin:0 0 12px 0;font-size:15px;color:#1a0005;font-family:Arial,sans-serif;">Dear <strong>${recipientName}</strong>,</p>
+            <p style="margin:0 0 12px 0;font-size:15px;color:#1a0005;font-family:Arial,sans-serif;">Dear <strong>${escapeHtml(recipientName)}</strong>,</p>
 
             <!-- Body text -->
             <p style="margin:0 0 18px 0;font-size:13px;color:#4a3035;line-height:1.65;font-family:Arial,sans-serif;">${bodyHtml}</p>
@@ -221,7 +238,7 @@ function buildEmailHtml(opts: {
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td bgcolor="${dotBg}" width="8" height="8" style="background-color:${dotBg};width:8px;height:8px;font-size:0;line-height:0;">&nbsp;&nbsp;</td>
-                      <td style="padding-left:7px;font-size:12px;font-weight:bold;color:${statusColor};font-family:Arial,sans-serif;" nowrap>${statusText}</td>
+                      <td style="padding-left:7px;font-size:12px;font-weight:bold;color:${statusColor};font-family:Arial,sans-serif;" nowrap>${escapeHtml(statusText)}</td>
                     </tr>
                   </table>
                 </td>
@@ -241,7 +258,7 @@ function buildEmailHtml(opts: {
             ${actionButtons ?? ''}
 
             <!-- Closing text -->
-            <p style="margin:0 0 16px 0;font-size:13px;color:#555555;line-height:1.65;font-family:Arial,sans-serif;">${closing}</p>
+            <p style="margin:0 0 16px 0;font-size:13px;color:#555555;line-height:1.65;font-family:Arial,sans-serif;">${escapeHtml(closing)}</p>
 
             <!-- Regards -->
             <p style="margin:0;font-size:13px;color:#4a3035;font-family:Arial,sans-serif;line-height:1.7;">
@@ -360,7 +377,7 @@ function buildActionButtons(approveUrl: string, declineUrl: string): string {
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td bgcolor="#1a5e2a" style="background-color:#1a5e2a;border-radius:5px;padding:11px 28px;">
-                <a href="${approveUrl}" style="font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;" target="_blank">&#10003;&nbsp; Approve</a>
+                <a href="${escapeHtml(approveUrl)}" style="font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;" target="_blank">&#10003;&nbsp; Approve</a>
               </td>
             </tr>
           </table>
@@ -369,7 +386,7 @@ function buildActionButtons(approveUrl: string, declineUrl: string): string {
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td bgcolor="#7a1020" style="background-color:#7a1020;border-radius:5px;padding:11px 28px;">
-                <a href="${declineUrl}" style="font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;" target="_blank">&#10007;&nbsp; Decline</a>
+                <a href="${escapeHtml(declineUrl)}" style="font-size:13px;font-weight:bold;color:#ffffff;text-decoration:none;font-family:Arial,sans-serif;" target="_blank">&#10007;&nbsp; Decline</a>
               </td>
             </tr>
           </table>
@@ -390,18 +407,19 @@ function buildLegacyApproverNotifyHtml(p: ApproverNotifyParams): { subject: stri
   ];
 
   const base = p.appUrl ?? 'http://localhost:8080';
+  const requestId = p.requestId ? encodeURIComponent(p.requestId) : '';
   const approveUrl = p.requestId
-    ? `${base}/leave-action?requestId=${p.requestId}&action=approve`
+    ? `${base}/leave-action?requestId=${requestId}&action=approve`
     : `${base}/hr-profiles?tab=leave-approvals`;
   const declineUrl = p.requestId
-    ? `${base}/leave-action?requestId=${p.requestId}&action=decline`
+    ? `${base}/leave-action?requestId=${requestId}&action=decline`
     : `${base}/hr-profiles?tab=leave-approvals`;
 
   const actionBlock = buildActionButtons(approveUrl, declineUrl);
 
   const html = buildEmailHtml({
     recipientName: p.approverName,
-    bodyHtml: `A leave request from <strong>${p.employeeName}</strong> has been forwarded to you and requires your review at the <strong>${p.stage}</strong> stage.`,
+    bodyHtml: `A leave request from <strong>${escapeHtml(p.employeeName)}</strong> has been forwarded to you and requires your review at the <strong>${escapeHtml(p.stage)}</strong> stage.`,
     statusText: `Action Required — ${p.stage}`,
     statusBg: '#fff8e6',
     statusColor: '#7a5200',
@@ -424,11 +442,12 @@ function buildLegacyApproverNotifyHtml(p: ApproverNotifyParams): { subject: stri
 
 async function buildApproverNotifyHtml(p: ApproverNotifyParams): Promise<{ subject: string; html: string }> {
   const base = p.appUrl ?? 'http://localhost:8080';
+  const requestId = p.requestId ? encodeURIComponent(p.requestId) : '';
   const approveUrl = p.requestId
-    ? `${base}/leave-action?requestId=${p.requestId}&action=approve`
+    ? `${base}/leave-action?requestId=${requestId}&action=approve`
     : `${base}/hr-profiles?tab=leave-approvals`;
   const declineUrl = p.requestId
-    ? `${base}/leave-action?requestId=${p.requestId}&action=decline`
+    ? `${base}/leave-action?requestId=${requestId}&action=decline`
     : `${base}/hr-profiles?tab=leave-approvals`;
 
   const html = await buildSCPNGActionRequiredEmailHTML({

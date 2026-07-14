@@ -6,7 +6,7 @@
  * full design; Outlook falls back to solid brand colours automatically.
  */
 
-import { EmailTemplateStage } from '@/types/hr';
+import type { EmailTemplateStage } from '@/types/hr';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,6 +109,15 @@ const STAGE_CONFIG: Record<EmailTemplateStage, StageConfig> = {
     bodyIntro:    'Your leave request has been <strong>approved by your Manager</strong> and forwarded to the Director for review.',
     showApprover: true,
   },
+  'CEO Approved': {
+    statusLabel:  'CEO Approved - Awaiting HR Review',
+    statusBg:     '#f3efff',
+    statusBorder: '#8b5cf6',
+    statusText:   '#4c1d95',
+    dotColor:     '#8b5cf6',
+    bodyIntro:    'Your leave request has been <strong>approved by the CEO</strong> and forwarded to HR for final review.',
+    showApprover: true,
+  },
   'Director Approved': {
     statusLabel:  'Director Approved — Awaiting HR Review',
     statusBg:     '#f3efff',
@@ -143,6 +152,15 @@ const STAGE_CONFIG: Record<EmailTemplateStage, StageConfig> = {
 // Detail rows
 // ---------------------------------------------------------------------------
 
+function escapeHtml(value: unknown): string {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function buildDetailRows(vars: EmailTemplateVars, cfg: StageConfig): string {
   const rows: [string, string][] = [
     ['Leave Type',     vars.leaveType],
@@ -156,8 +174,8 @@ function buildDetailRows(vars: EmailTemplateVars, cfg: StageConfig): string {
 
   return rows.map(([label, value], i) => `
     <tr style="background:${i % 2 === 1 ? '#fdf8f8' : '#ffffff'};">
-      <td width="130" style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#9a7070;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;mso-line-height-rule:exactly;line-height:16px;">${label}</td>
-      <td style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#1a0005;font-size:13px;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;mso-line-height-rule:exactly;line-height:16px;">${value}</td>
+      <td width="130" style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#9a7070;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;mso-line-height-rule:exactly;line-height:16px;">${escapeHtml(label)}</td>
+      <td style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#1a0005;font-size:13px;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;mso-line-height-rule:exactly;line-height:16px;">${escapeHtml(value)}</td>
     </tr>`).join('');
 }
 
@@ -174,8 +192,8 @@ function buildActionRequiredRows(vars: ActionRequiredEmailVars): string {
 
   return rows.map(([label, value], i) => `
     <tr style="background:${i % 2 === 1 ? '#fdf8f8' : '#ffffff'};">
-      <td width="130" style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#9a7070;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;mso-line-height-rule:exactly;line-height:16px;">${label}</td>
-      <td style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#1a0005;font-size:13px;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;mso-line-height-rule:exactly;line-height:16px;">${value}</td>
+      <td width="130" style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#9a7070;font-size:12px;font-family:'Segoe UI',Arial,sans-serif;white-space:nowrap;mso-line-height-rule:exactly;line-height:16px;">${escapeHtml(label)}</td>
+      <td style="padding:8px 14px;border-bottom:1px solid #efe4e4;color:#1a0005;font-size:13px;font-weight:600;font-family:'Segoe UI',Arial,sans-serif;mso-line-height-rule:exactly;line-height:16px;">${escapeHtml(value)}</td>
     </tr>`).join('');
 }
 
@@ -184,11 +202,11 @@ function buildActionButtons(approveUrl: string, declineUrl: string): string {
     <table border="0" cellpadding="0" cellspacing="0">
       <tr>
         <td bgcolor="#1f7a3a" style="background:#1f7a3a;padding:10px 24px;mso-line-height-rule:exactly;line-height:18px;">
-          <a href="${approveUrl}" target="_blank" style="display:inline-block;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;font-family:'Segoe UI',Arial,sans-serif;">Approve Request</a>
+          <a href="${escapeHtml(approveUrl)}" target="_blank" style="display:inline-block;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;font-family:'Segoe UI',Arial,sans-serif;">Approve Request</a>
         </td>
         <td width="10" style="font-size:0;line-height:0;">&nbsp;</td>
         <td bgcolor="${BURG_LIGHT}" style="background:${BURG_LIGHT};padding:10px 24px;mso-line-height-rule:exactly;line-height:18px;">
-          <a href="${declineUrl}" target="_blank" style="display:inline-block;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;font-family:'Segoe UI',Arial,sans-serif;">Decline Request</a>
+          <a href="${escapeHtml(declineUrl)}" target="_blank" style="display:inline-block;font-size:13px;font-weight:700;color:#ffffff;text-decoration:none;font-family:'Segoe UI',Arial,sans-serif;">Decline Request</a>
         </td>
       </tr>
     </table>
@@ -202,6 +220,9 @@ function buildActionButtons(approveUrl: string, declineUrl: string): string {
 function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: string, options: BuildOptions = {}): string {
   const cfg        = STAGE_CONFIG[stage];
   const detailRows = options.detailRows ?? buildDetailRows(vars, cfg);
+  const title = options.title ?? `Leave Request &mdash; ${vars.leaveType} | SCPNG HR`;
+  const recipientName = options.recipientName ?? vars.employeeName;
+  const statusLabel = options.statusLabel ?? cfg.statusLabel;
 
   const notifyText = options.notifyText ?? (
     stage === 'Fully Approved'
@@ -216,7 +237,7 @@ function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: 
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-left:3px solid #ef4444;background:#fef2f2;">
           <tr><td style="padding:10px 14px;">
             <p style="margin:0 0 5px 0;font-size:11px;font-weight:700;color:#7f1d1d;text-transform:uppercase;letter-spacing:0.5px;font-family:'Segoe UI',Arial,sans-serif;">Reason for Decline</p>
-            <p style="margin:0;font-size:13px;color:#450a0a;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">${vars.rejectionReason}</p>
+            <p style="margin:0;font-size:13px;color:#450a0a;line-height:1.6;font-family:'Segoe UI',Arial,sans-serif;">${escapeHtml(vars.rejectionReason)}</p>
           </td></tr>
         </table>
       </td></tr>`
@@ -231,7 +252,7 @@ function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: 
   <!--[if !mso]><!-->
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <!--<![endif]-->
-  <title>${options.title ?? `Leave Request &mdash; ${vars.leaveType} | SCPNG HR`}</title>
+  <title>${escapeHtml(title)}</title>
   <!--[if mso]>
   <noscript>
     <xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>
@@ -281,7 +302,7 @@ function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: 
 
       <!-- ══ GREETING ════════════════════════════════════════════════ -->
       <tr><td style="padding:28px 28px 0 28px;">
-        <p style="margin:0 0 12px 0;font-size:15px;color:#1a0005;font-family:'Segoe UI',Arial,sans-serif;">Dear <strong>${options.recipientName ?? vars.employeeName}</strong>,</p>
+        <p style="margin:0 0 12px 0;font-size:15px;color:#1a0005;font-family:'Segoe UI',Arial,sans-serif;">Dear <strong>${escapeHtml(recipientName)}</strong>,</p>
         <p style="margin:0 0 20px 0;font-size:13.5px;color:#4a3035;line-height:1.65;font-family:'Segoe UI',Arial,sans-serif;">${options.bodyIntro ?? cfg.bodyIntro}</p>
         <!-- Status badge — auto-width via inner table, not stretched -->
         <table border="0" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
@@ -296,7 +317,7 @@ function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: 
                     <!--[if mso]><span style="font-size:8px;color:${cfg.dotColor};">&#9679;</span><![endif]-->
                   </td>
                   <td valign="middle">
-                    <span style="font-size:12.5px;font-weight:700;color:${cfg.statusText};font-family:'Segoe UI',Arial,sans-serif;">${options.statusLabel ?? cfg.statusLabel}</span>
+                    <span style="font-size:12.5px;font-weight:700;color:${cfg.statusText};font-family:'Segoe UI',Arial,sans-serif;">${escapeHtml(statusLabel)}</span>
                   </td>
                 </tr>
               </table>
@@ -324,7 +345,7 @@ function buildHTML(stage: EmailTemplateStage, vars: EmailTemplateVars, logoSrc: 
 
       <!-- ══ BODY CLOSE TEXT ══════════════════════════════════════════ -->
       <tr><td style="padding:0 28px 20px 28px;">
-        <p style="margin:0 0 16px 0;font-size:13px;color:#555555;line-height:1.65;font-family:'Segoe UI',Arial,sans-serif;">${notifyText}</p>
+        <p style="margin:0 0 16px 0;font-size:13px;color:#555555;line-height:1.65;font-family:'Segoe UI',Arial,sans-serif;">${escapeHtml(notifyText)}</p>
         <p style="margin:0;font-size:13px;color:#4a3035;font-family:'Segoe UI',Arial,sans-serif;line-height:1.6;">
           Regards,<br/>
           <strong style="color:${BURG_LIGHT};font-size:14px;">HR Department</strong><br/>
@@ -467,7 +488,7 @@ export async function buildSCPNGActionRequiredEmailHTML(
   return buildHTML('Submission', vars, LOGO_URL, {
     title: `Action Required - Leave Request for ${vars.employeeName}`,
     recipientName: vars.approverName,
-    bodyIntro: `A leave request from <strong>${vars.employeeName}</strong> has been forwarded to you and requires your review at the <strong>${vars.stage}</strong> stage.`,
+    bodyIntro: `A leave request from <strong>${escapeHtml(vars.employeeName)}</strong> has been forwarded to you and requires your review at the <strong>${escapeHtml(vars.stage)}</strong> stage.`,
     statusLabel: `Action Required - ${vars.stage}`,
     detailRows: buildActionRequiredRows(vars),
     actionBlock: buildActionButtons(vars.approveUrl, vars.declineUrl),
@@ -488,14 +509,14 @@ export function buildSCPNGEmailSubject(
   stage: EmailTemplateStage,
   vars: Pick<EmailTemplateVars, 'leaveType' | 'days'>,
 ): string {
-  const map: Record<EmailTemplateStage, string> = {
+  const map: Partial<Record<EmailTemplateStage, string>> = {
     Submission:          `Leave Request Submitted — ${vars.leaveType} (${vars.days} day${vars.days !== 1 ? 's' : ''})`,
     'Manager Approved':  `Leave Request Update — Manager Approved | ${vars.leaveType}`,
     'Director Approved': `Leave Request Update — Director Approved | ${vars.leaveType}`,
     'Fully Approved':    `Leave Request Approved — ${vars.leaveType} (${vars.days} day${vars.days !== 1 ? 's' : ''})`,
     Rejected:            `Leave Request Declined — ${vars.leaveType}`,
   };
-  return map[stage];
+  return map[stage] ?? `Leave Request Update - ${stage} | ${vars.leaveType}`;
 }
 
 export function buildSCPNGActionRequiredEmailSubject(
