@@ -1,11 +1,11 @@
-# Graph Report - .  (2026-07-10)
+# Graph Report - .  (2026-07-14)
 
 ## Corpus Check
-- 615 files · ~1,802,720 words
+- 616 files · ~1,803,212 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2636 nodes · 2906 edges · 612 communities detected
+- 2643 nodes · 2914 edges · 613 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -622,6 +622,7 @@
 - [[_COMMUNITY_Community 609|Community 609]]
 - [[_COMMUNITY_Community 610|Community 610]]
 - [[_COMMUNITY_Community 611|Community 611]]
+- [[_COMMUNITY_Community 612|Community 612]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `SharePointListSetupService` - 109 edges
@@ -694,7 +695,7 @@ Nodes (4): createId(), getAttendanceDateKey(), getTimeZoneMinutes(), TimeAttenda
 
 ### Community 13 - "Community 13"
 Cohesion: 0.1
-Nodes (0): 
+Nodes (0):
 
 ### Community 14 - "Community 14"
 Cohesion: 0.13
@@ -702,7 +703,7 @@ Nodes (6): handleFollowUpClick(), handleScrollToBottomClick(), handleSendChatMes
 
 ### Community 15 - "Community 15"
 Cohesion: 0.11
-Nodes (0): 
+Nodes (0):
 
 ### Community 16 - "Community 16"
 Cohesion: 0.12
@@ -717,160 +718,160 @@ Cohesion: 0.25
 Nodes (2): escapeFilter(), UserSharePointService
 
 ### Community 19 - "Community 19"
-Cohesion: 0.15
-Nodes (3): combineStyles(), getStyle(), handleResizeHandleMouseDown()
+Cohesion: 0.23
+Nodes (13): addDays(), buildRecurringHolidayCalendar(), countBusinessDays(), dateKeyFromParts(), dateToLocalKey(), easterSunday(), getHolidaySet(), getPNGPublicHolidays() (+5 more)
 
 ### Community 20 - "Community 20"
 Cohesion: 0.15
-Nodes (3): handleCreateList(), handleDeleteList(), loadLists()
+Nodes (3): combineStyles(), getStyle(), handleResizeHandleMouseDown()
 
 ### Community 21 - "Community 21"
+Cohesion: 0.15
+Nodes (3): handleCreateList(), handleDeleteList(), loadLists()
+
+### Community 22 - "Community 22"
 Cohesion: 0.13
 Nodes (0): 
 
-### Community 22 - "Community 22"
+### Community 23 - "Community 23"
 Cohesion: 0.16
 Nodes (4): handleCloseModals(), handleConfirmDelete(), handleSaveAdd(), handleSaveEdit()
 
-### Community 23 - "Community 23"
+### Community 24 - "Community 24"
 Cohesion: 0.15
 Nodes (4): getColumns(), handleDeleteSelected(), handleResize(), toggleSelectMode()
 
-### Community 24 - "Community 24"
+### Community 25 - "Community 25"
 Cohesion: 0.25
 Nodes (1): AppsSharePointService
 
-### Community 25 - "Community 25"
+### Community 26 - "Community 26"
 Cohesion: 0.2
 Nodes (11): deleteAllPriceHistory(), fetchSharePointData(), fetchSharePointItems(), getAccessToken(), getMarketSettings(), getPriceHistory(), hexToRgba(), transformCompany() (+3 more)
 
-### Community 26 - "Community 26"
+### Community 27 - "Community 27"
 Cohesion: 0.24
 Nodes (5): getAllMarketNews(), getHighPriorityNews(), getTimeAgo(), MarketNewsSharePointService, transformNewsItem()
 
-### Community 27 - "Community 27"
+### Community 28 - "Community 28"
 Cohesion: 0.24
 Nodes (1): PowerAutomateService
 
-### Community 28 - "Community 28"
+### Community 29 - "Community 29"
 Cohesion: 0.14
 Nodes (1): SharePointExplorerService
 
-### Community 29 - "Community 29"
+### Community 30 - "Community 30"
 Cohesion: 0.24
 Nodes (6): getAllSlideshows(), getCapitalMarketActs(), getCapitalMarketNews(), getMSOffice365Tips(), SlideshowSharePointService, transformSlideshowItem()
 
-### Community 30 - "Community 30"
+### Community 31 - "Community 31"
 Cohesion: 0.18
 Nodes (3): handleSubmit(), sanitizeFolderName(), uploadPendingFiles()
 
-### Community 31 - "Community 31"
+### Community 32 - "Community 32"
 Cohesion: 0.28
 Nodes (1): DivisionService
 
-### Community 32 - "Community 32"
+### Community 33 - "Community 33"
 Cohesion: 0.27
 Nodes (2): EmployeePhotosService, escapeFilter()
 
-### Community 33 - "Community 33"
+### Community 34 - "Community 34"
 Cohesion: 0.33
 Nodes (12): buildActionButtons(), buildApproverNotifyHtml(), buildDetailRows(), buildEmailHtml(), buildLeaveEmailHtml(), buildLegacyApproverNotifyHtml(), escapeHtml(), fmt() (+4 more)
 
-### Community 34 - "Community 34"
+### Community 35 - "Community 35"
 Cohesion: 0.17
 Nodes (0): 
 
-### Community 35 - "Community 35"
+### Community 36 - "Community 36"
 Cohesion: 0.21
 Nodes (5): getChecklistText(), handleAdd(), handleChecklistChange(), resetForm(), validate()
 
-### Community 36 - "Community 36"
+### Community 37 - "Community 37"
 Cohesion: 0.35
 Nodes (10): callMsGraphApi(), diagnoseMsalIssues(), getAccessToken(), getAccount(), getMsalInstance(), getUserProfile(), handleRedirectResponse(), loginRedirect() (+2 more)
 
-### Community 37 - "Community 37"
+### Community 38 - "Community 38"
 Cohesion: 0.17
 Nodes (1): GalleryService
 
-### Community 38 - "Community 38"
+### Community 39 - "Community 39"
 Cohesion: 0.24
 Nodes (7): getFilteredCases(), handleFollowUpClick(), handleSend(), handleStopGeneration(), scrollToBottom(), serializeRegulatoryContext(), typeNextChar()
 
-### Community 39 - "Community 39"
+### Community 40 - "Community 40"
 Cohesion: 0.21
 Nodes (6): buildFallbackHistory(), getHistory(), isAssignedWorkflowApprover(), normalizeOrgName(), orgNameMatches(), sameEmail()
 
-### Community 40 - "Community 40"
+### Community 41 - "Community 41"
 Cohesion: 0.32
 Nodes (9): buildActionButtons(), buildActionRequiredRows(), buildDetailRows(), buildHTML(), buildSCPNGActionRequiredEmailHTML(), buildSCPNGEmailHTML(), buildSCPNGPreviewHTML(), escapeHtml() (+1 more)
 
-### Community 41 - "Community 41"
+### Community 42 - "Community 42"
 Cohesion: 0.2
 Nodes (2): calculatePosition(), calculateWidth()
 
-### Community 42 - "Community 42"
+### Community 43 - "Community 43"
 Cohesion: 0.25
 Nodes (6): handleFollowUpClick(), handleSend(), handleStopGeneration(), scrollToBottom(), serializeAnalyticsContext(), typeNextChar()
 
-### Community 43 - "Community 43"
+### Community 44 - "Community 44"
 Cohesion: 0.25
 Nodes (6): handleFollowUpClick(), handleSend(), handleStopGeneration(), scrollToBottom(), serializeDivisionContext(), typeNextChar()
 
-### Community 44 - "Community 44"
+### Community 45 - "Community 45"
 Cohesion: 0.25
 Nodes (6): getFilteredData(), handleFollowUpClick(), handleSend(), handleStopGeneration(), scrollToBottom(), typeNextChar()
 
-### Community 45 - "Community 45"
+### Community 46 - "Community 46"
 Cohesion: 0.35
 Nodes (10): useOpsService(), useSharePointCustomContacts(), useSharePointKPIs(), useSharePointKRAs(), useSharePointObjectives(), useSharePointProjects(), useSharePointRisks(), useSharePointSetup() (+2 more)
 
-### Community 46 - "Community 46"
+### Community 47 - "Community 47"
 Cohesion: 0.33
 Nodes (1): UnitService
 
-### Community 47 - "Community 47"
+### Community 48 - "Community 48"
 Cohesion: 0.36
 Nodes (1): OneDriveFileUploader
-
-### Community 48 - "Community 48"
-Cohesion: 0.2
-Nodes (0): 
 
 ### Community 49 - "Community 49"
 Cohesion: 0.2
 Nodes (0): 
 
 ### Community 50 - "Community 50"
-Cohesion: 0.27
-Nodes (4): generateKRAsForStaff(), getRoleCategory(), randomDate(), randomItem()
-
-### Community 51 - "Community 51"
-Cohesion: 0.47
-Nodes (8): fetchData(), getService(), handleAddUser(), handleCreateGroup(), handleDeleteGroup(), handleDeleteUser(), handleUpdateGroup(), handleUpdateUser()
-
-### Community 52 - "Community 52"
 Cohesion: 0.2
 Nodes (0): 
 
+### Community 51 - "Community 51"
+Cohesion: 0.27
+Nodes (4): generateKRAsForStaff(), getRoleCategory(), randomDate(), randomItem()
+
+### Community 52 - "Community 52"
+Cohesion: 0.47
+Nodes (8): fetchData(), getService(), handleAddUser(), handleCreateGroup(), handleDeleteGroup(), handleDeleteUser(), handleUpdateGroup(), handleUpdateUser()
+
 ### Community 53 - "Community 53"
+Cohesion: 0.2
+Nodes (0): 
+
+### Community 54 - "Community 54"
 Cohesion: 0.33
 Nodes (1): AssetSubSharePointService
 
-### Community 54 - "Community 54"
+### Community 55 - "Community 55"
 Cohesion: 0.29
 Nodes (6): extractAssetLibraryPath(), initialize(), isBlobUrl(), mapWithConcurrency(), resolveGalleryDataImageUrls(), resolveGalleryPhotoImageUrl()
 
-### Community 55 - "Community 55"
+### Community 56 - "Community 56"
 Cohesion: 0.33
 Nodes (1): MeetingShareService
 
-### Community 56 - "Community 56"
+### Community 57 - "Community 57"
 Cohesion: 0.38
 Nodes (9): buildDispatchFlowDefinition(), buildDispatchLoopActions(), buildReportSchedulerDefinition(), buildSendFlowDefinition(), sheetsGetRows(), sheetsInsertRow(), sheetsUpdateRow(), spGetItems() (+1 more)
-
-### Community 57 - "Community 57"
-Cohesion: 0.42
-Nodes (9): addDays(), countBusinessDays(), easterSunday(), getHolidaySet(), getPNGPublicHolidays(), isHoliday(), isWeekend(), listPNGPublicHolidays() (+1 more)
 
 ### Community 58 - "Community 58"
 Cohesion: 0.28
@@ -3088,6 +3089,10 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
+### Community 612 - "Community 612"
+Cohesion: 1.0
+Nodes (0):
+
 ## Knowledge Gaps
 - **2 isolated node(s):** `Inject cross-layer edges into graphify graph. This script ONLY modifies graphify`, `Regenerate all graphify outputs (HTML, Obsidian vault, wiki, GRAPH_REPORT). This`
   These have ≤1 connection - possible missing edges or undocumented components.
@@ -3781,29 +3786,29 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 588`** (1 nodes): `csv-sync.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 589`** (1 nodes): `sharePointLookupUtils.test.ts`
+- **Thin community `Community 589`** (1 nodes): `pngPublicHolidays.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 590`** (1 nodes): `apps.ts`
+- **Thin community `Community 590`** (1 nodes): `sharePointLookupUtils.test.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 591`** (1 nodes): `division.types.ts`
+- **Thin community `Community 591`** (1 nodes): `apps.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 592`** (1 nodes): `forms.ts`
+- **Thin community `Community 592`** (1 nodes): `division.types.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 593`** (1 nodes): `hr.ts`
+- **Thin community `Community 593`** (1 nodes): `forms.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 594`** (1 nodes): `index.ts`
+- **Thin community `Community 594`** (1 nodes): `hr.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 595`** (1 nodes): `news.ts`
+- **Thin community `Community 595`** (1 nodes): `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 596`** (1 nodes): `payment.types.ts`
+- **Thin community `Community 596`** (1 nodes): `news.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 597`** (1 nodes): `slideshow.types.ts`
+- **Thin community `Community 597`** (1 nodes): `payment.types.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 598`** (1 nodes): `staff.ts`
+- **Thin community `Community 598`** (1 nodes): `slideshow.types.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 599`** (1 nodes): `strategyExecution.ts`
+- **Thin community `Community 599`** (1 nodes): `staff.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 600`** (1 nodes): `index.ts`
+- **Thin community `Community 600`** (1 nodes): `strategyExecution.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 601`** (1 nodes): `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -3823,9 +3828,11 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 609`** (1 nodes): `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 610`** (1 nodes): `cors.ts`
+- **Thin community `Community 610`** (1 nodes): `index.ts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 611`** (1 nodes): `read_docx.ps1`
+- **Thin community `Community 611`** (1 nodes): `cors.ts`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 612`** (1 nodes): `read_docx.ps1`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions

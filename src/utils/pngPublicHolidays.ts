@@ -1,16 +1,69 @@
 /**
- * Papua New Guinea Public Holidays
+ * Papua New Guinea public holidays.
  *
- * Static holidays are fixed to a calendar date each year.
- * Moveable holidays (Easter group, Repentance Day, King's Birthday) are
- * computed dynamically per year.
- *
- * Sources: PNG Public Holidays Act (Chapter 321) and annual gazetted dates.
+ * Annual gazetted dates take precedence over the recurring fallback calendar.
+ * Keep the annual list current when DPM publishes the next year's circular.
  */
 
-// ---------------------------------------------------------------------------
-// Easter calculation (Anonymous Gregorian algorithm)
-// ---------------------------------------------------------------------------
+export interface PNGPublicHoliday {
+  date: string;
+  label: string;
+}
+
+const PNG_TIME_ZONE = 'Pacific/Port_Moresby';
+
+/** Official 2026 dates: DPM Circular Instruction No. 12 of 2025, as corrected
+ * by Circular Instruction No. 13 of 2026 for the King's Birthday date. */
+const GAZETTED_HOLIDAYS: Record<number, PNGPublicHoliday[]> = {
+  2026: [
+    { date: '2026-01-01', label: "New Year's Day" },
+    { date: '2026-02-26', label: 'Sir Michael Somare Remembrance Day' },
+    { date: '2026-04-03', label: 'Good Friday' },
+    { date: '2026-04-04', label: 'Easter Saturday' },
+    { date: '2026-04-05', label: 'Easter Sunday' },
+    { date: '2026-04-06', label: 'Easter Monday' },
+    { date: '2026-06-17', label: "King's Birthday" },
+    { date: '2026-07-23', label: 'National Remembrance Day' },
+    { date: '2026-08-26', label: 'National Repentance Day' },
+    { date: '2026-09-16', label: 'Independence Day' },
+    { date: '2026-12-25', label: 'Christmas Day' },
+    { date: '2026-12-26', label: 'Boxing Day' },
+  ],
+};
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function dateKeyFromParts(year: number, month: number, day: number): string {
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+function dateFromKey(dateKey: string): Date {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function dateToLocalKey(date: Date): string {
+  return dateKeyFromParts(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+
+/** Return the calendar date in Papua New Guinea for an instant in time. */
+export function getPNGDateKey(date: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: PNG_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
+}
+
+// Anonymous Gregorian algorithm.
 function easterSunday(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -24,82 +77,69 @@ function easterSunday(year: number): Date {
   const k = c % 4;
   const l = (32 + 2 * e + 2 * i - h - k) % 7;
   const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const month = Math.floor((h + l - 7 * m + 114) / 31); // 1-based
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
   const day = ((h + l - 7 * m + 114) % 31) + 1;
   return new Date(year, month - 1, day);
 }
 
-function addDays(date: Date, n: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
+function addDays(date: Date, amount: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + amount);
+  return result;
 }
 
-/** nth occurrence of a given weekday (0=Sun…6=Sat) in a month */
 function nthWeekdayOfMonth(year: number, month: number, weekday: number, nth: number): Date {
   const first = new Date(year, month - 1, 1);
   const offset = (weekday - first.getDay() + 7) % 7;
   return new Date(year, month - 1, 1 + offset + (nth - 1) * 7);
 }
 
-// ---------------------------------------------------------------------------
-// Public holiday list for a given year
-// ---------------------------------------------------------------------------
-export function getPNGPublicHolidays(year: number): Date[] {
+/**
+ * Recurring fallback for years without a captured annual DPM circular.
+ * The King's Birthday fallback uses the second Monday of June; annual
+ * declarations should replace it as soon as they are published.
+ */
+function buildRecurringHolidayCalendar(year: number): PNGPublicHoliday[] {
   const easter = easterSunday(year);
-
-  const holidays: Date[] = [
-    // Fixed
-    new Date(year, 0, 1),    // New Year's Day — 1 Jan
-    new Date(year, 6, 23),   // Remembrance Day — 23 Jul
-    new Date(year, 8, 16),   // Independence Day — 16 Sep
-    new Date(year, 11, 25),  // Christmas Day — 25 Dec
-    new Date(year, 11, 26),  // Boxing Day — 26 Dec
-
-    // Easter group (moveable)
-    addDays(easter, -2),     // Good Friday
-    addDays(easter, -1),     // Holy Saturday
-    addDays(easter, 1),      // Easter Monday
-
-    // King's/Queen's Birthday — 2nd Monday of June
-    nthWeekdayOfMonth(year, 6, 1, 2),
-
-    // Repentance Day — 3rd Sunday of August (observed Monday when falls on Sunday)
-    // Gazetted as a Monday public holiday
-    nthWeekdayOfMonth(year, 8, 1, 3),
+  const dates: Array<{ date: Date; label: string }> = [
+    { date: new Date(year, 0, 1), label: "New Year's Day" },
+    { date: addDays(easter, -2), label: 'Good Friday' },
+    { date: addDays(easter, -1), label: 'Easter Saturday' },
+    { date: easter, label: 'Easter Sunday' },
+    { date: addDays(easter, 1), label: 'Easter Monday' },
+    { date: nthWeekdayOfMonth(year, 6, 1, 2), label: "King's Birthday" },
+    { date: new Date(year, 6, 23), label: 'National Remembrance Day' },
+    { date: new Date(year, 7, 26), label: 'National Repentance Day' },
+    { date: new Date(year, 8, 16), label: 'Independence Day' },
+    { date: new Date(year, 11, 25), label: 'Christmas Day' },
+    { date: new Date(year, 11, 26), label: 'Boxing Day' },
   ];
 
-  // When a fixed holiday falls on a Sunday, the following Monday is observed
-  const withSubstitutes: Date[] = [];
-  for (const h of holidays) {
-    withSubstitutes.push(h);
-    if (h.getDay() === 0) {
-      // Substitute Monday
-      withSubstitutes.push(addDays(h, 1));
-    }
-  }
-
-  return withSubstitutes;
+  return dates
+    .sort((left, right) => left.date.getTime() - right.date.getTime())
+    .map(({ date, label }) => ({ date: dateToLocalKey(date), label }));
 }
 
-// ---------------------------------------------------------------------------
-// Holiday lookup set (ISO date strings for O(1) lookup)
-// ---------------------------------------------------------------------------
+export function listPNGPublicHolidays(year: number): PNGPublicHoliday[] {
+  const holidays = GAZETTED_HOLIDAYS[year] ?? buildRecurringHolidayCalendar(year);
+  return holidays.map((holiday) => ({ ...holiday }));
+}
+
+export function getPNGPublicHolidays(year: number): Date[] {
+  return listPNGPublicHolidays(year).map((holiday) => dateFromKey(holiday.date));
+}
+
 const holidayCache = new Map<number, Set<string>>();
 
 function getHolidaySet(year: number): Set<string> {
   if (!holidayCache.has(year)) {
-    const set = new Set(
-      getPNGPublicHolidays(year).map(d => d.toISOString().split('T')[0])
-    );
-    holidayCache.set(year, set);
+    holidayCache.set(year, new Set(listPNGPublicHolidays(year).map((holiday) => holiday.date)));
   }
   return holidayCache.get(year)!;
 }
 
 function isHoliday(date: Date): boolean {
-  const iso = date.toISOString().split('T')[0];
-  return getHolidaySet(date.getFullYear()).has(iso);
+  return getHolidaySet(date.getFullYear()).has(dateToLocalKey(date));
 }
 
 function isWeekend(date: Date): boolean {
@@ -107,16 +147,7 @@ function isWeekend(date: Date): boolean {
   return day === 0 || day === 6;
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/**
- * Count business days between two dates (inclusive of both endpoints),
- * excluding weekends and PNG public holidays.
- *
- * Drop-in replacement for date-fns `differenceInBusinessDays(end, start) + 1`.
- */
+/** Count business days inclusively, excluding weekends and PNG holidays. */
 export function countBusinessDays(start: Date, end: Date): number {
   if (end < start) return 0;
 
@@ -127,44 +158,11 @@ export function countBusinessDays(start: Date, end: Date): number {
   finish.setHours(0, 0, 0, 0);
 
   while (cursor <= finish) {
-    if (!isWeekend(cursor) && !isHoliday(cursor)) {
-      count++;
-    }
+    if (!isWeekend(cursor) && !isHoliday(cursor)) count += 1;
     cursor.setDate(cursor.getDate() + 1);
   }
 
   return count;
 }
 
-/**
- * Returns true if a given date is a PNG public holiday.
- */
 export { isHoliday as isPNGPublicHoliday };
-
-/**
- * Human-readable list of PNG public holidays for a given year,
- * sorted chronologically. Useful for displaying a holiday calendar.
- */
-export function listPNGPublicHolidays(year: number): { date: string; label: string }[] {
-  const easter = easterSunday(year);
-
-  const named: { date: Date; label: string }[] = [
-    { date: new Date(year, 0, 1),       label: "New Year's Day" },
-    { date: addDays(easter, -2),        label: 'Good Friday' },
-    { date: addDays(easter, -1),        label: 'Holy Saturday' },
-    { date: addDays(easter, 1),         label: 'Easter Monday' },
-    { date: nthWeekdayOfMonth(year, 6, 1, 2), label: "King's Birthday" },
-    { date: new Date(year, 6, 23),      label: 'Remembrance Day' },
-    { date: nthWeekdayOfMonth(year, 8, 1, 3), label: 'Repentance Day' },
-    { date: new Date(year, 8, 16),      label: 'Independence Day' },
-    { date: new Date(year, 11, 25),     label: 'Christmas Day' },
-    { date: new Date(year, 11, 26),     label: 'Boxing Day' },
-  ];
-
-  return named
-    .sort((a, b) => a.date.getTime() - b.date.getTime())
-    .map(({ date, label }) => ({
-      date: date.toISOString().split('T')[0],
-      label,
-    }));
-}

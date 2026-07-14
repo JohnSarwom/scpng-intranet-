@@ -22,8 +22,10 @@ import {
   getAttendanceDateKey,
   TimeAttendanceSharePointService,
 } from '@/services/timeAttendanceSharePointService';
+import { getPNGDateKey, listPNGPublicHolidays } from '@/utils/pngPublicHolidays';
 import {
   AlertTriangle,
+  CalendarDays,
   CalendarClock,
   Clock,
   Filter,
@@ -98,6 +100,7 @@ const TimeAttendance = () => {
   const [teamError, setTeamError] = useState<string | null>(null);
   const [lateClockInDialogOpen, setLateClockInDialogOpen] = useState(false);
   const [earlyClockOutDialogOpen, setEarlyClockOutDialogOpen] = useState(false);
+  const [holidayCalendarOpen, setHolidayCalendarOpen] = useState(false);
   const [now, setNow] = useState(new Date());
 
   const account = instance.getActiveAccount() || accounts[0];
@@ -574,6 +577,16 @@ const TimeAttendance = () => {
     month: 'short',
     year: 'numeric',
   }).format(now);
+  const pngDateKey = getPNGDateKey(now);
+  const holidayCalendarYear = Number(pngDateKey.slice(0, 4));
+  const publicHolidays = listPNGPublicHolidays(holidayCalendarYear);
+  const nextPublicHoliday = publicHolidays.find((holiday) => holiday.date >= pngDateKey);
+  const daysUntilNextHoliday = nextPublicHoliday
+    ? Math.round(
+        (Date.parse(`${nextPublicHoliday.date}T00:00:00Z`) - Date.parse(`${pngDateKey}T00:00:00Z`)) /
+          (24 * 60 * 60 * 1000)
+      )
+    : null;
   const todayStatusLabel = attendanceLoading
     ? 'LOADING'
     : todayRecord?.status === 'ClockedOut'
@@ -608,22 +621,46 @@ const TimeAttendance = () => {
               <h1 className="mt-2 text-3xl font-bold tracking-normal">Attendance System</h1>
               <p className="mt-1 text-sm text-white/80">Clock in and out while connected to the office network.</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="outline"
-                className={
-                  networkAllowed
-                    ? 'gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : 'gap-1.5 border-amber-200 bg-amber-50 text-amber-700'
-                }
+            <div className="flex flex-col gap-3 lg:items-end">
+              <button
+                type="button"
+                onClick={() => setHolidayCalendarOpen(true)}
+                className="flex min-w-64 items-center gap-3 rounded-md border border-white/30 bg-white/10 px-3 py-2 text-left text-white transition-colors hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                aria-label={`Open ${holidayCalendarYear} PNG public holiday calendar`}
               >
-                <ShieldCheck className="h-3.5 w-3.5" />
-                {networkChecking ? 'Checking office network' : networkAllowed ? 'Office network verified' : 'Office network required'}
-              </Badge>
-              <Badge variant="secondary" className="gap-1.5">
-                <Clock className="h-3.5 w-3.5" />
-                {today}
-              </Badge>
+                <CalendarDays className="h-5 w-5 shrink-0" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-medium uppercase tracking-wide text-white/70">
+                    {daysUntilNextHoliday === 0 ? 'Public holiday today' : 'Next public holiday'}
+                  </span>
+                  <span className="block truncate text-sm font-semibold">
+                    {nextPublicHoliday?.label ?? `No more holidays in ${holidayCalendarYear}`}
+                  </span>
+                </span>
+                {nextPublicHoliday && (
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-xs font-bold text-intranet-primary">
+                    {daysUntilNextHoliday === 0 ? 'Today' : `${daysUntilNextHoliday}d`}
+                  </span>
+                )}
+              </button>
+
+              <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                <Badge
+                  variant="outline"
+                  className={
+                    networkAllowed
+                      ? 'gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'gap-1.5 border-amber-200 bg-amber-50 text-amber-700'
+                  }
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {networkChecking ? 'Checking office network' : networkAllowed ? 'Office network verified' : 'Office network required'}
+                </Badge>
+                <Badge variant="secondary" className="gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  {today}
+                </Badge>
+              </div>
             </div>
           </div>
         </section>
@@ -1030,6 +1067,59 @@ const TimeAttendance = () => {
             </CardContent>
           </Card>
         )}
+
+        <Dialog open={holidayCalendarOpen} onOpenChange={setHolidayCalendarOpen}>
+          <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-intranet-primary" />
+                Papua New Guinea public holidays {holidayCalendarYear}
+              </DialogTitle>
+              <DialogDescription>
+                National public holidays captured for attendance and leave planning.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {publicHolidays.map((holiday) => {
+                const isToday = holiday.date === pngDateKey;
+                const isPast = holiday.date < pngDateKey;
+                const holidayDate = new Date(`${holiday.date}T00:00:00Z`);
+
+                return (
+                  <div
+                    key={`${holiday.date}-${holiday.label}`}
+                    className={`flex items-center justify-between gap-4 rounded-md border px-4 py-3 ${
+                      isToday
+                        ? 'border-intranet-primary bg-intranet-primary/5'
+                        : isPast
+                          ? 'bg-muted/30 text-muted-foreground'
+                          : 'bg-background'
+                    }`}
+                  >
+                    <div>
+                      <p className={`text-sm font-semibold ${isPast && !isToday ? '' : 'text-foreground'}`}>
+                        {holiday.label}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {new Intl.DateTimeFormat('en-PG', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          timeZone: 'UTC',
+                        }).format(holidayDate)}
+                      </p>
+                    </div>
+                    <Badge variant={isToday ? 'default' : 'outline'}>
+                      {isToday ? 'Today' : isPast ? 'Passed' : 'Upcoming'}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={lateClockInDialogOpen} onOpenChange={setLateClockInDialogOpen}>
           <DialogContent className="sm:max-w-xl">
