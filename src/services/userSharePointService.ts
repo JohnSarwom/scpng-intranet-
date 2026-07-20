@@ -31,6 +31,71 @@ const escapeFilter = (val: string) => {
     return encodeURIComponent(val.replace(/'/g, "''"));
 };
 
+/**
+ * Serialises a permissions map into the compact array form the Permissions
+ * column expects. The verbose object form ({"home":["read"],...}) overflows the
+ * 255-character single-line-text limit once a group has ~14 resources, which
+ * makes SharePoint reject the write.
+ *
+ * A resource whose only action is 'read' is stored as a bare string; anything
+ * with extra actions keeps them after a colon:
+ *   ["home","news","attendance:read,export"]
+ */
+export const serializePermissions = (permissions: any): string => {
+    if (!permissions || typeof permissions !== 'object') return JSON.stringify([]);
+    if (Array.isArray(permissions)) return JSON.stringify(permissions);
+
+    const entries = Object.keys(permissions).map((resource) => {
+        const actions = permissions[resource];
+        if (!Array.isArray(actions) || actions.length === 0) return resource;
+        if (actions.length === 1 && actions[0] === 'read') return resource;
+        return `${resource}:${actions.join(',')}`;
+    });
+
+    return JSON.stringify(entries);
+};
+
+/**
+ * Parses the Permissions column back into a map. Accepts the compact array
+ * form, the "resource:action,action" form, and the legacy object form so
+ * existing groups keep working untouched.
+ */
+export const parsePermissions = (raw: unknown): Record<string, string[]> => {
+    if (!raw) return {};
+
+    let parsed: any = raw;
+    if (typeof raw === 'string') {
+        try {
+            parsed = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Failed to parse group permissions JSON', e);
+            return {};
+        }
+    }
+
+    if (Array.isArray(parsed)) {
+        const permissions: Record<string, string[]> = {};
+        parsed.forEach((entry: string) => {
+            if (typeof entry !== 'string') return;
+            const separator = entry.indexOf(':');
+            if (separator === -1) {
+                permissions[entry] = ['read'];
+                return;
+            }
+            const resource = entry.slice(0, separator);
+            const actions = entry
+                .slice(separator + 1)
+                .split(',')
+                .map((action) => action.trim())
+                .filter(Boolean);
+            permissions[resource] = actions.length > 0 ? actions : ['read'];
+        });
+        return permissions;
+    }
+
+    return typeof parsed === 'object' ? parsed : {};
+};
+
 export class UserSharePointService {
     private client: Client;
     private siteId: string | null = null;
@@ -166,25 +231,7 @@ export class UserSharePointService {
 
     private mapGroupFromSharePoint(item: any): PermissionGroup {
         const fields = item.fields || item;
-        let permissions: any = {};
-        try {
-            const rawPermissions = fields[this.permissionsColumnName];
-            if (rawPermissions) {
-                const parsed = JSON.parse(rawPermissions);
-
-                // Handle compressed format (Array of strings)
-                if (Array.isArray(parsed)) {
-                    parsed.forEach((resourceId: string) => {
-                        permissions[resourceId] = ['read'];
-                    });
-                } else {
-                    // Handle legacy format (Object)
-                    permissions = parsed;
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to parse group permissions JSON', e);
-        }
+        const permissions = parsePermissions(fields[this.permissionsColumnName]);
 
         return {
             id: item.id,
@@ -366,7 +413,7 @@ export class UserSharePointService {
             };
 
             // Use dynamic column name
-            fields[this.permissionsColumnName] = JSON.stringify(group.permissions || {});
+            fields[this.permissionsColumnName] = serializePermissions(group.permissions);
 
             const response = await this.client
                 .api(`/sites/${this.siteId}/lists/${this.groupsListId}/items`)
@@ -390,7 +437,7 @@ export class UserSharePointService {
                 Description: group.description || ''
             };
 
-            fields[this.permissionsColumnName] = JSON.stringify(group.permissions || {});
+            fields[this.permissionsColumnName] = serializePermissions(group.permissions);
 
             console.log('[UserSharePointService] Updating group with fields:', fields);
 

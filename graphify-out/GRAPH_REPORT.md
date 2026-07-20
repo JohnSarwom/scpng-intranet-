@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-07-20)
 
 ## Corpus Check
-- 618 files · ~1,806,771 words
+- 618 files · ~1,807,205 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2671 nodes · 2964 edges · 615 communities detected
+- 2675 nodes · 2972 edges · 615 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -712,16 +712,16 @@ Cohesion: 0.11
 Nodes (0): 
 
 ### Community 17 - "Community 17"
+Cohesion: 0.23
+Nodes (4): escapeFilter(), parsePermissions(), serializePermissions(), UserSharePointService
+
+### Community 18 - "Community 18"
 Cohesion: 0.12
 Nodes (0): 
 
-### Community 18 - "Community 18"
+### Community 19 - "Community 19"
 Cohesion: 0.21
 Nodes (1): PaymentsSharePointService
-
-### Community 19 - "Community 19"
-Cohesion: 0.25
-Nodes (2): escapeFilter(), UserSharePointService
 
 ### Community 20 - "Community 20"
 Cohesion: 0.23
@@ -880,12 +880,12 @@ Cohesion: 0.38
 Nodes (9): buildDispatchFlowDefinition(), buildDispatchLoopActions(), buildReportSchedulerDefinition(), buildSendFlowDefinition(), sheetsGetRows(), sheetsInsertRow(), sheetsUpdateRow(), spGetItems() (+1 more)
 
 ### Community 59 - "Community 59"
-Cohesion: 0.28
-Nodes (3): getOpsService(), handleInitializeScopeList(), loadScopeSettings()
+Cohesion: 0.25
+Nodes (2): describeError(), handleDuplicateGroup()
 
 ### Community 60 - "Community 60"
-Cohesion: 0.22
-Nodes (0): 
+Cohesion: 0.28
+Nodes (3): getOpsService(), handleInitializeScopeList(), loadScopeSettings()
 
 ### Community 61 - "Community 61"
 Cohesion: 0.22
@@ -900,64 +900,64 @@ Cohesion: 0.22
 Nodes (0): 
 
 ### Community 64 - "Community 64"
-Cohesion: 0.39
-Nodes (7): useKPIsData(), useKRAsData(), useObjectivesData(), useProjectsData(), useRisksData(), useSupabaseData(), useTasksData()
-
-### Community 65 - "Community 65"
 Cohesion: 0.22
 Nodes (0): 
+
+### Community 65 - "Community 65"
+Cohesion: 0.39
+Nodes (7): useKPIsData(), useKRAsData(), useObjectivesData(), useProjectsData(), useRisksData(), useSupabaseData(), useTasksData()
 
 ### Community 66 - "Community 66"
 Cohesion: 0.22
 Nodes (0): 
 
 ### Community 67 - "Community 67"
+Cohesion: 0.22
+Nodes (0): 
+
+### Community 68 - "Community 68"
 Cohesion: 0.31
 Nodes (1): AnnouncementsSharePointService
 
-### Community 68 - "Community 68"
+### Community 69 - "Community 69"
 Cohesion: 0.33
 Nodes (3): NewsSharePointService, parseSharePointImage(), transformNewsItem()
 
-### Community 69 - "Community 69"
+### Community 70 - "Community 70"
 Cohesion: 0.25
 Nodes (2): calculateObjectiveStatus(), calculateStrategicProgress()
 
-### Community 70 - "Community 70"
+### Community 71 - "Community 71"
 Cohesion: 0.22
 Nodes (1): LoggerService
 
-### Community 71 - "Community 71"
+### Community 72 - "Community 72"
 Cohesion: 0.29
 Nodes (2): testApi(), updateStatus()
 
-### Community 72 - "Community 72"
+### Community 73 - "Community 73"
 Cohesion: 0.32
 Nodes (3): handleDrop(), handleFile(), handleFileChange()
 
-### Community 73 - "Community 73"
+### Community 74 - "Community 74"
 Cohesion: 0.25
 Nodes (0): 
 
-### Community 74 - "Community 74"
+### Community 75 - "Community 75"
 Cohesion: 0.29
 Nodes (2): handleSave(), rowsToGoals()
 
-### Community 75 - "Community 75"
+### Community 76 - "Community 76"
 Cohesion: 0.36
 Nodes (4): isBeforeDateValue(), pad(), parseDateValue(), toDateInputValue()
 
-### Community 76 - "Community 76"
+### Community 77 - "Community 77"
 Cohesion: 0.32
 Nodes (3): buildOverlapMessage(), findOverlappingLeaveRequest(), onSubmit()
 
-### Community 77 - "Community 77"
+### Community 78 - "Community 78"
 Cohesion: 0.32
 Nodes (4): isAssignedApprover(), normalizeOrgName(), orgNameMatches(), sameEmail()
-
-### Community 78 - "Community 78"
-Cohesion: 0.25
-Nodes (0): 
 
 ### Community 79 - "Community 79"
 Cohesion: 0.25
@@ -968,48 +968,48 @@ Cohesion: 0.25
 Nodes (0): 
 
 ### Community 81 - "Community 81"
+Cohesion: 0.25
+Nodes (0): 
+
+### Community 82 - "Community 82"
 Cohesion: 0.36
 Nodes (4): fetchCalendarEvents(), fetchSharedCalendarEvents(), getTodaysEvents(), getUpcomingEvents()
 
-### Community 82 - "Community 82"
+### Community 83 - "Community 83"
 Cohesion: 0.43
 Nodes (6): addCategoryChoiceToDocsList(), createDocumentCategory(), deleteDocumentCategory(), fetchDocumentCategories(), getSiteId(), updateDocumentCategory()
 
-### Community 83 - "Community 83"
+### Community 84 - "Community 84"
 Cohesion: 0.36
 Nodes (1): FeedbackSharePointService
 
-### Community 84 - "Community 84"
+### Community 85 - "Community 85"
 Cohesion: 0.39
 Nodes (1): FormsSharePointService
 
-### Community 85 - "Community 85"
+### Community 86 - "Community 86"
 Cohesion: 0.5
 Nodes (7): buildDocxBlob(), buildPayload(), extractName(), generateMeetingDocx(), generateMeetingPdf(), parseLines(), safePdfName()
 
-### Community 86 - "Community 86"
+### Community 87 - "Community 87"
 Cohesion: 0.43
 Nodes (1): OfficerProfileService
 
-### Community 87 - "Community 87"
+### Community 88 - "Community 88"
 Cohesion: 0.36
 Nodes (1): FlowClient
 
-### Community 88 - "Community 88"
+### Community 89 - "Community 89"
 Cohesion: 0.39
 Nodes (7): buildAssetProfileUrl(), buildAssetQrSnapshot(), decodeAssetQrSnapshot(), encodeAssetQrSnapshot(), fromBase64Url(), generateAssetQrDataUrl(), toBase64Url()
 
-### Community 89 - "Community 89"
+### Community 90 - "Community 90"
 Cohesion: 0.29
 Nodes (0): 
-
-### Community 90 - "Community 90"
-Cohesion: 0.38
-Nodes (3): getService(), handleDelete(), handleSave()
 
 ### Community 91 - "Community 91"
-Cohesion: 0.29
-Nodes (0): 
+Cohesion: 0.38
+Nodes (3): getService(), handleDelete(), handleSave()
 
 ### Community 92 - "Community 92"
 Cohesion: 0.29

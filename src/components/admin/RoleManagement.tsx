@@ -17,7 +17,14 @@ interface RoleManagementProps {
   onDeleteGroup: (groupId: string) => Promise<void>;
 }
 
-const SYSTEM_RESOURCES = [
+interface SystemResource {
+  id: string;
+  label: string;
+  /** Optional finer-grained actions, shown once the resource itself is enabled. */
+  extraActions?: Array<{ id: string; label: string }>;
+}
+
+const SYSTEM_RESOURCES: SystemResource[] = [
   { id: 'home', label: 'Home Page' },
   { id: 'news', label: 'News' },
   { id: 'documents', label: 'Documents' },
@@ -34,7 +41,13 @@ const SYSTEM_RESOURCES = [
   { id: 'divisions', label: 'Division Page' },
   { id: 'organization', label: 'Organization Chart' },
   { id: 'hr', label: 'HR Profiles' },
-  { id: 'attendance', label: 'Time & Attendance' },
+  {
+    id: 'attendance',
+    label: 'Time & Attendance',
+    extraActions: [
+      { id: 'export', label: 'Download attendance report (all divisions)' },
+    ],
+  },
   { id: 'reports', label: 'Reports' },
   { id: 'tickets', label: 'IT Tickets' },
   { id: 'licenses', label: 'Licensing Registry' },
@@ -42,6 +55,16 @@ const SYSTEM_RESOURCES = [
   { id: 'payments', label: 'Payments' },
   { id: 'regulatory', label: 'Regulatory Intelligence' },
 ];
+
+/** Pulls a readable message out of a Graph/SharePoint error shape. */
+const describeError = (error: unknown): string => {
+  const graphMessage = (error as any)?.body?.error?.message
+    || (error as any)?.error?.message
+    || (error as any)?.message;
+  return typeof graphMessage === 'string' && graphMessage.trim()
+    ? graphMessage
+    : 'Unknown error - see the browser console for details.';
+};
 
 const RoleManagement: React.FC<RoleManagementProps> = ({
   groups,
@@ -133,8 +156,8 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
       await onCreateGroup(duplicatedGroup);
       toast.success('Group duplicated successfully');
     } catch (error) {
-      console.error(error);
-      toast.error('Failed to duplicate group');
+      console.error('[RoleManagement] Duplicate failed:', error);
+      toast.error('Failed to duplicate group', { description: describeError(error) });
     } finally {
       setIsProcessing(false);
     }
@@ -147,13 +170,36 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
     const resourcePerms = currentPermissions[resourceId] || [];
 
     if (resourcePerms.includes('read')) {
-      // Remove read (and thus access)
+      // Remove read (and thus access, including any extra actions)
       delete currentPermissions[resourceId];
     } else {
       // Add read
       currentPermissions[resourceId] = ['read'];
     }
 
+    setNewGroup({ ...newGroup, permissions: currentPermissions });
+  };
+
+  /** Toggles a finer-grained action such as attendance: export. */
+  const toggleAction = (resourceId: string, actionId: string) => {
+    if (!newGroup) return;
+
+    const currentPermissions = { ...(newGroup.permissions || {}) };
+    const resourcePerms: string[] = [...(currentPermissions[resourceId] || [])];
+
+    const index = resourcePerms.indexOf(actionId);
+    if (index === -1) {
+      resourcePerms.push(actionId);
+    } else {
+      resourcePerms.splice(index, 1);
+    }
+
+    // Extra actions always sit alongside base access, never replace it.
+    if (!resourcePerms.includes('read')) {
+      resourcePerms.unshift('read');
+    }
+
+    currentPermissions[resourceId] = resourcePerms;
     setNewGroup({ ...newGroup, permissions: currentPermissions });
   };
 
@@ -205,18 +251,38 @@ const RoleManagement: React.FC<RoleManagementProps> = ({
                   return (
                     <div
                       key={resource.id}
-                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-colors ${isChecked ? 'bg-primary/10 border-primary' : 'bg-transparent border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      className={`space-y-2 p-3 rounded-lg border transition-colors ${isChecked ? 'bg-primary/10 border-primary' : 'bg-transparent border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                     >
-                      <Checkbox
-                        checked={isChecked}
-                        onCheckedChange={() => togglePermission(resource.id)}
-                        id={`perm-${resource.id}`}
-                        disabled={isProcessing}
-                      />
-                      <Label htmlFor={`perm-${resource.id}`} className="cursor-pointer font-medium">
-                        {resource.label}
-                      </Label>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={isChecked}
+                          onCheckedChange={() => togglePermission(resource.id)}
+                          id={`perm-${resource.id}`}
+                          disabled={isProcessing}
+                        />
+                        <Label htmlFor={`perm-${resource.id}`} className="cursor-pointer font-medium">
+                          {resource.label}
+                        </Label>
+                      </div>
+
+                      {isChecked && resource.extraActions?.map(action => (
+                        <div key={action.id} className="flex items-start space-x-2 pl-6">
+                          <Checkbox
+                            checked={newGroup.permissions?.[resource.id]?.includes(action.id) || false}
+                            onCheckedChange={() => toggleAction(resource.id, action.id)}
+                            id={`perm-${resource.id}-${action.id}`}
+                            disabled={isProcessing}
+                            className="mt-0.5"
+                          />
+                          <Label
+                            htmlFor={`perm-${resource.id}-${action.id}`}
+                            className="cursor-pointer text-xs font-normal leading-snug text-muted-foreground"
+                          >
+                            {action.label}
+                          </Label>
+                        </div>
+                      ))}
                     </div>
                   );
                 })}
