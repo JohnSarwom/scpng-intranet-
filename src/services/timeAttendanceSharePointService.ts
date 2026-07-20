@@ -70,6 +70,13 @@ export interface TeamAttendanceQuery {
   isAdmin?: boolean;
 }
 
+export interface AttendanceRangeQuery {
+  startDateKey: string;
+  endDateKey: string;
+  division?: string;
+  unit?: string;
+}
+
 export interface LateReason {
   id: string;
   reasonCategory: string;
@@ -187,6 +194,92 @@ export class TimeAttendanceSharePointService {
       .sort((a: AttendanceRecord, b: AttendanceRecord) =>
         (a.employeeName || a.employeeEmail).localeCompare(b.employeeName || b.employeeEmail)
       );
+  }
+
+  /**
+   * Fetches every attendance record inside an inclusive date range, optionally
+   * narrowed to a division and/or unit. Used by the divisional report export.
+   */
+  async getAttendanceRange(query: AttendanceRangeQuery): Promise<AttendanceRecord[]> {
+    await this.initialize();
+
+    const startKey = this.escapeOData(query.startDateKey);
+    const endKey = this.escapeOData(query.endDateKey);
+    const listId = this.getListId(LISTS.RECORDS);
+
+    const items = await this.fetchAllPages(
+      this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+        .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+        .expand('fields')
+        .filter(`fields/AttendanceDateKey ge '${startKey}' and fields/AttendanceDateKey le '${endKey}'`)
+        .top(2000)
+    );
+
+    const division = (query.division || '').trim().toLowerCase();
+    const unit = (query.unit || '').trim().toLowerCase();
+
+    return items
+      .map((item) => this.mapRecord(item))
+      .filter((record: AttendanceRecord) => {
+        if (division && record.division?.trim().toLowerCase() !== division) return false;
+        if (unit && record.unit?.trim().toLowerCase() !== unit) return false;
+        return true;
+      });
+  }
+
+  /**
+   * Bulk-loads exception reasons for a date range, keyed as
+   * `${attendanceId}::${exceptionType}` so the report builder can look up
+   * late clock-in and early clock-out reasons without one call per row.
+   */
+  async getExceptionReasonsInRange(startDateKey: string, endDateKey: string): Promise<Map<string, AttendanceExceptionReason>> {
+    await this.initialize();
+
+    const startKey = this.escapeOData(startDateKey);
+    const endKey = this.escapeOData(endDateKey);
+    const listId = this.getListId(LISTS.EXCEPTIONS);
+
+    const items = await this.fetchAllPages(
+      this.client
+        .api(`/sites/${this.siteId}/lists/${listId}/items`)
+        .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+        .expand('fields')
+        .filter(`fields/AttendanceDate ge '${startKey}' and fields/AttendanceDate le '${endKey}'`)
+        .top(2000)
+    );
+
+    const map = new Map<string, AttendanceExceptionReason>();
+    for (const item of items) {
+      const fields = item.fields || {};
+      const attendanceId = String(fields.AttendanceID || '');
+      const exceptionType = String(fields.ExceptionType || '');
+      if (!attendanceId || !exceptionType) continue;
+
+      map.set(`${attendanceId}::${exceptionType}`, {
+        id: item.id,
+        exceptionType,
+        reasonCategory: String(fields.ReasonCategory || 'Other'),
+        reasonDetails: String(fields.ReasonDetails || ''),
+        reviewStatus: String(fields.ReviewStatus || 'Pending'),
+      });
+    }
+
+    return map;
+  }
+
+  private async fetchAllPages(request: ReturnType<Client['api']>): Promise<SharePointListItem[]> {
+    const collected: SharePointListItem[] = [];
+    let response = await request.get() as SharePointListResponse & { '@odata.nextLink'?: string };
+
+    while (response) {
+      collected.push(...(response.value || []));
+      const nextLink = response['@odata.nextLink'];
+      if (!nextLink) break;
+      response = await this.client.api(nextLink).get() as SharePointListResponse & { '@odata.nextLink'?: string };
+    }
+
+    return collected;
   }
 
   async clockIn(employee: AttendanceEmployeeContext, network: AttendanceNetworkContext): Promise<AttendanceRecord> {
