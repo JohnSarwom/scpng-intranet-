@@ -24,7 +24,7 @@ import {
 } from '@/services/timeAttendanceSharePointService';
 import { getPNGDateKey, listPNGPublicHolidays } from '@/utils/pngPublicHolidays';
 import AttendanceReportExportDialog from '@/components/attendance/AttendanceReportExportDialog';
-import { canDownloadAttendanceReport } from '@/services/attendanceReportExportService';
+import { ATTENDANCE_EXPORT_PERMISSION } from '@/services/attendanceReportExportService';
 import {
   AlertTriangle,
   CalendarDays,
@@ -121,8 +121,11 @@ const TimeAttendance = () => {
   const employeeName = account?.name || roleUser?.full_name || employeeEmail || 'Current User';
   const roleName = roleUser?.role_name?.toLowerCase() || '';
   // Downloading the organisation-wide export is deliberately narrower than
-  // viewing the dashboard: only system admins and the named HR staff.
-  const canDownloadReport = canDownloadAttendanceReport(employeeEmail, isAdmin);
+  // viewing the dashboard. Admins always qualify; everyone else needs the
+  // 'attendance: export' permission granted via Admin Portal -> Groups.
+  const canDownloadReport = Boolean(
+    isAdmin || hasPermission(ATTENDANCE_EXPORT_PERMISSION.resource, ATTENDANCE_EXPORT_PERMISSION.action)
+  );
 
   const canViewSupervisorDashboard = Boolean(
     isAdmin ||

@@ -9,21 +9,14 @@ const UNASSIGNED_BRANCH = 'Unassigned';
 const UNASSIGNED_TEAM = 'Unassigned';
 
 /**
- * Staff cleared to download the organisation-wide attendance report, in
- * addition to system admins. Viewing the supervisor dashboard is governed
- * separately and stays open to supervisors and HR.
+ * Permission that grants the organisation-wide attendance download. Admins
+ * manage it per group under Admin Portal -> Groups -> Time & Attendance.
+ * Viewing the supervisor dashboard is governed separately by 'review'.
  */
-export const ATTENDANCE_REPORT_DOWNLOADERS = [
-  'lkarlyo@scpng.gov.pg', // Lovelyn Karlyo - Human Resources Unit
-  'tmondaya@scpng.gov.pg', // Thomas Mondaya - Human Resources Unit
-];
-
-/** True when `email` may download the full attendance export. */
-export function canDownloadAttendanceReport(email: string | undefined, isAdmin: boolean): boolean {
-  if (isAdmin) return true;
-  const normalised = (email || '').trim().toLowerCase();
-  return normalised.length > 0 && ATTENDANCE_REPORT_DOWNLOADERS.includes(normalised);
-}
+export const ATTENDANCE_EXPORT_PERMISSION = {
+  resource: 'attendance',
+  action: 'export',
+} as const;
 
 export const ATTENDANCE_REPORT_COLUMNS = [
   'Branch',

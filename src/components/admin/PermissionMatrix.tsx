@@ -42,6 +42,7 @@ const RESOURCES = [
             { id: 'read', label: 'Open Attendance Page' },
             { id: 'review', label: 'Supervisor Dashboard' },
             { id: 'manage', label: 'HR/Admin Attendance Controls' },
+            { id: 'export', label: 'Download Attendance Report (all divisions)' },
         ]
     },
     {
