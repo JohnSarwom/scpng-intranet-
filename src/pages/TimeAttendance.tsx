@@ -23,11 +23,14 @@ import {
   TimeAttendanceSharePointService,
 } from '@/services/timeAttendanceSharePointService';
 import { getPNGDateKey, listPNGPublicHolidays } from '@/utils/pngPublicHolidays';
+import AttendanceReportExportDialog from '@/components/attendance/AttendanceReportExportDialog';
+import { canDownloadAttendanceReport } from '@/services/attendanceReportExportService';
 import {
   AlertTriangle,
   CalendarDays,
   CalendarClock,
   Clock,
+  Download,
   Filter,
   LogIn,
   LogOut,
@@ -36,6 +39,15 @@ import {
   Users,
   Wifi,
 } from 'lucide-react';
+
+const attendanceReportDivisions = [
+  'Executive Division',
+  'Corporate Services Division',
+  'Licensing Market & Supervision Division',
+  'Legal Services Division',
+  'Research & Publication Division',
+  'Secretariat Unit',
+];
 
 const OFFICE_PUBLIC_IP = '124.240.199.154';
 const TIME_ZONE = 'Pacific/Port_Moresby';
@@ -101,12 +113,17 @@ const TimeAttendance = () => {
   const [lateClockInDialogOpen, setLateClockInDialogOpen] = useState(false);
   const [earlyClockOutDialogOpen, setEarlyClockOutDialogOpen] = useState(false);
   const [holidayCalendarOpen, setHolidayCalendarOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [now, setNow] = useState(new Date());
 
   const account = instance.getActiveAccount() || accounts[0];
   const employeeEmail = account?.username?.toLowerCase() || roleUser?.user_email?.toLowerCase() || '';
   const employeeName = account?.name || roleUser?.full_name || employeeEmail || 'Current User';
   const roleName = roleUser?.role_name?.toLowerCase() || '';
+  // Downloading the organisation-wide export is deliberately narrower than
+  // viewing the dashboard: only system admins and the named HR staff.
+  const canDownloadReport = canDownloadAttendanceReport(employeeEmail, isAdmin);
+
   const canViewSupervisorDashboard = Boolean(
     isAdmin ||
     hasPermission('attendance', 'review') ||
@@ -971,6 +988,17 @@ const TimeAttendance = () => {
                     <RefreshCw className={`h-4 w-4 ${teamLoading ? 'animate-spin' : ''}`} />
                     Refresh
                   </Button>
+                  {canDownloadReport && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-10 gap-2"
+                      onClick={() => setExportDialogOpen(true)}
+                    >
+                      <Download className="h-4 w-4" />
+                      Export Report
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
@@ -1066,6 +1094,14 @@ const TimeAttendance = () => {
               )}
             </CardContent>
           </Card>
+        )}
+
+        {canDownloadReport && (
+          <AttendanceReportExportDialog
+            open={exportDialogOpen}
+            onOpenChange={setExportDialogOpen}
+            availableDivisions={attendanceReportDivisions}
+          />
         )}
 
         <Dialog open={holidayCalendarOpen} onOpenChange={setHolidayCalendarOpen}>
