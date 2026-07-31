@@ -365,6 +365,6 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     service,
     viewer,
     canCreate: canCreateAsset(viewer),
-    canModify: (asset: Asset) => canModifyAsset(asset, viewer),
+    canModify: (asset?: Asset | null) => canModifyAsset(asset, viewer),
   };
 }

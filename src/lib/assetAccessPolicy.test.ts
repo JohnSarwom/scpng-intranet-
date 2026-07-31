@@ -29,6 +29,11 @@ const financeStaff: AssetAccessViewer = {
 };
 
 describe('asset access policy', () => {
+  it('treats an unselected asset as inaccessible instead of throwing', () => {
+    expect(canViewAsset(null, financeStaff)).toBe(false);
+    expect(canModifyAsset(null, financeStaff)).toBe(false);
+  });
+
   it('keeps IT assets private from non-IT users in the same division', () => {
     expect(canViewAsset(itAsset, financeStaff)).toBe(false);
     expect(canViewAsset(itAsset, { ...financeStaff, unitName: 'IT Unit' })).toBe(true);

@@ -36,19 +36,25 @@ const matchesIdentity = (value: string | undefined, viewer: AssetAccessViewer) =
   );
 };
 
-export const isITAsset = (asset: AssetAccessRecord) =>
-  isITLabel(asset.unit) || isITLabel(asset.division);
+export const isITAsset = (asset?: AssetAccessRecord | null) =>
+  Boolean(asset) && (isITLabel(asset.unit) || isITLabel(asset.division));
 
 export const isITViewer = (viewer: AssetAccessViewer) =>
   isITLabel(viewer.unitName) || isITLabel(viewer.divisionName) ||
   isITLabel(viewer.jobTitle);
 
-export const isAssetCreator = (asset: AssetAccessRecord, viewer: AssetAccessViewer) =>
-  matchesIdentity(asset.created_by, viewer);
+export const isAssetCreator = (
+  asset: AssetAccessRecord | null | undefined,
+  viewer: AssetAccessViewer,
+) => Boolean(asset) && matchesIdentity(asset.created_by, viewer);
 
-export const isAssetAssignee = (asset: AssetAccessRecord, viewer: AssetAccessViewer) =>
+export const isAssetAssignee = (
+  asset: AssetAccessRecord | null | undefined,
+  viewer: AssetAccessViewer,
+) => Boolean(asset) && (
   matchesIdentity(asset.assigned_to_email, viewer) ||
-  matchesIdentity(asset.assigned_to, viewer);
+  matchesIdentity(asset.assigned_to, viewer)
+);
 
 const isDivisionLeader = (viewer: AssetAccessViewer) => {
   const role = normalize(viewer.roleName);
@@ -58,7 +64,12 @@ const isDivisionLeader = (viewer: AssetAccessViewer) => {
     jobTitle.includes('director');
 };
 
-export const isAssetInViewerOrgScope = (asset: AssetAccessRecord, viewer: AssetAccessViewer) => {
+export const isAssetInViewerOrgScope = (
+  asset: AssetAccessRecord | null | undefined,
+  viewer: AssetAccessViewer,
+) => {
+  if (!asset) return false;
+
   if (isITAsset(asset)) {
     return isITViewer(viewer);
   }
@@ -81,10 +92,14 @@ export const isAssetInViewerOrgScope = (asset: AssetAccessRecord, viewer: AssetA
   return sameDivision && (!assetUnit || !viewerUnit);
 };
 
-export const canViewAsset = (asset: AssetAccessRecord, viewer: AssetAccessViewer) =>
+export const canViewAsset = (
+  asset: AssetAccessRecord | null | undefined,
+  viewer: AssetAccessViewer,
+) => Boolean(asset) && (
   isAssetAssignee(asset, viewer) ||
   isAssetCreator(asset, viewer) ||
-  isAssetInViewerOrgScope(asset, viewer);
+  isAssetInViewerOrgScope(asset, viewer)
+);
 
 export const isPrivilegedAssetOperator = (viewer: AssetAccessViewer) => {
   if (isITViewer(viewer) || viewer.isAdmin) return true;
@@ -105,6 +120,10 @@ export const isPrivilegedAssetOperator = (viewer: AssetAccessViewer) => {
 export const canCreateAsset = (viewer: AssetAccessViewer) =>
   isPrivilegedAssetOperator(viewer);
 
-export const canModifyAsset = (asset: AssetAccessRecord, viewer: AssetAccessViewer) =>
+export const canModifyAsset = (
+  asset: AssetAccessRecord | null | undefined,
+  viewer: AssetAccessViewer,
+) => Boolean(asset) && (
   isAssetCreator(asset, viewer) ||
-  (isPrivilegedAssetOperator(viewer) && isAssetInViewerOrgScope(asset, viewer));
+  (isPrivilegedAssetOperator(viewer) && isAssetInViewerOrgScope(asset, viewer))
+);
