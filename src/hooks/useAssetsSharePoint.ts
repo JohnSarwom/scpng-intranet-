@@ -1,10 +1,17 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AssetsSharePointService, Asset } from '@/services/assetsSharePointService';
 import { getGraphClient } from '@/services/graphService';
 import { useToast } from '@/hooks/use-toast';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useStaffMembers } from '@/hooks/useStaffMembers';
+import {
+  canCreateAsset,
+  canModifyAsset,
+  canViewAsset,
+  type AssetAccessViewer,
+} from '@/lib/assetAccessPolicy';
 
 export interface UseAssetsOptions {
   includeDeleted?: boolean;
@@ -21,11 +28,32 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
 
   // Get current user info and role
   const { user: roleUser, isAdmin } = useRoleBasedAuth();
+  const { staffMembers } = useStaffMembers();
   const currentUser = accounts[0];
   const userEmail = currentUser?.username || currentUser?.email;
-  const isManager = roleUser?.role_name === 'manager';
   const divisionName = roleUser?.division_name;
   const unitName = roleUser?.unit_name;
+  const currentStaff = useMemo(() => staffMembers.find(
+    member => member.email?.trim().toLowerCase() === userEmail?.trim().toLowerCase()
+  ), [staffMembers, userEmail]);
+  const viewer = useMemo<AssetAccessViewer>(() => ({
+    email: userEmail,
+    name: currentUser?.name || roleUser?.user_name,
+    roleName: roleUser?.role_name,
+    jobTitle: currentStaff?.jobTitle,
+    divisionName,
+    unitName,
+    isAdmin,
+  }), [
+    currentStaff?.jobTitle,
+    currentUser?.name,
+    divisionName,
+    isAdmin,
+    roleUser?.role_name,
+    roleUser?.user_name,
+    unitName,
+    userEmail,
+  ]);
 
   /**
    * Initialize the SharePoint service
@@ -75,14 +103,14 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     error,
     refetch: refreshAssets
   } = useQuery({
-    queryKey: ['assets', userEmail, isAdmin, isManager, divisionName, unitName, includeDeleted],
+    queryKey: ['assets', viewer, includeDeleted],
     queryFn: async () => {
       console.log(`📥 [useAssetsSharePoint] Fetching assets (includeDeleted: ${includeDeleted}) via React Query...`);
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
       }
-      return currentService.getAssets(userEmail, isAdmin, includeDeleted, isManager, divisionName, unitName);
+      return currentService.getAssets(viewer, includeDeleted);
     },
     // Only fetch when we have user info. Service will be init'd on demand if needed.
     enabled: !!userEmail && (!!roleUser || !isAdmin),
@@ -94,6 +122,10 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
    */
   const addAssetMutation = useMutation({
     mutationFn: async (assetData: Partial<Asset>) => {
+      if (!canCreateAsset(viewer)) {
+        throw new Error('You do not have permission to register assets.');
+      }
+
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
@@ -129,6 +161,13 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
    */
   const updateAssetMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Asset> }) => {
+      const existingAsset = assets.find(asset =>
+        asset.id === id || asset.sharepoint_item_id === id
+      );
+      if (!existingAsset || !canModifyAsset(existingAsset, viewer)) {
+        throw new Error('You can only update assets you created or assets you manage within your unit or division.');
+      }
+
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
@@ -163,6 +202,13 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
    */
   const deleteAssetMutation = useMutation({
     mutationFn: async (id: string) => {
+      const existingAsset = assets.find(asset =>
+        asset.id === id || asset.sharepoint_item_id === id
+      );
+      if (!existingAsset || !canModifyAsset(existingAsset, viewer)) {
+        throw new Error('You can only delete assets you created or assets you manage within your unit or division.');
+      }
+
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
@@ -191,6 +237,13 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
    */
   const restoreAssetMutation = useMutation({
     mutationFn: async (id: string) => {
+      const existingAsset = assets.find(asset =>
+        asset.id === id || asset.sharepoint_item_id === id
+      );
+      if (!existingAsset || !canModifyAsset(existingAsset, viewer)) {
+        throw new Error('You do not have permission to restore this asset.');
+      }
+
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
@@ -219,6 +272,10 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
    */
   const ensureQrCodeMutation = useMutation({
     mutationFn: async (asset: Asset) => {
+      if (!canModifyAsset(asset, viewer)) {
+        throw new Error('You do not have permission to update this asset QR code.');
+      }
+
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
@@ -250,6 +307,10 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
   const ensureQrCode = useCallback((asset: Asset, forceRegenerate: boolean = false) => {
     if (forceRegenerate) {
       return (async () => {
+        if (!canModifyAsset(asset, viewer)) {
+          throw new Error('You do not have permission to update this asset QR code.');
+        }
+
         let currentService = service;
         if (!currentService) {
           currentService = await initializeService();
@@ -280,8 +341,9 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
     if (!currentService) {
       currentService = await initializeService();
     }
-    return currentService.getAssetByAssetId(assetId);
-  }, [initializeService, service]);
+    const asset = await currentService.getAssetByAssetId(assetId);
+    return asset && canViewAsset(asset, viewer) ? asset : null;
+  }, [initializeService, service, viewer]);
 
   return {
     // Data
@@ -301,5 +363,8 @@ export function useAssetsSharePoint(options: UseAssetsOptions = {}) {
 
     // Service instance (for advanced usage if needed)
     service,
+    viewer,
+    canCreate: canCreateAsset(viewer),
+    canModify: (asset: Asset) => canModifyAsset(asset, viewer),
   };
 }

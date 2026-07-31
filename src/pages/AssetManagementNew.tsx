@@ -25,7 +25,6 @@ import { useStaffMembers } from '@/hooks/useStaffMembers'; // Import staff membe
 import { formatDate } from '@/lib/utils'; // Import formatDate from utils
 import { cn } from '@/lib/utils'; // Import cn utility
 import { getConditionBadgeClass, ASSET_CONDITIONS } from '@/config/assetConditions';
-import { useComponentVisibility } from '@/hooks/useComponentVisibility';
 
 // Import modal components
 import AddAssetModal from '@/components/unit-tabs/modals/AddAssetModal';
@@ -71,8 +70,6 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
   const authLoading = useMemo(() => inProgress !== InteractionStatus.None, [inProgress]); // Determine loading state
 
   const { toast } = useToast();
-  const { isComponentVisible } = useComponentVisibility();
-  const canAddAsset = isComponentVisible('Assets', 'Add Asset Button');
 
   // Use SharePoint hook exclusively
   const {
@@ -85,6 +82,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     ensureQrCode,
     getQrCodeImageSrc,
     refresh: refreshAssets,
+    canCreate,
+    canModify,
   } = useAssetsSharePoint();
 
   // Use the staff members hook to get data from database
@@ -125,9 +124,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
     warn: (msg: string, ...args: any[]) => console.warn(`[WARN] ${msg}`, ...args),
     error: (msg: string, ...args: any[]) => console.error(`[ERROR] ${msg}`, ...args),
   };
-  const { user: roleUser } = useRoleBasedAuth();
-  const isAdmin = roleUser?.roles?.includes('Admin') || roleUser?.roles?.includes('SuperAdmin');
-  const isITOrAdmin = isAdmin || roleUser?.unit_name?.toLowerCase() === 'it';
+  const { isAdmin } = useRoleBasedAuth();
 
   // --- End Fullscreen State ---
 
@@ -521,8 +518,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                   </TooltipWrapper>
                 )}
 
-                {/* Add Asset Button — visibility controlled via Admin > View Settings */}
-                {canAddAsset && (
+                {/* Asset policy is the source of truth for registration access. */}
+                {canCreate && (
                 <Dialog
                   open={activeModal.type === 'add'}
                   onOpenChange={(open) => setActiveModal(open ? { type: 'add', asset: null } : { type: null, asset: null })}
@@ -863,13 +860,13 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                         <Info className="mr-2 h-4 w-4" />
                                         View Details
                                       </DropdownMenuItem>
-                                      {isITOrAdmin && (
+                                      {canModify(asset) && (
                                         <DropdownMenuItem onClick={() => handleEditClick(asset)}>
                                           <Edit className="mr-2 h-4 w-4" />
                                           Edit
                                         </DropdownMenuItem>
                                       )}
-                                      {isITOrAdmin && (
+                                      {canModify(asset) && (
                                         <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />
                                           Delete
@@ -903,8 +900,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                               key={asset.id}
                               asset={asset}
                               onClick={() => handleInfoClick(asset)}
-                              onEdit={isITOrAdmin ? () => handleEditClick(asset) : undefined}
-                              onDelete={isITOrAdmin ? () => handleDeleteClick(asset) : undefined}
+                              onEdit={canModify(asset) ? () => handleEditClick(asset) : undefined}
+                              onDelete={canModify(asset) ? () => handleDeleteClick(asset) : undefined}
                             />
                           ))
                         ) : (
@@ -1406,13 +1403,13 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
                                         <Info className="mr-2 h-4 w-4" />
                                         View Details
                                       </DropdownMenuItem>
-                                      {isITOrAdmin && (
+                                      {canModify(asset) && (
                                         <DropdownMenuItem onClick={() => handleEditClick(asset)}>
                                           <Edit className="mr-2 h-4 w-4" />
                                           Edit
                                         </DropdownMenuItem>
                                       )}
-                                      {isITOrAdmin && (
+                                      {canModify(asset) && (
                                         <DropdownMenuItem onClick={() => handleDeleteClick(asset)} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />
                                           Delete
@@ -1500,7 +1497,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({
             asset={activeModal.type === 'info' ? activeModal.asset : null}
             isOpen={activeModal.type === 'info'}
             onClose={handleCloseModals}
-            onGenerateQRCode={ensureQrCode}
+            onGenerateQRCode={canModify(activeModal.asset) ? ensureQrCode : undefined}
             getQRCodeImageSrc={getQrCodeImageSrc}
           />
         </CardContent>
