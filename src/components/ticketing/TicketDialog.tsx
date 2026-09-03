@@ -168,24 +168,26 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 pb-4">
               <div className="sm:col-span-2 space-y-1">
                 <Label htmlFor="title">Title*</Label>
-                <Input 
-                  id="title" 
-                  placeholder="Enter ticket title" 
-                  value={title} 
-                  onChange={(e) => setTitle(e.target.value)} 
-                  className="py-3 px-4 rounded-lg" 
-                  required 
+                <Input
+                  id="title"
+                  placeholder="Enter ticket title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="py-3 px-4 rounded-lg"
+                  required
+                  aiAssist={{ mode: 'title', context: 'support ticket title', onApply: setTitle }}
                 />
               </div>
               <div className="sm:col-span-2 space-y-1">
                 <Label htmlFor="description">Description</Label>
-                <Textarea 
-                  id="description" 
-                  placeholder="Add a detailed description..." 
-                  value={description} 
-                  onChange={(e) => setDescription(e.target.value)} 
-                  className="py-3 px-4 rounded-lg" 
+                <Textarea
+                  id="description"
+                  placeholder="Add a detailed description..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="py-3 px-4 rounded-lg"
                   rows={4}
+                  aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'support ticket description', onApply: setDescription }}
                 />
               </div>
               <div className="space-y-1">
@@ -298,12 +300,13 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
               <Avatar className="h-9 w-9 mt-1">
                   <AvatarFallback>CU</AvatarFallback>
               </Avatar>
-              <Textarea 
-                placeholder="Add a comment..." 
+              <Textarea
+                placeholder="Add a comment..."
                 value={newCommentText}
                 onChange={(e) => setNewCommentText(e.target.value)}
                 rows={3}
-                className="flex-1 py-2 px-3 rounded-lg"
+                className="py-2 px-3 rounded-lg"
+                aiAssist={{ mode: 'grammar', context: 'comment on a support ticket', onApply: setNewCommentText, wrapperClassName: 'flex-1' }}
               />
               <Button 
                   type="button" 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,10 +37,11 @@ import QuestionLibrarySidebar from '@/components/ai-hub/QuestionLibrarySidebar';
 import AIHubSkeleton from '@/components/ai-hub/skeletons/AIHubSkeleton';
 import { useUIRoles } from '@/hooks/useUIRoles';
 import { cn } from '@/lib/utils';
-import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
+import { supabase, logger } from '@/lib/supabaseClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useMsal } from '@azure/msal-react';
 import { useMicrosoftGraph, type GraphContextType } from '@/hooks/useMicrosoftGraph';
+import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
 import { v4 as uuidv4 } from 'uuid';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -990,17 +991,12 @@ const AIHub = () => {
   const { user, isLoading: isAuthLoading } = useSupabaseAuth();
   const { accounts, inProgress: msalInProgress } = useMsal();
   const graphContext = useMicrosoftGraph() as GraphContextType;
+  const { apiKey: sharedApiKey, isReady: isSharedKeyReady } = useGeminiApiKey();
 
-  const [apiKey, setApiKey] = useState('');
-  const [apiEndpoint, setApiEndpoint] = useState('');
-  const [isTesting, setIsTesting] = useState(false);
-  const [testMessage, setTestMessage] = useState('');
-  const [testMessageType, setTestMessageType] = useState<'success' | 'error' | ''>('');
-  const [saveStatus, setSaveStatus] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastUpdatedBy, setLastUpdatedBy] = useState<string | null>(null);
+  // The Gemini key is managed on Admin > API & Integrations and read through the shared hook.
+  const apiKey = sharedApiKey || '';
 
-  const [isConfigLoading, setIsConfigLoading] = useState(true);
+  const isConfigLoading = !isSharedKeyReady;
   const [modelName, setModelName] = useState('gemini-2.5-flash');
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1120,64 +1116,6 @@ const AIHub = () => {
     }
   }, [chatMessages]);
 
-  useEffect(() => {
-    const fetchAiSettings = async () => {
-      // 1. Check .env first (Priority 1)
-      const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (envKey) {
-        setApiKey(envKey);
-        // setApiEndpoint() // If needed, or default
-        setIsConfigLoading(false);
-        return;
-      }
-
-      // 2. Check SharePoint InternalAppSettings (Priority 2)
-      if (graphContext.getAppSetting && !isAuthLoading && msalInProgress === 'none') {
-        // logger.info('[AIHub] Checking SharePoint for GeminiAPIKey...');
-        const spKey = await graphContext.getAppSetting('GeminiAPIKey');
-        if (spKey) {
-          setApiKey(spKey);
-          // logger.info('[AIHub] Loaded GeminiAPIKey from SharePoint.');
-          setIsConfigLoading(false);
-          return;
-        }
-      }
-
-      // 3. Fallback to Supabase settings (Legacy/Priority 3)
-      if (isAuthLoading || msalInProgress !== 'none') {
-        const waitingForAuth = true; // Just a marker variable
-        // If we are waiting for auth, we can't check SharePoint yet, so we wait.
-        // But to keep UI responsive, we proceed to specific DB check or just wait.
-        // We will return and let the effect run again when auth changes.
-        return;
-      }
-
-      setIsConfigLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('news_api_settings')
-          .select('api_key, api_endpoint, last_updated_by')
-          .eq('id', GLOBAL_SETTINGS_ID)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          logger.error('[AIHub] Error fetching AI settings:', error);
-          setSaveStatus(`Error loading AI settings: ${error.message}`);
-        } else if (data) {
-          if (data.api_key) setApiKey(data.api_key);
-          setApiEndpoint(data.api_endpoint || '');
-          setLastUpdatedBy(data.last_updated_by);
-        } else {
-          // Logic when no settings found
-        }
-      } catch (err: any) {
-        logger.error('[AIHub] Exception fetching AI settings:', err);
-      }
-      setIsConfigLoading(false);
-    };
-    fetchAiSettings();
-  }, [isAuthLoading, msalInProgress, graphContext]);
-
   // Handle auto-start search from query parameters
   useEffect(() => {
     if (isAuthLoading || msalInProgress !== 'none' || isConfigLoading || isInitialSearchHandled || !apiKey) {
@@ -1214,86 +1152,7 @@ const AIHub = () => {
     } else {
       setIsInitialSearchHandled(true);
     }
-  }, [searchParams, isAuthLoading, msalInProgress, isConfigLoading, apiKey, apiEndpoint, isInitialSearchHandled, aiModes, setSearchParams]);
-
-  const handleSaveAiSettings = async () => {
-    setIsSaving(true);
-    setSaveStatus('Saving AI settings...');
-    const settingsData = {
-      id: GLOBAL_SETTINGS_ID,
-      api_key: apiKey,
-      api_endpoint: apiEndpoint,
-      last_updated_by: user ? user.id : null,
-      updated_at: new Date().toISOString(),
-    };
-
-    try {
-      const { error } = await supabase.from('news_api_settings').upsert(settingsData, { onConflict: 'id' });
-      if (error) {
-        logger.error('[AIHub] Error saving AI settings (Supabase):', error);
-        setSaveStatus(`Error saving settings: ${error.message}.`);
-      } else {
-        setSaveStatus('AI settings saved successfully!');
-        setLastUpdatedBy(user ? user.id : null);
-        // logger.info('[AIHub] AI settings saved.', { adminMsalName: accounts[0]?.name, supabaseUserId: user?.id });
-      }
-    } catch (err) {
-      logger.error('[AIHub] Exception saving AI settings:', err);
-      setSaveStatus('An unexpected error occurred while saving AI settings.');
-    }
-    setIsSaving(false);
-    setTimeout(() => setSaveStatus(''), 5000);
-  };
-
-  const handleTestAiConnection = async () => {
-    setIsTesting(true);
-    setTestMessage('');
-    setTestMessageType('');
-
-    if (!apiEndpoint || !apiKey) {
-      setTestMessage('API Endpoint and API Key must be provided to test.');
-      setTestMessageType('error');
-      setIsTesting(false);
-      return;
-    }
-
-    if (apiEndpoint.includes('generativelanguage.googleapis.com')) {
-      const fullGeminiEndpoint = `${apiEndpoint}?key=${apiKey}`;
-      const testPrompt = "Test: Please respond with 'Hello World!'";
-      const requestBody = { contents: [{ parts: [{ text: testPrompt }] }] };
-
-      try {
-        // logger.info('[AIHub] Testing Gemini API connection...', { endpoint: apiEndpoint.split('?')[0] });
-        const response = await fetch(fullGeminiEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-        });
-        const responseData = await response.json();
-        if (!response.ok) {
-          const errorDetail = responseData?.error?.message || JSON.stringify(responseData);
-          throw new Error(`API request failed with status ${response.status}: ${errorDetail}`);
-        }
-        if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
-          const aiResponse = responseData.candidates[0].content.parts[0].text;
-          setTestMessage(`Connection successful! AI says: "${aiResponse}"`);
-          setTestMessageType('success');
-          // logger.info('[AIHub] Gemini API test successful.', { response: aiResponse });
-        } else {
-          throw new Error('Test response format not recognized or content missing.');
-        }
-      } catch (error: any) {
-        logger.error('[AIHub] Gemini API test failed:', error);
-        setTestMessage(`Connection failed: ${error.message}`);
-        setTestMessageType('error');
-      }
-    } else {
-      setTestMessage('Automated test for this endpoint type is not currently supported.');
-      setTestMessageType('error');
-      // logger.warn('[AIHub] API test skipped: Endpoint does not appear to be a Gemini endpoint.', { endpoint: apiEndpoint });
-    }
-    setIsTesting(false);
-  };
+  }, [searchParams, isAuthLoading, msalInProgress, isConfigLoading, apiKey, isInitialSearchHandled, aiModes, setSearchParams]);
 
   const handleStopGeneration = (e?: React.MouseEvent | React.FormEvent) => {
     e?.preventDefault();
@@ -1384,7 +1243,7 @@ const AIHub = () => {
     }
 
     // Prioritize environment variable, then settings state
-    const effectiveApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
+    const effectiveApiKey = apiKey;
 
     if (!effectiveApiKey) {
       const aiErrorMessage: ChatMessage = {
@@ -1740,7 +1599,6 @@ const AIHub = () => {
     ]
   };
 
-  const canEditSettings = !uiIsActuallyLoading && isSystemAdmin;
 
   const handleClearChat = () => {
     setChatMessages([
@@ -1766,7 +1624,7 @@ const AIHub = () => {
   };
 
   const handleLibraryQuestionSelect = (question: string, mode?: string) => {
-    if (!apiKey || !apiEndpoint) {
+    if (!apiKey) {
       alert("AI is not configured. Please contact an admin.");
       return;
     }
@@ -2268,71 +2126,22 @@ const AIHub = () => {
                       <Card className="border-none shadow-none bg-transparent pt-4 border-t border-border mt-4">
                         <CardHeader className="px-0 pt-0">
                           <CardTitle className="text-sm">AI Configuration</CardTitle>
-                          <CardDescription className="text-[10px] text-muted-foreground">Manage API settings for the AI Assistant.</CardDescription>
+                          <CardDescription className="text-[10px] text-muted-foreground">
+                            The Gemini API key and model settings are managed centrally on the Admin page.
+                          </CardDescription>
                         </CardHeader>
-                        <CardContent className="px-0">
-                          {isConfigLoading ? (
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <Skeleton className="h-4 w-20" />
-                                <Skeleton className="h-8 w-full" />
-                              </div>
-                              <div className="space-y-2">
-                                <Skeleton className="h-4 w-20" />
-                                <Skeleton className="h-8 w-full" />
-                              </div>
-                              <div className="flex flex-col gap-2 pt-2">
-                                <Skeleton className="h-8 w-full" />
-                                <Skeleton className="h-8 w-full" />
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-4">
-                              <div className="space-y-1.5">
-                                <Label htmlFor="aiApiKey" className="text-xs">API Key</Label>
-                                <Input
-                                  id="aiApiKey"
-                                  type="password"
-                                  value={apiKey}
-                                  onChange={(e) => setApiKey(e.target.value)}
-                                  className="h-8 text-xs"
-                                  placeholder="Enter API Key"
-                                  disabled={!canEditSettings || isSaving || isTesting}
-                                />
-                              </div>
-                              <div className="space-y-1.5">
-                                <Label htmlFor="aiApiEndpoint" className="text-xs">Endpoint</Label>
-                                <Input
-                                  id="aiApiEndpoint"
-                                  value={apiEndpoint}
-                                  onChange={(e) => setApiEndpoint(e.target.value)}
-                                  className="h-8 text-xs"
-                                  placeholder="Enter Endpoint"
-                                  disabled={!canEditSettings || isSaving || isTesting}
-                                />
-                              </div>
-                              <div className="flex flex-col gap-2 pt-2">
-                                <Button
-                                  onClick={handleTestAiConnection}
-                                  disabled={isTesting || isSaving || !canEditSettings || (!apiKey && !apiEndpoint)}
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                >
-                                  {isTesting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                                  Test Connection
-                                </Button>
-                                <Button
-                                  onClick={handleSaveAiSettings}
-                                  disabled={isSaving || isTesting || !canEditSettings}
-                                  size="sm"
-                                  className="h-8 text-xs"
-                                >
-                                  {isSaving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : null}
-                                  Save Settings
-                                </Button>
-                              </div>
-                            </div>
+                        <CardContent className="px-0 space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            {isConfigLoading
+                              ? 'Checking AI configuration...'
+                              : apiKey
+                                ? 'AI is configured and ready.'
+                                : 'AI is not configured yet. Add the key on the Admin page.'}
+                          </p>
+                          {isSystemAdmin && (
+                            <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+                              <Link to="/admin">Open Admin &rsaquo; API &amp; Integrations</Link>
+                            </Button>
                           )}
                         </CardContent>
                       </Card>

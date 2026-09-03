@@ -15,10 +15,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3, Trash2, Maximize, Minimize, Database } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useMsal } from '@azure/msal-react';
-import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
+import { logger } from '@/lib/supabaseClient';
+import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
 import { serializeStrategyContext } from '@/utils/strategyAnalyticsUtils';
 import { STRATEGY_QUICK_QUESTIONS, STRATEGY_QUESTION_LIBRARY } from './strategyQuestions';
 import strategyCalculationLogic from '@/prompts/strategyCalculationLogic.txt?raw';
@@ -105,8 +103,8 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false);
     const [dataSourceFilter, setDataSourceFilter] = useState<DataSourceFilter>('all');
 
-    const [apiKey, setApiKey] = useState('');
-    const [isConfigLoading, setIsConfigLoading] = useState(true);
+    const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
+    const isConfigLoading = !isKeyReady;
     const modelName = 'gemini-2.5-flash';
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -128,10 +126,6 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         }).length;
         return { avgCompletion, atRiskCount };
     }, [objectives]);
-
-    const { isLoading: isAuthLoading } = useSupabaseAuth();
-    const { inProgress: msalInProgress } = useMsal();
-    const graphContext = useMicrosoftGraph();
 
     const INITIAL_GREETING = "Hello! I'm your Strategy Intelligence Assistant. Ask me anything about strategic objectives, divisional performance, KPIs, or execution progress.";
 
@@ -252,43 +246,6 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         }
     }, [chatMessages]);
 
-    // Fetch API key
-    useEffect(() => {
-        const fetchAiSettings = async () => {
-            const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-            if (envKey) {
-                setApiKey(envKey);
-                setIsConfigLoading(false);
-                return;
-            }
-
-            if (graphContext.getAppSetting && !isAuthLoading && msalInProgress === 'none') {
-                const spKey = await graphContext.getAppSetting('GeminiAPIKey');
-                if (spKey) {
-                    setApiKey(spKey);
-                    setIsConfigLoading(false);
-                    return;
-                }
-            }
-
-            if (isAuthLoading || msalInProgress !== 'none') return;
-
-            setIsConfigLoading(true);
-            try {
-                const { data, error } = await supabase
-                    .from('news_api_settings')
-                    .select('api_key, api_endpoint')
-                    .eq('id', GLOBAL_SETTINGS_ID)
-                    .single();
-                if (!error && data?.api_key) setApiKey(data.api_key);
-            } catch (err: any) {
-                logger.error('[StrategyAI] Exception fetching AI settings:', err);
-            }
-            setIsConfigLoading(false);
-        };
-        fetchAiSettings();
-    }, [isAuthLoading, msalInProgress, graphContext]);
-
 
 
     const isAiTyping =
@@ -338,7 +295,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         setQuery('');
         setIsSending(true);
 
-        const effectiveApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
+        const effectiveApiKey = apiKey;
         if (!effectiveApiKey) {
             setChatMessages((prev) => [
                 ...prev,

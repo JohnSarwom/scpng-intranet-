@@ -153,6 +153,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             disabled={disabled}
             className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
             required
+            aiAssist={{ mode: 'title', context: 'Key Performance Indicator (KPI) name', onApply: (v) => onChange('name', v), container }}
           />
         </div>
 
@@ -350,6 +351,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             rows={2}
             disabled={disabled}
             className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
+            aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'Key Performance Indicator (KPI) description', onApply: (v) => onChange('description', v), container }}
           />
         </div>
 
@@ -364,6 +366,7 @@ const KpiInputBlock: React.FC<KpiInputBlockProps> = ({ kpiIndex, formData, onCha
             rows={2}
             disabled={disabled}
             className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
+            aiAssist={{ mode: ['grammar', 'polish'], context: 'comment on a Key Performance Indicator (KPI)', onApply: (v) => onChange('comments', v), container }}
           />
         </div>
 

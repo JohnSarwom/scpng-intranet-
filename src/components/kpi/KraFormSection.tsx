@@ -19,6 +19,7 @@ import { StaffMember } from '@/types/staff'; // Import StaffMember
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth'; // Corrected auth hook import
 import { useStaffByDepartment } from '@/hooks/useStaffByDepartment'; // Import hook to get user's department
 import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelector';
+import { AiImproveButton } from '@/components/ai/AiImproveButton';
 
 interface KraFormSectionProps {
   formData: Partial<Kra>;
@@ -107,6 +108,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
       {/* KRA Title Combobox */}
       <div className="grid gap-1.5">
         <Label htmlFor="kra-title" className="dark:text-gray-300">KRA Title *</Label>
+        <div className="flex items-center gap-1.5">
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -114,7 +116,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
               role="combobox"
               aria-label="Select or type a KRA title"
               className={cn(
-                "w-full justify-between dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 dark:hover:bg-gray-800",
+                "flex-1 min-w-0 justify-between dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 dark:hover:bg-gray-800",
                 !formData.title && "text-muted-foreground dark:text-gray-500"
               )}
               disabled={disabled}
@@ -200,6 +202,21 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
             </Command>
           </PopoverContent>
         </Popover>
+        {/* Sits beside the combobox: the trigger is a button, so there is no
+            field interior to float the sparkle inside. */}
+        <AiImproveButton
+          mode="title"
+          context="Key Result Area (KRA) title"
+          value={formData.title || ''}
+          onApply={(v) => {
+            onChange('title', v);
+            setInputValue(v);
+          }}
+          disabled={disabled}
+          container={container}
+          className="h-9 w-9 flex-shrink-0 border border-input"
+        />
+        </div>
       </div>
 
       {/* Objective & Unit (Side by side on larger screens) */}
@@ -353,6 +370,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
           rows={3}
           disabled={disabled}
           className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100 focus:ring-intranet-primary/20"
+          aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'note on a Key Result Area (KRA)', onApply: (v) => onChange('description', v), container }}
         />
       </div>
 
