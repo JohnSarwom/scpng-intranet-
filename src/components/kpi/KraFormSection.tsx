@@ -133,6 +133,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                 onValueChange={(search) => {
                   setInputValue(search);
                   onChange('title', search);
+                  if (isAddingNew) onChange('id' as any, undefined);
                 }}
                 className="dark:text-gray-100"
               />
@@ -143,12 +144,13 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                     ? existingKraObjects.map((kra) => (
                       <CommandItem
                         key={kra.id}
-                        value={kra.title}
+                        value={`${kra.title} ${kra.id}`}
                         className="dark:text-gray-300 dark:aria-selected:bg-gray-800 dark:aria-selected:text-gray-100"
                         onSelect={() => {
                           // Use the original KRA title (preserving casing) instead of cmdk's lowercased currentValue
                           const originalTitle = kra.title.trim();
-                          if (originalTitle === formData.title) {
+                          const isSelected = String(formData.id || '') === String(kra.id);
+                          if (isSelected) {
                             // Deselect: clear title and ID
                             onChange('title', '');
                             onChange('id' as any, undefined);
@@ -163,13 +165,13 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                             if (kra.assignees) onChange('assignees', kra.assignees);
                             if (kra.owner) onChange('owner', kra.owner);
                           }
-                          setInputValue(originalTitle === formData.title ? '' : originalTitle);
+                          setInputValue(isSelected ? '' : originalTitle);
                         }}
                       >
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            formData.title?.trim().toLowerCase() === kra.title.trim().toLowerCase() ? "opacity-100" : "opacity-0"
+                            String(formData.id || '') === String(kra.id) ? "opacity-100" : "opacity-0"
                           )}
                         />
                         {kra.title}
@@ -184,6 +186,7 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
                           // Fallback: use original title string (not cmdk's lowercased value)
                           const trimmedValue = title.trim();
                           onChange('title', trimmedValue === formData.title ? '' : trimmedValue);
+                          if (isAddingNew) onChange('id' as any, undefined);
                           setInputValue(trimmedValue === formData.title ? '' : trimmedValue);
                         }}
                       >
@@ -378,4 +381,4 @@ const KraFormSection: React.FC<KraFormSectionProps> = ({
   );
 };
 
-export default KraFormSection; 
+export default KraFormSection;

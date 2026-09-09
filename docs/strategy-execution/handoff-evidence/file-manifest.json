@@ -1,0 +1,195 @@
+{
+  "prepared": "2026-09-08",
+  "timezone": "Pacific/Port_Moresby",
+  "head": "9f777167162d1ec49bb9cff7ba407de804ed0557",
+  "branch": "feat/ai-text-improver",
+  "note": "Working-tree file fingerprints, not a patch or proof of authorship. New files are uncommitted. Unrelated changes are not included. Manifest does not fingerprint itself.",
+  "files": [
+    {
+      "path": "src/utils/workPlanEditor.ts",
+      "classification": "new",
+      "bytes": 6531,
+      "sha256": "41648ba3416eb266b4246dbf27525cce4d008be695fc25e1736062e1df361d91"
+    },
+    {
+      "path": "src/utils/workPlanAccess.ts",
+      "classification": "new",
+      "bytes": 877,
+      "sha256": "4070b8618153c878bd5a22ee1c7da0ee5649ddc517137b493c52ae9b375523f0"
+    },
+    {
+      "path": "src/utils/workPlanIdentity.ts",
+      "classification": "new",
+      "bytes": 1545,
+      "sha256": "934dc8301eb33a46290e91672850eb041a08d7194725b79060407642e1486700"
+    },
+    {
+      "path": "src/services/workPlanActivationService.ts",
+      "classification": "new",
+      "bytes": 27533,
+      "sha256": "6a10087e82849d976a0f686d18c6da83ef260ab6b32d0829ac6ccd38ffed38c0"
+    },
+    {
+      "path": "src/services/workPlanStorageService.ts",
+      "classification": "new",
+      "bytes": 6066,
+      "sha256": "b85dc17fb5b112b390c21050e1ff8f8594e28528ea8283843bdc8f26736ae4ef"
+    },
+    {
+      "path": "src/components/division/workplan/WorkPlanLinkageDialog.tsx",
+      "classification": "new",
+      "bytes": 11036,
+      "sha256": "abf3cfe44dda7054df7c81452c7d9276f4c063d71fddc621d5f06d2b77d0c62a"
+    },
+    {
+      "path": "src/tests/workPlanPreservation.test.cjs",
+      "classification": "new",
+      "bytes": 8648,
+      "sha256": "bac3d946bd4d6004d923fe36ca51310defd5bb0b5d95d40023da905e89f7d478"
+    },
+    {
+      "path": "src/tests/workPlanAccessIdentity.test.cjs",
+      "classification": "new",
+      "bytes": 15399,
+      "sha256": "c09edeae8e383a061db8136e788ec4fbd6fe2db1ab6e2de43d5ba9e02848d6d1"
+    },
+    {
+      "path": "src/tests/workPlanActivation.test.cjs",
+      "classification": "new",
+      "bytes": 15672,
+      "sha256": "de2a4bb5bb7dbcf47693b22284432f4dccf51484400da0bc3daf85742913bebe"
+    },
+    {
+      "path": "src/components/division/workplan/WorkPlanBuilder.tsx",
+      "classification": "modified_for_remediation",
+      "bytes": 44659,
+      "sha256": "6f6dc79fdd468da568317731a327ac8bade0d9cdde3cad00f19efaa2cb5fdd30"
+    },
+    {
+      "path": "src/components/kpi/KraFormSection.tsx",
+      "classification": "modified_for_remediation",
+      "bytes": 17802,
+      "sha256": "696e83029afed4e0e442489cce174f2ec738ba6998332e07d1598e3c61bef4c8"
+    },
+    {
+      "path": "src/components/unit-tabs/KRAsTab.tsx",
+      "classification": "modified_for_remediation",
+      "bytes": 94815,
+      "sha256": "1d393cb1a06679462d86c6777690c345d5d055a65375c21512480cfc1e7a65d1"
+    },
+    {
+      "path": "src/hooks/useDivisionData.ts",
+      "classification": "modified_for_remediation",
+      "bytes": 10611,
+      "sha256": "389d3c3541ca6c40653bc2cd2ae8e36240346f88e2bfb496c56bf2557f830fce"
+    },
+    {
+      "path": "src/hooks/useWorkPlans.ts",
+      "classification": "modified_for_remediation",
+      "bytes": 5129,
+      "sha256": "baec34ffb882138fbce5342834bf39e4163a009f5de19bfca70ee1ac6f41a95f"
+    },
+    {
+      "path": "src/pages/WorkPlanBuilderPage.tsx",
+      "classification": "modified_for_remediation",
+      "bytes": 6545,
+      "sha256": "3d10fac501bc98ba04f1497579334169a5e75a24ba9d8516dece9aeb6e6b83c5"
+    },
+    {
+      "path": "src/services/sharePointOpsService.ts",
+      "classification": "modified_for_remediation",
+      "bytes": 152671,
+      "sha256": "e305b9fe9353b8e4d65e792c930d5d8c41d4c4f2d92cc62fa3104d13a5941123"
+    },
+    {
+      "path": "src/types/division.types.ts",
+      "classification": "modified_for_remediation",
+      "bytes": 7645,
+      "sha256": "eda47da2e6559a82d47417d71133aeb07ff2873c471e69cd9b0a1bdf10e8a443"
+    },
+    {
+      "path": "src/App.tsx",
+      "classification": "mixed_existing_and_remediation",
+      "bytes": 15773,
+      "sha256": "4674e6c4488d92faad7dd47c165b5aa30eb5525e188bbeee8b06bdf11fcd7e07"
+    },
+    {
+      "path": "src/utils/kpiUtils.ts",
+      "classification": "unchanged_compatibility_reference",
+      "bytes": 11841,
+      "sha256": "296fe713347c022ad27700987106bff323e558837c8e84ddb78996262ea8cf26"
+    },
+    {
+      "path": "graphify-out/GRAPH_REPORT.md",
+      "classification": "generated_reference",
+      "bytes": 146603,
+      "sha256": "9677c75fd7f209ddbbf91f58558b19f83689c8e758be9c3973574692e5ee55a9"
+    },
+    {
+      "path": "docs/strategy-execution/2026-09-07-task-to-goal-audit.md",
+      "classification": "documentation",
+      "bytes": 49465,
+      "sha256": "6eb54a983a696937d7d1ebf1d668ff035a4a09e946baa5c68f413f2c4f70114a"
+    },
+    {
+      "path": "docs/strategy-execution/2026-09-07-lis-workplan-source-alignment-audit.md",
+      "classification": "documentation",
+      "bytes": 27943,
+      "sha256": "1507ef5d9e95f890f625446f99979a6e1911a393fc2a562d2fe4ed908f833ab5"
+    },
+    {
+      "path": "docs/strategy-execution/2026-09-07-remediation-phases.md",
+      "classification": "documentation",
+      "bytes": 12286,
+      "sha256": "461701fb1eed728acdee456bd3eb6b08cc0f674146dc694503f95dbe0e6099d1"
+    },
+    {
+      "path": "docs/strategy-execution/2026-09-07-phase-2b-activation.md",
+      "classification": "documentation",
+      "bytes": 9186,
+      "sha256": "d4d2a1dfbd165c53b6a194ed8f8135b41ab0576cc130ecac4772fb7917846f8c"
+    },
+    {
+      "path": "docs/strategy-execution/2026-09-08-developer-handoff.md",
+      "classification": "documentation",
+      "bytes": 54288,
+      "sha256": "fe0bfbbfdbe8b5633c452abcc34dacc11a22f64de380c53fa0c34554a6902306"
+    },
+    {
+      "path": "docs/strategy-execution/README.md",
+      "classification": "documentation",
+      "bytes": 8221,
+      "sha256": "3c9148eb5511fb7ea142ca72e9a21166a2eb075e76068fc8af453b34a1270cea"
+    },
+    {
+      "path": "docs/strategy-execution/handoff-evidence/phase1-typecheck.txt",
+      "classification": "preserved_validation_output",
+      "bytes": 43632,
+      "sha256": "775443a9ded2b2ec9b5a2f93437b3b48107010c3d4058c6ff85c3229bc09acf4"
+    },
+    {
+      "path": "docs/strategy-execution/handoff-evidence/phase2b-typecheck.txt",
+      "classification": "preserved_validation_output",
+      "bytes": 43632,
+      "sha256": "1092ffd0d88845a7d578cf10e36e031142d61e66949a9dca575f3a2583967365"
+    },
+    {
+      "path": "docs/strategy-execution/handoff-evidence/phase2b-tests.txt",
+      "classification": "preserved_validation_output",
+      "bytes": 3687,
+      "sha256": "3eaa543cd7ccb572b861a1bde221eb8207c16438cffafd06489ec18b8d6ca230"
+    },
+    {
+      "path": "docs/strategy-execution/handoff-evidence/phase2b-build.txt",
+      "classification": "preserved_validation_output",
+      "bytes": 5070,
+      "sha256": "d7c38efb63e45c3bdf3ee71dea5efc60849ed5a09474388e61f71c011d24803a"
+    },
+    {
+      "path": "docs/strategy-execution/handoff-evidence/README.md",
+      "classification": "documentation",
+      "bytes": 2522,
+      "sha256": "16fd46be03c09e241804f0478f44e868040ba55ded28db21cf4f90bcc7816766"
+    }
+  ]
+}

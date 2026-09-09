@@ -353,7 +353,9 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
     const inferredKraId = selectedKpiId && selectedKpiId !== 'none'
       ? kpis.find(k => k.id.toString() === selectedKpiId)?.kra_id?.toString() || selectedKraId
-      : selectedKraId;
+      : selectedKpiId === 'none'
+        ? 'none'
+        : selectedKraId;
 
     const taskData: Partial<Task> = {
       id: initialData?.id,

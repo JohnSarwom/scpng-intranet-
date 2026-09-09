@@ -13,6 +13,7 @@ export interface KpiTarget {
 
 export interface StrategicItem {
     id: string;
+    revision?: string;
     title: string;
     description: string;
     progress: number; // 0-100

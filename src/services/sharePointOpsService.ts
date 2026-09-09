@@ -14,9 +14,32 @@ interface Report {
     date_range: { start_date: string; end_date: string };
     content: Record<string, any>;
 }
+
+interface RecentTaskSync {
+    id: string;
+    status?: string;
+    title?: string;
+    linked?: boolean;
+}
 import { Logger } from '@/utils/logger';
-import { WorkPlan, WorkPlanGoal } from '@/types/division.types';
+import {
+    WorkPlan, WorkPlanGoal, WorkPlanRetirementAction, WorkPlanRetirementRequest,
+    WorkPlanStructureKind, WorkPlanStructureRetirementRequest,
+} from '@/types/division.types';
 import { normalizeLookupNumber, normalizeLookupString } from '@/utils/sharePointLookupUtils';
+import { UserSharePointService } from '@/services/userSharePointService';
+import { assertCanManageWorkPlan } from '@/utils/workPlanAccess';
+import { assertWorkPlanExecutionIdentity } from '@/utils/workPlanIdentity';
+import { WorkPlanActivationService } from '@/services/workPlanActivationService';
+import { WorkPlanStorageService } from '@/services/workPlanStorageService';
+import {
+    assertCanViewWorkPlanGovernance,
+    buildWorkPlanGovernanceHistory,
+} from '@/services/workPlanGovernanceService';
+import {
+    ARCHIVE_BOUND_SCHEDULER_BLOCK_MESSAGE,
+    type StrategyReportActor,
+} from '@/services/strategyReportArchiveService';
 
 // Configuration for SharePoint Lists
 const OPS_CONFIG = {
@@ -337,6 +360,121 @@ export class SharePointOpsService {
         }
     }
 
+    /**
+     * Collect every Graph page and stop if a continuation link repeats. A
+     * relationship reconciliation must never treat a truncated response as the
+     * complete record set.
+     */
+    private async getPagedValues(query: any, operation: string): Promise<any[]> {
+        let response = await query.get();
+        const values = [...(response?.value || [])];
+        const seenLinks = new Set<string>();
+
+        while (response?.['@odata.nextLink']) {
+            const nextLink = String(response['@odata.nextLink']);
+            if (seenLinks.has(nextLink)) {
+                throw new Error(`[SP Ops] ${operation} returned a repeated @odata.nextLink; reconciliation was stopped.`);
+            }
+            seenLinks.add(nextLink);
+            response = await this.client.api(nextLink).get();
+            values.push(...(response?.value || []));
+        }
+
+        return values;
+    }
+
+    private requireCurrentRevision(item: any, expectedRevision: string | undefined, label: string): string {
+        const currentRevision = String(item?.eTag || '').trim();
+        if (!currentRevision) {
+            throw new Error(`${label} has no SharePoint version. Reload before changing it.`);
+        }
+        if (expectedRevision && expectedRevision !== currentRevision) {
+            throw new Error(`${label} changed after it was opened. Reload and review the latest version before saving.`);
+        }
+        return currentRevision;
+    }
+
+    private isStaleWriteError(error: any): boolean {
+        const code = String(error?.code || '').toLowerCase();
+        return error?.statusCode === 412 || error?.status === 412 || code === 'preconditionfailed' || code === 'etagmismatch';
+    }
+
+    private async patchWithRevision(url: string, revision: string, payload: any, label: string): Promise<any> {
+        try {
+            return await this.client.api(url).header('If-Match', revision).patch(payload);
+        } catch (error: any) {
+            if (this.isStaleWriteError(error)) {
+                const staleError = new Error(`${label} changed while it was being saved. Reload and review the latest version.`);
+                (staleError as any).statusCode = 412;
+                throw staleError;
+            }
+            throw error;
+        }
+    }
+
+    private async deleteWithRevision(url: string, revision: string, label: string): Promise<void> {
+        try {
+            await this.client.api(url).header('If-Match', revision).delete();
+        } catch (error: any) {
+            if (this.isStaleWriteError(error)) {
+                const staleError = new Error(`${label} changed while it was being deleted. Reload and review the latest version.`);
+                (staleError as any).statusCode = 412;
+                throw staleError;
+            }
+            throw error;
+        }
+    }
+
+    private async getRequiredKpiKraId(kpiId: string): Promise<string> {
+        if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
+        const kpi = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${kpiId}`)
+            .expand('fields')
+            .get();
+        const kraId = normalizeLookupString(kpi.fields?.RelatedKRALookupId);
+        if (!kraId) {
+            throw new Error(`KPI ${kpiId} has no Performance KRA and cannot be used as a Task strategy link.`);
+        }
+        return kraId;
+    }
+
+    private async alignTaskKraLinksForKpi(kpiId: string, kraId: string | null): Promise<void> {
+        if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+        const tasks = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).expand('fields'),
+            `aligning Task ancestry for KPI ${kpiId}`
+        );
+        const linkedTasks = tasks.filter((item: any) =>
+            normalizeLookupString(item.fields?.RelatedKPILookupId) === String(kpiId)
+        );
+
+        for (const task of linkedTasks) {
+            if (normalizeLookupString(task.fields?.RelatedKRALookupId) === kraId) continue;
+            const revision = this.requireCurrentRevision(task, undefined, `Task ${task.id}`);
+            const taskUrl = `/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${task.id}`;
+            try {
+                await this.patchWithRevision(
+                    taskUrl,
+                    revision,
+                    { fields: { RelatedKRALookupId: normalizeLookupNumber(kraId) } },
+                    `Task ${task.id}`
+                );
+            } catch (error) {
+                if (!this.isStaleWriteError(error)) throw error;
+                const latest = await this.client.api(taskUrl).expand('fields').get();
+                if (normalizeLookupString(latest.fields?.RelatedKPILookupId) !== String(kpiId)) continue;
+                if (normalizeLookupString(latest.fields?.RelatedKRALookupId) === kraId) continue;
+                const latestRevision = this.requireCurrentRevision(latest, undefined, `Task ${task.id}`);
+                await this.patchWithRevision(
+                    taskUrl,
+                    latestRevision,
+                    { fields: { RelatedKRALookupId: normalizeLookupNumber(kraId) } },
+                    `Task ${task.id}`
+                );
+            }
+        }
+    }
+
     // --- Fetch Methods ---
 
     async getObjectives(scope: FilterScope = 'Division', context?: UserContext): Promise<Objective[]> {
@@ -347,16 +485,19 @@ export class SharePointOpsService {
 
         try {
             // Fetch all to avoid indexing issues with OData filters
-            const response = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items`)
+                    .expand('fields'),
+                'loading objectives'
+            );
 
-            console.log(`📊 [SP Ops] getObjectives fetched raw: ${response.value?.length || 0}`);
+            console.log(`📊 [SP Ops] getObjectives fetched raw: ${items.length}`);
 
-            return (response.value || [])
+            return items
                 .filter((item: any) => {
                     const f = item.fields;
+                    if (f.IsRetired === true) return false;
                     // Admin Bypass
                     if (context?.role === 'admin' || context?.role === 'super_admin') return true;
 
@@ -397,7 +538,7 @@ export class SharePointOpsService {
                 .map((item: any) => this.mapObjective(item));
         } catch (error) {
             console.error('❌ [SP Ops] getObjectives failed:', error);
-            return [];
+            throw error;
         }
     }
 
@@ -435,12 +576,15 @@ export class SharePointOpsService {
     async updateObjective(id: string, objective: Partial<Objective>): Promise<Objective> {
         if (!this.listIds['OBJECTIVES']) throw new Error('Objectives list not found');
 
-        const fields: any = {
-            Title: objective.title,
-            Description: objective.description,
-        };
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`;
+        const current = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(current, objective.revision, `Objective ${id}`);
+
+        const fields: any = {};
 
         // Only add fields if they are defined in the partial update
+        if (objective.title !== undefined) fields.Title = objective.title;
+        if (objective.description !== undefined) fields.Description = objective.description;
         if (objective.status !== undefined) fields.Status = objective.status;
         if (objective.progress !== undefined) fields.Progress = objective.progress;
         if (objective.year !== undefined) fields.Year = objective.year;
@@ -458,20 +602,32 @@ export class SharePointOpsService {
         const payload = { fields };
 
         console.log(`📝 [SP Ops] Updating Objective ${id}:`, payload);
-        const response = await this.client
-            .api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`)
-            .patch(payload);
+        const response = await this.patchWithRevision(itemUrl, revision, payload, `Objective ${id}`);
+        const updated = response?.fields ? response : await this.client.api(itemUrl).expand('fields').get();
 
-        return this.mapObjective(response);
+        return this.mapObjective(updated);
     }
 
-    async deleteObjective(id: string): Promise<void> {
+    async deleteObjective(id: string, expectedRevision?: string): Promise<void> {
         if (!this.listIds['OBJECTIVES']) throw new Error('Objectives list not found');
 
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`;
+        const objective = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(objective, expectedRevision, `Objective ${id}`);
+
+        const kras = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`).expand('fields'),
+            `checking Objective ${id} dependencies`
+        );
+        const childCount = kras.filter((item: any) =>
+            normalizeLookupString(item.fields?.UnitObjectiveLookupId) === String(id)
+        ).length;
+        if (childCount > 0) {
+            throw new Error(`Objective ${id} has ${childCount} linked KRA${childCount === 1 ? '' : 's'}. Reassign or retire them before deleting the Objective.`);
+        }
+
         console.log(`🗑️ [SP Ops] Deleting Objective ${id}`);
-        await this.client
-            .api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`)
-            .delete();
+        await this.deleteWithRevision(itemUrl, revision, `Objective ${id}`);
     }
 
     async getKRAs(scope: FilterScope = 'Division', context?: UserContext): Promise<KRA[]> {
@@ -500,32 +656,35 @@ export class SharePointOpsService {
             }
         }
 
-        const response = await query.get();
-        console.log(`📊 [KRAs Fetched] User: ${context?.email} | Count: ${response.value?.length || 0} | Admin: ${isAdmin}`);
+        const items = await this.getPagedValues(query, 'loading KRAs');
+        console.log(`📊 [KRAs Fetched] User: ${context?.email} | Count: ${items.length} | Admin: ${isAdmin}`);
 
         // AGGRESSIVE DEBUG: Check for KRA 111 or recent items
-        if (response.value) {
-            const target = response.value.find((i: any) => String(i.id) === '111' || String(i.id) === '108');
+        if (items.length > 0) {
+            const target = items.find((i: any) => String(i.id) === '111' || String(i.id) === '108');
             if (target) {
                 console.log(`🔍 [SP Ops] RAW FIELDS for KRA ${target.id}:`, JSON.stringify(target.fields));
                 console.log(`🔍 [SP Ops] Has Assignees?`, 'Assignees' in target.fields);
-            } else if (response.value.length > 0) {
+            } else {
                 // Log first item if target not found
-                console.log(`🔍 [SP Ops] RAW FIELDS for First KRA (${response.value[0].id}):`, Object.keys(response.value[0].fields));
+                console.log(`🔍 [SP Ops] RAW FIELDS for First KRA (${items[0].id}):`, Object.keys(items[0].fields));
             }
         }
 
-        return response.value.map((item: any) => this.mapKRA(item));
+        return items.filter((item: any) => item.fields?.IsRetired !== true).map((item: any) => this.mapKRA(item));
     }
 
     async getKPIs(department?: string): Promise<Kpi[]> {
         // KPI filtering usually happens via Linked KRA or client side for now as explicit linkage is complex in one query
         if (!this.listIds['KPIS']) return [];
-        const response = await this.client
-            .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
-            .expand('fields')
-            .get();
-        return response.value.map((item: any) => this.mapKPI(item));
+        const items = await this.getPagedValues(
+            this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
+                .expand('fields'),
+            'loading KPIs'
+        );
+        // Retired execution remains in SharePoint for audit/recovery but is not active strategy work.
+        return items.filter((item: any) => item.fields?.IsRetired !== true).map((item: any) => this.mapKPI(item));
     }
 
     async getProjects(scope: FilterScope = 'Unit', context?: UserContext): Promise<Project[]> {
@@ -582,13 +741,7 @@ export class SharePointOpsService {
 
         // Paginate through all results — Graph API caps at 200 items per page by default.
         // Without pagination, newly added tasks beyond item #200 are silently dropped.
-        let response = await query.get();
-        let allItems: any[] = response.value || [];
-
-        while (response['@odata.nextLink']) {
-            response = await this.client.api(response['@odata.nextLink']).get();
-            allItems = allItems.concat(response.value || []);
-        }
+        const allItems = await this.getPagedValues(query, 'loading Tasks');
 
         console.log(`📊 [Tasks Fetched] User: ${context?.email} | Count: ${allItems.length} | Admin: ${isAdmin}`);
         return allItems.map((item: any) => this.mapTask(item));
@@ -596,6 +749,16 @@ export class SharePointOpsService {
 
     async addTask(task: Partial<Task>, department?: string): Promise<Task> {
         if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
+
+        const linkedKpiId = normalizeLookupString(task.kpi_id);
+        let linkedKraId = normalizeLookupString(task.kra_id);
+        if (linkedKpiId) {
+            const kpiKraId = await this.getRequiredKpiKraId(linkedKpiId);
+            if (linkedKraId && linkedKraId !== kpiKraId) {
+                throw new Error(`Task KRA ${linkedKraId} conflicts with KPI ${linkedKpiId}, which belongs to KRA ${kpiKraId}.`);
+            }
+            linkedKraId = kpiKraId;
+        }
 
         // Handle Group ID logic — buckets come from Task Groups
         let numericGroupId = task.projectId ? Number(task.projectId) : null;
@@ -620,8 +783,8 @@ export class SharePointOpsService {
                 AssigneeViewMap: task.assigneeViewMap ? JSON.stringify(task.assigneeViewMap) : undefined,
                 AttachmentsJSON: task.attachments ? JSON.stringify(task.attachments) : undefined,
                 // Lookups
-                RelatedKRALookupId: normalizeLookupNumber(task.kra_id),
-                RelatedKPILookupId: normalizeLookupNumber(task.kpi_id),
+                RelatedKRALookupId: normalizeLookupNumber(linkedKraId),
+                RelatedKPILookupId: normalizeLookupNumber(linkedKpiId),
                 // Write group ID to TaskGroup lookup only (Projects lookup targets a different list)
                 RelatedTaskGroupLookupId: numericGroupId
             }
@@ -650,9 +813,13 @@ export class SharePointOpsService {
         }
 
         // Sync KPI checklist if task is linked to a KPI
-        const linkedKpiId = normalizeLookupString(task.kpi_id);
         if (linkedKpiId) {
-            await this.syncKPIChecklistFromTasks(linkedKpiId, { id: response.id, status: payload.fields.Status });
+            await this.syncKPIChecklistFromTasks(linkedKpiId, {
+                id: response.id,
+                status: payload.fields.Status,
+                title: payload.fields.Title,
+                linked: true,
+            });
         }
 
         return this.mapTask(response);
@@ -715,29 +882,44 @@ export class SharePointOpsService {
             fields.Tags = (task.tags || []).join(',');
         }
 
-        // Lookups
-        if (task.kra_id !== undefined) fields.RelatedKRALookupId = normalizeLookupNumber(task.kra_id);
-        if (task.kpi_id !== undefined) fields.RelatedKPILookupId = normalizeLookupNumber(task.kpi_id);
+        // Lookups are resolved after the current Task is loaded so KPI/KRA
+        // ancestry can be validated as one relationship.
         // Also handle explicit groupId updates
         if (task.groupId !== undefined && task.projectId === undefined) {
             const numericGroupId = task.groupId ? Number(task.groupId) : null;
             fields.RelatedTaskGroupLookupId = isNaN(numericGroupId as number) ? null : numericGroupId;
         }
 
-        // Fetch old task data to detect KPI linkage changes
-        let oldKpiId: string | null = null;
-        try {
-            const oldTask = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`)
-                .expand('fields')
-                .get();
-            oldKpiId = oldTask.fields?.RelatedKPILookupId ? String(oldTask.fields.RelatedKPILookupId) : null;
-        } catch { /* proceed without old data */ }
+        // Load the authoritative relationship before mutation. Continuing without
+        // it could leave the old KPI unsynchronized after a move.
+        const oldTask = await this.client
+            .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`)
+            .expand('fields')
+            .get();
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`;
+        const revision = this.requireCurrentRevision(oldTask, task.revision, `Task ${id}`);
+        const oldKpiId = normalizeLookupString(oldTask.fields?.RelatedKPILookupId);
+        const oldKraId = normalizeLookupString(oldTask.fields?.RelatedKRALookupId);
+        const newKpiId = task.kpi_id !== undefined ? normalizeLookupString(task.kpi_id) : oldKpiId;
+        let newKraId = task.kra_id !== undefined ? normalizeLookupString(task.kra_id) : oldKraId;
+
+        if (newKpiId) {
+            const kpiKraId = await this.getRequiredKpiKraId(newKpiId);
+            if (task.kra_id !== undefined && newKraId && newKraId !== kpiKraId) {
+                throw new Error(`Task KRA ${newKraId} conflicts with KPI ${newKpiId}, which belongs to KRA ${kpiKraId}.`);
+            }
+            newKraId = kpiKraId;
+        }
+
+        if (task.kpi_id !== undefined) fields.RelatedKPILookupId = normalizeLookupNumber(newKpiId);
+        if (task.kra_id !== undefined || (newKpiId && newKraId !== oldKraId)) {
+            fields.RelatedKRALookupId = normalizeLookupNumber(newKraId);
+        }
 
         console.log(`📝 [SP Ops] Updating Task ${id} Payload:`, JSON.stringify({ fields }, null, 2));
         let response: any;
         try {
-            response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+            response = await this.patchWithRevision(itemUrl, revision, { fields }, `Task ${id}`);
         } catch (err: any) {
             // If AttachmentsJSON or AssigneeViewMap columns don't exist yet, retry without them
             if (err?.message?.includes('AttachmentsJSON') || err?.message?.includes('AssigneeViewMap')) {
@@ -749,48 +931,46 @@ export class SharePointOpsService {
                     console.warn('⚠️ [SP Ops] AssigneeViewMap column not recognized, retrying without it');
                     delete fields.AssigneeViewMap;
                 }
-                response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).patch({ fields });
+                response = await this.patchWithRevision(itemUrl, revision, { fields }, `Task ${id}`);
             } else {
                 throw err;
             }
         }
 
         // Sync KPI checklist(s) after task update
-        const newKpiId = task.kpi_id !== undefined
-            ? normalizeLookupString(task.kpi_id)
-            : oldKpiId;
-
         // If KPI linkage changed, sync both old and new KPIs
-        const overrideData = { id, status: fields.Status };
+        const overrideData: RecentTaskSync = {
+            id,
+            status: fields.Status,
+            title: fields.Title,
+            linked: true,
+        };
 
         if (oldKpiId && newKpiId !== oldKpiId) {
-            await this.syncKPIChecklistFromTasks(oldKpiId, overrideData);
+            await this.syncKPIChecklistFromTasks(oldKpiId, { ...overrideData, linked: false });
         }
         if (newKpiId) {
             await this.syncKPIChecklistFromTasks(newKpiId, overrideData);
         }
 
-        return this.mapTask(response);
+        const updated = response?.fields ? response : await this.client.api(itemUrl).expand('fields').get();
+        return this.mapTask(updated);
     }
 
-    async deleteTask(id: string): Promise<void> {
+    async deleteTask(id: string, expectedRevision?: string): Promise<void> {
         if (!this.listIds['TASKS']) throw new Error('Operations Tasks list not found');
 
         // Fetch task before deleting to get its KPI linkage
-        let kpiId: string | null = null;
-        try {
-            const taskItem = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`)
-                .expand('fields')
-                .get();
-            kpiId = taskItem.fields?.RelatedKPILookupId ? String(taskItem.fields.RelatedKPILookupId) : null;
-        } catch { /* proceed with deletion */ }
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`;
+        const taskItem = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(taskItem, expectedRevision, `Task ${id}`);
+        const kpiId = normalizeLookupString(taskItem.fields?.RelatedKPILookupId);
 
-        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items/${id}`).delete();
+        await this.deleteWithRevision(itemUrl, revision, `Task ${id}`);
 
         // Sync KPI checklist to remove the deleted task's checklist item
         if (kpiId) {
-            await this.syncKPIChecklistFromTasks(kpiId);
+            await this.syncKPIChecklistFromTasks(kpiId, { id, linked: false });
         }
     }
 
@@ -853,8 +1033,8 @@ export class SharePointOpsService {
             if (filter) query = query.filter(filter);
         }
 
-        const response = await query.get();
-        return response.value.map((item: any) => this.mapRisk(item));
+        const items = await this.getPagedValues(query, 'loading risks');
+        return items.map((item: any) => this.mapRisk(item));
     }
 
     // --- Settings Methods ---
@@ -1145,6 +1325,8 @@ export class SharePointOpsService {
             }
             const mapped = this.mapKRA(response);
             console.log(`🔍 [SP Ops] mapKRA result — assignees:`, mapped.assignees, '| owner:', mapped.owner);
+            const objectiveId = normalizeLookupString(response?.fields?.UnitObjectiveLookupId ?? kra.objective_id);
+            if (objectiveId) await this.syncObjectiveProgress(objectiveId);
             return mapped;
         } catch (error: any) {
             console.error('❌ [SP Ops] Failed to add KRA:', error);
@@ -1158,6 +1340,10 @@ export class SharePointOpsService {
     async updateKRA(id: string, kra: Partial<KRA>): Promise<KRA> {
         if (!this.listIds['KRAS']) throw new Error('KRAs list not found');
         const fields: any = {};
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`;
+        const current = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(current, kra.revision, `KRA ${id}`);
+        const previousObjectiveId = normalizeLookupString(current.fields?.UnitObjectiveLookupId);
         if (kra.title !== undefined) fields.Title = kra.title;
         if (kra.owner !== undefined) fields.Responsible = kra.owner?.name || null;
         if (kra.unit !== undefined) fields.Unit = kra.unit;
@@ -1190,11 +1376,8 @@ export class SharePointOpsService {
             // After patching, do a GET with expand('fields') to get the full updated item
             // (including Assignees). Without this, mapKRA would return empty assignees
             // and the React Query cache would be overwritten with stale/empty data.
-            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`).patch({ fields });
-            const updated = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`)
-                .expand('fields')
-                .get();
+            await this.patchWithRevision(itemUrl, revision, { fields }, `KRA ${id}`);
+            const updated = await this.client.api(itemUrl).expand('fields').get();
             const rawAssignees = updated?.fields?.Assignees;
             console.log(`🔍 [SP Ops] GET after PATCH for KRA ${id} — Assignees raw:`, rawAssignees);
             console.log(`🔍 [SP Ops] GET after PATCH — ALL fields:`, Object.keys(updated?.fields || {}));
@@ -1203,6 +1386,11 @@ export class SharePointOpsService {
             }
             const mapped = this.mapKRA(updated);
             console.log(`🔍 [SP Ops] mapKRA result — assignees:`, mapped.assignees, '| owner:', mapped.owner);
+            const currentObjectiveId = normalizeLookupString(updated.fields?.UnitObjectiveLookupId);
+            if (previousObjectiveId && previousObjectiveId !== currentObjectiveId) {
+                await this.syncObjectiveProgress(previousObjectiveId);
+            }
+            if (currentObjectiveId) await this.syncObjectiveProgress(currentObjectiveId);
             return mapped;
         } catch (error: any) {
             console.error(`❌ [SP Ops] Failed to update KRA ${id}:`, error);
@@ -1213,9 +1401,29 @@ export class SharePointOpsService {
         }
     }
 
-    async deleteKRA(id: string): Promise<void> {
+    async deleteKRA(id: string, expectedRevision?: string): Promise<void> {
         if (!this.listIds['KRAS']) throw new Error('KRAs list not found');
-        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`).delete();
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${id}`;
+        const kraItem = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(kraItem, expectedRevision, `KRA ${id}`);
+        const [kpis, tasks] = await Promise.all([
+            this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`).expand('fields'),
+                `checking KRA ${id} KPI dependencies`
+            ),
+            this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).expand('fields'),
+                `checking KRA ${id} Task dependencies`
+            ),
+        ]);
+        const childKpis = kpis.filter((item: any) => normalizeLookupString(item.fields?.RelatedKRALookupId) === String(id)).length;
+        const childTasks = tasks.filter((item: any) => normalizeLookupString(item.fields?.RelatedKRALookupId) === String(id)).length;
+        if (childKpis > 0 || childTasks > 0) {
+            throw new Error(`KRA ${id} has ${childKpis} linked KPI${childKpis === 1 ? '' : 's'} and ${childTasks} directly linked Task${childTasks === 1 ? '' : 's'}. Reassign or retire them before deleting the KRA.`);
+        }
+        await this.deleteWithRevision(itemUrl, revision, `KRA ${id}`);
+        const objectiveId = normalizeLookupString(kraItem.fields?.UnitObjectiveLookupId);
+        if (objectiveId) await this.syncObjectiveProgress(objectiveId);
     }
 
     async addKPI(kpi: Partial<Kpi>): Promise<Kpi> {
@@ -1232,8 +1440,11 @@ export class SharePointOpsService {
                 StartDate: kpi.startDate ? new Date(kpi.startDate).toISOString() : null,
                 EndDate: kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null, // targetDate maps to EndDate
                 RelatedKRALookupId: normalizeLookupNumber(kpi.kra_id),
+                ...(kpi.initiative_id !== undefined ? { RelatedInitiativeLookupId: normalizeLookupNumber(kpi.initiative_id) } : {}),
                 CalculationType: kpi.calculationType || 'manual',
                 ChecklistJSON: kpi.checklist ? JSON.stringify(kpi.checklist) : undefined,
+                MeasurementDefinitionJSON: kpi.measurementDefinition ? JSON.stringify(kpi.measurementDefinition) : undefined,
+                MeasurementEvidenceJSON: kpi.measurementEvidence ? JSON.stringify(kpi.measurementEvidence) : undefined,
                 // Governance fields
                 Level: kpi.level || null,
                 DataSource: kpi.dataSource || null,
@@ -1274,19 +1485,10 @@ export class SharePointOpsService {
     async updateKPI(id: string, kpi: Partial<Kpi>): Promise<Kpi> {
         if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
         const fields: any = {};
-        let previousKraId: string | null = null;
-
-        if (kpi.kra_id !== undefined) {
-            try {
-                const currentKpi = await this.client
-                    .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`)
-                    .expand('fields')
-                    .get();
-                previousKraId = normalizeLookupString(currentKpi.fields?.RelatedKRALookupId);
-            } catch (e) {
-                console.warn(`[SP Ops] Could not fetch previous KRA ID for KPI ${id} before update`, e);
-            }
-        }
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`;
+        const currentKpi = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(currentKpi, kpi.revision, `KPI ${id}`);
+        const previousKraId = normalizeLookupString(currentKpi.fields?.RelatedKRALookupId);
 
         if (kpi.name !== undefined) fields.Title = kpi.name;
         if (kpi.metric !== undefined) fields.Metric = kpi.metric;
@@ -1298,8 +1500,11 @@ export class SharePointOpsService {
         if (kpi.startDate !== undefined) fields.StartDate = kpi.startDate ? new Date(kpi.startDate).toISOString() : null;
         if (kpi.targetDate !== undefined) fields.EndDate = kpi.targetDate ? new Date(kpi.targetDate).toISOString() : null;
         if (kpi.kra_id !== undefined) fields.RelatedKRALookupId = normalizeLookupNumber(kpi.kra_id);
+        if (kpi.initiative_id !== undefined) fields.RelatedInitiativeLookupId = normalizeLookupNumber(kpi.initiative_id);
         if (kpi.calculationType !== undefined) fields.CalculationType = kpi.calculationType;
         if (kpi.checklist !== undefined) fields.ChecklistJSON = JSON.stringify(kpi.checklist);
+        if (kpi.measurementDefinition !== undefined) fields.MeasurementDefinitionJSON = kpi.measurementDefinition ? JSON.stringify(kpi.measurementDefinition) : null;
+        if (kpi.measurementEvidence !== undefined) fields.MeasurementEvidenceJSON = kpi.measurementEvidence ? JSON.stringify(kpi.measurementEvidence) : null;
 
         if (kpi.assignees !== undefined) {
             fields['Assignees'] = JSON.stringify(kpi.assignees || []);
@@ -1314,10 +1519,13 @@ export class SharePointOpsService {
         if (kpi.reviewNote !== undefined) fields.ReviewNote = kpi.reviewNote;
 
         try {
-            const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).patch({ fields });
+            const response = await this.patchWithRevision(itemUrl, revision, { fields }, `KPI ${id}`);
 
             // Sync KRA progress if linked (either passed in this update or already known)
             const newKraId = kpi.kra_id !== undefined ? normalizeLookupString(kpi.kra_id) : null;
+            if (kpi.kra_id !== undefined && previousKraId !== newKraId) {
+                await this.alignTaskKraLinksForKpi(id, newKraId);
+            }
             if (previousKraId && previousKraId !== newKraId) {
                 await this.syncKRAProgress(previousKraId);
             }
@@ -1326,8 +1534,8 @@ export class SharePointOpsService {
             } else {
                 // Fetch the KPI to find its KRA ID if not provided in payload
                 try {
-                    const currentKpi = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).expand('fields').get();
-                    const kraId = normalizeLookupString(currentKpi.fields?.RelatedKRALookupId);
+                    const refreshedKpi = await this.client.api(itemUrl).expand('fields').get();
+                    const kraId = normalizeLookupString(refreshedKpi.fields?.RelatedKRALookupId);
                     if (kraId) {
                         await this.syncKRAProgress(kraId);
                     }
@@ -1336,7 +1544,7 @@ export class SharePointOpsService {
                 }
             }
 
-            return this.mapKPI(response);
+            return this.mapKPI(response?.fields ? response : await this.client.api(itemUrl).expand('fields').get());
         } catch (error: any) {
             console.error(`❌ [SP Ops] Failed to update KPI ${id}:`, error);
             if (error.body) {
@@ -1346,9 +1554,24 @@ export class SharePointOpsService {
         }
     }
 
-    async deleteKPI(id: string): Promise<void> {
+    async deleteKPI(id: string, expectedRevision?: string): Promise<void> {
         if (!this.listIds['KPIS']) throw new Error('KPIS list not found');
-        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`).delete();
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${id}`;
+        const kpiItem = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(kpiItem, expectedRevision, `KPI ${id}`);
+        const tasks = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`).expand('fields'),
+            `checking KPI ${id} dependencies`
+        );
+        const childCount = tasks.filter((item: any) =>
+            normalizeLookupString(item.fields?.RelatedKPILookupId) === String(id)
+        ).length;
+        if (childCount > 0) {
+            throw new Error(`KPI ${id} has ${childCount} linked Task${childCount === 1 ? '' : 's'}. Reassign or unlink them before deleting the KPI.`);
+        }
+        await this.deleteWithRevision(itemUrl, revision, `KPI ${id}`);
+        const kraId = normalizeLookupString(kpiItem.fields?.RelatedKRALookupId);
+        if (kraId) await this.syncKRAProgress(kraId);
     }
 
     /**
@@ -1362,7 +1585,7 @@ export class SharePointOpsService {
      * - Cascades to syncKRAProgress
      * @param updatedTaskData Optional payload of the task that was just updated (to override stale Graph API fetch)
      */
-    private async syncKPIChecklistFromTasks(kpiId: string, updatedTaskData?: { id: string, status?: string }): Promise<void> {
+    private async syncKPIChecklistFromTasks(kpiId: string, updatedTaskData?: RecentTaskSync, retryCount = 0): Promise<void> {
         try {
             if (!this.listIds['KPIS'] || !this.listIds['TASKS']) await this.initialize();
 
@@ -1372,6 +1595,15 @@ export class SharePointOpsService {
                 .expand('fields')
                 .get();
             const kpiFields = kpiItem.fields;
+            const calculationType = String(kpiFields.CalculationType || 'manual').trim().toLowerCase();
+
+            // A Task relationship is supporting context for a manual KPI. It must
+            // never redefine the KPI's measurement mode, target, actual or status.
+            if (calculationType !== 'checklist' && calculationType !== 'task-completion') {
+                const kraId = normalizeLookupString(kpiFields.RelatedKRALookupId);
+                if (kraId) await this.syncKRAProgress(kraId);
+                return;
+            }
 
             // 2. Parse existing checklist
             let checklist: ChecklistItem[] = [];
@@ -1380,105 +1612,101 @@ export class SharePointOpsService {
             } catch { checklist = []; }
 
             // 3. Fetch all tasks and filter for this KPI
-            const taskResponse = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`)
-                .expand('fields')
-                .get();
+            const taskItems = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${this.listIds['TASKS']}/items`)
+                    .expand('fields'),
+                `reconciling Tasks for KPI ${kpiId}`
+            );
 
             const kpiIdNum = Number(kpiId);
-            const linkedTasks = (taskResponse.value || []).filter(
+            let linkedTasks = taskItems.filter(
                 (t: any) => Number(t.fields?.RelatedKPILookupId) === kpiIdNum
             );
 
-            // 4. Build updated checklist
-            const TASK_DONE_STATUSES = ['done', 'completed'];
-
-            // Update existing task-linked items & remove unlinked ones
-            const linkedTaskIds = new Set(linkedTasks.map((t: any) => String(t.id)));
-            checklist = checklist.filter(item => {
-                if (!item.taskId) return true; // Keep manual items
-                return linkedTaskIds.has(item.taskId); // Remove if task no longer linked
-            }).map(item => {
-                if (!item.taskId) return item; // Manual items unchanged
-                const matchingTask = linkedTasks.find((t: any) => String(t.id) === item.taskId);
-                if (!matchingTask) return item;
-
-                // Override stale Graph API fetch if this was the freshly updated task
-                const isUpdatedTask = updatedTaskData && String(matchingTask.id) === updatedTaskData.id;
-                const activeStatus = isUpdatedTask && updatedTaskData.status
-                    ? updatedTaskData.status
-                    : matchingTask.fields.Status;
-
-                return {
-                    ...item,
-                    text: matchingTask.fields.Title, // Keep title in sync
-                    checked: TASK_DONE_STATUSES.includes((activeStatus || '').toLowerCase())
-                };
-            });
-
-            // Add new task-linked items for tasks not yet in checklist
-            const existingTaskIds = new Set(
-                checklist.filter(i => i.taskId).map(i => i.taskId)
-            );
-            for (const task of linkedTasks) {
-                if (!existingTaskIds.has(String(task.id))) {
-                    const isUpdatedTask = updatedTaskData && String(task.id) === updatedTaskData.id;
-                    const activeStatus = isUpdatedTask && updatedTaskData.status
-                        ? updatedTaskData.status
-                        : task.fields.Status;
-
-                    checklist.push({
-                        id: `task-${task.id}`,
-                        text: task.fields.Title,
-                        checked: TASK_DONE_STATUSES.includes((activeStatus || '').toLowerCase()),
-                        taskId: String(task.id),
-                        isTaskLinked: true
+            // Graph list queries can lag immediately after a create/update/delete.
+            // Overlay the authoritative operation that triggered this sync so a
+            // recently changed Task is neither omitted nor reintroduced.
+            if (updatedTaskData) {
+                const recentId = String(updatedTaskData.id);
+                const existing = linkedTasks.find((task: any) => String(task.id) === recentId);
+                linkedTasks = linkedTasks.filter((task: any) => String(task.id) !== recentId);
+                if (updatedTaskData.linked !== false) {
+                    linkedTasks.push({
+                        ...(existing || {}),
+                        id: recentId,
+                        fields: {
+                            ...(existing?.fields || {}),
+                            Title: updatedTaskData.title ?? existing?.fields?.Title ?? `Task ${recentId}`,
+                            Status: updatedTaskData.status ?? existing?.fields?.Status ?? 'Todo',
+                            RelatedKPILookupId: kpiIdNum,
+                        },
                     });
                 }
             }
 
-            // 5. Determine KPI status
-            const allChecked = checklist.length > 0 && checklist.every(item => item.checked);
-            const anyChecked = checklist.some(item => item.checked);
-            const currentStatus = (kpiFields.Status || '').toLowerCase();
-            let newStatus = kpiFields.Status;
+            const TASK_DONE_STATUSES = ['done', 'completed'];
+            const taskStatus = (task: any) => String(task.fields?.Status || '').trim().toLowerCase();
+            let updateFields: Record<string, unknown> = {};
 
-            if (allChecked && checklist.length > 0) {
-                newStatus = 'Completed';
-            } else if (anyChecked && !allChecked) {
-                // If some but not all tasks are done, make sure status isn't Not Started or Completed
-                if (['not-started', 'not started', 'completed', 'done'].includes(currentStatus)) {
-                    newStatus = 'In Progress';
+            if (calculationType === 'checklist') {
+                // Checklist KPIs intentionally mirror linked Tasks while retaining
+                // independently authored checklist items.
+                const linkedTaskIds = new Set(linkedTasks.map((task: any) => String(task.id)));
+                checklist = checklist.filter(item => !item.taskId || linkedTaskIds.has(String(item.taskId)));
+                const checklistByTaskId = new Map(
+                    checklist.filter(item => item.taskId).map(item => [String(item.taskId), item])
+                );
+
+                for (const task of linkedTasks) {
+                    const taskId = String(task.id);
+                    const existingItem = checklistByTaskId.get(taskId);
+                    const nextItem: ChecklistItem = {
+                        ...(existingItem || {}),
+                        id: existingItem?.id || `task-${taskId}`,
+                        text: task.fields?.Title || existingItem?.text || `Task ${taskId}`,
+                        checked: TASK_DONE_STATUSES.includes(taskStatus(task)),
+                        taskId,
+                        isTaskLinked: true,
+                    };
+                    if (existingItem) Object.assign(existingItem, nextItem);
+                    else checklist.push(nextItem);
                 }
-            } else if (!anyChecked && checklist.length > 0) {
-                // Was completed but now nothing is checked — revert
-                if (['completed', 'done'].includes(currentStatus)) {
-                    newStatus = 'In Progress';
-                }
+
+                const allChecked = checklist.length > 0 && checklist.every(item => item.checked);
+                const anyChecked = checklist.some(item => item.checked);
+                updateFields = {
+                    ChecklistJSON: JSON.stringify(checklist),
+                    Status: allChecked ? 'Completed' : anyChecked ? 'In Progress' : 'Not Started',
+                };
+            } else {
+                // Task-completion remains a distinct mode and is based only on the
+                // complete linked Task set. No checklist or numeric fields change.
+                const completedCount = linkedTasks.filter(task => TASK_DONE_STATUSES.includes(taskStatus(task))).length;
+                const hasStartedTask = linkedTasks.some(task => {
+                    const status = taskStatus(task);
+                    return status && !['todo', 'not started', 'not-started'].includes(status);
+                });
+                updateFields.Status = linkedTasks.length === 0
+                    ? 'Not Started'
+                    : completedCount === linkedTasks.length
+                        ? 'Completed'
+                        : hasStartedTask
+                            ? 'In Progress'
+                            : 'Not Started';
             }
 
-            // 6. Update KPI in SharePoint
-            const updateFields: any = {
-                ChecklistJSON: JSON.stringify(checklist),
-            };
-
-            const currentCalculationType = String(kpiFields.CalculationType || '').toLowerCase();
-
-            // Preserve task-completion as its own KPI mode. Task-linked checklist items
-            // can support the UI, but they must not silently convert the KPI to checklist.
-            if (linkedTasks.length > 0 && currentCalculationType !== 'task-completion') {
-                updateFields.CalculationType = 'checklist';
+            if (Object.entries(updateFields).some(([key, value]) => kpiFields[key] !== value)) {
+                const revision = this.requireCurrentRevision(kpiItem, undefined, `KPI ${kpiId}`);
+                await this.patchWithRevision(
+                    `/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${kpiId}`,
+                    revision,
+                    { fields: updateFields },
+                    `KPI ${kpiId}`
+                );
             }
 
-            if (newStatus !== kpiFields.Status) {
-                updateFields.Status = newStatus;
-            }
-
-            await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items/${kpiId}`)
-                .patch({ fields: updateFields });
-
-            console.log(`✅ [SP Ops] Synced KPI ${kpiId} checklist from tasks. ${linkedTasks.length} linked tasks, ${checklist.length} total items.`);
+            console.log(`✅ [SP Ops] Reconciled KPI ${kpiId} in ${calculationType} mode with ${linkedTasks.length} linked Tasks.`);
 
             // 7. Cascade: sync KRA progress
             const kraId = kpiFields.RelatedKRALookupId;
@@ -1486,14 +1714,19 @@ export class SharePointOpsService {
                 await this.syncKRAProgress(String(kraId));
             }
         } catch (error) {
-            console.error(`❌ [SP Ops] Failed to sync KPI ${kpiId} checklist from tasks:`, error);
+            if (this.isStaleWriteError(error) && retryCount < 1) {
+                console.warn(`[SP Ops] KPI ${kpiId} reconciliation raced with another writer; retrying from current data.`);
+                return this.syncKPIChecklistFromTasks(kpiId, updatedTaskData, retryCount + 1);
+            }
+            console.error(`❌ [SP Ops] Failed to reconcile KPI ${kpiId} from Tasks:`, error);
+            throw error;
         }
     }
 
     /**
      * Recalculates and updates the Progress column of a KRA based on its linked KPIs.
      */
-    private async syncKRAProgress(kraId: string): Promise<void> {
+    private async syncKRAProgress(kraId: string, retryCount = 0): Promise<void> {
         try {
             if (!this.listIds['KRAS'] || !this.listIds['KPIS']) await this.initialize();
 
@@ -1503,53 +1736,58 @@ export class SharePointOpsService {
             // 1. Fetch all KPIs and filter client-side.
             // Note: Graph API returns HTTP 400 when using $filter on SharePoint lookup columns,
             // so we cannot use server-side filtering here. Fetch all and filter locally.
-            const kpiResponse = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
-                .expand('fields')
-                .get();
+            const kpiItemsAll = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KPIS']}/items`)
+                    .expand('fields'),
+                `recalculating KRA ${kraId}`
+            );
 
             const kraIdNum = Number(kraId);
-            const kpiItems = (kpiResponse.value || []).filter((item: any) => {
+            const kpiItems = kpiItemsAll.filter((item: any) => {
                 const lookupId = item.fields?.RelatedKRALookupId;
-                return Number(lookupId) === kraIdNum;
+                return Number(lookupId) === kraIdNum && item.fields?.IsRetired !== true;
             });
 
             // 2. Calculate progress strictly from KPI completion status.
             // KRA progress = % of KPIs that have a "completed" status. Nothing else affects it.
             const COMPLETED_STATUSES = ['completed', 'achieved', 'done'];
-            const mappedKpis = kpiItems.map((item: any) => this.mapKPI(item));
-            const completedCount = mappedKpis.filter((kpi: any) =>
-                COMPLETED_STATUSES.includes((kpi.status || '').toLowerCase())
+            const completedCount = kpiItems.filter((item: any) =>
+                COMPLETED_STATUSES.includes(String(item.fields?.Status || '').toLowerCase())
             ).length;
-            const newProgress = mappedKpis.length > 0 ? Math.round((completedCount / mappedKpis.length) * 100) : 0;
+            const newProgress = kpiItems.length > 0 ? Math.round((completedCount / kpiItems.length) * 100) : 0;
 
-            console.log(`[SP Ops] Syncing KRA ${kraId}: ${mappedKpis.length} KPIs found. Calculated progress: ${newProgress}%`);
+            console.log(`[SP Ops] Syncing KRA ${kraId}: ${kpiItems.length} KPIs found. Calculated progress: ${newProgress}%`);
 
             // 4. Update SharePoint KRA list
             const fields: any = { Progress: newProgress };
 
             // If progress is 100%, also close the KRA status in the backend
-            if (newProgress === 100) {
-                fields.Status = 'Closed';
-            } else if (newProgress > 0) {
-                fields.Status = 'Open';
-            }
+            fields.Status = newProgress === 100 && kpiItems.length > 0 ? 'Closed' : 'Open';
 
-            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).patch({ fields });
+            const kraUrl = `/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`;
+            const kraItem = await this.client.api(kraUrl).expand('fields').get();
+            const revision = this.requireCurrentRevision(kraItem, undefined, `KRA ${kraId}`);
+            await this.patchWithRevision(kraUrl, revision, { fields }, `KRA ${kraId}`);
 
             console.log(`✅ [SP Ops] Successfully synced KRA ${kraId} progress (${newProgress}%) and status (${fields.Status || 'Unchanged'}) to SharePoint.`);
 
             // 5. Cascade to Objective
             try {
-                const kraItem = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items/${kraId}`).expand('fields').get();
                 const objectiveId = kraItem.fields?.UnitObjectiveLookupId;
                 if (objectiveId) {
                     await this.syncObjectiveProgress(objectiveId.toString());
                 }
             } catch (e) {
                 console.warn(`[SP Ops] Could not cascade KRA ${kraId} sync to Objective`, e);
+                throw e;
             }
         } catch (error) {
+            if (this.isStaleWriteError(error) && retryCount < 1) {
+                console.warn(`[SP Ops] KRA ${kraId} rollup raced with another writer; recalculating once.`);
+                return this.syncKRAProgress(kraId, retryCount + 1);
+            }
             console.error(`❌ [SP Ops] Failed to sync KRA ${kraId} progress:`, error);
+            throw error;
         }
     }
 
@@ -1622,6 +1860,7 @@ export class SharePointOpsService {
         const f = item.fields;
         return {
             id: item.id,
+            revision: item.eTag,
             title: f.Title,
             description: f.Description || '',
             status: f.Status,
@@ -1666,6 +1905,7 @@ export class SharePointOpsService {
 
         return {
             id: item.id,
+            revision: item.eTag,
             title: f.Title,
             department: f.Unit || null,
             unit: f.Unit || null,
@@ -1698,6 +1938,15 @@ export class SharePointOpsService {
     private mapKPI(item: any): Kpi {
         const f = item.fields;
 
+        const parseOptionalJson = <T,>(value: unknown, label: string): T | undefined => {
+            if (!value || typeof value !== 'string') return undefined;
+            try { return JSON.parse(value) as T; }
+            catch (error) {
+                console.warn(`[SP Ops] Failed to parse ${label} JSON for KPI ${item.id}`, error);
+                return undefined;
+            }
+        };
+
         let assignees: any[] = [];
         try {
             if (f.Assignees) {
@@ -1714,12 +1963,14 @@ export class SharePointOpsService {
 
         return {
             id: item.id,
+            revision: item.eTag,
             name: f.Title,
             metric: f.Metric || '#',
             actual: f.ActualValue || 0,
             target: f.TargetValue || 0,
             status: (f.Status?.toLowerCase() || 'on-track').replace(' ', '-') as any,
             kra_id: f.RelatedKRALookupId?.toString(),
+            initiative_id: normalizeLookupString(f.RelatedInitiativeLookupId),
             assignees: assignees,
             unit: '',
             progress: 0,
@@ -1729,6 +1980,8 @@ export class SharePointOpsService {
             targetDate: f.EndDate || null,
             calculationType: (f.CalculationType as any) || 'manual',
             checklist: f.ChecklistJSON ? (() => { try { return JSON.parse(f.ChecklistJSON); } catch { return []; } })() : [],
+            measurementDefinition: parseOptionalJson(f.MeasurementDefinitionJSON, 'measurement definition'),
+            measurementEvidence: parseOptionalJson(f.MeasurementEvidenceJSON, 'measurement evidence'),
             // Governance fields
             level: (f.Level as any) || undefined,
             owner: kpiOwner,
@@ -1821,6 +2074,7 @@ export class SharePointOpsService {
 
         return {
             id: item.id,
+            revision: item.eTag,
             title: f.Title,
             description: f.Description || '',
             status: (f.Status?.toLowerCase() === 'done' ? 'completed' :
@@ -1892,6 +2146,22 @@ export class SharePointOpsService {
     }
 
     // --- Reports ---
+
+    async getCurrentReportArchiveActor(): Promise<StrategyReportActor> {
+        const me = await this.client.api('/me').select('mail,userPrincipalName,displayName').get();
+        const email = (me.mail || me.userPrincipalName || '').trim().toLowerCase();
+        if (!email) throw new Error('Unable to verify the signed-in report user.');
+        const role = await new UserSharePointService(this.client).getUser(email);
+        if (!role) throw new Error('Unable to verify the signed-in report role.');
+        return {
+            email,
+            name: role.user_name || me.displayName || email,
+            role: role.role_name,
+            division: role.division_name,
+            unit: role.unit_name,
+            isAdmin: role.is_admin,
+        };
+    }
 
     async createReportsList(): Promise<void> {
         const listKey = 'REPORTS';
@@ -2000,16 +2270,14 @@ export class SharePointOpsService {
         if (!listId) return [];
 
         try {
-            const response = await this.client
-                .api(`/sites/${this.siteId}/lists/${listId}/items`)
-                .expand('fields')
-                .top(100)
-                .get();
-
-            if (response.value) {
-                return response.value.map((item: any) => ({ id: item.id, ...item.fields }));
-            }
-            return [];
+            const items = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                    .expand('fields')
+                    .top(100),
+                'loading report schedules'
+            );
+            return items.map((item: any) => ({ id: item.id, ...item.fields }));
         } catch (e) {
             console.error('[SP Ops] Failed to get all report schedules:', e);
             return [];
@@ -2036,13 +2304,14 @@ export class SharePointOpsService {
 
         try {
             // Fetch all and filter in JS — avoids OData non-indexed column restrictions
-            const response = await this.client
-                .api(`/sites/${this.siteId}/lists/${listId}/items`)
-                .expand('fields')
-                .top(500)
-                .get();
-
-            const items: any[] = (response.value || []).map((item: any) => ({ id: item.id, ...item.fields }));
+            const values = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${listId}/items`)
+                    .expand('fields')
+                    .top(500),
+                `finding report schedule for ${userEmail}`
+            );
+            const items: any[] = values.map((item: any) => ({ id: item.id, ...item.fields }));
 
             const match = items.find(item => {
                 const emailMatch = (item.UserEmail || '').toLowerCase() === userEmail.toLowerCase();
@@ -2080,6 +2349,9 @@ export class SharePointOpsService {
         itemId?: string;
         scope?: 'unit' | 'division';
     }): Promise<any> {
+        if (schedule.isActive) {
+            throw new Error(ARCHIVE_BOUND_SCHEDULER_BLOCK_MESSAGE);
+        }
         if (!this.listIds['REPORT_SCHEDULES']) {
             await this.createReportSchedulesList();
         }
@@ -2236,8 +2508,9 @@ export class SharePointOpsService {
     }
 
     async saveReport(report: Omit<Report, 'id'>): Promise<Report> {
+        if (!this.listIds['REPORTS']) await this.initialize();
         if (!this.listIds['REPORTS']) {
-            await this.createReportsList();
+            throw new Error('The Performance_Reports archive is not prepared. An administrator must verify the tenant schema before reports can be generated.');
         }
 
         const payload = {
@@ -2272,16 +2545,17 @@ export class SharePointOpsService {
         }
 
         try {
-            const response = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['REPORTS']}/items`)
-                .expand('fields')
-                .top(limit)
-                .orderby('createdDateTime desc')
-                .get();
-
-            return response.value.map((item: any) => this.mapReport(item));
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['REPORTS']}/items`)
+                    .expand('fields')
+                    .top(limit)
+                    .orderby('createdDateTime desc'),
+                'loading reports'
+            );
+            return items.slice(0, limit).map((item: any) => this.mapReport(item));
         } catch (e) {
             console.error(`❌ [SP Ops] Failed to fetch reports`, e);
-            return [];
+            throw e;
         }
     }
 
@@ -2325,12 +2599,13 @@ export class SharePointOpsService {
         }
 
         try {
-            const response = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`)
-                .expand('fields')
-                .get();
-
-            return response.value.map((item: any) => this.mapTaskGroup(item));
+            const items = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${this.listIds['TASK_GROUPS']}/items`)
+                    .expand('fields'),
+                'loading Task groups'
+            );
+            return items.map((item: any) => this.mapTaskGroup(item));
         } catch (error) {
             console.error('❌ [SP Ops] Failed to fetch Task Groups:', error);
             throw error;
@@ -2391,26 +2666,26 @@ export class SharePointOpsService {
     /**
      * Recalculates and updates the Progress and Status columns of a Unit Objective based on its linked KRAs.
      */
-    private async syncObjectiveProgress(objectiveId: string): Promise<void> {
+    private async syncObjectiveProgress(objectiveId: string, retryCount = 0): Promise<void> {
         try {
             if (!this.listIds['OBJECTIVES'] || !this.listIds['KRAS']) await this.initialize();
 
             // 1. Fetch all KRAs linked to this Objective
-            const kraResponse = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
-                .expand('fields')
-                .get();
+            const kraItems = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
+                    .expand('fields'),
+                `recalculating Objective ${objectiveId}`
+            );
 
             const objectiveIdNum = Number(objectiveId);
-            const linkedKras = (kraResponse.value || []).filter((item: any) => {
+            const linkedKras = kraItems.filter((item: any) => {
                 const lookupId = item.fields?.UnitObjectiveLookupId;
                 return Number(lookupId) === objectiveIdNum;
             });
 
-            if (linkedKras.length === 0) return;
-
             // 2. Calculate average progress
             const totalProgress = linkedKras.reduce((sum, item) => sum + (item.fields?.Progress || 0), 0);
-            const avgProgress = Math.round(totalProgress / linkedKras.length);
+            const avgProgress = linkedKras.length > 0 ? Math.round(totalProgress / linkedKras.length) : 0;
 
             // 3. Determine status
             let status = 'Not Started';
@@ -2423,254 +2698,293 @@ export class SharePointOpsService {
             console.log(`[SP Ops] Syncing Objective ${objectiveId}: Avg Progress ${avgProgress}%, Status ${status}`);
 
             // 4. Update SharePoint Objective list
-            await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${objectiveId}`).patch({
+            const objectiveUrl = `/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${objectiveId}`;
+            const objectiveItem = await this.client.api(objectiveUrl).expand('fields').get();
+            const revision = this.requireCurrentRevision(objectiveItem, undefined, `Objective ${objectiveId}`);
+            await this.patchWithRevision(objectiveUrl, revision, {
                 fields: {
                     Progress: avgProgress,
                     Status: status
                 }
-            });
+            }, `Objective ${objectiveId}`);
 
             console.log(`✅ [SP Ops] Successfully synced Objective ${objectiveId} to SharePoint.`);
         } catch (error) {
+            if (this.isStaleWriteError(error) && retryCount < 1) {
+                console.warn(`[SP Ops] Objective ${objectiveId} rollup raced with another writer; recalculating once.`);
+                return this.syncObjectiveProgress(objectiveId, retryCount + 1);
+            }
             console.error(`❌ [SP Ops] Failed to sync Objective ${objectiveId}:`, error);
+            throw error;
         }
     }
 
     // ─── WorkPlan CRUD ─────────────────────────────────────────────────────────
 
+    private async assertWorkPlanWriteAccess(id?: string, requestedDivision?: string, adminOnly = false): Promise<any> {
+        if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
+        // Resolve the authenticated Graph identity; never trust creator fields or local role caches.
+        const me = await this.client.api('/me').select('mail,userPrincipalName').get();
+        const email = (me.mail || me.userPrincipalName || '').toLowerCase();
+        if (!email) throw new Error('Unable to verify the signed-in user.');
+        const role = await new UserSharePointService(this.client).getUser(email);
+        if (adminOnly && !(role?.is_admin || ['admin', 'super_admin'].includes(role?.role_name?.toLowerCase() || ''))) {
+            throw new Error('Only administrators can prepare the activation schema.');
+        }
+        let existing: any;
+        if (id) {
+            existing = await this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+                .expand('fields').get();
+            assertCanManageWorkPlan(role, existing.fields?.DivisionName || '');
+        }
+        if (!id || requestedDivision !== undefined) {
+            if (!requestedDivision?.trim()) throw new Error('A division is required for a work plan.');
+            assertCanManageWorkPlan(role, requestedDivision);
+        }
+        return existing;
+    }
+
+    async getWorkPlanActivationReadiness(): Promise<string[]> {
+        return new WorkPlanActivationService(this.client, this.siteId).readiness();
+    }
+
+    async getWorkPlanMappingOptions(divisionName: string) {
+        return new WorkPlanActivationService(this.client, this.siteId).mappingOptions(divisionName);
+    }
+
+    async prepareWorkPlanActivationSchema(divisionName: string): Promise<string[]> {
+        await this.assertWorkPlanWriteAccess(undefined, divisionName, true);
+        return new WorkPlanActivationService(this.client, this.siteId).prepareSchema();
+    }
+
+    async previewWorkPlanActivation(plan: WorkPlan) {
+        await this.assertWorkPlanWriteAccess(plan.id, plan.divisionName);
+        return new WorkPlanActivationService(this.client, this.siteId).preview(plan);
+    }
+
+    async importLegacyWorkPlans(divisionId: string, divisionName: string, plans: WorkPlan[]) {
+        await this.assertWorkPlanWriteAccess(undefined, divisionName);
+        const base = `/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}`;
+        const columns = await this.client.api(`${base}/columns`).get();
+        const keyColumn = columns.value?.find((column: any) => column.name === 'LegacyImportKey');
+        if (!keyColumn?.enforceUniqueValues || !keyColumn.indexed) throw new Error('An administrator must prepare the activation schema before local-plan import.');
+        const results: { title: string; id: string; created: boolean }[] = [];
+        for (const plan of plans) {
+            if (!plan.id || plan.divisionId !== divisionId || plan.divisionName?.trim().toLowerCase() !== divisionName.trim().toLowerCase() || !Array.isArray(plan.goals)) throw new Error('A local plan has a missing identity or different division. Review local data before import.');
+        }
+        for (const plan of plans) {
+            const key = `legacy:${divisionId}:${plan.id}`;
+            if (key.length > 255) throw new Error('A local-plan import identifier is too long.');
+            const find = async () => {
+                const filter = encodeURIComponent(`fields/LegacyImportKey eq '${key.replace(/'/g, "''")}'`);
+                const response = await this.client.api(`${base}/items?$expand=fields&$filter=${filter}`).get();
+                if (response.value?.length > 1) throw new Error('Duplicate legacy import keys require reconciliation.');
+                return response.value?.[0];
+            };
+            let existing = await find();
+            let created = false;
+            if (!existing) {
+                const fields = this.buildWorkPlanFields({ ...plan, status: 'draft' });
+                fields.LegacyImportKey = key;
+                fields.GoalsJSON = await new WorkPlanStorageService(this.client, this.siteId).encode(plan.goals);
+                try { existing = await this.client.api(`${base}/items`).post({ fields }); created = true; }
+                catch (error) { existing = await find(); if (!existing) throw error; }
+            }
+            results.push({ title: plan.title, id: String(existing.id), created });
+        }
+        return results;
+    }
+
+    private async assertWorkPlanEditable(existing: any, changes: Partial<WorkPlan>) {
+        if (!existing.eTag) throw new Error('A work-plan version is required before editing. Reload and try again.');
+        if (changes.revision && changes.revision !== existing.eTag) throw new Error('This work plan changed since it was opened. Reload before saving.');
+        const state = existing.fields.ActivationJSON ? JSON.parse(existing.fields.ActivationJSON) : null;
+        if (state && state.state !== 'complete') throw new Error('Recover the interrupted activation before editing or deleting this plan.');
+        const retirement = existing.fields.RetirementJSON ? JSON.parse(existing.fields.RetirementJSON) : null;
+        if (retirement?.operation) throw new Error('Recover the interrupted retirement before editing or deleting this plan.');
+        if (changes.divisionId && changes.divisionId !== existing.fields.DivisionId) throw new Error('Moving a work plan between divisions requires a migration review.');
+        if (changes.goals) {
+            const previous = await new WorkPlanStorageService(this.client, this.siteId).decode(existing.fields.GoalsJSON);
+            for (const goal of previous) {
+                const next = changes.goals.find(candidate => candidate.id === goal.id);
+                if (goal.linkedObjectiveId && !next) throw new Error('Removing an activated goal requires a retirement review.');
+                if (goal.linkedObjectiveId && next?.linkedObjectiveId !== goal.linkedObjectiveId) throw new Error('Changing an execution objective requires a migration review.');
+                for (const kra of goal.kras || []) if (kra.linkedKraId && !next?.kras?.some(candidate => candidate.id === kra.id)) throw new Error('Removing an activated KRA requires a retirement review.');
+                for (const activity of goal.activities) if ((activity.linkedKraId || activity.linkedKpiId || activity.linkedTaskIds.length) && !next?.activities.some(candidate => candidate.id === activity.id)) throw new Error('Removing linked activity work requires a retirement review.');
+                for (const activity of goal.activities) {
+                    const candidate = next?.activities.find(candidate => candidate.id === activity.id);
+                    if (!candidate) continue;
+                    if ((activity.linkedKraId && candidate.linkedKraId !== activity.linkedKraId) || (activity.linkedKpiId && candidate.linkedKpiId !== activity.linkedKpiId) || activity.linkedTaskIds.some(id => !candidate.linkedTaskIds.includes(id))) throw new Error('Changing existing execution links requires a reconciliation review.');
+                }
+            }
+        }
+    }
+
+    private async validateWorkPlanExecutionLinks(plan: WorkPlan): Promise<void> {
+        assertWorkPlanExecutionIdentity(plan);
+        const read = async (list: string, id: string) => {
+            if (!/^[1-9]\d*$/.test(id) || !this.listIds[list]) throw new Error('Invalid work-plan execution reference.');
+            return this.client.api(`/sites/${this.siteId}/lists/${this.listIds[list]}/items/${id}`).expand('fields').get();
+        };
+        const normalize = (value: string) => (value || '').trim().toLowerCase();
+        for (const goal of plan.goals) {
+            if (goal.linkedObjectiveId) {
+                const objective = await read('OBJECTIVES', goal.linkedObjectiveId);
+                if (normalize(objective.fields?.Division) !== normalize(plan.divisionName)) {
+                    throw new Error(`Objective for "${goal.title}" does not belong to this division.`);
+                }
+            }
+            for (const activity of goal.activities) {
+                if (activity.linkedKraId) {
+                    const kra = await read('KRAS', activity.linkedKraId);
+                    if (!goal.linkedObjectiveId || String(kra.fields?.UnitObjectiveLookupId) !== goal.linkedObjectiveId) {
+                        throw new Error(`KRA for "${activity.title}" does not belong to its execution objective.`);
+                    }
+                }
+                if (activity.linkedKpiId) {
+                    const kpi = await read('KPIS', activity.linkedKpiId);
+                    if (!activity.linkedKraId || String(kpi.fields?.RelatedKRALookupId) !== activity.linkedKraId) {
+                        throw new Error(`KPI for "${activity.title}" does not belong to its KRA.`);
+                    }
+                }
+            }
+        }
+    }
+
     async getWorkPlans(divisionId: string): Promise<WorkPlan[]> {
         if (!this.listIds['WORKPLANS']) return [];
         try {
-            const response = await this.client
-                .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
-                .expand('fields')
-                .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
-                .filter(`fields/DivisionId eq '${divisionId}'`)
-                .get();
-            return (response.value || []).map((item: any) => this.mapWorkPlan(item));
+            const items = await this.getPagedValues(
+                this.client
+                    .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
+                    .expand('fields')
+                    .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                    .filter(`fields/DivisionId eq '${divisionId}'`),
+                `loading work plans for division ${divisionId}`
+            );
+            return Promise.all(items.map((item: any) => this.decodeWorkPlan(item)));
         } catch (error) {
             console.error('❌ [SP Ops] getWorkPlans failed:', error);
-            return [];
+            throw error;
         }
     }
 
     async addWorkPlan(plan: Partial<WorkPlan>): Promise<WorkPlan> {
+        await this.assertWorkPlanWriteAccess(undefined, plan.divisionName);
         if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
         const payload = { fields: this.buildWorkPlanFields(plan) };
+        if (plan.goals) payload.fields.GoalsJSON = await new WorkPlanStorageService(this.client, this.siteId).encode(plan.goals);
         console.log('📝 [SP Ops] Adding WorkPlan:', plan.title);
         const response = await this.client
             .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
             .expand('fields')
             .post(payload);
-        return this.mapWorkPlan(response);
+        return this.decodeWorkPlan(response);
     }
 
     async updateWorkPlan(id: string, plan: Partial<WorkPlan>): Promise<WorkPlan> {
+        const existing = await this.assertWorkPlanWriteAccess(id, plan.divisionName);
+        await this.assertWorkPlanEditable(existing, plan);
         if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
         const fields = this.buildWorkPlanFields(plan);
+        if (plan.goals) fields.GoalsJSON = await new WorkPlanStorageService(this.client, this.siteId).encode(plan.goals);
         console.log(`📝 [SP Ops] Updating WorkPlan ${id}`);
         await this.client
             .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+            .header('If-Match', existing.eTag)
             .patch({ fields });
         // PATCH doesn't return fields — GET after
         const updated = await this.client
             .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
             .expand('fields')
             .get();
-        return this.mapWorkPlan(updated);
+        return this.decodeWorkPlan(updated);
     }
 
     async deleteWorkPlan(id: string): Promise<void> {
+        const existing = await this.assertWorkPlanWriteAccess(id);
+        await this.assertWorkPlanEditable(existing, { goals: [] });
         if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
         await this.client
             .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items/${id}`)
+            .header('If-Match', existing.eTag)
             .delete();
     }
 
-    /**
-     * Activate a WorkPlan: creates real Objectives, KRAs, and KPIs in SharePoint
-     * for each goal/activity, then stores the linked IDs back on the plan.
-     * Idempotent — skips items that already have linked IDs.
-     */
+    /** Source-aware activation with durable keys, versioned checkpoints and schema preflight. */
     async activateWorkPlan(plan: WorkPlan): Promise<WorkPlan> {
-        console.log(`🚀 [SP Ops] Activating WorkPlan "${plan.title}" — creating Objectives/KRAs/KPIs...`);
-
-        const updatedGoals: WorkPlanGoal[] = JSON.parse(JSON.stringify(plan.goals));
-
-        for (let gi = 0; gi < updatedGoals.length; gi++) {
-            const goal = updatedGoals[gi];
-
-            // 1. Create Unit Objective for this Goal (if not already linked)
-            if (!goal.linkedObjectiveId) {
-                const objective = await this.addObjective({
-                    title: goal.title,
-                    description: goal.description || '',
-                    goalType: 'Unit',
-                    division: plan.divisionName,
-                    unit: goal.responsibleUnitNames?.[0] || '',
-                    status: 'Not Started',
-                    progress: 0,
-                    year: plan.year?.toString(),
-                    startDate: plan.startDate ? new Date(plan.startDate) : undefined,
-                    endDate: plan.endDate ? new Date(plan.endDate) : undefined,
-                    parentGoalId: plan.linkedStrategicObjectiveId
-                        ? Number(plan.linkedStrategicObjectiveId)
-                        : undefined,
-                    linkedDeliverable: goal.title,
-                }, plan.divisionName);
-                goal.linkedObjectiveId = objective.id.toString();
-                goal.linkedObjectiveTitle = objective.title;
-                console.log(`  ✅ Goal "${goal.title}" → Objective ID: ${goal.linkedObjectiveId}`);
-            }
-
-            // 2. Create KRAs + KPIs for each Activity
-            for (let ai = 0; ai < goal.activities.length; ai++) {
-                const activity = goal.activities[ai];
-
-                // Create KRA (if not already linked)
-                if (!activity.linkedKraId && activity.title) {
-                    const kra = await this.addKRA({
-                        title: activity.title,
-                        description: activity.expectedOutput || activity.description || '',
-                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
-                        division: plan.divisionName,
-                        objective_id: goal.linkedObjectiveId,
-                        owner: activity.responsiblePersonName
-                            ? { id: '', name: activity.responsiblePersonName, email: activity.responsiblePersonEmail || '' }
-                            : undefined,
-                        status: 'open',
-                        progress: 0,
-                    });
-                    activity.linkedKraId = kra.id.toString();
-                    console.log(`    ✅ Activity "${activity.title}" → KRA ID: ${activity.linkedKraId}`);
-                }
-
-                // Create KPI from kpiDescription (if not already linked)
-                if (activity.kpiDescription && !activity.linkedKpiId && activity.linkedKraId) {
-                    const kpi = await this.addKPI({
-                        name: activity.kpiDescription,
-                        description: activity.kpiDescription,
-                        kra_id: activity.linkedKraId,
-                        target: 100,
-                        actual: 0,
-                        status: 'on-track',
-                        metric: '%',
-                        calculationType: 'manual',
-                        startDate: activity.startDate || plan.startDate || undefined,
-                        targetDate: activity.endDate || plan.endDate || undefined,
-                    });
-                    activity.linkedKpiId = kpi.id.toString();
-                    console.log(`      ✅ KPI "${activity.kpiDescription}" → KPI ID: ${activity.linkedKpiId}`);
-                }
-            }
-        }
-
-        // 3. Update WorkPlan with linked IDs and status = 'active'
-        const activated = await this.updateWorkPlan(plan.id, {
-            ...plan,
-            goals: updatedGoals,
-            status: 'active',
-        });
-
-        console.log(`🚀 [SP Ops] WorkPlan activated successfully.`);
-        return { ...activated, goals: updatedGoals, status: 'active' };
+        await this.assertWorkPlanWriteAccess(plan.id, plan.divisionName);
+        const result = await new WorkPlanActivationService(this.client, this.siteId).execute(plan);
+        return this.decodeWorkPlan(result);
     }
 
-    /**
-     * Sync an already-activated WorkPlan: updates existing linked items
-     * and creates any new ones added after activation.
-     */
+    /** Read-only retirement journal projection; performs no migration, provisioning or recovery writes. */
+    async getWorkPlanGovernanceHistory(divisionId: string, divisionName: string) {
+        if (!this.listIds['WORKPLANS']) throw new Error('WorkPlans list not found');
+        if (!divisionId?.trim() || !divisionName?.trim()) throw new Error('An exact Division identity is required for governance history.');
+        const actor = await this.getCurrentReportArchiveActor();
+        assertCanViewWorkPlanGovernance(actor, divisionName);
+        const escapedDivisionId = divisionId.replace(/'/g, "''");
+        const items = await this.getPagedValues(
+            this.client
+                .api(`/sites/${this.siteId}/lists/${this.listIds['WORKPLANS']}/items`)
+                .expand('fields')
+                .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+                .filter(`fields/DivisionId eq '${escapedDivisionId}'`),
+            `loading retirement governance for division ${divisionId}`,
+        );
+        return buildWorkPlanGovernanceHistory(items, { divisionId, divisionName });
+    }
+
     async syncWorkPlanToSharePoint(plan: WorkPlan): Promise<WorkPlan> {
-        if (plan.status !== 'active') {
-            return this.updateWorkPlan(plan.id, plan);
-        }
+        if (plan.status !== 'active') return this.updateWorkPlan(plan.id, plan);
+        return this.activateWorkPlan(plan);
+    }
 
-        console.log(`🔄 [SP Ops] Syncing activated WorkPlan "${plan.title}"...`);
-        const updatedGoals: WorkPlanGoal[] = JSON.parse(JSON.stringify(plan.goals));
+    async previewWorkPlanActivityRetirement(
+        planId: string,
+        activityId: string,
+        action: WorkPlanRetirementAction,
+        targetKraId?: string,
+    ) {
+        await this.assertWorkPlanWriteAccess(planId);
+        return new WorkPlanActivationService(this.client, this.siteId)
+            .previewActivityRetirement(planId, activityId, action, targetKraId);
+    }
 
-        for (const goal of updatedGoals) {
-            if (goal.linkedObjectiveId) {
-                // Update existing Objective
-                await this.updateObjective(goal.linkedObjectiveId, {
-                    title: goal.title,
-                    description: goal.description || '',
-                    unit: goal.responsibleUnitNames?.[0],
-                });
-            } else {
-                // New goal added after activation — create Objective
-                const objective = await this.addObjective({
-                    title: goal.title,
-                    description: goal.description || '',
-                    goalType: 'Unit',
-                    division: plan.divisionName,
-                    unit: goal.responsibleUnitNames?.[0] || '',
-                    status: 'Not Started',
-                    progress: 0,
-                    year: plan.year?.toString(),
-                    startDate: plan.startDate ? new Date(plan.startDate) : undefined,
-                    endDate: plan.endDate ? new Date(plan.endDate) : undefined,
-                    parentGoalId: plan.linkedStrategicObjectiveId
-                        ? Number(plan.linkedStrategicObjectiveId)
-                        : undefined,
-                    linkedDeliverable: goal.title,
-                }, plan.divisionName);
-                goal.linkedObjectiveId = objective.id.toString();
-                goal.linkedObjectiveTitle = objective.title;
-            }
+    async executeWorkPlanActivityRetirement(request: WorkPlanRetirementRequest): Promise<WorkPlan> {
+        await this.assertWorkPlanWriteAccess(request.impact.planId);
+        const actor = await this.getCurrentReportArchiveActor();
+        const result = await new WorkPlanActivationService(this.client, this.siteId)
+            .executeActivityRetirement({
+                ...request,
+                performedBy: { email: actor.email, name: actor.name || actor.email, role: actor.role },
+            });
+        return this.decodeWorkPlan(result);
+    }
 
-            for (const activity of goal.activities) {
-                if (activity.linkedKraId) {
-                    // Update existing KRA
-                    await this.updateKRA(activity.linkedKraId, {
-                        title: activity.title,
-                        description: activity.expectedOutput || activity.description || '',
-                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
-                        objective_id: goal.linkedObjectiveId,
-                    });
-                } else if (activity.title) {
-                    // New activity — create KRA
-                    const kra = await this.addKRA({
-                        title: activity.title,
-                        description: activity.expectedOutput || activity.description || '',
-                        unit: activity.assignedUnitName || goal.responsibleUnitNames?.[0] || '',
-                        division: plan.divisionName,
-                        objective_id: goal.linkedObjectiveId,
-                        owner: activity.responsiblePersonName
-                            ? { id: '', name: activity.responsiblePersonName, email: activity.responsiblePersonEmail || '' }
-                            : undefined,
-                        status: 'open',
-                        progress: 0,
-                    });
-                    activity.linkedKraId = kra.id.toString();
-                }
+    async previewWorkPlanStructureRetirement(
+        planId: string,
+        entityKind: WorkPlanStructureKind,
+        sourceId: string,
+        action: WorkPlanRetirementAction,
+        targetExecutionId?: string,
+    ) {
+        await this.assertWorkPlanWriteAccess(planId);
+        return new WorkPlanActivationService(this.client, this.siteId)
+            .previewStructureRetirement(planId, entityKind, sourceId, action, targetExecutionId);
+    }
 
-                if (activity.kpiDescription && activity.linkedKpiId) {
-                    // Update existing KPI
-                    await this.updateKPI(activity.linkedKpiId, {
-                        name: activity.kpiDescription,
-                        description: activity.kpiDescription,
-                    });
-                } else if (activity.kpiDescription && !activity.linkedKpiId && activity.linkedKraId) {
-                    // New KPI — create it
-                    const kpi = await this.addKPI({
-                        name: activity.kpiDescription,
-                        description: activity.kpiDescription,
-                        kra_id: activity.linkedKraId,
-                        target: 100,
-                        actual: 0,
-                        status: 'on-track',
-                        metric: '%',
-                        calculationType: 'manual',
-                        startDate: activity.startDate || plan.startDate || undefined,
-                        targetDate: activity.endDate || plan.endDate || undefined,
-                    });
-                    activity.linkedKpiId = kpi.id.toString();
-                }
-            }
-        }
-
-        const updated = await this.updateWorkPlan(plan.id, { ...plan, goals: updatedGoals });
-        return { ...updated, goals: updatedGoals };
+    async executeWorkPlanStructureRetirement(request: WorkPlanStructureRetirementRequest): Promise<WorkPlan> {
+        await this.assertWorkPlanWriteAccess(request.impact.planId);
+        const actor = await this.getCurrentReportArchiveActor();
+        const result = await new WorkPlanActivationService(this.client, this.siteId)
+            .executeStructureRetirement({
+                ...request,
+                performedBy: { email: actor.email, name: actor.name || actor.email, role: actor.role },
+            });
+        return this.decodeWorkPlan(result);
     }
 
     // ─── WorkPlan helpers ──────────────────────────────────────────────────────
@@ -2701,12 +3015,20 @@ export class SharePointOpsService {
         return fields;
     }
 
+    private async decodeWorkPlan(item: any): Promise<WorkPlan> {
+        const goals = await new WorkPlanStorageService(this.client, this.siteId).decode(item.fields?.GoalsJSON);
+        return this.mapWorkPlan({ ...item, fields: { ...item.fields, GoalsJSON: JSON.stringify(goals) } });
+    }
+
     private mapWorkPlan(item: any): WorkPlan {
         const f = item.fields || {};
         let goals: WorkPlanGoal[] = [];
+        let retirementHistory: WorkPlan['retirementHistory'] = [];
         try { goals = JSON.parse(f.GoalsJSON || '[]'); } catch { /* empty */ }
+        try { retirementHistory = JSON.parse(f.RetirementJSON || '{}').history || []; } catch { /* empty */ }
         return {
             id: item.id?.toString(),
+            revision: item.eTag,
             title: f.Title || '',
             description: f.Description || '',
             divisionId: f.DivisionId || '',
@@ -2731,6 +3053,7 @@ export class SharePointOpsService {
             monitoringAndReporting: f.MonitoringAndReporting || undefined,
             reviewFrequency: f.ReviewFrequency || undefined,
             reportingTo: f.ReportingTo || undefined,
+            retirementHistory,
         };
     }
 

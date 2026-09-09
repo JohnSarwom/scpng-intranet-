@@ -10,6 +10,20 @@ import DivisionStaffMap from '@/utils/divisionStaffMap';
 // Singleton shared promise to prevent multiple concurrent initializations across React Query hooks
 let sharedOpsServicePromise: Promise<SharePointOpsService> | null = null;
 
+const strategyExecutionQueryPrefixes = [
+    ['sharePoint', 'tasks'],
+    ['sharePoint', 'kpis'],
+    ['sharePoint', 'kras'],
+    ['sharePoint', 'objectives'],
+    ['strategyData'],
+] as const;
+
+async function invalidateStrategyExecutionQueries(queryClient: ReturnType<typeof useQueryClient>): Promise<void> {
+    await Promise.allSettled(
+        strategyExecutionQueryPrefixes.map(queryKey => queryClient.invalidateQueries({ queryKey: [...queryKey] }))
+    );
+}
+
 // Helper to get service instance
 export const useOpsService = () => {
     const { instance: msalInstance } = useMsal();
@@ -91,9 +105,7 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch Objectives', err);
-
-                // Also fallback on error
-                return [];
+                throw err;
             }
         }
     });
@@ -112,34 +124,41 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
                     if (!prev) return [newItem];
                     return [...prev, newItem];
                 });
-                // Refetch in background to sync confirmed server state
-                query.refetch();
                 return true;
             } catch (error) {
                 console.error('Failed to add objective', error);
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         update: async (id: string, item: Partial<Objective>) => {
             try {
                 const service = await getService();
-                await service.updateObjective(id, item);
-                query.refetch();
+                const current = query.data?.find(objective => String(objective.id) === String(id));
+                const updated = await service.updateObjective(id, { ...item, revision: item.revision || current?.revision });
+                queryClient.setQueryData(objectivesQueryKey, (previous: Objective[] | undefined) =>
+                    previous?.map(objective => String(objective.id) === String(id) ? updated : objective) || []
+                );
                 return true;
             } catch (error) {
                 console.error('Failed to update objective', error);
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                await service.deleteObjective(id);
-                query.refetch();
+                const current = query.data?.find(objective => String(objective.id) === String(id));
+                await service.deleteObjective(id, current?.revision);
                 return true;
             } catch (error) {
                 console.error('Failed to delete objective', error);
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         refresh: query.refetch
@@ -217,7 +236,7 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
                 return krasWithKpis;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch KRAs', err);
-                return [];
+                throw err;
             }
         },
         staleTime: 1000 * 60 * 5, // 5 min
@@ -242,21 +261,21 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
                     return [...oldData, newKra as unknown as Kra];
                 });
 
-                // Background refetch to get full data (with KPIs merged)
-                setTimeout(() => { query.refetch(); }, 3000);
-
                 toast({ title: "Success", description: "KRA added successfully" });
                 return newKra; // Return the created KRA so we can use its ID
             } catch (error: any) {
                 console.error('Failed to add KRA', error);
                 toast({ title: "Error", description: error.message || "Failed to add KRA", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         update: async (id: string, item: Partial<KRA>) => {
             try {
                 const service = await getService();
-                const updatedKra = await service.updateKRA(id, item);
+                const current = query.data?.find(kra => String(kra.id) === String(id));
+                const updatedKra = await service.updateKRA(id, { ...item, revision: item.revision || current?.revision });
 
                 // Optimistically update the cache
                 queryClient.setQueryData(queryKey, (oldData: Kra[] | undefined) => {
@@ -264,30 +283,29 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
                     return oldData.map(kra => String(kra.id) === id ? { ...kra, ...updatedKra } : kra);
                 });
 
-                // Refetch in the background after indexing has caught up
-                setTimeout(() => {
-                    query.refetch();
-                }, 3000);
-
                 toast({ title: "Success", description: "KRA updated successfully" });
                 return updatedKra; // Return the updated KRA
             } catch (error: any) {
                 console.error('Failed to update KRA', error);
                 toast({ title: "Error", description: error.message || "Failed to update KRA", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                await service.deleteKRA(id);
-                query.refetch();
+                const current = query.data?.find(kra => String(kra.id) === String(id));
+                await service.deleteKRA(id, current?.revision);
                 toast({ title: "Success", description: "KRA deleted successfully" });
                 return true;
             } catch (error: any) {
                 console.error('Failed to delete KRA', error);
                 toast({ title: "Error", description: error.message || "Failed to delete KRA", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         refresh: query.refetch
@@ -332,7 +350,7 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch KPIs', err);
-                return [];
+                throw err;
             }
         }
     });
@@ -345,30 +363,27 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
             try {
                 const service = await getService();
                 await service.addKPI(item);
-                query.refetch();
                 toast({ title: "Success", description: "KPI added successfully" });
                 return true;
             } catch (error: any) {
                 console.error('Failed to add KPI', error);
                 toast({ title: "Error", description: error.message || "Failed to add KPI", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         update: async (id: string, item: Partial<Kpi>) => {
             try {
                 const service = await getService();
-                await service.updateKPI(id, item);
+                const current = query.data?.find(kpi => String(kpi.id) === String(id));
+                const updated = await service.updateKPI(id, { ...item, revision: item.revision || current?.revision });
 
                 // Optimistically update the cache to prevent UI flickering from stale SharePoint indexing
                 queryClient.setQueryData(queryKey, (oldData: Kpi[] | undefined) => {
                     if (!oldData) return [];
-                    return oldData.map(kpi => String(kpi.id) === id ? { ...kpi, ...item } : kpi);
+                    return oldData.map(kpi => String(kpi.id) === String(id) ? updated : kpi);
                 });
-
-                // Refetch in the background after indexing has likely caught up
-                setTimeout(() => {
-                    query.refetch();
-                }, 3000);
 
                 toast({ title: "Success", description: "KPI updated successfully" });
                 return true;
@@ -376,19 +391,23 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
                 console.error('Failed to update KPI', error);
                 toast({ title: "Error", description: error.message || "Failed to update KPI", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                await service.deleteKPI(id);
-                query.refetch();
+                const current = query.data?.find(kpi => String(kpi.id) === String(id));
+                await service.deleteKPI(id, current?.revision);
                 toast({ title: "Success", description: "KPI deleted successfully" });
                 return true;
             } catch (error: any) {
                 console.error('Failed to delete KPI', error);
                 toast({ title: "Error", description: error.message || "Failed to delete KPI", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         refresh: query.refetch
@@ -455,12 +474,14 @@ export function useSharePointTasks(
 ) {
     const getService = useOpsService();
     const { toast } = useToast();
+    const queryClient = useQueryClient();
 
     // Stable cache key: sorted joined string so array order doesn't matter
     const rosterKey = unitRosterEmails ? [...unitRosterEmails].sort().join(',') : '';
+    const queryKey = ['sharePoint', 'tasks', department, scope, context?.division, context?.unit, context?.email, context?.role, rosterKey];
 
     const query = useQuery({
-        queryKey: ['sharePoint', 'tasks', department, scope, context?.division, context?.unit, context?.email, context?.role, rosterKey],
+        queryKey,
         queryFn: async () => {
             try {
                 const service = await getService();
@@ -514,7 +535,7 @@ export function useSharePointTasks(
                 return data;
             } catch (err) {
                 console.error('❌ [useSharePointOps] Failed to fetch Tasks', err);
-                return [];
+                throw err;
             }
         },
         // Use placeholderData to keep previous data while fetching new data to prevent flicker
@@ -529,23 +550,27 @@ export function useSharePointTasks(
             try {
                 const service = await getService();
                 const createdTask = await service.addTask(item, department);
-                // Return the created task immediately so the UI can show it optimistically.
-                // Refetch in the background after a short delay for SharePoint indexing.
-                setTimeout(async () => {
-                    try { await query.refetch(); } catch { /* silent */ }
-                }, 1200);
+                queryClient.setQueryData(queryKey, (previous: Task[] | undefined) => [
+                    ...(previous || []).filter(task => String(task.id) !== String(createdTask.id)),
+                    createdTask,
+                ]);
                 return createdTask;
             } catch (error: any) {
                 console.error('Failed to add Task', error);
                 toast({ title: "Error", description: error.message || "Failed to add Task", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         update: async (id: string, item: Partial<Task>, options?: { suppressToast?: boolean }) => {
             try {
                 const service = await getService();
-                await service.updateTask(id, item);
-                await query.refetch();
+                const current = query.data?.find(task => String(task.id) === String(id));
+                const updated = await service.updateTask(id, { ...item, revision: item.revision || current?.revision });
+                queryClient.setQueryData(queryKey, (previous: Task[] | undefined) =>
+                    previous?.map(task => String(task.id) === String(id) ? updated : task) || []
+                );
                 if (!options?.suppressToast) {
                     toast({ title: "Success", description: "Task updated successfully" });
                 }
@@ -554,19 +579,23 @@ export function useSharePointTasks(
                 console.error('Failed to update Task', error);
                 toast({ title: "Error", description: error.message || "Failed to update Task", variant: "destructive" });
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                await service.deleteTask(id);
-                await query.refetch();
+                const current = query.data?.find(task => String(task.id) === String(id));
+                await service.deleteTask(id, current?.revision);
                 // Toast is now handled by TasksTab with undo functionality
                 return true;
             } catch (error: any) {
                 console.error('Failed to delete Task', error);
                 // Keep error toast for debugging, but TasksTab will show user-friendly rollback message
                 throw error;
+            } finally {
+                await invalidateStrategyExecutionQueries(queryClient);
             }
         },
         refresh: query.refetch

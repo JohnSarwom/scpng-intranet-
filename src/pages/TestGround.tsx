@@ -4138,39 +4138,39 @@ const TestGround = () => {
                             Power Automate — Report Scheduler (2 Flows)
                         </CardTitle>
                         <CardDescription>
-                            Deploys two flows to automation@scpng.gov.pg. Flow 1 (Dispatch) reads due schedules and writes metrics to Google Sheets every 30 min. Google Apps Script calls Gemini AI and marks rows READY. Flow 2 (Send) picks up READY rows, builds the HTML email, and sends via Office 365 — no premium connectors required.
+                            Legacy scheduler definition retained for audit only. Deployment is blocked until it consumes a checksum-verified archived strategy report and appends queued/sent/failed events to the immutable delivery journal.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2 text-sm">
                             <div className="font-medium flex items-center gap-2">
                                 <ListTree className="h-4 w-4 text-violet-500" />
-                                Flow 1 — Dispatch (every 30 min, SharePoint + Google Sheets):
+                                Quarantined Flow 1 — independent recalculation:
                             </div>
                             <ul className="ml-6 space-y-1 text-muted-foreground text-xs mb-3">
                                 <li>1. Read active schedules from SharePoint where NextSendAt &lt;= now</li>
-                                <li>2. For each due user: fetch Tasks, KRAs, KPIs, Objectives</li>
-                                <li>3. Compute metrics + period label</li>
+                                <li>2. Fetches live Tasks, KRAs, KPIs and Objectives instead of an archived graph snapshot</li>
+                                <li>3. Filters by Modified/DueDate and computes metrics outside the report contract</li>
                                 <li>4. Insert PENDING row into Google Sheets AI_Queue</li>
                             </ul>
                             <div className="font-medium flex items-center gap-2">
                                 <ListTree className="h-4 w-4 text-violet-500" />
-                                Google Apps Script (every 5 min, free):
+                                Quarantined AI queue:
                             </div>
                             <ul className="ml-6 space-y-1 text-muted-foreground text-xs mb-3">
                                 <li>5. Read PENDING rows from AI_Queue</li>
-                                <li>6. Call Gemini API for AI summary</li>
+                                <li>6. Calls Gemini with metrics that are not checksum-bound to the report archive</li>
                                 <li>7. Write AISummary + mark row READY</li>
                             </ul>
                             <div className="font-medium flex items-center gap-2">
                                 <ListTree className="h-4 w-4 text-violet-500" />
-                                Flow 2 — Send (every 15 min, Google Sheets + Office 365):
+                                Quarantined Flow 2 — email send:
                             </div>
                             <ul className="ml-6 space-y-1 text-muted-foreground text-xs">
                                 <li>8. Read READY rows from AI_Queue</li>
                                 <li>9. Build HTML email with metrics + embedded AI summary</li>
                                 <li>10. Send via Office 365 from automation@scpng.gov.pg</li>
-                                <li>11. Update NextSendAt in SharePoint + mark row SENT</li>
+                                <li>11. Does not append the required immutable report-delivery journal events</li>
                             </ul>
                         </div>
 
@@ -4230,21 +4230,13 @@ const TestGround = () => {
 
                         <Button
                             onClick={handleDeployReportFlow}
-                            disabled={isDeployingFlow}
-                            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                            disabled
+                            className="w-full"
+                            variant="outline"
                             size="lg"
                         >
-                            {isDeployingFlow ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Deploying Flow...
-                                </>
-                            ) : (
-                                <>
-                                    <Zap className="mr-2 h-4 w-4" />
-                                    Deploy Both Flows (Dispatch + Send)
-                                </>
-                            )}
+                            <AlertCircle className="mr-2 h-4 w-4" />
+                            Deployment blocked — archive contract required
                         </Button>
                     </CardContent>
                 </Card>

@@ -17,34 +17,39 @@ import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3,
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
-import { serializeStrategyContext } from '@/utils/strategyAnalyticsUtils';
 import { STRATEGY_QUICK_QUESTIONS, STRATEGY_QUESTION_LIBRARY } from './strategyQuestions';
-import strategyCalculationLogic from '@/prompts/strategyCalculationLogic.txt?raw';
 import { cn } from '@/lib/utils';
 import {
     AIChatPanel,
     StaticQuestionLibrarySidebar,
     type AIChatMessage,
 } from '@/components/shared/ai-chat';
+import { useArchivedStrategyAI } from '@/hooks/useArchivedStrategyAI';
+import {
+    assertStrategyAIResponseUsesArchivedNumbers,
+    serializeArchivedStrategyAIContext,
+    strategyAIFilterRowCount,
+    type StrategyAIEvidenceFilter,
+} from '@/services/strategyReportAIService';
 
-type DataSourceFilter = 'all' | 'objectives' | 'unit_objectives' | 'kras' | 'kpis' | 'milestones' | 'divisions' | 'units' | 'staff_profiles' | 'org_hierarchy';
+type DataSourceFilter = StrategyAIEvidenceFilter;
 
 const STRATEGY_AI_SYSTEM_PROMPT = `You are the SCPNG Strategy Intelligence Assistant — an AI analyst embedded within the Securities Commission of Papua New Guinea's intranet platform.
 
-CRITICAL: You DO have access to live organizational data. The data below has ALREADY been fetched from the organization's SharePoint environment via Microsoft Graph API and is provided to you in real-time. You MUST use this data to answer questions. Do NOT say you cannot access SharePoint or external data — the data is already here, loaded and ready for your analysis.
+CRITICAL: Your only factual source is the authorized checksum-verified immutable report archive below. It is historical evidence, not a live SharePoint view. Never use page data, conversation claims, general knowledge, or assumptions as SCPNG performance evidence.
 
-=== BEGIN LIVE STRATEGY DATA (from SharePoint via Microsoft Graph) ===
+=== BEGIN AUTHORIZED ARCHIVED STRATEGY EVIDENCE ===
 {strategyDataContext}
-=== END LIVE STRATEGY DATA ===
+=== END AUTHORIZED ARCHIVED STRATEGY EVIDENCE ===
 
 INSTRUCTIONS:
-- You are analyzing REAL, LIVE data from the SCPNG strategic management system
-- Always reference specific objectives, KRAs, KPIs, divisions, and milestones BY NAME and with their actual numbers from the data above
+- State the frozen scope label and reporting period when answering.
+- Never generalize findings beyond the archived scope.
+- Numeric facts may only be repeated exactly when they appear in the archive context. Do not calculate, estimate, forecast, or invent a new number.
+- Always reference specific objectives, KRAs, KPIs and Tasks by name from the archived rows above.
 - If data shows 0 items or empty sections, acknowledge that those areas have no data recorded yet
-- Calculate averages, percentages, and comparisons directly from the numbers provided
-- Identify patterns, risks, and opportunities based on the actual progress values
-
-{calculationLogic}
+- If the requested evidence is absent, say it is unavailable in this archived snapshot.
+- Identify patterns and risks only within the frozen evidence; recommendations must not introduce numeric targets.
 
 ANALYTICS EXPANSION SUMMARY:
 - Executive Scorecard: Dynamic color coding and a 5th "At-Risk" card.
@@ -106,6 +111,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
     const isConfigLoading = !isKeyReady;
     const modelName = 'gemini-2.5-flash';
+    const archivedEvidence = useArchivedStrategyAI({ audience: 'strategy' });
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -113,52 +119,29 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
     const briefTriggeredRef = useRef(false);
     const userScrolledUpRef = useRef(false);
 
-    // Teaser metrics for collapsed view
+    // Teaser metrics come from the same archived snapshot used by the model.
     const teaserMetrics = useMemo(() => {
-        const avgCompletion = objectives.length > 0
-            ? Math.round(objectives.reduce((s, o) => s + (o.progress || 0), 0) / objectives.length)
-            : 0;
-        const atRiskCount = objectives.filter(o => {
-            const status = (o.status || '').toLowerCase();
-            if (status === 'completed' || status === 'achieved' || (o.progress || 0) >= 100) return false;
-            if (status === 'at-risk' || status === 'behind') return true;
-            return (o.progress || 0) < 25;
-        }).length;
-        return { avgCompletion, atRiskCount };
-    }, [objectives]);
+        const snapshot = archivedEvidence.archive?.record.snapshot;
+        return {
+            avgCompletion: snapshot?.summary.averageProgress,
+            diagnosticCount: snapshot?.summary.diagnosticCount,
+            kraCount: snapshot?.summary.organisationalKraCount,
+            kpiCount: snapshot?.summary.kpiCount,
+        };
+    }, [archivedEvidence.archive]);
 
     const INITIAL_GREETING = "Hello! I'm your Strategy Intelligence Assistant. Ask me anything about strategic objectives, divisional performance, KPIs, or execution progress.";
 
     // Data source options for the dropdown
     const dataSourceOptions: { value: DataSourceFilter; label: string; count: number }[] = [
-        { value: 'all', label: 'All Data', count: objectives.length + unitObjectives.length + kras.length + kpis.length + milestones.length + divisions.length + units.length + officerProfiles.length + orgHierarchy.length },
-        { value: 'objectives', label: 'Strategic Goals', count: objectives.length },
-        { value: 'unit_objectives', label: 'Unit Objectives', count: unitObjectives.length },
-        { value: 'kras', label: 'KRAs', count: kras.length },
-        { value: 'kpis', label: 'KPIs', count: kpis.length },
-        { value: 'milestones', label: 'Milestones', count: milestones.length },
-        { value: 'divisions', label: 'Divisions', count: divisions.length },
-        { value: 'units', label: 'Units', count: units.length },
-        { value: 'staff_profiles', label: 'Staff Profiles', count: officerProfiles.length },
-        { value: 'org_hierarchy', label: 'Org Hierarchy', count: orgHierarchy.length },
+        { value: 'all', label: 'All Archived Evidence', count: strategyAIFilterRowCount(archivedEvidence.archive, 'all') },
+        { value: 'traceability', label: 'Traceability & Heatmap', count: strategyAIFilterRowCount(archivedEvidence.archive, 'traceability') },
+        { value: 'delivery-risks', label: 'Overdue & Evidence Risks', count: strategyAIFilterRowCount(archivedEvidence.archive, 'delivery-risks') },
+        { value: 'accountability', label: 'Owner Accountability', count: strategyAIFilterRowCount(archivedEvidence.archive, 'accountability') },
+        { value: 'variance', label: 'KPI Variance', count: strategyAIFilterRowCount(archivedEvidence.archive, 'variance') },
+        { value: 'governance', label: 'KPI Governance', count: strategyAIFilterRowCount(archivedEvidence.archive, 'governance') },
+        { value: 'exceptions', label: 'Exceptions & Diagnostics', count: strategyAIFilterRowCount(archivedEvidence.archive, 'exceptions') },
     ];
-
-    // Filter data based on selected source
-    const getFilteredData = () => {
-        const empty: any[] = [];
-        switch (dataSourceFilter) {
-            case 'objectives': return { objectives, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
-            case 'unit_objectives': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
-            case 'kras': return { objectives: empty, kras, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
-            case 'kpis': return { objectives: empty, kras: empty, kpis, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
-            case 'milestones': return { objectives: empty, kras: empty, kpis: empty, milestones, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles: empty };
-            case 'divisions': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions, units: empty, officerProfiles: empty };
-            case 'units': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units, officerProfiles: empty };
-            case 'staff_profiles': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy: empty, divisions: empty, units: empty, officerProfiles };
-            case 'org_hierarchy': return { objectives: empty, kras: empty, kpis: empty, milestones: empty, unitObjectives: empty, orgHierarchy, divisions: empty, units: empty, officerProfiles: empty };
-            default: return { objectives, kras, kpis, milestones, unitObjectives, orgHierarchy, divisions, units, officerProfiles };
-        }
-    };
 
     const handleClearChat = () => {
         setChatMessages([{
@@ -295,6 +278,18 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
         setQuery('');
         setIsSending(true);
 
+        if (archivedEvidence.isLoading || !archivedEvidence.archive) {
+            setChatMessages((prev) => [...prev, {
+                id: uuidv4(), sender: 'ai',
+                text: archivedEvidence.isLoading
+                    ? 'The authorized report archive is still loading. Please try again shortly.'
+                    : archivedEvidence.error?.message || 'No authorized archived strategy evidence is available.',
+                isTyping: false, timestamp: new Date(),
+            }]);
+            setIsSending(false);
+            return;
+        }
+
         const effectiveApiKey = apiKey;
         if (!effectiveApiKey) {
             setChatMessages((prev) => [
@@ -311,13 +306,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
             return;
         }
 
-        const filtered = getFilteredData();
-        const strategyContext = serializeStrategyContext(
-            filtered.objectives, filtered.kras, filtered.kpis, filtered.milestones, filtered.unitObjectives, filtered.orgHierarchy, filtered.divisions, filtered.units, filtered.officerProfiles
-        );
+        const strategyContext = serializeArchivedStrategyAIContext(archivedEvidence.archive, dataSourceFilter);
         const systemContext = STRATEGY_AI_SYSTEM_PROMPT
-            .replace('{strategyDataContext}', strategyContext)
-            .replace('{calculationLogic}', strategyCalculationLogic);
+            .replace('{strategyDataContext}', strategyContext);
 
         const conversationHistory: any[] = [
             {
@@ -328,7 +319,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                 role: 'model',
                 parts: [
                     {
-                        text: `Understood. I have loaded ${filtered.objectives.length} strategic objectives, ${filtered.unitObjectives.length} unit-level objectives, ${filtered.kras.length} KRAs, ${filtered.kpis.length} KPIs, ${filtered.milestones.length} milestones, ${filtered.divisions.length} divisions, ${filtered.units.length} units, and ${filtered.officerProfiles.length} staff profiles from the SCPNG SharePoint system. I will analyze this data to provide data-driven strategic insights.`,
+                        text: `Understood. I will use only archived snapshot ${archivedEvidence.archive.record.snapshotId}, preserve its ${archivedEvidence.archive.record.scope.label} scope, and avoid unsupported numeric claims.`,
                     },
                 ],
             },
@@ -367,6 +358,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
 
             if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
                 let aiResponseText = responseData.candidates[0].content.parts[0].text;
+                assertStrategyAIResponseUsesArchivedNumbers(aiResponseText, strategyContext);
                 let followUpQuestions: string[] = [];
 
                 const followUpMatch = aiResponseText.match(/<followups>(.*?)<\/followups>/s);
@@ -532,22 +524,26 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                 </div>
                 {!isFullScreenInstance && !expanded && (
                     <div className="mt-2 cursor-pointer" onClick={() => setExpanded(true)}>
-                        <CardDescription className="mb-2">AI-powered strategic analysis and insights</CardDescription>
-                        {objectives.length > 0 && (
+                        <CardDescription className="mb-2">
+                            {archivedEvidence.archive
+                                ? `Checksum-verified ${archivedEvidence.archive.record.scope.label} report evidence`
+                                : archivedEvidence.isLoading ? 'Loading authorized archived evidence…' : 'Archived report evidence required'}
+                        </CardDescription>
+                        {archivedEvidence.archive && (
                             <div className="flex flex-wrap gap-3">
                                 <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
                                     <TrendingUp className="w-3 h-3 text-intranet-primary" />
-                                    <span>{teaserMetrics.avgCompletion}% avg. completion</span>
+                                    <span>{teaserMetrics.avgCompletion}% archived progress</span>
                                 </div>
-                                {teaserMetrics.atRiskCount > 0 && (
+                                {(teaserMetrics.diagnosticCount || 0) > 0 && (
                                     <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                                         <AlertTriangle className="w-3 h-3" />
-                                        <span>{teaserMetrics.atRiskCount} at-risk</span>
+                                        <span>{teaserMetrics.diagnosticCount} diagnostics</span>
                                     </div>
                                 )}
                                 <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
                                     <BarChart3 className="w-3 h-3 text-blue-500" />
-                                    <span>{kras.length} KRAs · {kpis.length} KPIs</span>
+                                    <span>{teaserMetrics.kraCount} KRAs · {teaserMetrics.kpiCount} KPIs</span>
                                 </div>
                             </div>
                         )}
@@ -570,9 +566,9 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
                                 copiedMessageId={copiedMessageId}
                                 onCopy={handleCopy}
                                 onFollowUpClick={handleFollowUpClick}
-                                disabled={isConfigLoading}
-                                inputPlaceholder="Ask about strategy performance..."
-                                placeholderDisclaimer="This assistant analyzes live SCPNG strategic data from SharePoint in real-time. Always verify insights against official records."
+                                disabled={isConfigLoading || archivedEvidence.isLoading || !archivedEvidence.archive}
+                                inputPlaceholder="Ask about the archived strategy report evidence..."
+                                placeholderDisclaimer="This assistant uses one authorized checksum-verified archived report. It cannot use live page totals or introduce numeric facts absent from that snapshot."
                                 headerSlot={chatHeaderSlot}
                                 className="flex-1"
                             />

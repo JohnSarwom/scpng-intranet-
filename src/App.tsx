@@ -252,9 +252,9 @@ const AppRoutes = () => {
         </RoleProtectedRoute>
       } />
       <Route path="/test-ground" element={
-        <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={['admin', 'super_admin']}>
           <TestGround />
-        </ProtectedRoute>
+        </RoleProtectedRoute>
       } />
 
       <Route path="/uat-feedback" element={

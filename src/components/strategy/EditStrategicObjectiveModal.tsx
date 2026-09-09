@@ -145,6 +145,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
         try {
             await updateObjective(objective.id, {
+                revision: objective.revision,
                 title,
                 description,
                 // Progress is now auto-calculated from KRAs/KPIs, don't save manual value
