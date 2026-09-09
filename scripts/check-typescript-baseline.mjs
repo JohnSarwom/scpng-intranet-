@@ -7,11 +7,17 @@ const tscPath = resolve('node_modules', 'typescript', 'bin', 'tsc');
 const diagnosticPattern = /^(.*?\.tsx?)\(\d+,\d+\): error (TS\d+): (.*)$/gm;
 const writeBaseline = process.argv.includes('--write-baseline');
 
+function normalizeDiagnostic(value) {
+  return value
+    .replaceAll('\\', '/')
+    .replace(/import\("[^"]*\/src\//gi, 'import("<repo>/src/');
+}
+
 function diagnosticSet(output) {
   const diagnostics = new Set();
   for (const match of output.matchAll(diagnosticPattern)) {
     const file = match[1].replaceAll('\\', '/').toLowerCase();
-    diagnostics.add(`${file}|${match[2]}|${match[3].trim()}`);
+    diagnostics.add(normalizeDiagnostic(`${file}|${match[2]}|${match[3].trim()}`));
   }
   return diagnostics;
 }
@@ -61,7 +67,7 @@ if (baselineDocument?.baselineVersion !== 1 || !Array.isArray(baselineDocument.d
   console.error(`The TypeScript baseline at ${baselinePath} is invalid.`);
   process.exit(1);
 }
-const baseline = new Set(baselineDocument.diagnostics);
+const baseline = new Set(baselineDocument.diagnostics.map(normalizeDiagnostic));
 if (baseline.size === 0 || baseline.size !== baselineDocument.diagnosticCount) {
   console.error(`The TypeScript baseline at ${baselinePath} is empty or internally inconsistent.`);
   process.exit(1);

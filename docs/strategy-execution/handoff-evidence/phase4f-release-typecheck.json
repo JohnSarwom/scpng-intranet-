@@ -91,7 +91,7 @@
     "src/hooks/usepaymentssharepoint.ts|TS2339|Property 'full_name' does not exist on type 'UserRole'.",
     "src/hooks/useslideshows.ts|TS2552|Cannot find name 'getAllSlideshows'. Did you mean 'useAllSlideshows'?",
     "src/hooks/usestaffbydivision.ts|TS2307|Cannot find module './useDivisionContext' or its corresponding type declarations.",
-    "src/hooks/usestaffbydivision.ts|TS2322|Type 'StaffMember[]' is not assignable to type 'import(\"C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/.codex-release-candidate/src/types/staff\").StaffMember[]'.",
+    "src/hooks/usestaffbydivision.ts|TS2322|Type 'StaffMember[]' is not assignable to type 'import(\"<repo>/src/types/staff\").StaffMember[]'.",
     "src/hooks/usestaffbydivision.ts|TS2322|Type '{ id: any; name: any; email: any; job_title: any; department: any; mobile: any; business_phone: any; office_location: any; division_id: any; }[]' is not assignable to type 'StaffMember[]'.",
     "src/hooks/usestaffbydivision.ts|TS2551|Property 'job_title' does not exist on type 'StaffMember'. Did you mean 'jobTitle'?",
     "src/integrations/supabase/aichatservice.ts|TS2307|Cannot find module '@/types/reports' or its corresponding type declarations.",
