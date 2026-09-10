@@ -216,6 +216,7 @@ export const FormField: React.FC<FormFieldProps> = ({
                 placeholder={field.placeholder}
                 rows={field.rows || 3}
                 className={cn(commonProps.className, "dark:bg-white/5 dark:border-white/10 dark:text-gray-100")}
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: `form answer for "${field.label}"`, onApply: formField.onChange }}
               />
             )}
           />

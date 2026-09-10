@@ -1,0 +1,583 @@
+{
+  "manifestVersion": 1,
+  "assessedAt": "2026-09-09T23:54:23.923Z",
+  "inventory": {
+    "inventoryVersion": 1,
+    "environmentName": "SCPNG production — scpngintranet",
+    "environmentKind": "production",
+    "capturedAt": "2026-09-09T23:54:21.969Z",
+    "lists": [
+      {
+        "name": "Performance_Reports",
+        "exists": true,
+        "id": "edef001e-ba4c-462f-b5e7-4a1f72ef2174",
+        "displayName": "Performance_Reports",
+        "webUrl": "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Performance_Reports",
+        "columns": [
+          {
+            "name": "Title",
+            "displayName": "Title",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ColorTag",
+            "displayName": "Color Tag",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ComplianceAssetId",
+            "displayName": "Compliance Asset Id",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ReportType",
+            "displayName": "ReportType",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "GeneratedBy",
+            "displayName": "GeneratedBy",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "StartDate",
+            "displayName": "StartDate",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "EndDate",
+            "displayName": "EndDate",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ContentJSON",
+            "displayName": "ContentJSON",
+            "kind": "multiline-text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "AIAnalysis",
+            "displayName": "AIAnalysis",
+            "kind": "boolean",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Status",
+            "displayName": "Status",
+            "kind": "choice",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ID",
+            "displayName": "ID",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ContentType",
+            "displayName": "Content Type",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Modified",
+            "displayName": "Modified",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Created",
+            "displayName": "Created",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Author",
+            "displayName": "Created By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Editor",
+            "displayName": "Modified By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_UIVersionString",
+            "displayName": "Version",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Attachments",
+            "displayName": "Attachments",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Edit",
+            "displayName": "Edit",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "LinkTitleNoMenu",
+            "displayName": "Title",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "LinkTitle",
+            "displayName": "Title",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "DocIcon",
+            "displayName": "Type",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ItemChildCount",
+            "displayName": "Item Child Count",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "FolderChildCount",
+            "displayName": "Folder Child Count",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceFlags",
+            "displayName": "Label setting",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTag",
+            "displayName": "Retention label",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTagWrittenTime",
+            "displayName": "Retention label Applied",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTagUserId",
+            "displayName": "Label applied by",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_IsRecord",
+            "displayName": "Item is a Record",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "AppAuthor",
+            "displayName": "App Created By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "AppEditor",
+            "displayName": "App Modified By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          }
+        ],
+        "sampleItemHasETag": true
+      },
+      {
+        "name": "Report_Schedules",
+        "exists": true,
+        "id": "c1356b99-5aa2-410f-9a51-3bcbf0cb534e",
+        "displayName": "Report_Schedules",
+        "webUrl": "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Report_Schedules",
+        "columns": [
+          {
+            "name": "Title",
+            "displayName": "Title",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ColorTag",
+            "displayName": "Color Tag",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ComplianceAssetId",
+            "displayName": "Compliance Asset Id",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "UserEmail",
+            "displayName": "UserEmail",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Division",
+            "displayName": "Division",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Unit",
+            "displayName": "Unit",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "TimePeriod",
+            "displayName": "TimePeriod",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Categories",
+            "displayName": "Categories",
+            "kind": "multiline-text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "IsActive",
+            "displayName": "IsActive",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "PreferredTime",
+            "displayName": "PreferredTime",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "PreferredDay",
+            "displayName": "PreferredDay",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "PreferredDayOfMonth",
+            "displayName": "PreferredDayOfMonth",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "LastSentAt",
+            "displayName": "LastSentAt",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "NextSendAt",
+            "displayName": "NextSendAt",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ManagerEmail",
+            "displayName": "ManagerEmail",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ID",
+            "displayName": "ID",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ContentType",
+            "displayName": "Content Type",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Modified",
+            "displayName": "Modified",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Created",
+            "displayName": "Created",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Author",
+            "displayName": "Created By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Editor",
+            "displayName": "Modified By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_UIVersionString",
+            "displayName": "Version",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Attachments",
+            "displayName": "Attachments",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "Edit",
+            "displayName": "Edit",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "LinkTitleNoMenu",
+            "displayName": "Title",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "LinkTitle",
+            "displayName": "Title",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "DocIcon",
+            "displayName": "Type",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "ItemChildCount",
+            "displayName": "Item Child Count",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "FolderChildCount",
+            "displayName": "Folder Child Count",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceFlags",
+            "displayName": "Label setting",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTag",
+            "displayName": "Retention label",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTagWrittenTime",
+            "displayName": "Retention label Applied",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_ComplianceTagUserId",
+            "displayName": "Label applied by",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "_IsRecord",
+            "displayName": "Item is a Record",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "AppAuthor",
+            "displayName": "App Created By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "name": "AppEditor",
+            "displayName": "App Modified By",
+            "kind": "unknown",
+            "indexed": false,
+            "enforceUniqueValues": false
+          }
+        ],
+        "sampleItemHasETag": true
+      }
+    ]
+  },
+  "findings": [
+    {
+      "severity": "blocker",
+      "code": "column-not-indexed",
+      "target": "Performance_Reports.ReportType",
+      "message": "Required query/identity column is not indexed."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-not-indexed",
+      "target": "Report_Schedules.IsActive",
+      "message": "Required query/identity column is not indexed."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-not-indexed",
+      "target": "Report_Schedules.NextSendAt",
+      "message": "Required query/identity column is not indexed."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.ArchiveStorageId",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.SnapshotId",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.SnapshotChecksum",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.BindingJSON",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.DispatchId",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.DispatchState",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.LeaseUntil",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.LastProviderMessageId",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "column-missing",
+      "target": "Report_Schedules.LastError",
+      "message": "Required column is missing."
+    },
+    {
+      "severity": "blocker",
+      "code": "capability-attestations-missing",
+      "target": "executor",
+      "message": "Activation requires verified least-privilege identity, archive read, append-only journal, conditional checkpoint and idempotent email evidence."
+    }
+  ],
+  "schemaReadyForAdapterImplementation": false,
+  "activationReady": false
+}

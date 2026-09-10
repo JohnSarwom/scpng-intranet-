@@ -14,11 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus, FileText, Calendar, ChevronRight, ChevronDown,
   Target, Clock, CheckCircle, AlertTriangle, Trash2, Edit,
-  Eye, Layers, BarChart3, Building2,
+  Eye, Layers, BarChart3, Building2, ShieldCheck,
 } from 'lucide-react';
 import { WorkPlan, WorkPlanStatus } from '@/types/division.types';
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { useWorkPlans } from '@/hooks/useWorkPlans';
+import { WorkPlanGovernanceHistoryDialog } from '@/components/division/workplan/WorkPlanGovernanceHistoryDialog';
+import { canViewWorkPlanGovernance } from '@/services/workPlanGovernanceService';
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -379,6 +381,13 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
 
   const [selectedPlan, setSelectedPlan] = useState<WorkPlan | null>(null);
   const [planToDelete, setPlanToDelete] = useState<WorkPlan | null>(null);
+  const [governanceOpen, setGovernanceOpen] = useState(false);
+  const canViewGovernance = canEdit || canViewWorkPlanGovernance({
+    email: data.userContext.email,
+    name: data.userContext.name,
+    role: data.userContext.role,
+    division: data.userContext.division,
+  }, data.division?.name || '');
 
   const filteredPlans = enrichedPlans;
 
@@ -404,13 +413,21 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
   return (
     <div className="space-y-4 mt-4">
       {/* Tab Header */}
-      <div className="px-1 mb-2">
-        <h2 className="text-lg font-bold text-black">
-          Division Work Plans
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Strategic roadmaps and operational work plans aligned with corporate objectives for the current period.
-        </p>
+      <div className="flex flex-col gap-3 px-1 mb-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-black">
+            Division Work Plans
+          </h2>
+          <p className="text-xs text-muted-foreground mt-1">
+            Strategic roadmaps and operational work plans aligned with corporate objectives for the current period.
+          </p>
+        </div>
+        {canViewGovernance && (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setGovernanceOpen(true)}>
+            <ShieldCheck className="h-4 w-4" />
+            Governance history
+          </Button>
+        )}
       </div>
 
 
@@ -466,6 +483,15 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {canViewGovernance && (
+        <WorkPlanGovernanceHistoryDialog
+          open={governanceOpen}
+          onOpenChange={setGovernanceOpen}
+          divisionId={divisionId}
+          divisionName={divisionName}
+        />
+      )}
     </div>
   );
 };

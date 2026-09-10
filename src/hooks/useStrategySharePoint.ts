@@ -43,7 +43,7 @@ export const useStrategySharePoint = () => {
                 return data;
             } catch (err) {
                 console.error('❌ [useStrategySharePoint] Connection Error:', err);
-                return mockStrategyData;
+                throw err;
             }
         },
         staleTime: 0, // Disable cache temporarily to ensure user sees the latest data

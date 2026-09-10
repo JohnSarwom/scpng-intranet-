@@ -310,10 +310,11 @@ const EditRiskModal: React.FC<EditRiskModalProps> = ({
                 value={formState.title || ''}
                 onChange={handleChange}
                 className={cn("dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all", errors.title && 'border-destructive')}
+                aiAssist={{ mode: 'title', context: 'risk register title', onApply: (v) => setFormState((prev) => ({ ...prev, title: v })) }}
               />
               {errors.title && <p className="text-sm text-destructive mt-1 font-medium">{errors.title}</p>}
             </div>
-            
+
             <div className="col-span-2">
               <Label htmlFor="description" className="mb-2 dark:text-gray-300">Description</Label>
               <Textarea
@@ -323,6 +324,7 @@ const EditRiskModal: React.FC<EditRiskModalProps> = ({
                 onChange={handleChange}
                 className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all custom-scrollbar"
                 rows={3}
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'risk description', onApply: (v) => setFormState((prev) => ({ ...prev, description: v })) }}
               />
             </div>
             
@@ -465,6 +467,7 @@ const EditRiskModal: React.FC<EditRiskModalProps> = ({
                 onChange={handleChange}
                 className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all custom-scrollbar"
                 rows={3}
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'risk mitigation plan', onApply: (v) => setFormState((prev) => ({ ...prev, mitigationPlan: v })) }}
               />
             </div>
             

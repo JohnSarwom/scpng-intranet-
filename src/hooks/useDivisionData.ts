@@ -16,6 +16,7 @@ import { Objective, Kra, Kpi, KRA, KPI, Task, Project, UserContext, FilterScope 
 import DivisionStaffMap from '@/utils/divisionStaffMap';
 import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { divisions as staticDivisions } from '@/data/divisions';
+import { canManageWorkPlan } from '@/utils/workPlanAccess';
 
 export interface DivisionInfo {
   id: string;
@@ -234,9 +235,8 @@ export function useDivisionData(divisionIdParam?: string): UseDivisionDataReturn
 
   // Permissions
   const canEditStrategy = useMemo(() => {
-    const role = roleUser?.role_name?.toLowerCase();
-    return roleUser?.is_admin || role === 'super_admin' || role === 'admin' || role === 'manager';
-  }, [roleUser]);
+    return canManageWorkPlan(roleUser, division?.name || '');
+  }, [roleUser, division?.name]);
 
   const canViewStaffMetrics = useMemo(() => {
     const role = roleUser?.role_name?.toLowerCase();

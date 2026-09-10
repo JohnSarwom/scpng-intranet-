@@ -11,7 +11,7 @@ import {
   FileText, Download, Printer, RefreshCw, Calendar, BarChart2,
   CheckCircle, AlertTriangle, Clock, Target, TrendingUp, Loader2,
   ListChecks, Crosshair, Flag, Bell, Save, Mail, Users, Pencil, Trash2,
-  ChevronDown, ChevronUp, Info, RotateCw
+  ChevronDown, ChevronUp, Info, RotateCw, GitBranch
 } from 'lucide-react';
 import {
   ReportTimePeriod, ReportDataCategory, GeneratedReport, ReportConfig
@@ -23,6 +23,12 @@ import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { toast } from 'sonner';
 import { Copy } from 'lucide-react';
 import useRoleBasedAuth from '@/hooks/useRoleBasedAuth';
+import { useStrategyExecutionGraph } from '@/hooks/useStrategyExecutionGraph';
+import { buildStrategyReport, strategyReportToCsv } from '@/services/strategyReportingService';
+import { createSharePointStrategyReportArchiveService } from '@/services/strategyReportArchiveService';
+import type { StrategyTraceabilityReport } from '@/types/strategyExecution';
+import type { StoredStrategyReportArchive } from '@/services/strategyReportArchiveService';
+import { StrategyGovernanceSections } from '@/components/reports/StrategyGovernanceSections';
 
 // ===== Metadata for Internal Reference & Setup =====
 
@@ -185,6 +191,21 @@ interface ReportMetrics {
 }
 
 type CategoryKey = ReportDataCategory;
+type UnitGeneratedReport = GeneratedReport & {
+  strategySnapshot: StrategyTraceabilityReport;
+  archive: StoredStrategyReportArchive;
+};
+
+const unitReportFromArchive = (stored: StoredStrategyReportArchive): UnitGeneratedReport => ({
+  id: stored.storageId,
+  config: stored.record.presentationConfig as unknown as ReportConfig,
+  title: stored.record.snapshot.title,
+  generatedAt: stored.record.snapshot.generatedAt,
+  generatedBy: stored.record.snapshot.generatedBy,
+  sections: [],
+  strategySnapshot: stored.record.snapshot,
+  archive: stored,
+});
 
 const ALL_CATEGORIES: { key: CategoryKey; label: string }[] = [
   { key: 'tasks', label: 'Tasks / Daily Operations' },
@@ -354,6 +375,55 @@ function computeMetrics(
   };
 }
 
+function metricsFromStrategySnapshot(report: StrategyTraceabilityReport): ReportMetrics {
+  const rows = report.sections.find(section => section.id === 'traceability')?.rows || [];
+  const taskRows = rows.filter(row => row.entityType === 'task');
+  const kraRows = rows.filter(row => row.entityType === 'performance_kra');
+  const kpiRows = rows.filter(row => row.entityType === 'kpi');
+  const objectiveRows = rows.filter(row => row.entityType === 'objective');
+  const completedTasks = taskRows.filter(row => ['completed', 'done'].includes(row.status || '')).length;
+  const tasksByPriority = taskRows.reduce((counts, row) => {
+    if (row.priority) counts[row.priority] = (counts[row.priority] || 0) + 1;
+    return counts;
+  }, {} as Record<string, number>);
+  const objectiveStatuses = objectiveRows.reduce((counts, row) => {
+    const status = row.status || 'unknown';
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {} as Record<string, number>);
+  const average = (values: Array<number | undefined>) => {
+    const available = values.filter((value): value is number => value !== undefined);
+    return available.length ? Math.round(available.reduce((sum, value) => sum + value, 0) / available.length) : 0;
+  };
+  const onTrack = (status?: string) => ['on_track', 'completed'].includes(status || '');
+  return {
+    totalTasks: taskRows.length,
+    completedTasks,
+    inProgressTasks: taskRows.filter(row => row.status === 'in-progress').length,
+    overdueTasks: report.sections.find(section => section.id === 'overdue')?.rows.length || 0,
+    todoTasks: taskRows.filter(row => row.status === 'todo').length,
+    onHoldTasks: taskRows.filter(row => row.status === 'on-hold').length,
+    tasksByPriority,
+    taskCompletionRate: taskRows.length ? Math.round((completedTasks / taskRows.length) * 100) : 0,
+    totalKRAs: kraRows.length,
+    activeKRAs: kraRows.filter(row => !['completed', 'closed', 'done'].includes(row.status || '')).length,
+    completedKRAs: kraRows.filter(row => ['completed', 'closed', 'done'].includes(row.status || '')).length,
+    atRiskKRAs: kraRows.filter(row => ['behind_or_early'].includes(row.statusBand || '')).length,
+    avgKRAProgress: average(kraRows.map(row => row.progress)),
+    totalKPIs: kpiRows.length,
+    onTrackKPIs: kpiRows.filter(row => onTrack(row.statusBand)).length,
+    atRiskKPIs: kpiRows.filter(row => row.statusBand === 'behind_or_early').length,
+    behindKPIs: kpiRows.filter(row => row.statusBand === 'behind_or_early').length,
+    completedKPIs: kpiRows.filter(row => row.statusBand === 'completed').length,
+    kpiOnTrackPercentage: kpiRows.length
+      ? Math.round((kpiRows.filter(row => onTrack(row.statusBand)).length / kpiRows.length) * 100)
+      : 0,
+    totalObjectives: objectiveRows.length,
+    objectivesByStatus: objectiveStatuses,
+    avgObjectiveProgress: average(objectiveRows.map(row => row.progress)),
+  };
+}
+
 function buildTitle(period: ReportTimePeriod, categories: CategoryKey[]): string {
   const periodLabel = TIME_PERIOD_OPTIONS.find(o => o.value === period)?.label || period;
   if (categories.length === ALL_CATEGORIES.length) {
@@ -370,7 +440,7 @@ function formatDate(d: Date): string {
 // ===== Report Preview =====
 
 interface ReportPreviewProps {
-  report: GeneratedReport;
+  report: UnitGeneratedReport;
   metrics: ReportMetrics;
   categories: CategoryKey[];
   unitName: string;
@@ -381,7 +451,9 @@ interface ReportPreviewProps {
 const ReportPreview: React.FC<ReportPreviewProps> = ({
   report, metrics, categories, unitName, onPrint, onExportCSV
 }) => {
-  const today = formatDate(new Date());
+  const snapshot = report.strategySnapshot;
+  const traceabilityRows = snapshot.sections.find(section => section.id === 'traceability')?.rows || [];
+  const today = formatDate(new Date(report.generatedAt));
 
   return (
     <div className="space-y-4">
@@ -419,6 +491,13 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
         </div>
 
         <div className="p-6 space-y-6 bg-white dark:bg-gray-950 print:p-4">
+          <section className="grid gap-2 rounded-lg border bg-muted/20 p-3 text-xs md:grid-cols-2">
+            <p><strong>Scope:</strong> {snapshot.scope} — {snapshot.snapshot.scopeLabel}</p>
+            <p><strong>Diagnostics:</strong> {snapshot.summary.diagnosticCount}</p>
+            <p className="md:col-span-2"><strong>Source:</strong> {snapshot.snapshot.dataSourceSummary}</p>
+            <p className="md:col-span-2"><strong>Formula:</strong> {snapshot.snapshot.progressFormula}</p>
+          </section>
+
           {/* Executive Summary */}
           <section>
             <h2 className="text-base font-bold mb-3 flex items-center gap-2 text-[#83002A]">
@@ -637,6 +716,48 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
             </>
           )}
 
+          <Separator />
+          <section>
+            <h2 className="text-base font-bold mb-3 flex items-center gap-2">
+              <GitBranch className="h-4 w-4 text-[#83002A]" />
+              Strategy Traceability
+            </h2>
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[760px] text-xs">
+                <thead className="bg-muted/50 text-left">
+                  <tr>
+                    <th className="p-2 font-semibold">Type</th>
+                    <th className="p-2 font-semibold">Hierarchy</th>
+                    <th className="p-2 font-semibold">Owner</th>
+                    <th className="p-2 font-semibold text-right">Progress</th>
+                    <th className="p-2 font-semibold text-right">Evidence</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {traceabilityRows.map((row, index) => (
+                    <tr key={`${row.entityType}:${row.entityId}:${index}`} className="border-t align-top">
+                      <td className="p-2 capitalize">{row.entityType.replace(/_/g, ' ')}</td>
+                      <td className="p-2">
+                        <div className="font-medium">{row.title}</div>
+                        {row.parentPath && <div className="mt-0.5 text-muted-foreground">{row.parentPath}</div>}
+                      </td>
+                      <td className="p-2">{row.ownerName || 'Unassigned'}</td>
+                      <td className="p-2 text-right">{row.progress === undefined ? '—' : `${Math.round(row.progress)}%`}</td>
+                      <td className="p-2 text-right">{row.evidenceCount || 0}</td>
+                    </tr>
+                  ))}
+                  {traceabilityRows.length === 0 && (
+                    <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No traceability rows in this reporting scope.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <Separator />
+
+          <StrategyGovernanceSections report={snapshot} deliveryHistory={report.archive.record.deliveryHistory} />
+
           {/* Footer */}
           <div className="text-xs text-muted-foreground text-center pt-4 border-t dark:border-white/10">
             Confidential &mdash; {unitName} &middot; Generated {today} &middot; SCPNG Intranet
@@ -660,8 +781,35 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   const [generating, setGenerating] = useState(false);
   const [isGeneratorExpanded, setIsGeneratorExpanded] = useState(false);
   const [isScheduleExpanded, setIsScheduleExpanded] = useState(false);
-  const [currentReport, setCurrentReport] = useState<GeneratedReport | null>(null);
-  const [reportHistory, setReportHistory] = useState<GeneratedReport[]>([]);
+  const [currentReport, setCurrentReport] = useState<UnitGeneratedReport | null>(null);
+  const [reportHistory, setReportHistory] = useState<UnitGeneratedReport[]>([]);
+  const graphState = useStrategyExecutionGraph({
+    scope: 'unit',
+    ownerEmail: userContext?.email,
+    ownerName: userContext?.name,
+    division: userContext?.division,
+    unit: userContext?.unit,
+    role: userContext?.role,
+  });
+
+  useEffect(() => {
+    let active = true;
+    const loadReportHistory = async () => {
+      if (!userContext?.email) return;
+      try {
+        const graphClient = await getGraphClient(msalInstance);
+        if (!graphClient) throw new Error('No Graph client');
+        const opsService = new SharePointOpsService(graphClient);
+        await opsService.initialize();
+        const history = await createSharePointStrategyReportArchiveService(opsService).history(20);
+        if (active) setReportHistory(history.map(unitReportFromArchive));
+      } catch (error) {
+        console.error('Failed to load persisted Unit report history:', error);
+      }
+    };
+    loadReportHistory();
+    return () => { active = false; };
+  }, [userContext?.email, msalInstance]);
 
   // Schedule state
   const [scheduleActive, setScheduleActive] = useState(false);
@@ -894,56 +1042,53 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
   // Compute metrics for current report
   const currentMetrics = useMemo(() => {
     if (!currentReport) return null;
-    const { start, end } = {
-      start: new Date(currentReport.config.dateRange.start),
-      end: new Date(currentReport.config.dateRange.end),
-    };
-    const cats = currentReport.config.categories || [];
-    const fTasks = cats.includes('tasks') ? filterTasks(tasks, start, end) : [];
-    const fKRAs = cats.includes('kras') ? filterKRAs(kras, start, end) : [];
-    const fKPIs = cats.includes('kpis') ? filterKPIs(kpis, start, end) : [];
-    const fObjs = cats.includes('objectives') ? filterObjectives(objectives, start, end) : [];
-    return computeMetrics(fTasks, fKRAs, fKPIs, fObjs);
-  }, [currentReport, tasks, kras, kpis, objectives]);
+    return metricsFromStrategySnapshot(currentReport.strategySnapshot);
+  }, [currentReport]);
 
   const handleGenerate = async () => {
     if (selectedCategories.length === 0) return;
+    if (graphState.isLoading) { toast.info('The strategy graph is still loading.'); return; }
+    if (graphState.error) { toast.error(`The strategy graph could not be loaded: ${graphState.error.message}`); return; }
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 500));
-
-    let { start, end } = getDateRange(timePeriod);
-    // Override with custom dates if available
-    if (timePeriod === 'custom' && customStartDate) {
-      start = new Date(customStartDate);
+    try {
+      let { start, end } = getDateRange(timePeriod);
+      if (timePeriod === 'custom') {
+        if (!customStartDate || !customEndDate) throw new Error('Choose both custom report dates.');
+        start = new Date(customStartDate);
+        end = new Date(customEndDate);
+        end.setUTCHours(23, 59, 59, 999);
+      }
+      const config: ReportConfig = {
+        timePeriod, scope: 'unit', reportType: 'operations', divisionId: '',
+        divisionName: userContext?.division, unitName: userContext?.unit,
+        dateRange: { start: start.toISOString(), end: end.toISOString() },
+        includeCharts: true, includeAISummary: false, categories: selectedCategories,
+      };
+      const title = buildTitle(timePeriod, selectedCategories);
+      const strategySnapshot = buildStrategyReport(graphState.graph, {
+        type: 'strategic-traceability', title,
+        generatedBy: userContext?.name || userContext?.email || 'Unknown',
+        scopeLabel: userContext?.unit || '', dateRange: config.dateRange,
+      });
+      const graphClient = await getGraphClient(msalInstance);
+      if (!graphClient) throw new Error('The report archive is unavailable because no Graph client could be created.');
+      const opsService = new SharePointOpsService(graphClient);
+      await opsService.initialize();
+      const stored = await createSharePointStrategyReportArchiveService(opsService).archive(
+        strategySnapshot,
+        config as unknown as Record<string, unknown>,
+        { division: userContext?.division, unit: userContext?.unit },
+      );
+      const report: UnitGeneratedReport = {
+        ...unitReportFromArchive(stored), config, title,
+      };
+      setCurrentReport(report);
+      setReportHistory(prev => [report, ...prev.filter(item => item.id !== report.id)].slice(0, 20));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'The report could not be generated.');
+    } finally {
+      setGenerating(false);
     }
-    if (timePeriod === 'custom' && customEndDate) {
-      end = new Date(customEndDate);
-    }
-    const config: ReportConfig = {
-      timePeriod,
-      scope: 'unit',
-      reportType: 'operations',
-      divisionId: '',
-      divisionName: userContext?.division,
-      unitName: userContext?.unit,
-      dateRange: { start: start.toISOString(), end: end.toISOString() },
-      includeCharts: true,
-      includeAISummary: false,
-      categories: selectedCategories,
-    };
-
-    const report: GeneratedReport = {
-      id: `rpt-${Date.now()}`,
-      config,
-      title: buildTitle(timePeriod, selectedCategories),
-      generatedAt: new Date().toISOString(),
-      generatedBy: userContext?.name || 'Unknown',
-      sections: [],
-    };
-
-    setCurrentReport(report);
-    setReportHistory(prev => [report, ...prev.slice(0, 9)]);
-    setGenerating(false);
   };
 
   const handleCopyMetadata = () => {
@@ -959,68 +1104,63 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
     }
   };
 
-  const handlePrint = () => window.print();
+  const recordDeliveryEvent = async (
+    report: UnitGeneratedReport,
+    channel: 'download' | 'print',
+    status: 'queued' | 'sent' | 'failed',
+    error?: string,
+  ) => {
+    const graphClient = await getGraphClient(msalInstance);
+    if (!graphClient) throw new Error('No Graph client');
+    const opsService = new SharePointOpsService(graphClient);
+    await opsService.initialize();
+    const stored = await createSharePointStrategyReportArchiveService(opsService).recordDelivery(
+      report.archive.record,
+      { channel, status, error },
+    );
+    const event = stored.record.event;
+    const addEvent = (item: UnitGeneratedReport): UnitGeneratedReport => ({
+      ...item,
+      archive: {
+        ...item.archive,
+        record: { ...item.archive.record, deliveryHistory: [event, ...item.archive.record.deliveryHistory] },
+      },
+    });
+    setCurrentReport(previous => previous?.id === report.id ? addEvent(previous) : previous);
+    setReportHistory(previous => previous.map(item => item.id === report.id ? addEvent(item) : item));
+  };
 
-  const handleExportCSV = () => {
-    if (!currentReport || !currentMetrics) return;
-    const cats = currentReport.config.categories || [];
-    const rows: (string | number)[][] = [['Metric', 'Value']];
+  const handlePrint = async () => {
+    if (!currentReport) return;
+    try {
+      await recordDeliveryEvent(currentReport, 'print', 'queued');
+      window.print();
+      await recordDeliveryEvent(currentReport, 'print', 'sent');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Print audit failed.';
+      try { await recordDeliveryEvent(currentReport, 'print', 'failed', message); } catch {}
+      toast.error(`The report could not be printed with a complete audit trail: ${message}`);
+    }
+  };
 
-    if (cats.includes('tasks')) {
-      rows.push(
-        ['--- Tasks ---', ''],
-        ['Total Tasks', currentMetrics.totalTasks],
-        ['Completed', currentMetrics.completedTasks],
-        ['In Progress', currentMetrics.inProgressTasks],
-        ['To Do', currentMetrics.todoTasks],
-        ['On Hold', currentMetrics.onHoldTasks],
-        ['Overdue', currentMetrics.overdueTasks],
-        ['Completion Rate', `${currentMetrics.taskCompletionRate}%`],
-        ['Priority - Urgent', currentMetrics.tasksByPriority['urgent'] || 0],
-        ['Priority - High', currentMetrics.tasksByPriority['high'] || 0],
-        ['Priority - Medium', currentMetrics.tasksByPriority['medium'] || 0],
-        ['Priority - Low', currentMetrics.tasksByPriority['low'] || 0],
-      );
+  const handleExportCSV = async () => {
+    if (!currentReport) return;
+    try {
+      await recordDeliveryEvent(currentReport, 'download', 'queued');
+      const csv = strategyReportToCsv(currentReport.strategySnapshot);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentReport.title.replace(/\s+/g, '_')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      await recordDeliveryEvent(currentReport, 'download', 'sent');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'CSV export audit failed.';
+      try { await recordDeliveryEvent(currentReport, 'download', 'failed', message); } catch {}
+      toast.error(`The CSV could not be exported with a complete audit trail: ${message}`);
     }
-    if (cats.includes('kras')) {
-      rows.push(
-        ['--- KRAs ---', ''],
-        ['Total KRAs', currentMetrics.totalKRAs],
-        ['Active', currentMetrics.activeKRAs],
-        ['Completed', currentMetrics.completedKRAs],
-        ['At Risk', currentMetrics.atRiskKRAs],
-        ['Avg Progress', `${currentMetrics.avgKRAProgress}%`],
-      );
-    }
-    if (cats.includes('kpis')) {
-      rows.push(
-        ['--- KPIs ---', ''],
-        ['Total KPIs', currentMetrics.totalKPIs],
-        ['On Track', currentMetrics.onTrackKPIs],
-        ['At Risk', currentMetrics.atRiskKPIs],
-        ['Behind', currentMetrics.behindKPIs],
-        ['On Track Rate', `${currentMetrics.kpiOnTrackPercentage}%`],
-      );
-    }
-    if (cats.includes('objectives')) {
-      rows.push(
-        ['--- Objectives ---', ''],
-        ['Total Objectives', currentMetrics.totalObjectives],
-        ['Avg Progress', `${currentMetrics.avgObjectiveProgress}%`],
-      );
-      Object.entries(currentMetrics.objectivesByStatus).forEach(([status, count]) => {
-        rows.push([`Status: ${status}`, count]);
-      });
-    }
-
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentReport.title.replace(/\s+/g, '_')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   const unitName = userContext?.unit || 'Unit';
@@ -1142,7 +1282,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
 
           <Button
             onClick={handleGenerate}
-            disabled={generating || selectedCategories.length === 0}
+            disabled={generating || graphState.isLoading || selectedCategories.length === 0}
             className="w-full bg-[#83002A] hover:bg-[#5C001E] gap-2"
           >
             {generating ? (
@@ -1629,7 +1769,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
       )}
 
       {/* Report History */}
-      {reportHistory.length > 1 && (
+      {reportHistory.some(report => report.id !== currentReport?.id) && (
         <Card className="dark:bg-gray-900 dark:border-white/10 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -1639,7 +1779,7 @@ export const ReportsTab: React.FC<ReportsTabProps> = ({
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {reportHistory.slice(1).map(rpt => (
+              {reportHistory.filter(report => report.id !== currentReport?.id).map(rpt => (
                 <div
                   key={rpt.id}
                   className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors dark:border-white/10 dark:bg-gray-900/50"

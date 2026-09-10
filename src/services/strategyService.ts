@@ -88,14 +88,16 @@ export class StrategyService {
     }
 
     private async resolveListIds() {
-        const lists = await this.client
-            .api(`/sites/${this.siteId}/lists`)
-            .select('id,displayName')
-            .get();
+        const lists = await this.getPagedValues(
+            this.client
+                .api(`/sites/${this.siteId}/lists`)
+                .select('id,displayName'),
+            'resolving SharePoint lists'
+        );
 
         const targetLists = Object.values(STRATEGY_CONFIG.LISTS);
 
-        lists.value.forEach((list: any) => {
+        lists.forEach((list: any) => {
             if (targetLists.includes(list.displayName)) {
                 const key = Object.keys(STRATEGY_CONFIG.LISTS).find(
                     k => STRATEGY_CONFIG.LISTS[k as keyof typeof STRATEGY_CONFIG.LISTS] === list.displayName
@@ -115,6 +117,38 @@ export class StrategyService {
         });
     }
 
+    private async getPagedValues(query: any, operation: string): Promise<any[]> {
+        let response = await query.get();
+        const values = [...(response?.value || [])];
+        const seenLinks = new Set<string>();
+
+        while (response?.['@odata.nextLink']) {
+            const nextLink = String(response['@odata.nextLink']);
+            if (seenLinks.has(nextLink)) {
+                throw new Error(`[StrategyService] ${operation} returned a repeated @odata.nextLink; the incomplete result was rejected.`);
+            }
+            seenLinks.add(nextLink);
+            response = await this.client.api(nextLink).get();
+            values.push(...(response?.value || []));
+        }
+
+        return values;
+    }
+
+    private requireCurrentRevision(item: any, expectedRevision: string | undefined, label: string): string {
+        const currentRevision = String(item?.eTag || '').trim();
+        if (!currentRevision) throw new Error(`${label} has no SharePoint version. Reload before changing it.`);
+        if (expectedRevision && expectedRevision !== currentRevision) {
+            throw new Error(`${label} changed after it was opened. Reload and review the latest version before saving.`);
+        }
+        return currentRevision;
+    }
+
+    private isStaleWriteError(error: any): boolean {
+        const code = String(error?.code || '').toLowerCase();
+        return error?.statusCode === 412 || error?.status === 412 || code === 'preconditionfailed' || code === 'etagmismatch';
+    }
+
     /**
      * Fetch full strategy tree
      */
@@ -123,13 +157,13 @@ export class StrategyService {
 
         try {
             const [config, pillars, objectives, alignments, milestones, risks, hierarchy] = await Promise.all([
-                this.fetchConfig().catch(e => { console.error('Error fetching config', e); return []; }),
-                this.fetchPillars().catch(e => { console.error('Error fetching pillars', e); return []; }),
-                this.fetchObjectives().catch(e => { console.error('Error fetching objectives', e); return []; }),
-                this.fetchAlignments().catch(e => { console.error('Error fetching alignments', e); return []; }),
-                this.fetchMilestones().catch(e => { console.error('Error fetching milestones', e); return []; }),
-                this.fetchRisks().catch(e => { console.error('Error fetching risks', e); return []; }),
-                this.fetchHierarchy().catch(e => { console.error('Error fetching hierarchy', e); return { structure: {}, details: [] }; })
+                this.fetchConfig(),
+                this.fetchPillars(),
+                this.fetchObjectives(),
+                this.fetchAlignments(),
+                this.fetchMilestones(),
+                this.fetchRisks(),
+                this.fetchHierarchy()
             ]);
 
             // Build Organization Info
@@ -162,8 +196,11 @@ export class StrategyService {
 
     private async fetchConfig(): Promise<Array<{ key: string, value: string }>> {
         if (!this.listIds['CONFIG']) return [];
-        const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['CONFIG']}/items`).expand('fields').get();
-        return items.value.map((item: any) => ({
+        const items = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['CONFIG']}/items`).expand('fields'),
+            'loading strategy configuration'
+        );
+        return items.map((item: any) => ({
             key: item.fields.Title,
             value: item.fields.Value
         }));
@@ -173,13 +210,14 @@ export class StrategyService {
         if (!this.listIds['PILLARS']) return [];
         // Fetch all and sort in memory to avoid indexing issues
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['PILLARS']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['PILLARS']}/items`).expand('fields'),
+                'loading strategic pillars'
+            );
 
-            console.log(`📊 [StrategyService] Pillars fetched: ${items.value?.length || 0}`);
+            console.log(`📊 [StrategyService] Pillars fetched: ${items.length}`);
 
-            return (items.value || [])
+            return items
                 .map((item: any) => ({
                     id: item.id,
                     title: item.fields.Title,
@@ -192,7 +230,7 @@ export class StrategyService {
                 .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching pillars:', error);
-            return [];
+            throw error;
         }
     }
 
@@ -200,13 +238,14 @@ export class StrategyService {
         if (!this.listIds['OBJECTIVES']) return [];
         // Fetch all and filter in memory to avoid indexing issues
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items`).expand('fields'),
+                'loading strategy objectives'
+            );
 
-            console.log(`📊 [StrategyService] Objectives fetched raw: ${items.value?.length || 0}`);
+            console.log(`📊 [StrategyService] Objectives fetched raw: ${items.length}`);
 
-            return (items.value || [])
+            return items
                 .filter((item: any) => {
                     const type = item.fields.GoalType;
                     const isFeatured = item.fields.IsFeatured;
@@ -222,6 +261,7 @@ export class StrategyService {
                     
                     return {
                         id: item.id,
+                        revision: item.eTag,
                         title: item.fields.Title,
                         description: item.fields.Description || '',
                         progress: item.fields.Progress || 0,
@@ -240,7 +280,7 @@ export class StrategyService {
                 });
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching objectives:', error);
-            return [];
+            throw error;
         }
     }
 
@@ -251,11 +291,12 @@ export class StrategyService {
     async fetchStrategicGoals(): Promise<any[]> {
         if (!this.listIds['GOALS']) return [];
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['GOALS']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['GOALS']}/items`).expand('fields'),
+                'loading strategic goals'
+            );
 
-            return (items.value || []).map((item: any) => ({
+            return items.map((item: any) => ({
                 id: item.id,
                 title: item.fields.Title,
                 description: item.fields.Description || '',
@@ -270,18 +311,19 @@ export class StrategyService {
             }));
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching Strategic Goals:', error);
-            return [];
+            throw error;
         }
     }
 
     async fetchStrategicKRAs(): Promise<any[]> {
         if (!this.listIds['KRAS']) return [];
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['KRAS']}/items`).expand('fields'),
+                'loading strategic KRAs'
+            );
 
-            return (items.value || []).map((item: any) => ({
+            return items.map((item: any) => ({
                 id: item.id,
                 goalId: item.fields.ParentGoalIdLookupId || null, 
                 title: item.fields.Title,
@@ -292,18 +334,19 @@ export class StrategyService {
             }));
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching Strategic KRAs:', error);
-            return [];
+            throw error;
         }
     }
 
     async fetchStrategicInitiatives(): Promise<any[]> {
         if (!this.listIds['INITIATIVES']) return [];
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['INITIATIVES']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['INITIATIVES']}/items`).expand('fields'),
+                'loading strategic initiatives'
+            );
 
-            return (items.value || []).map((item: any) => ({
+            return items.map((item: any) => ({
                 id: item.id,
                 kraId: item.fields.ParentKRAIdLookupId || null,
                 title: item.fields.Title,
@@ -318,7 +361,7 @@ export class StrategyService {
             }));
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching Strategic Initiatives:', error);
-            return [];
+            throw error;
         }
     }
 
@@ -352,9 +395,17 @@ export class StrategyService {
             fields.Deliverables = data.kras.join(', ');
         }
 
-        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`).patch({
-            fields
-        });
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items/${id}`;
+        const current = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(current, data.revision, `Strategic Objective ${id}`);
+        try {
+            await this.client.api(itemUrl).header('If-Match', revision).patch({ fields });
+        } catch (error: any) {
+            if (this.isStaleWriteError(error)) {
+                throw new Error(`Strategic Objective ${id} changed while it was being saved. Reload and review the latest version.`);
+            }
+            throw error;
+        }
     }
 
     /**
@@ -487,8 +538,11 @@ export class StrategyService {
 
     private async fetchAlignments(): Promise<any[]> {
         if (!this.listIds['ALIGNMENT']) return [];
-        const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['ALIGNMENT']}/items`).expand('fields').get();
-        return items.value.map((item: any) => ({
+        const items = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['ALIGNMENT']}/items`).expand('fields'),
+            'loading strategy alignments'
+        );
+        return items.map((item: any) => ({
             id: item.id,
             name: item.fields.Title,
             director: item.fields.Director,
@@ -501,8 +555,11 @@ export class StrategyService {
 
     private async fetchMilestones(): Promise<any[]> {
         if (!this.listIds['MILESTONES']) return [];
-        const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['MILESTONES']}/items`).expand('fields').get();
-        return items.value.map((item: any) => ({
+        const items = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['MILESTONES']}/items`).expand('fields'),
+            'loading strategy milestones'
+        );
+        return items.map((item: any) => ({
             id: item.id,
             title: item.fields.Title,
             date: item.fields.MilestoneDate,
@@ -514,8 +571,11 @@ export class StrategyService {
 
     private async fetchRisks(): Promise<any[]> {
         if (!this.listIds['RISKS']) return [];
-        const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['RISKS']}/items`).expand('fields').get();
-        return items.value.map((item: any) => ({
+        const items = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['RISKS']}/items`).expand('fields'),
+            'loading strategy risks'
+        );
+        return items.map((item: any) => ({
             id: item.id,
             title: item.fields.Title,
             impact: item.fields.ImpactLevel,
@@ -526,14 +586,15 @@ export class StrategyService {
     private async fetchHierarchy(): Promise<{ structure: Record<string, string[]>; details: any[] }> {
         if (!this.listIds['HIERARCHY']) return { structure: {}, details: [] };
         try {
-            const items = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['HIERARCHY']}/items`)
-                .expand('fields')
-                .get();
+            const items = await this.getPagedValues(
+                this.client.api(`/sites/${this.siteId}/lists/${this.listIds['HIERARCHY']}/items`).expand('fields'),
+                'loading strategy hierarchy'
+            );
 
             const structure: Record<string, string[]> = {};
             const details: any[] = [];
 
-            (items.value || []).forEach((item: any) => {
+            items.forEach((item: any) => {
                 const f = item.fields;
                 const division = f.Division || f.Title;
                 const unit = f.Unit;
@@ -560,7 +621,7 @@ export class StrategyService {
             return { structure, details };
         } catch (error) {
             console.error('❌ [StrategyService] Failed to fetch hierarchy:', error);
-            return { structure: {}, details: [] };
+            throw error;
         }
     }
 }

@@ -451,10 +451,11 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-gray-700 uppercase">Meeting Name <span className="text-red-500">*</span></label>
                   <Input 
-                      value={data.particulars.name} 
+                      value={data.particulars.name}
                       onChange={(e) => updateParticulars('name', e.target.value)}
                       placeholder="e.g. Project Alpha Update"
                       className="bg-white border-gray-300 focus:ring-1 focus:ring-[#83002A] focus:border-[#83002A] h-11 rounded-lg transition-all"
+                      aiAssist={{ mode: 'title', context: 'meeting name', onApply: (v) => updateParticulars('name', v) }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -571,19 +572,21 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-700 uppercase">Meeting Objective <span className="text-red-500">*</span></label>
                     <Textarea 
-                        value={data.particulars.objective} 
+                        value={data.particulars.objective}
                         onChange={(e) => updateParticulars('objective', e.target.value)}
                         placeholder="State the purpose of this meeting..."
                         className="bg-white border-gray-300 focus:ring-1 focus:ring-[#83002A] min-h-[100px] rounded-lg p-3 resize-none"
+                        aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'meeting objective', onApply: (v) => updateParticulars('objective', v) }}
                     />
                 </div>
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-700 uppercase">Opening Mentions</label>
                     <Textarea 
-                        value={data.particulars.order} 
+                        value={data.particulars.order}
                         onChange={(e) => updateParticulars('order', e.target.value)}
                         placeholder="Housekeeping, apologies, or opening remarks..."
                         className="bg-white border-gray-300 min-h-[80px] rounded-lg p-3 resize-none"
+                        aiAssist={{ mode: ['polish', 'grammar'], context: 'opening mentions in meeting minutes', onApply: (v) => updateParticulars('order', v) }}
                     />
                 </div>
               </div>
@@ -706,6 +709,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                                       onChange={(e) => updateDiscussion(idx, 'topic', e.target.value)}
                                       placeholder="Brief Topic Header"
                                       className="bg-white border-gray-300 font-bold text-gray-900 rounded-lg h-10"
+                                      aiAssist={{ mode: 'title', context: 'discussion topic header in meeting minutes', onApply: (v) => updateDiscussion(idx, 'topic', v) }}
                                   />
                               </div>
                               <div className="space-y-2">
@@ -715,6 +719,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                                       onChange={(e) => updateDiscussion(idx, 'points', e.target.value)}
                                       placeholder="Record details of the discussion here..."
                                       className="bg-white border-gray-300 min-h-[140px] rounded-lg p-4 resize-none leading-relaxed"
+                                      aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'record of deliberations and resolutions in meeting minutes, where each line is a separate bullet point', onApply: (v) => updateDiscussion(idx, 'points', v) }}
                                   />
                                   <p className="text-[10px] text-gray-400 italic mt-1">Separate bullets with a new line for proper document formatting.</p>
                               </div>
@@ -761,6 +766,7 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                                         onChange={(e) => updateActionItem(idx, 'action', e.target.value)}
                                         placeholder="Assigned task or directive..."
                                         className="bg-white border-gray-300 h-10 text-xs"
+                                        aiAssist={{ mode: ['title', 'grammar'], context: 'action item or directive from a meeting', onApply: (v) => updateActionItem(idx, 'action', v) }}
                                     />
                                 </div>
                                 <div className="md:col-span-2">
@@ -800,10 +806,11 @@ const MeetingMinutesForm = ({ data, onChange, onClear, onSave, history, onLoadHi
                   <div className="space-y-3">
                       <label className="text-xs font-bold text-gray-700 uppercase">Closing Statements</label>
                       <Textarea 
-                          value={data.remarks} 
+                          value={data.remarks}
                           onChange={(e) => onChange({...data, remarks: e.target.value})}
                           placeholder="Summary of meeting closure, next proposed meeting date..."
                           className="bg-white border-gray-300 min-h-[120px] rounded-lg p-4 resize-none leading-relaxed"
+                          aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'closing statements in meeting minutes', onApply: (v) => onChange({ ...data, remarks: v }) }}
                       />
                   </div>
                   

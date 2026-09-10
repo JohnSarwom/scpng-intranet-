@@ -15,10 +15,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Bot, ChevronDown, ChevronUp, Zap, Trash2, Maximize, Minimize, Database, Eye, Users, Globe, BarChart3 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useMsal } from '@azure/msal-react';
-import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
+import { logger } from '@/lib/supabaseClient';
+import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
 import { ANALYTICS_QUICK_QUESTIONS, OVERVIEW_QUICK_QUESTIONS, ANALYTICS_QUESTION_LIBRARY } from './analyticsQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -157,18 +155,14 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
     const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false);
     const [dataSourceFilter, setDataSourceFilter] = useState<DataSourceFilter>('all');
 
-    const [apiKey, setApiKey] = useState('');
-    const [isConfigLoading, setIsConfigLoading] = useState(true);
+    const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
+    const isConfigLoading = !isKeyReady;
     const modelName = 'gemini-2.5-flash';
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const userScrolledUpRef = useRef(false);
-
-    const { isLoading: isAuthLoading } = useSupabaseAuth();
-    const { inProgress: msalInProgress } = useMsal();
-    const graphContext = useMicrosoftGraph();
 
 
     const dataSourceOptions = useMemo(() => [
@@ -353,42 +347,6 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
         }
     }, [chatMessages]);
 
-    useEffect(() => {
-        const fetchAiSettings = async () => {
-            const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-            if (envKey) {
-                setApiKey(envKey);
-                setIsConfigLoading(false);
-                return;
-            }
-
-            if (graphContext.getAppSetting && !isAuthLoading && msalInProgress === 'none') {
-                const spKey = await graphContext.getAppSetting('GeminiAPIKey');
-                if (spKey) {
-                    setApiKey(spKey);
-                    setIsConfigLoading(false);
-                    return;
-                }
-            }
-
-            if (isAuthLoading || msalInProgress !== 'none') return;
-
-            setIsConfigLoading(true);
-            try {
-                const { data: settingsData, error } = await supabase
-                    .from('news_api_settings')
-                    .select('api_key, api_endpoint')
-                    .eq('id', GLOBAL_SETTINGS_ID)
-                    .single();
-                if (!error && settingsData?.api_key) setApiKey(settingsData.api_key);
-            } catch (err: any) {
-                logger.error('[AnalyticsAI] Exception fetching AI settings:', err);
-            }
-            setIsConfigLoading(false);
-        };
-        fetchAiSettings();
-    }, [isAuthLoading, msalInProgress, graphContext]);
-
     const isAiTyping =
         chatMessages.length > 0 &&
         chatMessages[chatMessages.length - 1].sender === 'ai' &&
@@ -435,7 +393,7 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
         setQuery('');
         setIsSending(true);
 
-        const effectiveApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
+        const effectiveApiKey = apiKey;
         if (!effectiveApiKey) {
             setChatMessages((prev) => [
                 ...prev,

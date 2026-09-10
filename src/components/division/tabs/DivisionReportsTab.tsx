@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -23,10 +22,31 @@ import { getGraphClient } from '@/services/graphService';
 import { SharePointOpsService } from '@/services/sharePointOpsService';
 import { toast } from 'sonner';
 import useRoleBasedAuth from '@/hooks/useRoleBasedAuth';
+import { useStrategyExecutionGraph } from '@/hooks/useStrategyExecutionGraph';
+import { buildStrategyReport, strategyReportToCsv } from '@/services/strategyReportingService';
+import { createSharePointStrategyReportArchiveService } from '@/services/strategyReportArchiveService';
+import type { ProgressScope, StrategyReportType, StrategyTraceabilityReport } from '@/types/strategyExecution';
+import type { StoredStrategyReportArchive } from '@/services/strategyReportArchiveService';
+import { StrategyGovernanceSections } from '@/components/reports/StrategyGovernanceSections';
 
 // ===== Constants =====
 
 type CategoryKey = ReportDataCategory;
+type DivisionGeneratedReport = GeneratedReport & {
+  strategySnapshot: StrategyTraceabilityReport;
+  archive: StoredStrategyReportArchive;
+};
+
+const divisionReportFromArchive = (stored: StoredStrategyReportArchive): DivisionGeneratedReport => ({
+  id: stored.storageId,
+  config: stored.record.presentationConfig as unknown as ReportConfig,
+  title: stored.record.snapshot.title,
+  generatedAt: stored.record.snapshot.generatedAt,
+  generatedBy: stored.record.snapshot.generatedBy,
+  sections: [],
+  strategySnapshot: stored.record.snapshot,
+  archive: stored,
+});
 
 const ALL_CATEGORIES: { key: CategoryKey; label: string }[] = [
   { key: 'tasks', label: 'Tasks / Daily Operations' },
@@ -63,15 +83,20 @@ const DAY_OF_MONTH_OPTIONS = Array.from({ length: 28 }, (_, i) => String(i + 1))
 // ===== Report Preview =====
 
 interface ReportPreviewProps {
-  report: GeneratedReport;
+  report: DivisionGeneratedReport;
   data: UseDivisionDataReturn;
-  metrics: DivisionMetrics;
   onPrint: () => void;
   onExportCSV: () => void;
 }
 
-const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, onPrint, onExportCSV }) => {
-  const today = new Date().toLocaleDateString('en-PG', { day: '2-digit', month: 'long', year: 'numeric' });
+const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, onPrint, onExportCSV }) => {
+  const snapshot = report.strategySnapshot;
+  const today = new Date(report.generatedAt).toLocaleDateString('en-PG', { day: '2-digit', month: 'long', year: 'numeric' });
+  const traceRows = snapshot.sections.find(section => section.id === 'traceability')?.rows || [];
+  const taskRows = traceRows.filter(row => row.entityType === 'task');
+  const completedTasks = taskRows.filter(row => row.statusBand === 'completed').length;
+  const overdueTasks = snapshot.sections.find(section => section.id === 'overdue')?.rows.length || 0;
+  const taskCompletionRate = taskRows.length ? Math.round((completedTasks / taskRows.length) * 100) : 0;
 
   return (
     <div className="space-y-4">
@@ -93,13 +118,13 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, on
             <div>
               <h1 className="text-xl font-bold">{report.title}</h1>
               <p className="text-white/80 text-sm mt-1">
-                {data.division?.name} &middot; Generated: {today}
+                {snapshot.snapshot.scopeLabel} &middot; Generated: {today}
               </p>
             </div>
             <div className="text-right">
               <div className="text-white/70 text-xs">Period</div>
               <div className="font-semibold capitalize">{report.config.timePeriod} Report</div>
-              <div className="text-white/70 text-xs mt-1 capitalize">Scope: {report.config.scope}</div>
+              <div className="text-white/70 text-xs mt-1 capitalize">Scope: {snapshot.scope}</div>
             </div>
           </div>
         </div>
@@ -113,10 +138,10 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, on
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Task Completion', value: `${metrics.taskCompletionRate}%`, icon: CheckCircle, color: 'text-green-600' },
-                { label: 'KPI On Track', value: `${metrics.kpiOnTrackPercentage}%`, icon: TrendingUp, color: 'text-blue-600' },
-                { label: 'Active KRAs', value: metrics.activeKRAs, icon: Target, color: 'text-purple-600' },
-                { label: 'Staff Count', value: metrics.staffCount, icon: Users, color: 'text-orange-600' },
+                { label: 'Graph Progress', value: `${snapshot.summary.averageProgress}%`, icon: TrendingUp, color: 'text-green-600' },
+                { label: 'Included Tasks', value: snapshot.summary.taskCount, icon: CheckCircle, color: 'text-blue-600' },
+                { label: 'Evidence Signals', value: snapshot.summary.evidenceCount, icon: Target, color: 'text-purple-600' },
+                { label: 'Diagnostics', value: snapshot.summary.diagnosticCount, icon: Flag, color: 'text-orange-600' },
               ].map((item, idx) => (
                 <div key={idx} className="border rounded-lg p-3">
                   <div className={`flex items-center gap-1.5 ${item.color} mb-1`}>
@@ -139,10 +164,10 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, on
             </h2>
             <div className="space-y-2">
               {[
-                { label: 'Total Tasks', value: metrics.totalTasks, max: metrics.totalTasks },
-                { label: 'Completed', value: metrics.completedTasks, max: metrics.totalTasks, color: 'bg-green-500' },
-                { label: 'In Progress', value: metrics.inProgressTasks, max: metrics.totalTasks, color: 'bg-blue-500' },
-                { label: 'Overdue', value: metrics.overdueTasks, max: metrics.totalTasks, color: 'bg-red-500' },
+                { label: 'Total Tasks', value: taskRows.length, max: taskRows.length },
+                { label: 'Completed', value: completedTasks, max: taskRows.length, color: 'bg-green-500' },
+                { label: 'Completion rate', value: taskCompletionRate, max: 100, color: 'bg-blue-500' },
+                { label: 'Overdue', value: overdueTasks, max: taskRows.length, color: 'bg-red-500' },
               ].map((item, idx) => (
                 <div key={idx} className="flex items-center gap-3">
                   <span className="text-sm w-28">{item.label}</span>
@@ -172,17 +197,17 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, on
               <div>
                 <h3 className="text-sm font-semibold mb-2">Key Result Areas</h3>
                 <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Active KRAs</span><span className="font-medium">{metrics.activeKRAs}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Completed</span><span className="font-medium text-green-600">{metrics.completedKRAs}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">At Risk</span><span className="font-medium text-red-600">{metrics.atRiskKRAs}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Performance KRAs</span><span className="font-medium">{snapshot.summary.performanceKraCount}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Objectives</span><span className="font-medium">{snapshot.summary.objectiveCount}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Units</span><span className="font-medium">{snapshot.summary.unitCount}</span></div>
                 </div>
               </div>
               <div>
                 <h3 className="text-sm font-semibold mb-2">Key Performance Indicators</h3>
                 <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Total KPIs</span><span className="font-medium">{metrics.totalKPIs}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">On Track</span><span className="font-medium text-green-600">{metrics.kpiOnTrackPercentage}%</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Alignment Score</span><span className="font-medium">{metrics.strategicAlignmentScore}%</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Total KPIs</span><span className="font-medium">{snapshot.summary.kpiCount}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Evidence</span><span className="font-medium text-green-600">{snapshot.summary.evidenceCount}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Conserved</span><span className="font-medium">{snapshot.integrity.isConserved ? 'Yes' : 'No'}</span></div>
                 </div>
               </div>
             </div>
@@ -190,30 +215,35 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ report, data, metrics, on
 
           <Separator />
 
-          {/* Unit Comparison */}
-          {metrics.unitComparisons.length > 0 && (
-            <section>
-              <h2 className="text-base font-bold mb-3 flex items-center gap-2">
-                <Users className="h-4 w-4 text-orange-600" />
-                Unit Performance Summary
-              </h2>
-              <div className="space-y-2">
-                {metrics.unitComparisons.map(unit => (
-                  <div key={unit.unitId} className="flex items-center gap-3">
-                    <span className="text-sm w-32 truncate">{unit.unitName}</span>
-                    <div className="flex-1">
-                      <div className="flex justify-between text-xs mb-1">
-                        <span className="text-muted-foreground">Tasks: {unit.taskCompletion}%</span>
-                        <span className="text-muted-foreground">KRAs: {unit.kraProgress}%</span>
-                      </div>
-                      <Progress value={unit.overallScore} className="h-1.5" />
-                    </div>
-                    <span className="text-sm font-semibold w-12 text-right">{unit.overallScore}%</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
+          <section className="space-y-2 text-xs">
+            <h2 className="text-base font-bold text-[#83002A]">Scope and evidence contract</h2>
+            <p><strong>Period:</strong> {new Date(snapshot.dateRange.start).toLocaleDateString('en-PG')} – {new Date(snapshot.dateRange.end).toLocaleDateString('en-PG')}</p>
+            <p><strong>Source:</strong> {snapshot.snapshot.dataSourceSummary}</p>
+            <p><strong>Formula:</strong> {snapshot.snapshot.progressFormula}</p>
+            <p><strong>Date basis:</strong> planned interval overlap and actual completion events; last-modified timestamps are not used.</p>
+          </section>
+
+          <Separator />
+
+          <section>
+            <h2 className="text-base font-bold mb-3">Strategy traceability</h2>
+            <div className="overflow-x-auto border rounded-lg">
+              <table className="w-full text-xs">
+                <thead className="bg-muted"><tr><th className="p-2 text-left">Type</th><th className="p-2 text-left">Hierarchy</th><th className="p-2 text-left">Owner</th><th className="p-2 text-right">Progress</th><th className="p-2 text-right">Evidence</th></tr></thead>
+                <tbody>{traceRows.map(row => <tr key={`${row.entityType}:${row.entityId}`} className="border-t">
+                  <td className="p-2">{row.entityType.replace(/_/g, ' ')}</td>
+                  <td className="p-2"><span className="text-muted-foreground">{row.parentPath ? `${row.parentPath} > ` : ''}</span>{row.title}</td>
+                  <td className="p-2">{row.ownerName || 'Unassigned'}</td>
+                  <td className="p-2 text-right">{row.progress ?? '—'}{row.progress !== undefined ? '%' : ''}</td>
+                  <td className="p-2 text-right">{row.evidenceCount || 0}</td>
+                </tr>)}</tbody>
+              </table>
+            </div>
+          </section>
+
+          <Separator />
+
+          <StrategyGovernanceSections report={snapshot} deliveryHistory={report.archive.record.deliveryHistory} />
 
           <div className="text-xs text-muted-foreground text-center pt-4 border-t">
             Confidential — {data.division?.name} &middot; Generated {today} &middot; SCPNG Intranet
@@ -233,6 +263,24 @@ function buildReportTitle(config: ReportConfig): string {
   return `${period} ${scope}-Level ${type} Report`;
 }
 
+function reportDateRange(period: ReportTimePeriod, customStart?: string, customEnd?: string) {
+  const end = new Date();
+  const start = new Date(end);
+  if (period === 'daily') start.setHours(0, 0, 0, 0);
+  else if (period === 'weekly') start.setDate(start.getDate() - 7);
+  else if (period === 'monthly') start.setMonth(start.getMonth() - 1);
+  else if (period === 'quarterly') start.setMonth(start.getMonth() - 3);
+  else if (period === 'half-yearly') start.setMonth(start.getMonth() - 6);
+  else if (period === 'yearly') start.setFullYear(start.getFullYear() - 1);
+  else {
+    if (!customStart || !customEnd) throw new Error('Choose both custom report dates.');
+    const customRangeEnd = new Date(customEnd);
+    customRangeEnd.setUTCHours(23, 59, 59, 999);
+    return { start: new Date(customStart), end: customRangeEnd };
+  }
+  return { start, end };
+}
+
 function dayOrdinal(d: string): string {
   if (['1', '21'].includes(d)) return `${d}st`;
   if (['2', '22'].includes(d)) return `${d}nd`;
@@ -247,7 +295,7 @@ interface DivisionReportsTabProps {
   metrics: DivisionMetrics;
 }
 
-export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, metrics }) => {
+export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data }) => {
   const { instance: msalInstance } = useMsal();
   const { isAdmin } = useRoleBasedAuth();
   const reportRef = useRef<HTMLDivElement>(null);
@@ -257,8 +305,8 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
   const [scope, setScope] = useState<ReportScope>('division');
   const [reportType, setReportType] = useState<ReportType>('performance');
   const [generating, setGenerating] = useState(false);
-  const [currentReport, setCurrentReport] = useState<GeneratedReport | null>(null);
-  const [reportHistory, setReportHistory] = useState<GeneratedReport[]>([]);
+  const [currentReport, setCurrentReport] = useState<DivisionGeneratedReport | null>(null);
+  const [reportHistory, setReportHistory] = useState<DivisionGeneratedReport[]>([]);
   const [isGeneratorExpanded, setIsGeneratorExpanded] = useState(false);
 
   // Schedule state
@@ -291,6 +339,34 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
   const [editingScheduleName, setEditingScheduleName] = useState<string | null>(null);
 
   const userContext = data.userContext;
+  const graphScope: ProgressScope = scope === 'individual' ? 'personal' : scope;
+  const graphState = useStrategyExecutionGraph({
+    scope: graphScope,
+    ownerEmail: userContext.email,
+    ownerName: userContext.name,
+    division: data.division?.name || userContext.division,
+    unit: userContext.unit,
+    role: userContext.role,
+  });
+
+  useEffect(() => {
+    let active = true;
+    const loadReportHistory = async () => {
+      if (!userContext?.email) return;
+      try {
+        const graphClient = await getGraphClient(msalInstance);
+        if (!graphClient) throw new Error('No Graph client');
+        const opsService = new SharePointOpsService(graphClient);
+        await opsService.initialize();
+        const history = await createSharePointStrategyReportArchiveService(opsService).history(20);
+        if (active) setReportHistory(history.map(divisionReportFromArchive));
+      } catch (error) {
+        console.error('Failed to load persisted Division report history:', error);
+      }
+    };
+    loadReportHistory();
+    return () => { active = false; };
+  }, [userContext?.email, msalInstance]);
 
   // Load existing schedule on mount
   useEffect(() => {
@@ -469,62 +545,125 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
   };
 
   const handleGenerate = async () => {
+    if (graphState.isLoading) {
+      toast.info('The strategy graph is still loading.');
+      return;
+    }
+    if (graphState.error) {
+      toast.error(`The strategy graph could not be loaded: ${graphState.error.message}`);
+      return;
+    }
     setGenerating(true);
-    await new Promise(r => setTimeout(r, 900));
-
-    const config: ReportConfig = {
-      timePeriod,
-      scope,
-      reportType,
-      divisionId: data.division?.id || '',
-      divisionName: data.division?.name,
-      dateRange: {
-        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        end: new Date().toISOString(),
-      },
-      includeCharts: true,
-      includeAISummary: false,
-    };
-
-    const report: GeneratedReport = {
-      id: `rpt-${Date.now()}`,
-      config,
-      title: buildReportTitle(config),
-      generatedAt: new Date().toISOString(),
-      generatedBy: data.userContext.name,
-      sections: [],
-    };
-
-    setCurrentReport(report);
-    setReportHistory(prev => [report, ...prev.slice(0, 9)]);
-    setGenerating(false);
+    try {
+      const { start, end } = reportDateRange(timePeriod, customStartDate, customEndDate);
+      const config: ReportConfig = {
+        timePeriod, scope, reportType,
+        divisionId: data.division?.id || '', divisionName: data.division?.name,
+        unitName: graphScope === 'unit' ? userContext.unit : undefined,
+        individualEmail: graphScope === 'personal' ? userContext.email : undefined,
+        individualName: graphScope === 'personal' ? userContext.name : undefined,
+        dateRange: { start: start.toISOString(), end: end.toISOString() },
+        includeCharts: true, includeAISummary: false,
+      };
+      const strategyType: StrategyReportType = reportType === 'operations'
+        ? 'overdue-strategic-tasks'
+        : reportType === 'performance'
+          ? 'kra-kpi-evidence'
+          : 'strategic-traceability';
+      const title = buildReportTitle(config);
+      const strategySnapshot = buildStrategyReport(graphState.graph, {
+        type: strategyType,
+        title,
+        generatedBy: data.userContext.name || data.userContext.email,
+        dateRange: config.dateRange,
+        scopeLabel: graphScope === 'personal'
+          ? data.userContext.name
+          : graphScope === 'unit'
+            ? data.userContext.unit
+            : data.division?.name || data.userContext.division,
+      });
+      const graphClient = await getGraphClient(msalInstance);
+      if (!graphClient) throw new Error('The report archive is unavailable because no Graph client could be created.');
+      const opsService = new SharePointOpsService(graphClient);
+      await opsService.initialize();
+      const stored = await createSharePointStrategyReportArchiveService(opsService).archive(
+        strategySnapshot,
+        config as unknown as Record<string, unknown>,
+        {
+          division: data.division?.name || data.userContext.division,
+          unit: graphScope === 'unit' ? data.userContext.unit : undefined,
+          ownerEmail: graphScope === 'personal' ? data.userContext.email : undefined,
+        },
+      );
+      const report: DivisionGeneratedReport = {
+        ...divisionReportFromArchive(stored), config, title,
+      };
+      setCurrentReport(report);
+      setReportHistory(prev => [report, ...prev.filter(item => item.id !== report.id)].slice(0, 20));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'The report could not be generated.');
+    } finally {
+      setGenerating(false);
+    }
   };
 
-  const handlePrint = () => window.print();
+  const recordDeliveryEvent = async (
+    report: DivisionGeneratedReport,
+    channel: 'download' | 'print',
+    status: 'queued' | 'sent' | 'failed',
+    error?: string,
+  ) => {
+    const graphClient = await getGraphClient(msalInstance);
+    if (!graphClient) throw new Error('No Graph client');
+    const opsService = new SharePointOpsService(graphClient);
+    await opsService.initialize();
+    const stored = await createSharePointStrategyReportArchiveService(opsService).recordDelivery(
+      report.archive.record,
+      { channel, status, error },
+    );
+    const event = stored.record.event;
+    const addEvent = (item: DivisionGeneratedReport): DivisionGeneratedReport => ({
+      ...item,
+      archive: {
+        ...item.archive,
+        record: { ...item.archive.record, deliveryHistory: [event, ...item.archive.record.deliveryHistory] },
+      },
+    });
+    setCurrentReport(previous => previous?.id === report.id ? addEvent(previous) : previous);
+    setReportHistory(previous => previous.map(item => item.id === report.id ? addEvent(item) : item));
+  };
 
-  const handleExportCSV = () => {
-    const rows = [
-      ['Metric', 'Value'],
-      ['Total Tasks', metrics.totalTasks],
-      ['Completed Tasks', metrics.completedTasks],
-      ['Task Completion Rate', `${metrics.taskCompletionRate}%`],
-      ['Overdue Tasks', metrics.overdueTasks],
-      ['Active KRAs', metrics.activeKRAs],
-      ['At-Risk KRAs', metrics.atRiskKRAs],
-      ['KPI On Track', `${metrics.kpiOnTrackPercentage}%`],
-      ['Active Projects', metrics.activeProjects],
-      ['Staff Count', metrics.staffCount],
-      ['Strategic Alignment', `${metrics.strategicAlignmentScore}%`],
-      ['Overall Performance', `${metrics.overallPerformanceScore}%`],
-    ];
-    const csv = rows.map(r => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${currentReport?.title || 'division-report'}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handlePrint = async () => {
+    if (!currentReport) return;
+    try {
+      await recordDeliveryEvent(currentReport, 'print', 'queued');
+      window.print();
+      await recordDeliveryEvent(currentReport, 'print', 'sent');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Print audit failed.';
+      try { await recordDeliveryEvent(currentReport, 'print', 'failed', message); } catch {}
+      toast.error(`The report could not be printed with a complete audit trail: ${message}`);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!currentReport) return;
+    try {
+      await recordDeliveryEvent(currentReport, 'download', 'queued');
+      const csv = strategyReportToCsv(currentReport.strategySnapshot);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentReport.title.replace(/\s+/g, '_')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      await recordDeliveryEvent(currentReport, 'download', 'sent');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'CSV export audit failed.';
+      try { await recordDeliveryEvent(currentReport, 'download', 'failed', message); } catch {}
+      toast.error(`The CSV could not be exported with a complete audit trail: ${message}`);
+    }
   };
 
   return (
@@ -630,9 +769,22 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
               </div>
             </div>
 
+            {timePeriod === 'custom' && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label htmlFor="division-report-start" className="text-xs font-medium">Report start date</label>
+                  <Input id="division-report-start" type="date" value={customStartDate} onChange={event => setCustomStartDate(event.target.value)} />
+                </div>
+                <div className="space-y-1.5">
+                  <label htmlFor="division-report-end" className="text-xs font-medium">Report end date</label>
+                  <Input id="division-report-end" type="date" value={customEndDate} onChange={event => setCustomEndDate(event.target.value)} />
+                </div>
+              </div>
+            )}
+
             <Button
               onClick={handleGenerate}
-              disabled={generating}
+              disabled={generating || graphState.isLoading}
               className="w-full bg-[#83002A] hover:bg-[#5C001E] gap-2"
             >
               {generating
@@ -650,7 +802,6 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
           <ReportPreview
             report={currentReport}
             data={data}
-            metrics={metrics}
             onPrint={handlePrint}
             onExportCSV={handleExportCSV}
           />
@@ -658,7 +809,7 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
       )}
 
       {/* Report History */}
-      {reportHistory.length > 1 && (
+      {reportHistory.some(report => report.id !== currentReport?.id) && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -668,7 +819,7 @@ export const DivisionReportsTab: React.FC<DivisionReportsTabProps> = ({ data, me
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {reportHistory.slice(1).map(rpt => (
+              {reportHistory.filter(report => report.id !== currentReport?.id).map(rpt => (
                 <div
                   key={rpt.id}
                   className="flex items-center justify-between p-2 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
