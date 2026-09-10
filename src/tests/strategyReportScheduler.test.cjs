@@ -117,7 +117,9 @@ function adapters(source, options = {}) {
       calls.push(`claim:${claim.dispatchId}`);
       return options.claimResults?.[claimCount - 1] || 'acquired';
     },
-    async markSent(_scheduleId, dispatchId) { calls.push(`checkpoint:sent:${dispatchId}`); },
+    async markSent(_scheduleId, dispatchId, _sentAt, providerMessageId) {
+      calls.push(`checkpoint:sent:${dispatchId}:${providerMessageId || ''}`);
+    },
     async markFailed(_scheduleId, dispatchId, _failedAt, error) { calls.push(`checkpoint:failed:${dispatchId}:${error}`); },
   };
   return { archiveReader, journal, sender, checkpoints, calls, get senderCalls() { return senderCalls; } };
@@ -139,7 +141,7 @@ test('trusted executor sends only the checksum-verified archive and journals que
   assert.equal(source.deliveries[1].event.dispatchId, result.dispatchId);
   assert.equal(source.deliveries[1].event.scheduleId, 'schedule-7');
   assert.equal(source.deliveries[1].event.providerMessageId, 'provider-message-9');
-  assert.equal(io.calls.at(-1), `checkpoint:sent:${result.dispatchId}`);
+  assert.equal(io.calls.at(-1), `checkpoint:sent:${result.dispatchId}:provider-message-9`);
 });
 
 test('dispatch identity is deterministic and rendered HTML escapes archived text', async () => {

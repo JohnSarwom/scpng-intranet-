@@ -4,7 +4,7 @@ Date: 10 September 2026
 Repository: `scpng-intranet`
 Branch: `feat/ai-text-improver`
 Release implementation HEAD before Phase 5 evidence: `20551431ab651ac2201c6fd75b89974f12cba230` (`2055143`)
-Status: implementation is pushed to GitHub pull request #1 with green quality and Vercel preview checks. A production GET-only scheduler inventory and separately authorized schema remediation are complete; schema readiness now passes. No SharePoint item/permission mutation, email, schedule activation, merge to `main` or production deployment has been performed. Automated LIS import is out of scope by business decision.
+Status: the release implementation and Phase 5 schema evidence are pushed to GitHub pull request #1 with green quality and Vercel preview checks. Production inventory and separately authorized schema remediation are complete, and server-side tenant adapters are implemented and verified locally. No SharePoint item/permission mutation, email, schedule activation, merge to `main` or production deployment has been performed. Automated LIS import is out of scope by business decision.
 
 ## Start here
 
@@ -26,8 +26,9 @@ The local implementation includes:
 - hard quarantine of the independently calculated legacy Power Automate flows;
 - GET-only scheduler tenant inventory and fail-closed readiness manifest;
 - offline GitHub quality gate covering the full strategy regression, inherited TypeScript baseline and production build.
+- exact SharePoint archive/journal adapters, ETag-conditional schedule checkpoints and a server-side idempotency-key email adapter, all unwired pending controlled UAT.
 
-The executor core and readiness tooling are complete. Production inspection and the separately authorized schema remediation confirm that both required lists, required columns, required indexes and sample ETags are available. The tenant schema is ready for adapter implementation. The SharePoint archive reader, delivery journal, conditional schedule checkpoint and email-provider adapters remain unimplemented and inactive.
+The executor core, readiness tooling and server-side tenant-adapter code are complete locally. Production inspection and the separately authorized schema remediation confirm that both required lists, required columns, required indexes and sample ETags are available. Exact archive reads, append-only delivery events, ETag-conditional schedule checkpoints and a Resend idempotency-key sender are implemented behind the executor interfaces, but remain unwired and inactive pending service-identity provisioning, provider configuration and controlled UAT.
 
 ## Phase 4E result
 
@@ -53,8 +54,8 @@ Detailed result: [Phase 5 production readiness inventory](2026-09-10-phase-5-pro
 
 ## Validation state
 
-- Full strategy/work-plan regression: **121/121 passed** across twelve suites.
-- Archive/executor/readiness focused gate: **23/23 passed**.
+- Full strategy/work-plan regression: **129/129 passed** across thirteen suites.
+- Archive/executor/readiness/adapter focused gate: **31/31 passed**.
 - Isolated staged-candidate Vite build: **passed**, 5,502 modules transformed.
 - Isolated staged-candidate TypeScript gate: **172 inherited unique primary diagnostics**, with zero added against its structured release baseline; zero diagnostics in readiness, scheduler, archive or Power Automate paths.
 - Build warnings remain operational/inherited: stale Browserslist data, `next-themes` annotations, runtime LED font resolution, mixed imports and the large main chunk.
@@ -99,9 +100,15 @@ New Phase 5 evidence paths:
 - `docs/strategy-execution/handoff-evidence/phase5-production-schema-pre-change.json`
 - `docs/strategy-execution/handoff-evidence/phase5-production-schema-remediation.json`
 
+New Phase 5A adapter paths:
+
+- `src/services/strategyReportTenantAdapters.ts`
+- `src/tests/strategyReportTenantAdapters.test.cjs`
+- `docs/strategy-execution/2026-09-10-phase-5a-tenant-adapter-implementation.md`
+
 ## Next controlled step
 
-Implement the four tenant adapters behind the trusted executor interfaces: exact archive read by storage ID/checksum, append-only delivery journal, conditional schedule lease/checkpoint repository and idempotent email-provider send. Then run controlled failure-injection UAT with a least-privilege executor identity and preserve fresh capability attestations. Capability evidence must come from observed behavior, not configuration assumptions. Do not activate production schedules during adapter implementation or UAT without separate authorization.
+Provision the dedicated selected-list application identity and server-side email-provider configuration, then run controlled failure-injection UAT against an explicitly identified inactive schedule, archive and test recipient. Preserve fresh capability attestations from observed behavior, including the provider's documented idempotency window; do not infer them from configuration. Do not activate production schedules during UAT without separate authorization. Implementation detail and required inputs are recorded in [Phase 5A tenant-adapter implementation](2026-09-10-phase-5a-tenant-adapter-implementation.md).
 
 No non-production SharePoint site is configured. Repository configuration references only `https://scpng1.sharepoint.com/sites/scpngintranet`, which project documentation identifies as production. The completed GET-only inspection does not authorize schema mutation, adapter writes, email, activation, merge or deployment.
 

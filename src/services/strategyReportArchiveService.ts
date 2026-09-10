@@ -168,6 +168,63 @@ async function checksum(value: unknown): Promise<string> {
   return [...new Uint8Array(digest)].map(part => part.toString(16).padStart(2, '0')).join('');
 }
 
+export async function verifyStrategyReportDeliveryRecord(
+  delivery: StrategyReportDeliveryRecord,
+  archive: Pick<StrategyReportArchiveRecord, 'snapshotId' | 'snapshotChecksum'>,
+  storageId = delivery?.event?.id || 'unknown',
+): Promise<void> {
+  if (delivery?.eventVersion !== 1 || delivery.snapshotId !== archive.snapshotId ||
+    delivery.snapshotChecksum !== archive.snapshotChecksum) {
+    throw new Error(`Stored delivery ${storageId} does not match its archived snapshot.`);
+  }
+  if (await checksum(delivery.event) !== delivery.eventChecksum) {
+    throw new Error(`Stored delivery ${storageId} failed its event checksum.`);
+  }
+}
+
+export async function createStrategyReportDeliveryRecord(
+  archive: StrategyReportArchiveRecord,
+  request: StrategyReportDeliveryRequest,
+  recordedBy: string,
+  now: () => string = () => new Date().toISOString(),
+  nextId: () => string = () => globalThis.crypto.randomUUID(),
+): Promise<StrategyReportDeliveryRecord> {
+  await verifyStrategyReportArchive(archive, archive.snapshotId);
+  const actor = normalize(recordedBy);
+  if (!actor) throw new Error('A delivery journal actor is required.');
+  if (request.channel === 'email') assertEmail(request.recipient, 'Email delivery recipient');
+  if (request.status === 'failed' && !request.error?.trim()) {
+    throw new Error('A failed delivery event requires an error description.');
+  }
+  if (request.providerMessageId && request.status !== 'sent') {
+    throw new Error('A provider message ID is valid only for a sent delivery event.');
+  }
+  if (!!request.scheduleId !== !!request.dispatchId) {
+    throw new Error('Scheduled delivery events require both schedule and dispatch identities.');
+  }
+  const occurredAt = now();
+  if (!Number.isFinite(Date.parse(occurredAt))) throw new Error('The delivery event time is invalid.');
+  const event: StrategyReportDeliveryEvent = {
+    id: nextId(),
+    occurredAt: new Date(occurredAt).toISOString(),
+    recordedBy: actor,
+    status: request.status,
+    channel: request.channel,
+    ...(normalize(request.recipient) ? { recipient: normalize(request.recipient) } : {}),
+    ...(request.error?.trim() ? { error: request.error.trim() } : {}),
+    ...(request.scheduleId?.trim() ? { scheduleId: request.scheduleId.trim() } : {}),
+    ...(request.dispatchId?.trim() ? { dispatchId: request.dispatchId.trim() } : {}),
+    ...(request.providerMessageId?.trim() ? { providerMessageId: request.providerMessageId.trim() } : {}),
+  };
+  return deepFreeze({
+    eventVersion: 1,
+    snapshotId: archive.snapshotId,
+    snapshotChecksum: archive.snapshotChecksum,
+    eventChecksum: await checksum(event),
+    event,
+  });
+}
+
 function assertIdentity(actor: StrategyReportActor | null): asserts actor is StrategyReportActor {
   if (!actor || !normalize(actor.email) || (!normalize(actor.role) && !actor.isAdmin)) {
     throw new Error('Unable to verify the signed-in report user and role.');
@@ -417,12 +474,8 @@ export class StrategyReportArchiveService {
     for (const storedDelivery of deliveries) {
       const delivery = storedDelivery.record;
       const archive = bySnapshot.get(delivery.snapshotId);
-      if (!archive || archive.record.snapshotChecksum !== delivery.snapshotChecksum) {
-        throw new Error(`Stored delivery ${storedDelivery.storageId} does not match its archived snapshot.`);
-      }
-      if (delivery.eventVersion !== 1 || await checksum(delivery.event) !== delivery.eventChecksum) {
-        throw new Error(`Stored delivery ${storedDelivery.storageId} failed its event checksum.`);
-      }
+      if (!archive) throw new Error(`Stored delivery ${storedDelivery.storageId} does not match its archived snapshot.`);
+      await verifyStrategyReportDeliveryRecord(delivery, archive.record, storedDelivery.storageId);
       deliveryHistory.get(delivery.snapshotId)?.push(clone(delivery.event));
     }
     const hydrated = visible.map(item => ({
@@ -448,35 +501,9 @@ export class StrategyReportArchiveService {
       throw new Error('You do not have permission to record delivery for this report scope.');
     }
     if (request.channel === 'email') assertCanArchive(actor, archive.scope);
-    if (request.channel === 'email') assertEmail(request.recipient, 'Email delivery recipient');
-    if (request.status === 'failed' && !request.error?.trim()) {
-      throw new Error('A failed delivery event requires an error description.');
-    }
-    if (request.providerMessageId && request.status !== 'sent') {
-      throw new Error('A provider message ID is valid only for a sent delivery event.');
-    }
-    if (!!request.scheduleId !== !!request.dispatchId) {
-      throw new Error('Scheduled delivery events require both schedule and dispatch identities.');
-    }
-    const event: StrategyReportDeliveryEvent = {
-      id: this.nextId(),
-      occurredAt: this.now(),
-      recordedBy: normalize(actor.email),
-      status: request.status,
-      channel: request.channel,
-      recipient: normalize(request.recipient) || undefined,
-      error: request.error?.trim() || undefined,
-      scheduleId: request.scheduleId?.trim() || undefined,
-      dispatchId: request.dispatchId?.trim() || undefined,
-      providerMessageId: request.providerMessageId?.trim() || undefined,
-    };
-    const record: StrategyReportDeliveryRecord = {
-      eventVersion: 1,
-      snapshotId: archive.snapshotId,
-      snapshotChecksum: archive.snapshotChecksum,
-      eventChecksum: await checksum(event),
-      event,
-    };
+    const record = await createStrategyReportDeliveryRecord(
+      archive, request, actor.email, this.now, this.nextId,
+    );
     const saved = await this.store.appendDelivery(deepFreeze(clone(record)));
     return deepFreeze({ storageId: saved.storageId, record: clone(record) });
   }

@@ -68,3 +68,7 @@ The original inventory did not authorize schema changes. Separate user authoriza
 Passing schema readiness authorizes only tenant-adapter implementation. Scheduled-delivery activation additionally requires fresh, referenced controlled-UAT evidence for least-privilege executor identity, exact archive reads by storage ID and checksum, append-only delivery-journal writes, conditional schedule leases/checkpoints and idempotent email-provider sends. Production inventory and schema remediation alone cannot authorize activation.
 
 No LIS data was imported. No list items or permissions were changed, no email was sent, no schedule or legacy flow was activated, and no application production deployment occurred.
+
+## Continuation
+
+The schema-ready result has now been consumed by the local [Phase 5A tenant-adapter implementation](2026-09-10-phase-5a-tenant-adapter-implementation.md). The adapters remain unwired and do not change this inventory's activation decision; controlled capability UAT and separate production activation approval are still required.

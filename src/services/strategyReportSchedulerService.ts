@@ -26,7 +26,7 @@ export type StrategyReportScheduleClaimResult = 'acquired' | 'busy' | 'completed
 /** Must implement conditional/ETag writes so only one executor owns a dispatch lease. */
 export interface StrategyReportScheduleCheckpointStore {
   claim(claim: StrategyReportScheduleClaim): Promise<StrategyReportScheduleClaimResult>;
-  markSent(scheduleId: string, dispatchId: string, sentAt: string): Promise<void>;
+  markSent(scheduleId: string, dispatchId: string, sentAt: string, providerMessageId?: string): Promise<void>;
   markFailed(scheduleId: string, dispatchId: string, failedAt: string, error: string): Promise<void>;
 }
 
@@ -194,7 +194,7 @@ export class StrategyReportScheduledDeliveryExecutor {
       const history = await this.journal.listVerified(archive);
       const priorSent = history.find(event => event.channel === 'email' && event.status === 'sent' && event.dispatchId === dispatchId);
       if (priorSent) {
-        await this.checkpoints.markSent(scheduleId, dispatchId, startedAt);
+        await this.checkpoints.markSent(scheduleId, dispatchId, startedAt, priorSent.providerMessageId);
         return deepFreeze({ dispatchId, status: 'already-sent', providerMessageId: priorSent.providerMessageId });
       }
       if (!history.some(event => event.channel === 'email' && event.status === 'queued' && event.dispatchId === dispatchId)) {
@@ -211,7 +211,7 @@ export class StrategyReportScheduledDeliveryExecutor {
       });
       sentJournaled = true;
       const sentAt = validTimestamp(this.now(), 'Email completion time');
-      await this.checkpoints.markSent(scheduleId, dispatchId, sentAt);
+      await this.checkpoints.markSent(scheduleId, dispatchId, sentAt, providerMessageId);
       return deepFreeze({ dispatchId, status: 'sent', providerMessageId });
     } catch (error) {
       const message = errorMessage(error);

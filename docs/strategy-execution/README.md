@@ -2,7 +2,7 @@
 
 ## Developer handoff — start here (10 September 2026)
 
-Read the **[current developer handoff](2026-09-10-developer-handoff.md)** first, then the [9 September consolidated handoff](2026-09-09-developer-handoff.md) for the complete earlier implementation and recovery details. The current handoff adds the GET-only scheduler tenant inventory, fail-closed readiness manifest and offline GitHub quality gate to the reporting, archive, AI, governance and trusted-executor foundation. The older numbered roadmap and sprint documents describe earlier proposals; their phase numbers and completion language must not be treated as the present status.
+Read the **[current developer handoff](2026-09-10-developer-handoff.md)** first, then the [9 September consolidated handoff](2026-09-09-developer-handoff.md) for the complete earlier implementation and recovery details. The current handoff adds the scheduler tenant inventory, fail-closed readiness manifest, offline GitHub quality gate, authorized production schema result and locally verified tenant adapters to the reporting, archive, AI, governance and trusted-executor foundation. The older numbered roadmap and sprint documents describe earlier proposals; their phase numbers and completion language must not be treated as the present status.
 
 | Current evidence | Purpose |
 |---|---|
@@ -22,9 +22,10 @@ Read the **[current developer handoff](2026-09-10-developer-handoff.md)** first,
 | [Phase 4E scheduler tenant readiness](2026-09-10-phase-4e-scheduler-tenant-readiness.md) | GET-only schema/ETag inventory and evidence-gated activation manifest |
 | [Phase 4F offline quality gate](2026-09-10-phase-4f-offline-quality-gate.md) | GitHub-ready local regression, TypeScript-baseline and production-build checks |
 | [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md) | Authenticated GET-only production schema/ETag result and exact blockers |
+| [Phase 5A tenant-adapter implementation](2026-09-10-phase-5a-tenant-adapter-implementation.md) | Exact SharePoint archive/journal/checkpoint adapters, idempotent email adapter and controlled-UAT boundary |
 | [Handoff evidence](handoff-evidence/README.md) | Preserved validation outputs and file fingerprints |
 
-**Stop point:** Phase 2B, all Phase 3 integrity/lifecycle slices and Phase 4 implementation are complete. GitHub pull request #1 has green quality and Vercel preview checks. The authenticated [Phase 5 production inventory and schema remediation](2026-09-10-phase-5-production-readiness-inventory.md) confirms both required lists, ETags, fields and indexes; `schemaReadyForAdapterImplementation` is `true`. Adapter implementation, capability UAT, email and activation remain gated; no list items or permissions changed, and no merge or production application deployment has occurred. Independently calculated legacy flows remain hard-quarantined. The LIS document is a planning guide only, and the LIS team will enter its own data manually; no automated LIS import is planned.
+**Stop point:** Phase 2B, all Phase 3 integrity/lifecycle slices and Phase 4 implementation are complete. GitHub pull request #1 has green quality and Vercel preview checks. The authenticated [Phase 5 production inventory and schema remediation](2026-09-10-phase-5-production-readiness-inventory.md) confirms both required lists, ETags, fields and indexes; `schemaReadyForAdapterImplementation` is `true`. The [Phase 5A tenant adapters](2026-09-10-phase-5a-tenant-adapter-implementation.md) are implemented and locally tested but remain unwired. Service-identity provisioning, provider configuration, capability UAT, email and activation remain gated; no list items or permissions changed, and no merge or production application deployment has occurred. Independently calculated legacy flows remain hard-quarantined. The LIS document is a planning guide only, and the LIS team will enter its own data manually; no automated LIS import is planned.
 
 ---
 
