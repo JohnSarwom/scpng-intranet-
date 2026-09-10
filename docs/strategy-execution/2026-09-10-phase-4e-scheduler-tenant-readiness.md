@@ -45,3 +45,7 @@ Attestations older than 30 days fail closed. Production inventory cannot authori
 ## Next controlled step
 
 Obtain the name/site identity and explicit approval for a non-production SCPNG tenant. Run the GET-only inventory, preserve the resulting manifest as handoff evidence, and have the relevant owners review every blocker. Do not supply capability attestations until the corresponding read/write/idempotency behavior has been observed in controlled UAT. Do not activate a schedule during inventory.
+
+## Production continuation
+
+The only configured tenant was later inspected with explicit user authorization after the GitHub transfer. The authenticated production GET-only inventory completed successfully and is recorded in [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md). Both lists and sample ETags exist, but the schema is not ready: three indexes and nine scheduler columns are missing. No schema or item mutation occurred.
