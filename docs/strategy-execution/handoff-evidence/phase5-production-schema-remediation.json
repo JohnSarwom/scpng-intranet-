@@ -1,0 +1,143 @@
+{
+  "remediationVersion": 1,
+  "completedAt": "2026-09-10T00:33:56.512Z",
+  "authorization": "User explicitly authorized three indexes and nine Report_Schedules columns on 10 September 2026.",
+  "preChangeEvidence": "phase5-production-schema-pre-change.json",
+  "audit": [
+    {
+      "action": "index-enabled",
+      "target": "Performance_Reports.ReportType",
+      "columnId": "93dab25c-6ac3-4f4d-b2b8-31b94dcb8241",
+      "indexed": true
+    },
+    {
+      "action": "index-enabled",
+      "target": "Report_Schedules.IsActive",
+      "columnId": "cd213d6e-c46f-4e52-916c-02192031c332",
+      "indexed": true
+    },
+    {
+      "action": "index-enabled",
+      "target": "Report_Schedules.NextSendAt",
+      "columnId": "a224e009-684f-4cfb-99e9-55bc09694ed8",
+      "indexed": true
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.ArchiveStorageId",
+      "columnId": "da02b0d2-3a24-48a0-b0a3-1325f1a4183b",
+      "kind": "text",
+      "indexed": true
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.SnapshotId",
+      "columnId": "af459503-f59e-41b9-83c4-c368df11ce81",
+      "kind": "text",
+      "indexed": true
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.SnapshotChecksum",
+      "columnId": "5bb20357-1b80-4ee9-ad48-f3a31e6f779c",
+      "kind": "text",
+      "indexed": false
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.BindingJSON",
+      "columnId": "13985b24-4806-47d7-b61e-fbb30aa5460a",
+      "kind": "multiline-text",
+      "indexed": false
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.DispatchId",
+      "columnId": "8fe57a09-47ef-4a94-93e7-998dbede1788",
+      "kind": "text",
+      "indexed": true
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.DispatchState",
+      "columnId": "169027d6-0ac9-4b16-b55e-5dfb684b91bc",
+      "kind": "text",
+      "indexed": false
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.LeaseUntil",
+      "columnId": "ac2367e8-a5ea-4980-b20c-72f25f232082",
+      "kind": "date-time",
+      "indexed": false
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.LastProviderMessageId",
+      "columnId": "f4c128aa-8eb9-4c30-857b-952d52ac02c9",
+      "kind": "text",
+      "indexed": false
+    },
+    {
+      "action": "column-created",
+      "target": "Report_Schedules.LastError",
+      "columnId": "d58ae2d4-8643-4496-a56b-8f6ed5b42992",
+      "kind": "multiline-text",
+      "indexed": false
+    }
+  ],
+  "postChange": {
+    "snapshotVersion": 1,
+    "label": "post-change",
+    "capturedAt": "2026-09-10T00:33:56.510Z",
+    "siteId": "scpng1.sharepoint.com,1615181f-7ac2-458b-8584-8586881c3e4e,62ed622f-af08-4519-8ca9-bd27b464ca65",
+    "lists": {
+      "Performance_Reports": {
+        "id": "edef001e-ba4c-462f-b5e7-4a1f72ef2174",
+        "relevantColumns": [
+          {
+            "id": "93dab25c-6ac3-4f4d-b2b8-31b94dcb8241",
+            "name": "ReportType",
+            "kind": "text",
+            "indexed": true
+          }
+        ]
+      },
+      "Report_Schedules": {
+        "id": "c1356b99-5aa2-410f-9a51-3bcbf0cb534e",
+        "relevantColumns": [
+          { "id": "cd213d6e-c46f-4e52-916c-02192031c332", "name": "IsActive", "kind": "text", "indexed": true },
+          { "id": "a224e009-684f-4cfb-99e9-55bc09694ed8", "name": "NextSendAt", "kind": "date-time", "indexed": true },
+          { "id": "da02b0d2-3a24-48a0-b0a3-1325f1a4183b", "name": "ArchiveStorageId", "kind": "text", "indexed": true },
+          { "id": "af459503-f59e-41b9-83c4-c368df11ce81", "name": "SnapshotId", "kind": "text", "indexed": true },
+          { "id": "5bb20357-1b80-4ee9-ad48-f3a31e6f779c", "name": "SnapshotChecksum", "kind": "text", "indexed": false },
+          { "id": "13985b24-4806-47d7-b61e-fbb30aa5460a", "name": "BindingJSON", "kind": "multiline-text", "indexed": false },
+          { "id": "8fe57a09-47ef-4a94-93e7-998dbede1788", "name": "DispatchId", "kind": "text", "indexed": true },
+          { "id": "169027d6-0ac9-4b16-b55e-5dfb684b91bc", "name": "DispatchState", "kind": "text", "indexed": false },
+          { "id": "ac2367e8-a5ea-4980-b20c-72f25f232082", "name": "LeaseUntil", "kind": "date-time", "indexed": false },
+          { "id": "f4c128aa-8eb9-4c30-857b-952d52ac02c9", "name": "LastProviderMessageId", "kind": "text", "indexed": false },
+          { "id": "d58ae2d4-8643-4496-a56b-8f6ed5b42992", "name": "LastError", "kind": "multiline-text", "indexed": false }
+        ]
+      }
+    }
+  },
+  "readiness": {
+    "assessedAt": "2026-09-10T00:33:56.506Z",
+    "inventoryCapturedAt": "2026-09-10T00:33:54.830Z",
+    "schemaReadyForAdapterImplementation": true,
+    "activationReady": false,
+    "findings": [
+      {
+        "severity": "blocker",
+        "code": "capability-attestations-missing",
+        "target": "executor",
+        "message": "Activation requires verified least-privilege identity, archive read, append-only journal, conditional checkpoint and idempotent email evidence."
+      }
+    ]
+  },
+  "rollbackPlan": {
+    "executed": false,
+    "requiresSeparateApproval": true,
+    "procedure": "Set the three newly enabled indexes back to false and delete only the nine columns whose IDs are recorded as column-created in this audit. Do not execute unless separately approved."
+  }
+}

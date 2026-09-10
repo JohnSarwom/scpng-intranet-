@@ -1,7 +1,7 @@
 # Phase 5 — Production scheduler readiness inventory
 
 Date: 10 September 2026
-Status: authenticated GET-only production inventory complete; schema and activation are blocked; no tenant mutation performed.
+Status: authenticated inventory and separately authorized schema remediation complete; schema is ready for adapter implementation; activation remains blocked pending capability UAT.
 
 ## Result
 
@@ -21,15 +21,33 @@ The resulting manifest is fail-closed:
 
 Exact evidence: [production scheduler readiness manifest](handoff-evidence/phase5-production-scheduler-readiness.json).
 
-## Required schema remediation
+## Authorized schema remediation result
 
-The following existing columns require indexes:
+After the user separately authorized the exact production change set, a raw pre-change schema snapshot was captured and its site, list and existing-column identities were validated before mutation. Microsoft Graph then enabled the three approved indexes and created the nine approved `Report_Schedules` columns. No item, permission, schedule, email or flow operation was available to the remediation tool.
+
+The immediate post-change GET verification passed:
+
+- all three required existing-column indexes are enabled;
+- all nine required scheduler columns exist with the approved kinds;
+- `ArchiveStorageId`, `SnapshotId` and `DispatchId` are indexed;
+- both lists still resolve by their recorded identities and expose sample ETags;
+- `schemaReadyForAdapterImplementation`: `true`;
+- `activationReady`: `false`, solely because controlled capability attestations have not yet been produced.
+
+Evidence:
+
+- [pre-change schema snapshot and authorized change set](handoff-evidence/phase5-production-schema-pre-change.json)
+- [mutation audit, post-change snapshot and readiness result](handoff-evidence/phase5-production-schema-remediation.json)
+
+## Completed schema remediation
+
+The following existing-column indexes were enabled:
 
 - `Performance_Reports.ReportType`
 - `Report_Schedules.IsActive`
 - `Report_Schedules.NextSendAt`
 
-The following columns are missing from `Report_Schedules`:
+The following columns were created in `Report_Schedules`:
 
 | Column | Required kind | Index required |
 |---|---|---|
@@ -45,8 +63,8 @@ The following columns are missing from `Report_Schedules`:
 
 ## Safety boundary
 
-This inventory does not authorize schema changes. Before production mutation, an owner must separately approve the exact columns and indexes, a pre-change schema snapshot, the change window and the rollback procedure. Rerun the GET-only inventory after remediation.
+The original inventory did not authorize schema changes. Separate user authorization was received, the pre-change snapshot was preserved, and the exact change set was applied and re-read. The recorded rollback procedure was not executed and still requires separate approval because it would disable indexes and delete the newly created columns.
 
-Passing schema readiness will authorize only tenant-adapter implementation. Scheduled-delivery activation additionally requires fresh, referenced controlled-UAT evidence for least-privilege executor identity, exact archive reads by storage ID and checksum, append-only delivery-journal writes, conditional schedule leases/checkpoints and idempotent email-provider sends. Production inventory alone can never authorize activation.
+Passing schema readiness authorizes only tenant-adapter implementation. Scheduled-delivery activation additionally requires fresh, referenced controlled-UAT evidence for least-privilege executor identity, exact archive reads by storage ID and checksum, append-only delivery-journal writes, conditional schedule leases/checkpoints and idempotent email-provider sends. Production inventory and schema remediation alone cannot authorize activation.
 
-No LIS data was imported. No email was sent, no schedule or legacy flow was activated, and no application production deployment occurred.
+No LIS data was imported. No list items or permissions were changed, no email was sent, no schedule or legacy flow was activated, and no application production deployment occurred.

@@ -4,7 +4,7 @@ Date: 10 September 2026
 Repository: `scpng-intranet`
 Branch: `feat/ai-text-improver`
 Release implementation HEAD before Phase 5 evidence: `20551431ab651ac2201c6fd75b89974f12cba230` (`2055143`)
-Status: implementation is pushed to GitHub pull request #1 with green quality and Vercel preview checks. A production GET-only scheduler inventory was captured; no SharePoint mutation, email, schedule activation, merge to `main` or production deployment has been performed. Automated LIS import is out of scope by business decision.
+Status: implementation is pushed to GitHub pull request #1 with green quality and Vercel preview checks. A production GET-only scheduler inventory and separately authorized schema remediation are complete; schema readiness now passes. No SharePoint item/permission mutation, email, schedule activation, merge to `main` or production deployment has been performed. Automated LIS import is out of scope by business decision.
 
 ## Start here
 
@@ -27,7 +27,7 @@ The local implementation includes:
 - GET-only scheduler tenant inventory and fail-closed readiness manifest;
 - offline GitHub quality gate covering the full strategy regression, inherited TypeScript baseline and production build.
 
-The executor core and readiness tooling are complete. Production inspection confirms that both required lists exist and sample ETags are available, but the tenant schema is not ready for adapter implementation. The SharePoint archive reader, delivery journal, conditional schedule checkpoint and email-provider adapters remain unimplemented and inactive.
+The executor core and readiness tooling are complete. Production inspection and the separately authorized schema remediation confirm that both required lists, required columns, required indexes and sample ETags are available. The tenant schema is ready for adapter implementation. The SharePoint archive reader, delivery journal, conditional schedule checkpoint and email-provider adapters remain unimplemented and inactive.
 
 ## Phase 4E result
 
@@ -47,7 +47,7 @@ The first release-preparation review is also complete. The dirty tree contains a
 
 ## Phase 5 production inventory result
 
-An authenticated GET-only inventory of `https://scpng1.sharepoint.com/sites/scpngintranet` completed at `2026-09-09T23:54:21.969Z`. Both `Performance_Reports` and `Report_Schedules` exist, their inspected columns have compatible kinds where present, and sample items expose ETags. The manifest reports three required indexes absent and nine required `Report_Schedules` columns absent. Capability attestations are also intentionally absent, so `schemaReadyForAdapterImplementation` and `activationReady` are both `false`.
+An authenticated GET-only inventory of `https://scpng1.sharepoint.com/sites/scpngintranet` completed at `2026-09-09T23:54:21.969Z`. It found three required indexes and nine required `Report_Schedules` columns absent. After separate user authorization, a pre-change snapshot was captured and the exact twelve schema changes were applied. The post-change GET verification completed at `2026-09-10T00:33:54.830Z`; `schemaReadyForAdapterImplementation` is now `true`. `activationReady` remains `false` because capability attestations are intentionally absent.
 
 Detailed result: [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md). Exact evidence: [production scheduler readiness manifest](handoff-evidence/phase5-production-scheduler-readiness.json).
 
@@ -61,7 +61,7 @@ Detailed result: [Phase 5 production readiness inventory](2026-09-10-phase-5-pro
 - Graphify refreshed after Phase 4F: **2,923 nodes, 3,501 edges and 647 communities** across 650 files.
 - GitHub push and pull request #1: **complete**; push and pull-request quality runs passed.
 - Vercel preview check: **passed**; this is not the production deployment.
-- Production GET-only scheduler inventory: **complete**; 12 schema blockers plus the intentionally missing capability-attestation blocker remain.
+- Production inventory and schema remediation: **complete**; all 12 schema blockers resolved and post-change readiness passed. The intentionally missing capability-attestation blocker remains.
 
 Regression command:
 
@@ -72,7 +72,7 @@ node scripts\run-strategy-tests.mjs
 ## External-state and transfer boundary
 
 - A GET-only production inventory read list identity, column metadata and one sample item ETag per required list. No list-item field values were captured.
-- No SharePoint list, column, item, permission or schedule was created, updated or deleted.
+- Three approved indexes were enabled and nine approved `Report_Schedules` columns were created. No list item, permission or schedule was created, updated or deleted.
 - No email or Power Automate flow was sent, created or deployed.
 - The LIS work plan is a planning guide only. The LIS team owns manual re-entry of its data; no importer or automated migration is required.
 - The implementation was pushed to `feat/ai-text-improver`, and GitHub pull request #1 is open with green checks. It has not been merged.
@@ -96,10 +96,12 @@ New Phase 5 evidence paths:
 
 - `docs/strategy-execution/2026-09-10-phase-5-production-readiness-inventory.md`
 - `docs/strategy-execution/handoff-evidence/phase5-production-scheduler-readiness.json`
+- `docs/strategy-execution/handoff-evidence/phase5-production-schema-pre-change.json`
+- `docs/strategy-execution/handoff-evidence/phase5-production-schema-remediation.json`
 
 ## Next controlled step
 
-Obtain separate approval for the exact production schema changes recorded in the Phase 5 inventory: index `Performance_Reports.ReportType`, `Report_Schedules.IsActive` and `Report_Schedules.NextSendAt`, and add the nine missing scheduler fields with the required kinds/indexes. Capture a pre-change schema snapshot and rollback procedure before mutation, then rerun the GET-only inventory. Only after schema readiness passes should the tenant adapters be implemented and controlled capability UAT begin. Capability attestations must come from observed evidence, not configuration assumptions.
+Implement the four tenant adapters behind the trusted executor interfaces: exact archive read by storage ID/checksum, append-only delivery journal, conditional schedule lease/checkpoint repository and idempotent email-provider send. Then run controlled failure-injection UAT with a least-privilege executor identity and preserve fresh capability attestations. Capability evidence must come from observed behavior, not configuration assumptions. Do not activate production schedules during adapter implementation or UAT without separate authorization.
 
 No non-production SharePoint site is configured. Repository configuration references only `https://scpng1.sharepoint.com/sites/scpngintranet`, which project documentation identifies as production. The completed GET-only inspection does not authorize schema mutation, adapter writes, email, activation, merge or deployment.
 

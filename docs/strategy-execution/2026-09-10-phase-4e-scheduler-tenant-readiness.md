@@ -48,4 +48,4 @@ Obtain the name/site identity and explicit approval for a non-production SCPNG t
 
 ## Production continuation
 
-The only configured tenant was later inspected with explicit user authorization after the GitHub transfer. The authenticated production GET-only inventory completed successfully and is recorded in [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md). Both lists and sample ETags exist, but the schema is not ready: three indexes and nine scheduler columns are missing. No schema or item mutation occurred.
+The only configured tenant was later inspected with explicit user authorization after the GitHub transfer. The authenticated production GET-only inventory found both lists and sample ETags, plus three missing indexes and nine missing scheduler columns. After separate explicit authorization, the exact schema change set was applied and the post-change GET verification passed. The result is recorded in [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md). No list item, permission, email, schedule or flow mutation occurred.

@@ -10,11 +10,13 @@ These are preserved local validation outputs from the completed implementation p
 | [Phase 2B TypeScript result](phase2b-typecheck.txt) | 233 diagnostics; same normalized file/message set as Phase 1 |
 | [Phase 4F isolated release baseline](phase4f-release-typecheck.json) | Structured primary TypeScript diagnostic baseline from the staged strategy-only candidate |
 | [Phase 5 production scheduler readiness](phase5-production-scheduler-readiness.json) | Authenticated GET-only production list/column/ETag inventory and fail-closed findings |
+| [Phase 5 pre-change schema snapshot](phase5-production-schema-pre-change.json) | Validated site/list/column identities and the separately authorized twelve-change schema plan |
+| [Phase 5 schema remediation](phase5-production-schema-remediation.json) | Exact mutation audit, post-change relevant schema, readiness result and unexecuted rollback procedure |
 | [File manifest](file-manifest.json) | Repository-relative paths, classification, byte sizes and SHA-256 fingerprints |
 
 At packaging, both type-check logs contained 233 diagnostic lines and 165 distinct normalized file/message pairs. Comparing those sets after removing line/column coordinates found **zero added and zero removed pairs**. This establishes the recorded comparison, not a clean TypeScript project or a claim that every diagnostic is unique.
 
-The original file manifest includes new/modified remediation files, the mixed-history App.tsx file, the unchanged calculation reference, current graph report, primary handoff/audit documents and the pre-transfer validation outputs. It deliberately excludes unrelated dirty files, credentials and generated build bundles. The Phase 5 readiness JSON is later evidence containing production list identity, URL, column metadata and Boolean ETag availability only; it contains no access token or list-item field values. Neither evidence file is a backup or complete inventory of the repository.
+The original file manifest includes new/modified remediation files, the mixed-history App.tsx file, the unchanged calculation reference, current graph report, primary handoff/audit documents and the pre-transfer validation outputs. It deliberately excludes unrelated dirty files, credentials and generated build bundles. The Phase 5 JSON files are later evidence containing production site/list/column identities, schema metadata, Boolean ETag availability and the authorized schema mutation audit only; they contain no access token or list-item field values. These evidence files are not a tenant backup or complete repository inventory.
 
 To verify an individual file after transfer, run from the received repository root in PowerShell:
 
