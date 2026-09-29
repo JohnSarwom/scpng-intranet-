@@ -20,7 +20,8 @@ import { WorkPlan, WorkPlanStatus } from '@/types/division.types';
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { useWorkPlans } from '@/hooks/useWorkPlans';
 import { WorkPlanGovernanceHistoryDialog } from '@/components/division/workplan/WorkPlanGovernanceHistoryDialog';
-import { canViewWorkPlanGovernance } from '@/services/workPlanGovernanceService';
+import { canViewWorkPlanGovernance, governanceActorFromRole } from '@/services/workPlanGovernanceService';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -344,6 +345,7 @@ interface DivisionWorkPlansTabProps {
 
 export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data, canEdit }) => {
   const navigate = useNavigate();
+  const { user: roleUser } = useRoleBasedAuth();
   const divisionId = data.division?.id || '';
   const divisionName = data.division?.name || 'Division';
 
@@ -382,12 +384,12 @@ export const DivisionWorkPlansTab: React.FC<DivisionWorkPlansTabProps> = ({ data
   const [selectedPlan, setSelectedPlan] = useState<WorkPlan | null>(null);
   const [planToDelete, setPlanToDelete] = useState<WorkPlan | null>(null);
   const [governanceOpen, setGovernanceOpen] = useState(false);
-  const canViewGovernance = canEdit || canViewWorkPlanGovernance({
-    email: data.userContext.email,
-    name: data.userContext.name,
-    role: data.userContext.role,
-    division: data.userContext.division,
-  }, data.division?.name || '');
+  // The viewer's division must come from their own role record: data.userContext.division
+  // is the Division being viewed, which would let any manager pass for any Division.
+  const canViewGovernance = canEdit || canViewWorkPlanGovernance(
+    governanceActorFromRole(roleUser, { email: data.userContext.email, name: data.userContext.name }),
+    data.division?.name || '',
+  );
 
   const filteredPlans = enrichedPlans;
 

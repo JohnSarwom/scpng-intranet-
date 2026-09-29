@@ -18,6 +18,7 @@ function load(file) {
 const {
   canViewWorkPlanGovernance,
   assertCanViewWorkPlanGovernance,
+  governanceActorFromRole,
   buildWorkPlanGovernanceHistory,
 } = load('../services/workPlanGovernanceService.ts');
 
@@ -133,4 +134,20 @@ test('malformed journals, duplicate operations and cross-Division rows fail clos
     impact, activitySnapshot: { title: 'Review applications' },
   };
   assert.throws(() => buildWorkPlanGovernanceHistory([item({ version: 1, history: [record, record] })], { divisionId: 'lic', divisionName: 'Licensing' }), /Duplicate/);
+});
+
+test('the governance viewer takes their division from their own role, not the viewed Division', () => {
+  const role = { role_name: 'manager', division_name: 'Corporate Services', unit_name: 'IT Unit', is_admin: false };
+  const actor = governanceActorFromRole(role, { email: ' manager@example.test ', name: 'Manager' });
+  assert.deepEqual({ ...actor }, {
+    email: 'manager@example.test', name: 'Manager', role: 'manager', division: 'Corporate Services', unit: 'IT Unit', isAdmin: false,
+  });
+  // Visiting another Division's page no longer grants its governance history.
+  assert.equal(canViewWorkPlanGovernance(actor, 'Licensing'), false);
+  assert.equal(canViewWorkPlanGovernance(actor, 'Corporate Services'), true);
+  // Admins flagged only through IsAdmin are recognised.
+  const flaggedAdmin = governanceActorFromRole({ role_name: 'staff', division_name: '', is_admin: true }, { email: 'a@example.test' });
+  assert.equal(canViewWorkPlanGovernance(flaggedAdmin, 'Licensing'), true);
+  assert.equal(governanceActorFromRole(null, { email: 'x@example.test' }), null);
+  assert.equal(canViewWorkPlanGovernance(governanceActorFromRole(null, { email: 'x@example.test' }), 'Licensing'), false);
 });

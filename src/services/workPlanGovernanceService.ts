@@ -57,6 +57,25 @@ export function canViewWorkPlanGovernance(actor: StrategyReportActor | null | un
   return ['manager', 'director'].includes(role) && normalize(actor.division) === normalize(divisionName);
 }
 
+/**
+ * Builds the governance viewer from their own UserRoles record. The Division page's
+ * context carries the Division being viewed, so it must never supply the viewer's division.
+ */
+export function governanceActorFromRole(
+  role: { role_name?: string | null; division_name?: string | null; unit_name?: string | null; is_admin?: boolean | null } | null | undefined,
+  identity: { email?: string | null; name?: string | null },
+): StrategyReportActor | null {
+  if (!role) return null;
+  return {
+    email: identity.email?.trim() || '',
+    name: identity.name || undefined,
+    role: role.role_name || undefined,
+    division: role.division_name || undefined,
+    unit: role.unit_name || undefined,
+    isAdmin: !!role.is_admin,
+  };
+}
+
 export function assertCanViewWorkPlanGovernance(actor: StrategyReportActor | null | undefined, divisionName: string): void {
   if (!canViewWorkPlanGovernance(actor, divisionName)) {
     throw new Error('You do not have permission to view retirement governance for this Division.');
