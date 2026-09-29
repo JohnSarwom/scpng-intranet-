@@ -15,6 +15,9 @@ import { DivisionOverviewTab } from '@/components/division/tabs/DivisionOverview
 import { DivisionUnitsTab } from '@/components/division/tabs/DivisionUnitsTab';
 import { DivisionWorkPlansTab } from '@/components/division/tabs/DivisionWorkPlansTab';
 import { DivisionReportsTab } from '@/components/division/tabs/DivisionReportsTab';
+import { DivisionLinkageTab } from '@/components/division/tabs/DivisionLinkageTab';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { canViewLinkageInventory } from '@/services/linkageInventoryService';
 
 const Division = () => {
   const { divisionId } = useParams<{ divisionId?: string }>();
@@ -28,6 +31,12 @@ const Division = () => {
   // Fetch all division-scoped data
   const divisionData = useDivisionData(divisionId);
   const metrics = useDivisionMetrics(divisionData);
+  const { user: roleUser } = useRoleBasedAuth();
+
+  // Checked against the viewer's own UserRoles division, not the page's target division.
+  const canViewLinkage = canViewLinkageInventory(roleUser, divisionData.division?.name || '');
+  const isAdminViewer = !!roleUser &&
+    (roleUser.is_admin || ['admin', 'super_admin'].includes(roleUser.role_name?.trim().toLowerCase() || ''));
 
   // Permissions
   const canEditWorkPlans = useMemo(() => {
@@ -88,6 +97,7 @@ const Division = () => {
             <TabsTrigger value="units">Units</TabsTrigger>
             <TabsTrigger value="workplans">Work Plans</TabsTrigger>
             <TabsTrigger value="reports">Reports</TabsTrigger>
+            {canViewLinkage && <TabsTrigger value="linkage">Linkage</TabsTrigger>}
           </TabsList>
 
           {activeTab === 'workplans' && canEditWorkPlans && (
@@ -119,6 +129,12 @@ const Division = () => {
         <TabsContent value="reports" className="mt-0">
           <DivisionReportsTab data={divisionData} metrics={metrics} />
         </TabsContent>
+
+        {canViewLinkage && (
+          <TabsContent value="linkage" className="mt-0">
+            <DivisionLinkageTab data={divisionData} isAdmin={isAdminViewer} />
+          </TabsContent>
+        )}
       </Tabs>
     </PageLayout>
   );
