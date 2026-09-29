@@ -10,6 +10,7 @@ import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { useLinkageInventory } from '@/hooks/useLinkageInventory';
 import {
   linkageIssuesToCsv,
+  strategicTaskCount,
   tracedTaskShare,
   type InventoryIssue,
   type UnitLinkageSummary,
@@ -47,6 +48,7 @@ function UnitRow({ summary, emphasis = false }: { summary: UnitLinkageSummary; e
     <TableRow className={emphasis ? 'font-semibold bg-muted/40' : undefined}>
       <TableCell className="whitespace-nowrap">{summary.unit}</TableCell>
       <TableCell className="text-right">{summary.tasks.total}</TableCell>
+      <TableCell className="text-right text-muted-foreground">{summary.tasks.operational}</TableCell>
       <TableCell className="text-right whitespace-nowrap">
         {summary.tasks.traced}{share !== null && <span className="text-xs text-muted-foreground"> ({share}%)</span>}
       </TableCell>
@@ -156,9 +158,9 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatTile
-          label="Tasks fully traced"
+          label="Strategic tasks fully traced"
           value={share === null ? '—' : `${share}%`}
-          hint={`${totals.tasks.traced} of ${totals.tasks.total} tasks`}
+          hint={`${totals.tasks.traced} of ${strategicTaskCount(totals)} tasks; ${totals.tasks.operational} marked operational`}
         />
         <StatTile
           label="Tasks with no link"
@@ -190,6 +192,7 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
               <TableRow>
                 <TableHead>Unit</TableHead>
                 <TableHead className="text-right">Tasks</TableHead>
+                <TableHead className="text-right">Operational</TableHead>
                 <TableHead className="text-right">Traced</TableHead>
                 <TableHead className="text-right">No link</TableHead>
                 <TableHead className="text-right">KRA only</TableHead>
@@ -209,7 +212,8 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
           </Table>
           <p className="text-xs text-muted-foreground mt-3">
             "Broken chain" covers links to deleted or retired records and KPIs whose KRA or Objective is missing.
-            "KRA conflict" means a task's own KRA differs from its KPI's KRA. Tasks with no unit are counted here only
+            "KRA conflict" means a task's own KRA differs from its KPI's KRA. "Operational" tasks are day-to-day work
+            deliberately not linked to strategy; they don't count against the traced share. Tasks with no unit are counted here only
             when their KPI or KRA belongs to this Division.
           </p>
         </CardContent>

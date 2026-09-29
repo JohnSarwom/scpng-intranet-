@@ -20,6 +20,8 @@ export interface InventoryTaskInput {
   unit_id?: string | null;
   kpi_id?: string | number | null;
   kra_id?: string | number | null;
+  /** Explicitly marked as operational work that is deliberately not linked to strategy. */
+  operational?: boolean;
 }
 
 export interface InventoryKpiInput {
@@ -67,7 +69,9 @@ export type TaskLinkageState =
   /** Points to a KPI/KRA that no longer exists or is retired. */
   | 'broken_link'
   /** No KPI and no KRA. */
-  | 'unlinked';
+  | 'unlinked'
+  /** No KPI and no KRA, and deliberately marked as operational work. */
+  | 'operational';
 
 export type InventoryIssueCode =
   | 'task_unlinked'
@@ -106,6 +110,8 @@ export interface UnitLinkageSummary {
     kraOnly: number;
     brokenLink: number;
     unlinked: number;
+    /** Deliberately not linked; excluded from the traced share. */
+    operational: number;
     kraConflict: number;
   };
   kpis: { total: number; traced: number; noTasks: number };
@@ -159,7 +165,7 @@ const isOrgLevelObjective = (objective: InventoryObjectiveInput): boolean => {
 function emptySummary(unit: string): UnitLinkageSummary {
   return {
     unit,
-    tasks: { total: 0, traced: 0, chainIncomplete: 0, kraOnly: 0, brokenLink: 0, unlinked: 0, kraConflict: 0 },
+    tasks: { total: 0, traced: 0, chainIncomplete: 0, kraOnly: 0, brokenLink: 0, unlinked: 0, operational: 0, kraConflict: 0 },
     kpis: { total: 0, traced: 0, noTasks: 0 },
     kras: { total: 0, traced: 0, noObjective: 0, brokenObjective: 0, noKpis: 0 },
     objectives: { total: 0, noParent: 0 },
@@ -318,6 +324,8 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     } else if (directKra) {
       state = 'kra_only';
       pushIssue('task_kra_only', 'task', id, title, unit);
+    } else if (task.operational) {
+      state = 'operational';
     } else {
       state = 'unlinked';
       pushIssue('task_unlinked', 'task', id, title, unit);
@@ -327,6 +335,7 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     else if (state === 'chain_incomplete') summary.tasks.chainIncomplete += 1;
     else if (state === 'kra_only') summary.tasks.kraOnly += 1;
     else if (state === 'broken_link') summary.tasks.brokenLink += 1;
+    else if (state === 'operational') summary.tasks.operational += 1;
     else summary.tasks.unlinked += 1;
 
     if (kpi && kraId && clean(kpi.kra_id) && kraId !== clean(kpi.kra_id)) {
@@ -374,10 +383,16 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
   };
 }
 
-/** Share of tasks whose full chain resolves; null when the scope has no tasks. */
+/** Tasks expected to be linked: everything except work marked operational. */
+export function strategicTaskCount(summary: UnitLinkageSummary): number {
+  return summary.tasks.total - summary.tasks.operational;
+}
+
+/** Share of strategic tasks whose full chain resolves; null when there are none. */
 export function tracedTaskShare(summary: UnitLinkageSummary): number | null {
-  if (summary.tasks.total === 0) return null;
-  return Math.round((summary.tasks.traced / summary.tasks.total) * 100);
+  const strategic = strategicTaskCount(summary);
+  if (strategic <= 0) return null;
+  return Math.round((summary.tasks.traced / strategic) * 100);
 }
 
 const csvCell = (value: unknown): string => {

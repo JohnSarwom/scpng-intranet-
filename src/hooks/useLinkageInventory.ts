@@ -1,11 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { useOpsService } from '@/hooks/useSharePointOps';
 import { buildLinkageInventory, type LinkageInventory } from '@/services/linkageInventoryService';
+import { isOperationalTask } from '@/utils/taskAlignment';
 
 // Unfiltered read: the inventory must resolve links that cross Division lines,
 // so the list readers' scope filters are bypassed here. Who may view the result
 // is decided by canViewLinkageInventory, and SharePoint still enforces read access.
 const UNFILTERED_READ = { division: '', unit: '', email: '', name: '', role: 'admin' };
+
+/** Bump when the inventory's shape changes. */
+const LINKAGE_INVENTORY_VERSION = 2;
 
 /**
  * Read-only linkage inventory for one Division. Loads every page of Tasks, KPIs,
@@ -16,7 +20,10 @@ export function useLinkageInventory(divisionName: string | undefined, unitNames:
   const getService = useOpsService();
 
   return useQuery<LinkageInventory, Error>({
-    queryKey: ['linkageInventory', divisionName, unitNames],
+    // Versioned key and no persistence: an inventory saved by an older build (missing
+    // newer fields) must never be rendered, and audit counts should always be fresh.
+    queryKey: ['linkageInventory', LINKAGE_INVENTORY_VERSION, divisionName, unitNames],
+    meta: { persist: false },
     enabled: enabled && !!divisionName,
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
@@ -30,7 +37,15 @@ export function useLinkageInventory(divisionName: string | undefined, unitNames:
       return buildLinkageInventory({
         divisionName: divisionName || '',
         unitNames,
-        tasks,
+        tasks: tasks.map(task => ({
+          id: String(task.id),
+          title: task.title,
+          status: task.status,
+          unit_id: task.unit_id,
+          kpi_id: task.kpi_id,
+          kra_id: task.kra_id,
+          operational: isOperationalTask(task.tags),
+        })),
         kpis: kpis.map(kpi => ({ id: String(kpi.id), name: kpi.name, kra_id: kpi.kra_id })),
         kras: kras.map(kra => ({
           id: String(kra.id), title: kra.title, unit: kra.unit, division: kra.division, objective_id: kra.objective_id,

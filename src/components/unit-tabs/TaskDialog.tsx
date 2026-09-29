@@ -32,6 +32,12 @@ import { GlobalAssigneeSelector } from '@/components/common/GlobalAssigneeSelect
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 import { useSharePointUpload } from '@/hooks/useSharePointUpload';
 import { toast } from '@/components/ui/use-toast';
+import {
+  OPERATIONAL_KPI_CHOICE,
+  alignmentChoiceError,
+  alignmentChoiceFor,
+  withOperationalTag,
+} from '@/utils/taskAlignment';
 
 type Subtask = { id: string; text: string; completed: boolean };
 
@@ -237,7 +243,7 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       setRecurrence(initialData.recurrence || 'none');
       setSubtasks(initialData.subtasks || []);
       setSelectedKraId(initialData.kra_id);
-      setSelectedKpiId(initialData.kpi_id);
+      setSelectedKpiId(alignmentChoiceFor(initialData));
       setExistingAttachments(initialData.attachments || []);
       setPendingFiles([]);
 
@@ -348,12 +354,21 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       return;
     }
 
+    const alignmentError = alignmentChoiceError(selectedKpiId, !initialData?.id);
+    if (alignmentError) {
+      toast({ title: "Choose a KPI", description: alignmentError, variant: "destructive" });
+      return;
+    }
+
     console.log(`[Metrics] TaskDialog Save Clicked at ${performance.now().toFixed(2)}ms`);
     console.time('TaskDialog-SaveReaction');
 
-    const inferredKraId = selectedKpiId && selectedKpiId !== 'none'
-      ? kpis.find(k => k.id.toString() === selectedKpiId)?.kra_id?.toString() || selectedKraId
-      : selectedKpiId === 'none'
+    // "Operational" clears any KPI/KRA link the same way "None" does.
+    const isOperational = selectedKpiId === OPERATIONAL_KPI_CHOICE;
+    const kpiChoice = isOperational ? 'none' : selectedKpiId;
+    const inferredKraId = kpiChoice && kpiChoice !== 'none'
+      ? kpis.find(k => k.id.toString() === kpiChoice)?.kra_id?.toString() || selectedKraId
+      : kpiChoice === 'none'
         ? 'none'
         : selectedKraId;
 
@@ -371,9 +386,10 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
       recurrence: recurrence,
       subtasks: subtasks,
       comments: comments,
-      tags: initialData?.tags, // Pass existing tags so service can update bucket tag
+      // Pass existing tags so service can update bucket tag; an undecided edit leaves them as they were.
+      tags: selectedKpiId === undefined ? initialData?.tags : withOperationalTag(initialData?.tags, isOperational),
       kra_id: inferredKraId,
-      kpi_id: selectedKpiId,
+      kpi_id: kpiChoice,
     };
 
     setIsSubmitting(true);
@@ -640,13 +656,13 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="kpi">Link to KPI</Label>
+                <Label htmlFor="kpi">Link to KPI{!initialData?.id && <span className="text-red-500"> *</span>}</Label>
                 <Select value={selectedKpiId} onValueChange={setSelectedKpiId}>
                   <SelectTrigger id="kpi" className="py-3 px-4 rounded-lg">
-                    <SelectValue placeholder="Select a KPI" />
+                    <SelectValue placeholder="Select a KPI, or mark as operational" />
                   </SelectTrigger>
                   <SelectContent container={container}>
-                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value={OPERATIONAL_KPI_CHOICE}>Operational work (not linked to strategy)</SelectItem>
                     {visibleKpis.map((kpi) => (
                       <SelectItem key={kpi.id} value={kpi.id.toString()}>
                         {kpi.name}
@@ -654,6 +670,9 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+                {initialData?.id && selectedKpiId === undefined && (
+                  <p className="text-xs text-amber-600">Not yet linked. Pick a KPI, or mark it as operational work.</p>
+                )}
               </div>
               <div className="space-y-1">
                 <Label htmlFor="recurrence" className="dark:text-gray-300">Repeat</Label>
