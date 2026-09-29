@@ -81,6 +81,10 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { addDays, addWeeks, addMonths, format, isBefore, isValid } from 'date-fns';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
 
+/** True for an assignee with a usable email address, false for placeholders such as "Unassigned". */
+const isRealAssignee = (person?: { email?: string | null }) =>
+  Boolean(person?.email && person.email.includes('@'));
+
 interface BoardData {
   [key: string]: Task[];
 }
@@ -2175,8 +2179,11 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
             // Detect newly added assignees for notifications
             const oldAssignees = editingTask.assignees || [];
             const newAssignees = taskData.assignees || [];
+            // Only real people are notified or given an "Assigned to Me" group.
+            // Placeholder entries such as "Unassigned" carry no email address.
             const addedAssignees = newAssignees.filter(
-              na => !oldAssignees.some(oa => oa.email?.toLowerCase() === na.email?.toLowerCase())
+              na => isRealAssignee(na) &&
+                !oldAssignees.some(oa => oa.email?.toLowerCase() === na.email?.toLowerCase())
             );
 
             await editTask(editingTask.id, taskData);
@@ -2314,7 +2321,7 @@ export const TasksTab: React.FC<NewTasksTabProps> = ({
               }
 
               // Fire-and-forget: notifications + assignee group creation
-              const taskAssignees = taskData.assignees || [];
+              const taskAssignees = (taskData.assignees || []).filter(isRealAssignee);
               if (taskAssignees.length > 0 && createdTask && typeof createdTask === 'object' && 'id' in createdTask) {
                 (async () => {
                   try {

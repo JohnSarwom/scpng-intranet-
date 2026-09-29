@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { latestKnownRevision } from '@/utils/latestRevision';
 import { useMsal } from '@azure/msal-react';
 import { SharePointOpsService, resetOpsServiceCache } from '@/services/sharePointOpsService';
 import { SharePointListSetupService } from '@/services/sharePointListSetupService';
@@ -135,8 +136,8 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
         update: async (id: string, item: Partial<Objective>) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(objective => String(objective.id) === String(id));
-                const updated = await service.updateObjective(id, { ...item, revision: item.revision || current?.revision });
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Objective[]>(objectivesQueryKey), query.data);
+                const updated = await service.updateObjective(id, { ...item, revision: item.revision || latestRevision });
                 queryClient.setQueryData(objectivesQueryKey, (previous: Objective[] | undefined) =>
                     previous?.map(objective => String(objective.id) === String(id) ? updated : objective) || []
                 );
@@ -151,8 +152,8 @@ export function useSharePointObjectives(department?: string, scope: FilterScope 
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(objective => String(objective.id) === String(id));
-                await service.deleteObjective(id, current?.revision);
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Objective[]>(objectivesQueryKey), query.data);
+                await service.deleteObjective(id, latestRevision);
                 return true;
             } catch (error) {
                 console.error('Failed to delete objective', error);
@@ -274,8 +275,8 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
         update: async (id: string, item: Partial<KRA>) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(kra => String(kra.id) === String(id));
-                const updatedKra = await service.updateKRA(id, { ...item, revision: item.revision || current?.revision });
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Kra[]>(queryKey), query.data);
+                const updatedKra = await service.updateKRA(id, { ...item, revision: item.revision || latestRevision });
 
                 // Optimistically update the cache
                 queryClient.setQueryData(queryKey, (oldData: Kra[] | undefined) => {
@@ -296,8 +297,8 @@ export function useSharePointKRAs(department?: string, scope: FilterScope = 'Div
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(kra => String(kra.id) === String(id));
-                await service.deleteKRA(id, current?.revision);
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Kra[]>(queryKey), query.data);
+                await service.deleteKRA(id, latestRevision);
                 toast({ title: "Success", description: "KRA deleted successfully" });
                 return true;
             } catch (error: any) {
@@ -376,8 +377,8 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
         update: async (id: string, item: Partial<Kpi>) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(kpi => String(kpi.id) === String(id));
-                const updated = await service.updateKPI(id, { ...item, revision: item.revision || current?.revision });
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Kpi[]>(queryKey), query.data);
+                const updated = await service.updateKPI(id, { ...item, revision: item.revision || latestRevision });
 
                 // Optimistically update the cache to prevent UI flickering from stale SharePoint indexing
                 queryClient.setQueryData(queryKey, (oldData: Kpi[] | undefined) => {
@@ -398,8 +399,8 @@ export function useSharePointKPIs(department?: string, context?: UserContext) {
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(kpi => String(kpi.id) === String(id));
-                await service.deleteKPI(id, current?.revision);
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Kpi[]>(queryKey), query.data);
+                await service.deleteKPI(id, latestRevision);
                 toast({ title: "Success", description: "KPI deleted successfully" });
                 return true;
             } catch (error: any) {
@@ -566,8 +567,8 @@ export function useSharePointTasks(
         update: async (id: string, item: Partial<Task>, options?: { suppressToast?: boolean }) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(task => String(task.id) === String(id));
-                const updated = await service.updateTask(id, { ...item, revision: item.revision || current?.revision });
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Task[]>(queryKey), query.data);
+                const updated = await service.updateTask(id, { ...item, revision: item.revision || latestRevision });
                 queryClient.setQueryData(queryKey, (previous: Task[] | undefined) =>
                     previous?.map(task => String(task.id) === String(id) ? updated : task) || []
                 );
@@ -586,8 +587,8 @@ export function useSharePointTasks(
         remove: async (id: string) => {
             try {
                 const service = await getService();
-                const current = query.data?.find(task => String(task.id) === String(id));
-                await service.deleteTask(id, current?.revision);
+                const latestRevision = latestKnownRevision(id, queryClient.getQueryData<Task[]>(queryKey), query.data);
+                await service.deleteTask(id, latestRevision);
                 // Toast is now handled by TasksTab with undo functionality
                 return true;
             } catch (error: any) {
