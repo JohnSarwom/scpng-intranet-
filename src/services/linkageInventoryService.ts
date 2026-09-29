@@ -119,8 +119,19 @@ export interface UnitLinkageSummary {
   objectives: { total: number; noParent: number };
 }
 
+/** A KPI in this Division that tasks can be linked to during clean-up. */
+export interface InventoryKpiOption {
+  id: string;
+  name: string;
+  unit: string;
+  kraTitle: string;
+  /** False when the KPI's KRA has no Objective, so linked tasks won't fully trace yet. */
+  traced: boolean;
+}
+
 export interface LinkageInventory {
   divisionName: string;
+  kpiOptions: InventoryKpiOption[];
   generatedAt: string;
   units: UnitLinkageSummary[];
   totals: UnitLinkageSummary;
@@ -268,6 +279,7 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
   }
 
   const unplacedKpis: InventoryIssue[] = [];
+  const kpiOptions: InventoryKpiOption[] = [];
   for (const kpi of input.kpis) {
     const id = clean(kpi.id);
     const kraId = clean(kpi.kra_id);
@@ -286,6 +298,7 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     const summary = summaryFor(unit);
     summary.kpis.total += 1;
     if (kraTraced(kra)) summary.kpis.traced += 1;
+    kpiOptions.push({ id, name: clean(kpi.name) || '(untitled)', unit, kraTitle: clean(kra.title), traced: kraTraced(kra) });
     if (!taskCountByKpi.get(id)) {
       summary.kpis.noTasks += 1;
       pushIssue('kpi_no_tasks', 'kpi', id, clean(kpi.name), unit);
@@ -375,6 +388,7 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
 
   return {
     divisionName: clean(input.divisionName),
+    kpiOptions: kpiOptions.sort((a, b) => a.unit.localeCompare(b.unit) || a.name.localeCompare(b.name)),
     generatedAt: input.generatedAt || new Date().toISOString(),
     units,
     totals,

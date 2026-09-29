@@ -33,6 +33,32 @@ export function alignmentChoiceFor(task: { kpi_id?: unknown; tags?: readonly str
   return isOperationalTask(task.tags) ? OPERATIONAL_KPI_CHOICE : undefined;
 }
 
+export type TriageAction = { kind: 'link'; kpiId: string } | { kind: 'operational' };
+
+export interface TriageUpdate {
+  kpi_id: string;
+  kra_id?: string;
+  tags: string[];
+  revision?: string;
+}
+
+/**
+ * The task fields a manager's clean-up action writes. Linking sets the KPI (the
+ * service derives the matching KRA) and drops the operational tag; marking
+ * operational clears both links and adds the tag. Other tags are kept, and the
+ * loaded revision is sent so a task changed meanwhile is refused, not overwritten.
+ */
+export function triageUpdateFor(
+  action: TriageAction,
+  current: { tags?: readonly string[] | null; revision?: string },
+): TriageUpdate {
+  if (action.kind === 'link') {
+    if (!hasKpi(action.kpiId)) throw new Error('Choose a KPI to link.');
+    return { kpi_id: String(action.kpiId).trim(), tags: withOperationalTag(current.tags, false), revision: current.revision };
+  }
+  return { kpi_id: 'none', kra_id: 'none', tags: withOperationalTag(current.tags, true), revision: current.revision };
+}
+
 /**
  * New tasks must either link a KPI or be marked operational. Returns a message
  * for the form when the choice is missing, or null when the task may be saved.

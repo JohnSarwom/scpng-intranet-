@@ -132,7 +132,7 @@ const Division = () => {
 
         {canViewLinkage && (
           <TabsContent value="linkage" className="mt-0">
-            <DivisionLinkageTab data={divisionData} isAdmin={isAdminViewer} />
+            <DivisionLinkageTab data={divisionData} isAdmin={isAdminViewer} canTriage={canViewLinkage} />
           </TabsContent>
         )}
       </Tabs>

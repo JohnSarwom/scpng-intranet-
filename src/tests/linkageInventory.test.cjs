@@ -178,3 +178,10 @@ test('a scope with only operational tasks has no traced share', () => {
   });
   assert.equal(tracedTaskShare(unitOf(inventory, 'IT Unit')), null);
 });
+test('KPI options list the division KPIs with their KRA and trace state', () => {
+  const inventory = build();
+  assert.deepEqual(inventory.kpiOptions.map(o => [o.id, o.unit, o.kraTitle, o.traced]), [
+    ['201', 'HR Unit', 'KRA without objective', false],
+    ['200', 'IT Unit', 'Traced KRA', true],
+  ]);
+});

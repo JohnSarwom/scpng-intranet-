@@ -22,6 +22,7 @@ const {
   withOperationalTag,
   alignmentChoiceFor,
   alignmentChoiceError,
+  triageUpdateFor,
 } = load('../utils/taskAlignment.ts');
 
 test('the operational tag is added once, removed cleanly, and keeps other tags', () => {
@@ -48,4 +49,18 @@ test('new tasks must pick a KPI or operational; existing tasks are not blocked',
   assert.equal(alignmentChoiceError(OPERATIONAL_KPI_CHOICE, true), null);
   assert.equal(alignmentChoiceError('42', true), null);
   assert.equal(alignmentChoiceError(undefined, false), null);
+});
+
+test('triage linking sets the KPI, drops the operational tag and keeps the revision', () => {
+  const update = triageUpdateFor({ kind: 'link', kpiId: ' 200 ' }, { tags: ['bucket:x', OPERATIONAL_TASK_TAG], revision: '"etag,5"' });
+  assert.deepEqual({ ...update, tags: [...update.tags] }, { kpi_id: '200', tags: ['bucket:x'], revision: '"etag,5"' });
+  assert.equal('kra_id' in update, false, 'the service derives the KRA from the KPI');
+  assert.throws(() => triageUpdateFor({ kind: 'link', kpiId: 'none' }, {}), /Choose a KPI/);
+});
+
+test('triage marking operational clears both links and adds the tag once', () => {
+  const update = triageUpdateFor({ kind: 'operational' }, { tags: ['completed'], revision: 'r1' });
+  assert.deepEqual({ ...update, tags: [...update.tags] }, {
+    kpi_id: 'none', kra_id: 'none', tags: ['completed', OPERATIONAL_TASK_TAG], revision: 'r1',
+  });
 });
