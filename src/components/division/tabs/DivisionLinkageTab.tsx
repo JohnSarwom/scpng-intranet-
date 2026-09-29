@@ -5,9 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { AlertTriangle, Download, Link2Off, RefreshCw, ShieldCheck } from 'lucide-react';
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
-import { useLinkageInventory } from '@/hooks/useLinkageInventory';
+import { useLinkageInventory, useLinkageTriage, type TriageOutcome } from '@/hooks/useLinkageInventory';
+import type { TriageAction } from '@/utils/taskAlignment';
 import {
   linkageIssuesToCsv,
   strategicTaskCount,
@@ -21,6 +33,8 @@ const ISSUE_ROW_LIMIT = 200;
 interface DivisionLinkageTabProps {
   data: UseDivisionDataReturn;
   isAdmin: boolean;
+  /** Managers, Directors and admins who may link tasks or mark them operational. */
+  canTriage: boolean;
 }
 
 function StatTile({ label, value, hint, tone = 'default' }: {
@@ -66,7 +80,7 @@ function UnitRow({ summary, emphasis = false }: { summary: UnitLinkageSummary; e
 }
 
 function downloadCsv(filename: string, csv: string) {
-  const blob = new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' });
+  const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -75,13 +89,41 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
-export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
+export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkageTabProps) {
   const divisionName = data.division?.name;
   const unitNames = data.division?.unitNames || [];
   const { data: inventory, isLoading, error, refetch, isFetching } = useLinkageInventory(divisionName, unitNames, true);
+  const triage = useLinkageTriage();
 
   const [unitFilter, setUnitFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState<'gap' | 'all'>('gap');
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [triageKpiId, setTriageKpiId] = useState<string>('');
+  const [pendingAction, setPendingAction] = useState<TriageAction | null>(null);
+  const [lastOutcomes, setLastOutcomes] = useState<TriageOutcome[] | null>(null);
+
+  const toggleTask = (taskId: string, checked: boolean) => {
+    setSelectedTaskIds(prev => {
+      const next = new Set(prev);
+      if (checked) next.add(taskId); else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const runTriage = async () => {
+    if (!pendingAction || !inventory) return;
+    const taskIds = Array.from(selectedTaskIds);
+    const action = pendingAction;
+    setPendingAction(null);
+    try {
+      const outcomes = await triage.mutateAsync({ taskIds, action, taskMeta: inventory.taskMeta });
+      setLastOutcomes(outcomes);
+      // Keep only the failures selected so they can be retried after a refresh.
+      setSelectedTaskIds(new Set(outcomes.filter(o => !o.ok).map(o => o.taskId)));
+    } catch (err: any) {
+      setLastOutcomes(taskIds.map(taskId => ({ taskId, ok: false, error: err?.message || 'Could not connect to SharePoint.' })));
+    }
+  };
 
   const filteredIssues = useMemo<InventoryIssue[]>(() => {
     if (!inventory) return [];
@@ -128,11 +170,11 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <h2 className="text-base font-semibold">Strategy linkage inventory</h2>
-              <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" />Read only</Badge>
+              {!canTriage && <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" />Read only</Badge>}
             </div>
             <p className="text-xs text-muted-foreground max-w-2xl">
               How many of this Division's tasks trace all the way from Task to KPI, KRA and Unit Objective, and which
-              records are missing a link. Counts come straight from SharePoint; nothing is changed or inferred.
+              records are missing a link. Counts come straight from SharePoint; nothing is inferred, and records change only when you save a clean-up below.
               Generated {new Date(inventory.generatedAt).toLocaleString()}.
             </p>
           </div>
@@ -265,12 +307,68 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
+          {canTriage && (
+            <div className="mb-3 rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs text-muted-foreground">
+                Tick tasks below, then link them to a KPI or mark them as operational work. Each task is saved on its
+                own; a task someone else changed since this list loaded is skipped, not overwritten.
+              </p>
+              <div className="flex flex-col md:flex-row gap-2 md:items-center">
+                <span className="text-xs font-medium whitespace-nowrap">{selectedTaskIds.size} selected</span>
+                <Select value={triageKpiId} onValueChange={setTriageKpiId}>
+                  <SelectTrigger className="h-8 text-xs md:w-80"><SelectValue placeholder="Choose a KPI to link to" /></SelectTrigger>
+                  <SelectContent>
+                    {inventory.kpiOptions.map(option => (
+                      <SelectItem key={option.id} value={option.id} className="text-xs">
+                        {option.unit}: {option.name} (KRA: {option.kraTitle}){option.traced ? '' : ' - KRA has no Objective'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="h-8"
+                    disabled={selectedTaskIds.size === 0 || !triageKpiId || triage.isPending}
+                    onClick={() => setPendingAction({ kind: 'link', kpiId: triageKpiId })}
+                  >
+                    Link to KPI
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8"
+                    disabled={selectedTaskIds.size === 0 || triage.isPending}
+                    onClick={() => setPendingAction({ kind: 'operational' })}
+                  >
+                    Mark operational
+                  </Button>
+                  {selectedTaskIds.size > 0 && (
+                    <Button size="sm" variant="ghost" className="h-8" onClick={() => setSelectedTaskIds(new Set())}>Clear</Button>
+                  )}
+                </div>
+              </div>
+              {triage.isPending && <p className="text-xs">Saving tasks...</p>}
+              {lastOutcomes && !triage.isPending && (
+                <div className="text-xs space-y-1">
+                  <p>
+                    {lastOutcomes.filter(o => o.ok).length} task(s) saved.
+                    {lastOutcomes.some(o => !o.ok) && ` ${lastOutcomes.filter(o => !o.ok).length} not saved and still selected:`}
+                  </p>
+                  {lastOutcomes.filter(o => !o.ok).map(o => (
+                    <p key={o.taskId} className="text-red-600">Task {o.taskId}: {o.error}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           {shownIssues.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">No records need review for this filter.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
+                  {canTriage && <TableHead className="w-8"><span className="sr-only">Select</span></TableHead>}
                   <TableHead>Unit</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>ID</TableHead>
@@ -281,6 +379,17 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
               <TableBody>
                 {shownIssues.map(issue => (
                   <TableRow key={`${issue.code}:${issue.recordType}:${issue.recordId}`}>
+                    {canTriage && (
+                      <TableCell className="w-8">
+                        {issue.recordType === 'task' && (
+                          <Checkbox
+                            aria-label={`Select task ${issue.recordId}`}
+                            checked={selectedTaskIds.has(issue.recordId)}
+                            onCheckedChange={checked => toggleTask(issue.recordId, checked === true)}
+                          />
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="whitespace-nowrap text-xs">{issue.unit}</TableCell>
                     <TableCell className="text-xs uppercase">{issue.recordType}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{issue.recordId}</TableCell>
@@ -301,6 +410,26 @@ export function DivisionLinkageTab({ data, isAdmin }: DivisionLinkageTabProps) {
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!pendingAction} onOpenChange={open => { if (!open) setPendingAction(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAction?.kind === 'link' ? 'Link tasks to this KPI?' : 'Mark tasks as operational?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAction?.kind === 'link'
+                ? `${selectedTaskIds.size} task(s) will be linked to "${inventory.kpiOptions.find(o => o.id === triageKpiId)?.name || 'the selected KPI'}". Their KRA is set from the KPI, and the KPI's checklist is updated.`
+                : `${selectedTaskIds.size} task(s) will be marked as operational work. Any existing KPI or KRA link on them is removed.`}
+              {' '}This changes live SharePoint records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={runTriage}>Save changes</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
