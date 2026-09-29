@@ -34,6 +34,9 @@ import { Objective } from '@/types';
 import { calculateGoalProgressFromChildren, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils'; // Import calculation utility
 import { StrategyPageSkeleton } from '@/components/strategy/skeletons/StrategyPageSkeleton';
 import { DivisionHierarchySkeleton } from '@/components/strategy/skeletons/DivisionHierarchySkeleton';
+import { useStrategyDemoMode } from '@/hooks/useStrategyDemoMode';
+import { generateStrategyDemoData } from '@/data/strategyDemoOverlay';
+import { FlaskConical, RotateCcw } from 'lucide-react';
 
 // Map icon strings to components
 const IconMap: Record<string, React.ComponentType<any>> = {
@@ -217,10 +220,10 @@ const Strategy = () => {
 
     // Fetch ALL KRAs for dynamic progress calculation
     // We use 'All' scope to get KRAs from all units/divisions
-    const { data: allKras } = useSharePointKRAs(undefined, 'All', undefined);
+    const { data: rawKras } = useSharePointKRAs(undefined, 'All', undefined);
 
     // Fetch ALL KPIs for dynamic KRA progress calculation
-    const { data: allKpis } = useSharePointKPIs(undefined, undefined);
+    const { data: rawKpis } = useSharePointKPIs(undefined, undefined);
 
     // Fetch ALL unit-level objectives for the live division hierarchy (admin bypass)
     const { data: allUnitObjectives, loading: isLoadingHierarchy } = useSharePointObjectives(
@@ -233,6 +236,27 @@ const Strategy = () => {
     const { data: allDivisions = [] } = useDivisions();
     const { data: allUnits = [] } = useUnits();
     const { data: allOfficerProfiles = [] } = useOfficerProfiles();
+
+    // --- Demo mode -------------------------------------------------------
+    // Layers generated KRAs/KPIs over the live data so the page shows realistic
+    // progress during demonstrations. Nothing is written to SharePoint, so
+    // switching it off restores the real (possibly empty) figures instantly.
+    const { isDemoMode, enableDemoMode, disableDemoMode } = useStrategyDemoMode();
+
+    const demoData = useMemo(
+        () => (isDemoMode ? generateStrategyDemoData(allUnitObjectives || []) : null),
+        [isDemoMode, allUnitObjectives]
+    );
+
+    const allKras = useMemo(
+        () => (demoData ? [...(rawKras || []), ...demoData.kras] : rawKras),
+        [rawKras, demoData]
+    );
+
+    const allKpis = useMemo(
+        () => (demoData ? [...(rawKpis || []), ...demoData.kpis] : rawKpis),
+        [rawKpis, demoData]
+    );
 
     // Build dynamic Division → Unit → Key Deliverable → Objectives hierarchy from live objectives data
     // IMPORTANT: This useMemo MUST be before any early returns to satisfy Rules of Hooks
@@ -580,6 +604,27 @@ const Strategy = () => {
                                 <Target className="w-12 h-12 text-white/90" />
                             </div>
                             {isAdmin && (
+                                isDemoMode ? (
+                                    <Button
+                                        onClick={disableDemoMode}
+                                        variant="outline"
+                                        className="bg-amber-400 text-amber-950 border-amber-300 hover:bg-amber-300 font-black text-xs uppercase tracking-widest px-6 py-8 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95 h-auto"
+                                    >
+                                        <RotateCcw className="w-5 h-5 mr-2" />
+                                        Revert Demo Data
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        onClick={enableDemoMode}
+                                        variant="outline"
+                                        className="bg-white/10 text-white border-white/30 hover:bg-white/20 hover:text-white font-black text-xs uppercase tracking-widest px-6 py-8 rounded-2xl shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95 h-auto"
+                                    >
+                                        <FlaskConical className="w-5 h-5 mr-2" />
+                                        Load Demo Data
+                                    </Button>
+                                )
+                            )}
+                            {isAdmin && (
                                 <Button
                                     onClick={() => setIsWizardOpen(true)}
                                     className="bg-white text-intranet-primary hover:bg-white/90 font-black text-xs uppercase tracking-widest px-6 py-8 rounded-2xl shadow-xl transition-all hover:scale-105 active:scale-95 group h-auto"
@@ -595,6 +640,34 @@ const Strategy = () => {
                     <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white/5 rounded-full blur-3xl" />
                     <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/20 rounded-full blur-2xl" />
                 </motion.div>
+
+                {/* Demo mode banner — makes it obvious the figures are simulated */}
+                {isDemoMode && demoData && (
+                    <div className="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 dark:bg-amber-900/20 px-6 py-4">
+                        <div className="flex items-start gap-3">
+                            <FlaskConical className="w-5 h-5 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+                            <div>
+                                <p className="font-bold text-sm text-amber-900 dark:text-amber-200">
+                                    Demo data active — these figures are simulated
+                                </p>
+                                <p className="text-xs text-amber-800/80 dark:text-amber-300/80 mt-0.5">
+                                    {demoData.summary.kras} demo KRAs and {demoData.summary.kpis} demo KPIs generated across{' '}
+                                    {demoData.summary.objectives} objectives and {demoData.summary.officers} officers.
+                                    Nothing has been saved to SharePoint.
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            onClick={disableDemoMode}
+                            size="sm"
+                            variant="outline"
+                            className="shrink-0 border-amber-500 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40"
+                        >
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Revert to live data
+                        </Button>
+                    </div>
+                )}
 
                 {/* Mission & Vision Section */}
                 {/* Content is now organized in Tabs below */}

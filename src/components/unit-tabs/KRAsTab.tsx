@@ -662,20 +662,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       kraPayload.division_id = currentDivisionId;
     }
 
-    // --- Duplicate Prevention: Case-insensitive title match as safety net ---
-    // If no ID is set yet (user typed a title manually), check if an existing KRA matches
-    if (!kraPayload.id && kraPayload.title) {
-      const normalizedTitle = kraPayload.title.trim().toLowerCase();
-      const matchingKra = krasFromProps.find(
-        k => k.title && k.title.trim().toLowerCase() === normalizedTitle
-      );
-      if (matchingKra) {
-        console.log(`[handleKpiFormSubmit] Duplicate prevention: Found existing KRA "${matchingKra.title}" (ID: ${matchingKra.id}) matching typed title "${kraPayload.title}". Reusing existing KRA.`);
-        kraPayload.id = matchingKra.id;
-        kraPayload.title = matchingKra.title; // Preserve original casing from SharePoint
-        kraId = matchingKra.id;
-      }
-    }
+    // Reuse requires an explicitly selected ID; equal titles do not establish identity.
 
     console.log("[handleKpiFormSubmit] Prepared KRA Payload:", kraPayload);
 

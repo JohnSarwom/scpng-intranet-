@@ -252,9 +252,9 @@ const AppRoutes = () => {
         </RoleProtectedRoute>
       } />
       <Route path="/test-ground" element={
-        <ProtectedRoute>
+        <RoleProtectedRoute allowedRoles={['admin', 'super_admin']}>
           <TestGround />
-        </ProtectedRoute>
+        </RoleProtectedRoute>
       } />
 
       <Route path="/uat-feedback" element={
@@ -367,7 +367,8 @@ const AppContent = () => {
         maxAge: 1000 * 60 * 60 * 24, // 24h max cache age
         buster: CACHE_VERSION,
         dehydrateOptions: {
-          shouldDehydrateQuery: (query) => query.state.status === 'success',
+          shouldDehydrateQuery: (query) =>
+            query.state.status === 'success' && query.meta?.persist !== false,
         },
       }}
     >

@@ -473,25 +473,141 @@ export const useMicrosoftGraph = () => {
       // NOTE: In a real optimize scenario, siteId should be in a context.
       const site = await client.api(`/sites/${siteDomain}:${sitePath}`).get();
       const siteId = site.id;
+      const itemsUrl = `/sites/${siteId}/lists/InternalAppSettings/items`;
+      const safeKey = key.replace(/'/g, "''");
 
-      const response = await client
-        .api(`/sites/${siteId}/lists/InternalAppSettings/items`)
-        .filter(`fields/Title eq '${key}'`)
-        .expand('fields')
-        .get();
+      // 1. Server-side filter on Title (fast path). Graph sometimes refuses filters on
+      //    list fields unless this Prefer header is present.
+      try {
+        const response = await client
+          .api(itemsUrl)
+          .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+          .filter(`fields/Title eq '${safeKey}'`)
+          .expand('fields($select=Title,Value)')
+          .get();
 
-      if (response.value && response.value.length > 0) {
-        const val = response.value[0].fields.Value;
-        // console.log(`✅ [getAppSetting] Found value for ${key}`);
-        return val;
-      } else {
-        // console.warn(`⚠️ [getAppSetting] No setting found for key: ${key}`);
-        return null;
+        if (response.value && response.value.length > 0) {
+          return response.value[0].fields?.Value ?? null;
+        }
+      } catch (filterError: any) {
+        console.warn(`[getAppSetting] Filtered lookup for ${key} failed, scanning list instead:`, filterError?.message || filterError);
       }
+
+      // 2. Fallback: read the (small) list and match the Title client-side.
+      const all = await client
+        .api(itemsUrl)
+        .expand('fields($select=Title,Value)')
+        .top(200)
+        .get();
+      const match = (all.value || []).find(
+        (item: any) => (item.fields?.Title || '').trim().toLowerCase() === key.trim().toLowerCase()
+      );
+      if (match) return match.fields?.Value ?? null;
+
+      console.warn(`[getAppSetting] No item titled '${key}' in InternalAppSettings.`);
+      return null;
     } catch (error: any) {
-      console.warn(`[getAppSetting] Error fetching key ${key}:`, error);
+      console.warn(`[getAppSetting] Error fetching key ${key}:`, error?.message || error);
       // Don't set global error state for config fetch to avoid alerting user unnecessarily
       return null;
+    }
+  }, [msalInstance]);
+
+  /**
+   * Creates or updates a setting in the InternalAppSettings list.
+   * @param key The key (Title) of the setting
+   * @param value The value to store in the Value column
+   * @returns { success: true } or { success: false, error } with SharePoint's own message
+   */
+  const setAppSetting = useCallback(async (
+    key: string,
+    value: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    setLastError(null);
+    if (!msalInstance) {
+      const error = 'Not signed in to Microsoft 365.';
+      setLastError(error);
+      return { success: false, error };
+    }
+
+    const describe = (err: any, step: string): string => {
+      const status = err?.statusCode ?? err?.status;
+      const code = err?.code || err?.body?.error?.code;
+      let message = err?.message || '';
+      if (typeof err?.body === 'string') {
+        try { message = JSON.parse(err.body)?.error?.message || message; } catch { /* keep message */ }
+      }
+      return `${step}: ${status ? `HTTP ${status} ` : ''}${code ? `${code} ` : ''}${message}`.trim();
+    };
+
+    try {
+      const client = await getGraphClient(msalInstance);
+      if (!client) {
+        const error = 'Could not create Graph client.';
+        setLastError(error);
+        return { success: false, error };
+      }
+
+      const siteDomain = 'scpng1.sharepoint.com';
+      const sitePath = '/sites/scpngintranet';
+      const site = await client.api(`/sites/${siteDomain}:${sitePath}`).get();
+      const siteId = site.id;
+
+      // Confirm the list exists and get its id (the list is addressed by id from here on)
+      let listId: string;
+      try {
+        const lists = await client
+          .api(`/sites/${siteId}/lists`)
+          .filter("displayName eq 'InternalAppSettings'")
+          .select('id,displayName')
+          .get();
+        if (!lists.value || lists.value.length === 0) {
+          const error = "The SharePoint list 'InternalAppSettings' does not exist on the intranet site. Create it from Test Ground (Setup App Settings) and try again.";
+          setLastError(error);
+          return { success: false, error };
+        }
+        listId = lists.value[0].id;
+      } catch (err: any) {
+        const error = describe(err, 'Finding the InternalAppSettings list');
+        setLastError(error);
+        return { success: false, error };
+      }
+
+      const itemsUrl = `/sites/${siteId}/lists/${listId}/items`;
+
+      let existingId: string | null = null;
+      try {
+        const existing = await client
+          .api(itemsUrl)
+          .header('Prefer', 'HonorNonIndexedQueriesWarningMayFailRandomly')
+          .filter(`fields/Title eq '${key.replace(/'/g, "''")}'`)
+          .expand('fields($select=Title,Value)')
+          .get();
+        existingId = existing.value?.[0]?.id ?? null;
+      } catch (err: any) {
+        const error = describe(err, `Looking up '${key}'`);
+        setLastError(error);
+        return { success: false, error };
+      }
+
+      try {
+        if (existingId) {
+          await client.api(`${itemsUrl}/${existingId}/fields`).patch({ Value: value });
+        } else {
+          await client.api(itemsUrl).post({ fields: { Title: key, Value: value } });
+        }
+      } catch (err: any) {
+        const error = describe(err, existingId ? `Updating '${key}'` : `Creating '${key}'`);
+        setLastError(error);
+        return { success: false, error };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      const message = describe(error, `Saving '${key}'`);
+      console.error(`[setAppSetting] ${message}`, error);
+      setLastError(message);
+      return { success: false, error: message };
     }
   }, [msalInstance]);
 
@@ -528,6 +644,7 @@ export const useMicrosoftGraph = () => {
     isAuthenticated,
     getClient,
     getAppSetting,
+    setAppSetting,
     // OneDrive CRUD
     uploadToOneDrive,
     createOneDriveFolder,
@@ -546,6 +663,7 @@ export const useMicrosoftGraph = () => {
     isAuthenticated,
     getClient,
     getAppSetting,
+    setAppSetting,
     uploadToOneDrive,
     createOneDriveFolder,
     renameOneDriveItem,

@@ -1,0 +1,45 @@
+✔ manager edits own division; administrators edit across divisions; readers and missing roles fail closed (3.7964ms)
+✔ an organizational dropdown ID never becomes an execution objective ID (5.0465ms)
+✔ ambiguous legacy execution IDs fail before cascade writes; explicit matching refs pass (12.0527ms)
+✔ corporate IDs, unmapped new goals and source plans cannot enter the old activation engine (1.2693ms)
+✔ all five work-plan service mutations deny a reader before writes, independently of UI (1487.2572ms)
+✔ an authorized manager cannot move a different division’s plan into their own division (107.7331ms)
+✔ unavailable authoritative role lookup fails closed (117.1823ms)
+✔ execution preflight rejects an objective from another division (174.1188ms)
+✔ execution preflight rejects KRA and KPI links outside the selected chain (216.6218ms)
+✔ read-only work-plan hook queries never migrate data and all mutation callbacks deny writes (72.2001ms)
+✔ KRA selector distinguishes duplicate titles and clears selection when a new title is typed (183.3676ms)
+✔ draft saves cannot drop execution links or overwrite an interrupted activation (184.7637ms)
+✔ KPI mapper and update round-trip the corporate initiative link, including explicit clearing (255.5221ms)
+✔ a new plan records its persisted URL before activation and retries reuse the same draft (47.2718ms)
+✔ activation creates actual source KRAs, separate activity KPIs and ordinary Tasks without touching goal percentages (250.4762ms)
+✔ repeated activation and a lost create response do not duplicate execution records (34.232ms)
+✔ partial failure checkpoints IDs and a stale form can resume the same intent (20.7771ms)
+✔ an interrupted activation must recover before a different intent runs (24.1496ms)
+✔ an active lease prevents concurrent activation and a stale writer cannot overwrite a newer lease (8.8783ms)
+✔ wrong schema lookup targets fail before writes (3.3277ms)
+✔ same numeric corporate and legacy IDs require an explicit compatibility mapping (25.2094ms)
+✔ linking an existing Task preserves its identity, status, assignees, comments and attachments (12.428ms)
+✔ a Task already linked elsewhere is rejected before any writes (5.5869ms)
+✔ removing activated activities cannot silently orphan execution records (14.099ms)
+✔ large plans use immutable payload chunks and preserve all source details (407.5454ms)
+✔ metadata-only synchronization preserves existing actuals, statuses and stored progress (116.1373ms)
+✔ payload chunking preserves Unicode at chunk boundaries (61.5192ms)
+✔ unchanged saves preserve IDs, all source metadata, units, execution links and progress (13.6288ms)
+✔ editing visible text preserves hidden fields and does not mutate originals (3.3717ms)
+✔ goals sharing a title and objective remain distinct (1.2178ms)
+✔ goal rename updates its rows together without guessing another objective identity (1.264ms)
+✔ duplicates have fresh stable identities, zero progress and no source or execution IDs (18.3987ms)
+✔ status changes are detected, while planned quarters never count as completion (1.5462ms)
+✔ blanking an existing activity title does not silently delete its linked record (1.048ms)
+✔ new rows keep stable IDs on successive conversions and saves (1.6344ms)
+✔ source metadata and execution IDs survive the actual SharePoint GoalsJSON mappers (666.975ms)
+✔ existing organizational progress contracts remain unchanged (including known legacy differences) (3.0986ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5993.3258

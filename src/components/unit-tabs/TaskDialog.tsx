@@ -353,7 +353,9 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
 
     const inferredKraId = selectedKpiId && selectedKpiId !== 'none'
       ? kpis.find(k => k.id.toString() === selectedKpiId)?.kra_id?.toString() || selectedKraId
-      : selectedKraId;
+      : selectedKpiId === 'none'
+        ? 'none'
+        : selectedKraId;
 
     const taskData: Partial<Task> = {
       id: initialData?.id,
@@ -530,6 +532,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-intranet-primary/50 dark:text-gray-100"
                   required
                   autoFocus
+                  disabled={isSubmitting}
+                  aiAssist={{ mode: 'title', context: 'task title', onApply: setTitle, container }}
                 />
               </div>
               <div className="sm:col-span-2 space-y-1">
@@ -541,6 +545,8 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                   onChange={(e) => setDescription(e.target.value)}
                   className="py-3 px-4 rounded-lg dark:bg-gray-900 dark:border-white/10 focus:ring-intranet-primary/50 dark:text-gray-100"
                   rows={4}
+                  disabled={isSubmitting}
+                  aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'task description', onApply: setDescription, container }}
                 />
               </div>
               <div className="space-y-1">
@@ -808,7 +814,9 @@ const TaskDialog: React.FC<TaskDialogProps> = ({
                 value={newCommentText}
                 onChange={(e) => setNewCommentText(e.target.value)}
                 rows={3}
-                className="flex-1 py-2 px-3 rounded-lg"
+                className="py-2 px-3 rounded-lg"
+                disabled={isSavingComment}
+                aiAssist={{ mode: 'grammar', context: 'comment on a task', onApply: setNewCommentText, container, wrapperClassName: 'flex-1' }}
               />
               <Button
                 type="button"

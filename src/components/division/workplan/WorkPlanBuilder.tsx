@@ -18,7 +18,15 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import {
   WorkPlan, WorkPlanGoal, WorkPlanActivity, WorkPlanTimePeriod,
+  WorkPlanRetirementAction, WorkPlanRetirementImpact,
+  WorkPlanStructureKind, WorkPlanStructureRetirementImpact,
 } from '@/types/division.types';
+
+import { goalsToRows, rowsToGoals, duplicateWorkPlanRow, updateWorkPlanRow, workPlanProgressUnchanged, type WorkPlanTableRow as TableRow } from '@/utils/workPlanEditor';
+import { WorkPlanLinkageDialog } from './WorkPlanLinkageDialog';
+import { WorkPlanRetirementDialog } from './WorkPlanRetirementDialog';
+import { WorkPlanStructureRetirementDialog } from './WorkPlanStructureRetirementDialog';
+import type { WorkPlanMappingOptions } from '@/services/workPlanActivationService';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -48,22 +56,20 @@ export interface WorkPlanBuilderProps {
   onSave: (plan: WorkPlan) => void | Promise<void>;
   onCancel: () => void;
   saving?: boolean;
-}
-
-// Flat row model used internally in the table
-interface TableRow {
-  id: string;
-  strategicObjective: string;
-  linkedObjectiveId?: string;
-  activity: string;
-  output: string;
-  kpi: string;
-  responsibleOfficer: string;
-  responsibleOfficerEmail?: string;
-  timelineStart: string;
-  timelineEnd: string;
-  resources: string;
-  status: WorkPlanActivity['status'];
+  loadMappingOptions?: () => Promise<WorkPlanMappingOptions>;
+  previewActivityRetirement?: (
+    activityId: string,
+    action: WorkPlanRetirementAction,
+    targetKraId?: string,
+  ) => Promise<WorkPlanRetirementImpact>;
+  retireActivity?: (impact: WorkPlanRetirementImpact, reason: string) => Promise<WorkPlan>;
+  previewStructureRetirement?: (
+    entityKind: WorkPlanStructureKind,
+    sourceId: string,
+    action: WorkPlanRetirementAction,
+    targetExecutionId?: string,
+  ) => Promise<WorkPlanStructureRetirementImpact>;
+  retireStructure?: (impact: WorkPlanStructureRetirementImpact, reason: string) => Promise<WorkPlan>;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -79,114 +85,6 @@ const STATUS_OPTIONS: { value: WorkPlanActivity['status']; label: string; color:
 const TIME_PERIODS: WorkPlanTimePeriod[] = ['Q1', 'Q2', 'Q3', 'Q4', 'H1', 'H2', 'annual', 'custom'];
 const REVIEW_FREQUENCIES = ['daily', 'weekly', 'monthly', 'quarterly', 'bi-annually', 'annually'];
 
-// ─── Utilities ──────────────────────────────────────────────────────────────
-
-function goalsToRows(goals: WorkPlanGoal[]): TableRow[] {
-  const rows: TableRow[] = [];
-  goals.forEach(goal => {
-    if (goal.activities.length === 0) {
-      rows.push({
-        id: `empty-${goal.id}`,
-        strategicObjective: goal.title,
-        linkedObjectiveId: goal.linkedObjectiveId,
-        activity: '',
-        output: '',
-        kpi: '',
-        responsibleOfficer: '',
-        timelineStart: '',
-        timelineEnd: '',
-        resources: '',
-        status: 'not-started',
-      });
-    } else {
-      goal.activities.forEach(act => {
-        rows.push({
-          id: act.id,
-          strategicObjective: goal.title,
-          linkedObjectiveId: goal.linkedObjectiveId,
-          activity: act.title,
-          output: act.expectedOutput || '',
-          kpi: act.kpiDescription || '',
-          responsibleOfficer: act.responsiblePersonName || '',
-          responsibleOfficerEmail: act.responsiblePersonEmail,
-          timelineStart: act.startDate || '',
-          timelineEnd: act.endDate || '',
-          resources: act.resourcesRequired || '',
-          status: act.status,
-        });
-      });
-    }
-  });
-  return rows;
-}
-
-function rowsToGoals(rows: TableRow[], planId: string): WorkPlanGoal[] {
-  const grouped: Record<string, { objective: string; linkedId?: string; rows: TableRow[] }> = {};
-  rows.forEach(row => {
-    const key = row.linkedObjectiveId || row.strategicObjective || 'general';
-    if (!grouped[key]) {
-      grouped[key] = {
-        objective: row.strategicObjective || 'General',
-        linkedId: row.linkedObjectiveId,
-        rows: [],
-      };
-    }
-    grouped[key].rows.push(row);
-  });
-
-  return Object.values(grouped).map(({ objective, linkedId, rows: groupRows }, idx) => {
-    const goalId = `goal-${planId}-${idx}-${Date.now()}`;
-    const completedCount = groupRows.filter(r => r.status === 'completed' && r.activity.trim()).length;
-    const totalCount = groupRows.filter(r => r.activity.trim()).length;
-    const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
-    const allCompleted = totalCount > 0 && completedCount === totalCount;
-    const anyAtRisk = groupRows.some(r => r.status === 'overdue' || r.status === 'blocked');
-
-    return {
-      id: goalId,
-      workPlanId: planId,
-      title: objective,
-      description: '',
-      linkedObjectiveId: linkedId,
-      linkedObjectiveTitle: objective,
-      responsibleUnitIds: [],
-      responsibleUnitNames: [],
-      activities: groupRows
-        .filter(r => r.activity.trim())
-        .map((row, i): WorkPlanActivity => ({
-          id:
-            row.id.startsWith('new-') || row.id.startsWith('empty-')
-              ? `act-${planId}-${idx}-${i}`
-              : row.id,
-          goalId,
-          title: row.activity,
-          description: '',
-          assignedUnitId: '',
-          assignedUnitName: '',
-          responsiblePersonName: row.responsibleOfficer || undefined,
-          responsiblePersonEmail: row.responsibleOfficerEmail,
-          startDate: row.timelineStart,
-          endDate: row.timelineEnd,
-          expectedOutput: row.output,
-          kpiDescription: row.kpi,
-          resourcesRequired: row.resources,
-          linkedTaskIds: [],
-          status: row.status,
-          progress:
-            row.status === 'completed'
-              ? 100
-              : row.status === 'in-progress'
-              ? 50
-              : 0,
-          order: i,
-        })),
-      progress,
-      status: allCompleted ? 'completed' : anyAtRisk ? 'at-risk' : progress > 0 ? 'in-progress' : 'not-started',
-      order: idx,
-    } as WorkPlanGoal;
-  });
-}
-
 // ─── Editable Table Row ──────────────────────────────────────────────────────
 
 interface EditableRowProps {
@@ -197,10 +95,11 @@ interface EditableRowProps {
   onChange: (id: string, updates: Partial<TableRow>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onLinkage?: (id: string) => void;
 }
 
 const EditableRow: React.FC<EditableRowProps> = ({
-  row, rowIndex, objectiveOptions, staffData, onChange, onDelete, onDuplicate,
+  row, rowIndex, objectiveOptions, staffData, onChange, onDelete, onDuplicate, onLinkage,
 }) => {
   const [officerOpen, setOfficerOpen] = useState(false);
   const statusOpt = STATUS_OPTIONS.find(s => s.value === row.status);
@@ -218,9 +117,14 @@ const EditableRow: React.FC<EditableRowProps> = ({
           list={`obj-${row.id}`}
           value={row.strategicObjective}
           onChange={e => {
-            const match = objectiveOptions.find(o => o.title === e.target.value);
+            const matches = objectiveOptions.filter(o => o.title === e.target.value);
+            const match = matches.length === 1 ? matches[0] : undefined;
             onChange(row.id, {
               strategicObjective: e.target.value,
+              ...(!row.originalGoal ? {
+                organizationalGoalRef: match && !match.id.startsWith('custom-')
+                  ? { list: 'Strategic_Objectives' as const, id: match.id } : undefined,
+              } : {}),
               // Auto-populate Output if a linked deliverable exists and field is still empty
               ...(match?.linkedDeliverable && !row.output
                 ? { output: match.linkedDeliverable }
@@ -228,7 +132,7 @@ const EditableRow: React.FC<EditableRowProps> = ({
             });
           }}
           className="h-8 text-xs"
-          placeholder="Strategic objective..."
+          placeholder="Divisional annual goal..."
         />
         <datalist id={`obj-${row.id}`}>
           {objectiveOptions.map((o, i) => <option key={i} value={o.title} />)}
@@ -379,6 +283,7 @@ const EditableRow: React.FC<EditableRowProps> = ({
       {/* Row actions */}
       <td className="p-1.5 w-16">
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onLinkage && <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => onLinkage(row.id)} title="Linkage and source details"><Target className="h-3 w-3" /></Button>}
           <Button
             variant="ghost" size="sm" className="h-7 w-7 p-0"
             onClick={() => onDuplicate(row.id)} title="Duplicate"
@@ -433,6 +338,11 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
   onSave,
   onCancel,
   saving = false,
+  loadMappingOptions,
+  previewActivityRetirement,
+  retireActivity,
+  previewStructureRetirement,
+  retireStructure,
 }) => {
   const currentYear = new Date().getFullYear();
   const nextYear = currentYear + 1;
@@ -468,7 +378,8 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
   const [selectedObjectiveIds, setSelectedObjectiveIds] = useState<string[]>(() => {
     if (!initialPlan?.goals) return [];
     return initialPlan.goals
-      .map(g => g.linkedObjectiveId)
+      .map(g => g.organizationalGoalRef?.list === 'Strategic_Objectives'
+        ? g.organizationalGoalRef.id : undefined)
       .filter((id): id is string => Boolean(id));
   });
   const [customObjectives, setCustomObjectives] = useState<string[]>([]);
@@ -478,6 +389,21 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
   const [tableRows, setTableRows] = useState<TableRow[]>(
     initialPlan?.goals ? goalsToRows(initialPlan.goals) : [],
   );
+  const [operationRevision, setOperationRevision] = useState(initialPlan?.revision);
+  const [retirementActivity, setRetirementActivity] = useState<WorkPlanActivity>();
+  const [structureRetirement, setStructureRetirement] = useState<{
+    entityKind: WorkPlanStructureKind;
+    sourceId: string;
+    sourceExecutionId: string;
+    sourceTitle: string;
+  }>();
+  const [linkage, setLinkage] = useState<{ goal: WorkPlanGoal; activity: WorkPlanActivity } | null>(null);
+  const handleLinkage = (id: string) => {
+    const goals = rowsToGoals(tableRows, initialPlan?.id || 'draft');
+    const goal = goals.find(goal => goal.activities.some(activity => activity.id === id));
+    const activity = goal?.activities.find(activity => activity.id === id);
+    if (goal && activity) setLinkage({ goal, activity });
+  };
 
   // ── Section 5: Monitoring ──
   const [monitoring, setMonitoring] = useState(
@@ -520,17 +446,33 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
 
   // ── Row handlers ──
   const handleRowChange = (id: string, updates: Partial<TableRow>) =>
-    setTableRows(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+    setTableRows(prev => updateWorkPlanRow(prev, id, updates));
 
-  const handleRowDelete = (id: string) =>
-    setTableRows(prev => prev.filter(r => r.id !== id));
+  const handleRowDelete = (id: string) => {
+    const row = tableRows.find(candidate => candidate.id === id);
+    const activity = row?.originalActivity;
+    if (activity && (activity.linkedKpiId || activity.linkedKraId || activity.linkedTaskIds.length)) {
+      setRetirementActivity(activity);
+      return;
+    }
+    if (row?.originalGoal?.linkedObjectiveId && !activity) {
+      setStructureRetirement({
+        entityKind: 'goal',
+        sourceId: row.originalGoal.id,
+        sourceExecutionId: row.originalGoal.linkedObjectiveId,
+        sourceTitle: row.originalGoal.title,
+      });
+      return;
+    }
+    setTableRows(prev => prev.filter(row => row.id !== id));
+  };
 
   const handleRowDuplicate = (id: string) => {
     const existing = tableRows.find(r => r.id === id);
     if (existing) {
       setTableRows(prev => [
         ...prev,
-        { ...existing, id: `new-${Date.now()}` },
+        duplicateWorkPlanRow(existing),
       ]);
     }
   };
@@ -539,9 +481,10 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
     setTableRows(prev => [
       ...prev,
       {
-        id: `new-${Date.now()}`,
+        id: `new-${crypto.randomUUID()}`,
         strategicObjective: selectedObjectiveTitles[0] || '',
-        linkedObjectiveId: selectedObjectiveIds[0] || undefined,
+        organizationalGoalRef: selectedObjectiveIds[0]
+          ? { list: 'Strategic_Objectives' as const, id: selectedObjectiveIds[0] } : undefined,
         activity: '',
         output: '',
         kpi: '',
@@ -559,7 +502,9 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
     const planId = initialPlan?.id || `wp-${Date.now()}`;
     const goals = rowsToGoals(tableRows, planId);
     const plan: WorkPlan = {
+      ...initialPlan,
       id: planId,
+      revision: operationRevision,
       title: title.trim() || `${divisionName} Work Plan`,
       description: mandate.substring(0, 300),
       divisionId,
@@ -576,10 +521,11 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
       year,
       startDate,
       endDate,
-      linkedStrategicObjectiveId: selectedObjectiveIds[0],
-      linkedStrategicObjectiveTitle: selectedObjectiveTitles[0],
+      linkedStrategicObjectiveId: initialPlan?.linkedStrategicObjectiveId ?? selectedObjectiveIds[0],
+      linkedStrategicObjectiveTitle: initialPlan?.linkedStrategicObjectiveTitle ?? selectedObjectiveTitles[0],
       goals,
-      overallProgress,
+      overallProgress: initialPlan?.goals && workPlanProgressUnchanged(initialPlan.goals, goals)
+        ? initialPlan.overallProgress ?? overallProgress : overallProgress,
       createdBy: initialPlan?.createdBy || createdBy,
       createdByEmail: initialPlan?.createdByEmail || createdByEmail,
       createdAt: initialPlan?.createdAt || new Date().toISOString(),
@@ -593,6 +539,83 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50/60">
+      {retirementActivity && initialPlan?.id && loadMappingOptions && previewActivityRetirement && retireActivity && (
+        <WorkPlanRetirementDialog
+          open
+          planId={initialPlan.id}
+          activity={retirementActivity}
+          onOpenChange={open => { if (!open) setRetirementActivity(undefined); }}
+          loadMappingOptions={loadMappingOptions}
+        preview={previewActivityRetirement}
+          confirm={async (impact, reason) => {
+            const updated = await retireActivity(impact, reason);
+            setOperationRevision(updated.revision);
+            setTableRows(rows => rows.filter(row => row.id !== impact.activityId));
+            setRetirementActivity(undefined);
+          }}
+        />
+      )}
+      {structureRetirement && initialPlan?.id && loadMappingOptions && previewStructureRetirement && retireStructure && (
+        <WorkPlanStructureRetirementDialog
+          open
+          {...structureRetirement}
+          onOpenChange={open => { if (!open) setStructureRetirement(undefined); }}
+          loadMappingOptions={loadMappingOptions}
+          preview={previewStructureRetirement}
+          confirm={async (impact, reason) => {
+            const updated = await retireStructure(impact, reason);
+            setOperationRevision(updated.revision);
+            if (impact.entityKind === 'goal') {
+              setTableRows(rows => rows.filter(row => row.originalGoal?.id !== impact.sourceId));
+            } else {
+              setTableRows(rows => rows
+                .filter(row => row.originalActivity?.sourceKraId !== impact.sourceId)
+                .map(row => row.originalGoal ? {
+                  ...row,
+                  originalGoal: {
+                    ...row.originalGoal,
+                    kras: (row.originalGoal.kras || []).filter(kra => kra.id !== impact.sourceId),
+                    activities: row.originalGoal.activities.filter(activity => activity.sourceKraId !== impact.sourceId),
+                  },
+                } : row));
+            }
+            setStructureRetirement(undefined);
+          }}
+        />
+      )}
+      {linkage && loadMappingOptions && <WorkPlanLinkageDialog
+        key={linkage.activity.id}
+        goal={linkage.goal} activity={linkage.activity} loadOptions={loadMappingOptions}
+        onClose={() => setLinkage(null)}
+        onRetireGoal={goal => {
+          if (!goal.linkedObjectiveId) return;
+          setLinkage(null);
+          setStructureRetirement({
+            entityKind: 'goal',
+            sourceId: goal.id,
+            sourceExecutionId: goal.linkedObjectiveId,
+            sourceTitle: goal.title,
+          });
+        }}
+        onRetireKra={kra => {
+          if (!kra.linkedKraId) return;
+          setLinkage(null);
+          setStructureRetirement({
+            entityKind: 'kra',
+            sourceId: kra.id,
+            sourceExecutionId: kra.linkedKraId,
+            sourceTitle: kra.title,
+          });
+        }}
+        onApply={(goal, activity) => {
+          const ids = new Set(goal.activities.map(item => item.id));
+          setTableRows(rows => rows.map(row => ids.has(row.id) ? {
+            ...row, originalGoal: goal,
+            ...(row.id === activity.id ? { originalActivity: activity } : {}),
+          } : row));
+          setLinkage(null);
+        }}
+      />}
 
       {/* ── Sticky top bar ── */}
       <div className="sticky top-0 z-30 bg-white border-b shadow-sm">
@@ -804,8 +827,8 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
             <SectionHeader
               number={3}
               icon={<Target className="h-4 w-4 text-[#83002A]" />}
-              title="Strategic Objectives"
-              description="Select the strategic objectives this work plan addresses. These will appear as options in the work plan table."
+              title="Organizational Alignment"
+              description="Select the organizational objectives this plan supports. Define divisional annual goals in the table and verify their links in source details."
             />
           </CardHeader>
           <CardContent className="space-y-4">
@@ -930,7 +953,7 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
                 number={4}
                 icon={<Table2 className="h-4 w-4 text-[#83002A]" />}
                 title="Annual Work Plan"
-                description="Define activities, outputs, KPIs, responsible officers, and timelines. Rows sharing the same Strategic Objective are grouped as a goal."
+                description="Define activities, outputs, KPIs, responsible officers, and timelines. Use each row's linkage details to assign its source KRA, annual target and Tasks."
               />
               <Button
                 variant="outline" size="sm"
@@ -987,7 +1010,7 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
                     <tr className="bg-[#83002A]/5 border-b">
                       <th className="text-left p-2 text-xs font-semibold text-muted-foreground w-8">#</th>
                       <th className="text-left p-2 text-xs font-semibold text-muted-foreground min-w-[180px]">
-                        Strategic Objective
+                        Divisional Annual Goal
                       </th>
                       <th className="text-left p-2 text-xs font-semibold text-muted-foreground min-w-[180px]">
                         Activity
@@ -1016,6 +1039,7 @@ export const WorkPlanBuilder: React.FC<WorkPlanBuilderProps> = ({
                   <tbody>
                     {tableRows.map((row, idx) => (
                       <EditableRow
+                        onLinkage={loadMappingOptions ? handleLinkage : undefined}
                         key={row.id}
                         row={row}
                         rowIndex={idx}

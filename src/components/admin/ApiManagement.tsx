@@ -9,7 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, CheckCircle, XCircle, Loader2, ExternalLink, Edit, Save, Activity, Key, Globe } from 'lucide-react';
+import { Play, CheckCircle, XCircle, Loader2, ExternalLink, Edit, Save, Activity, Key, Globe, Sparkles } from 'lucide-react';
+import { Switch } from "@/components/ui/switch";
+import { useQueryClient } from "@tanstack/react-query";
+import { useMicrosoftGraph } from "@/hooks/useMicrosoftGraph";
+import { GEMINI_API_KEY_SETTING_NAME, invalidateGeminiApiKey } from "@/hooks/useGeminiApiKey";
+import {
+    AI_TEXT_ASSIST_MODEL_OPTIONS,
+    AI_TEXT_ASSIST_SETTINGS_QUERY_KEY,
+    DEFAULT_AI_TEXT_ASSIST_SETTINGS,
+    parseAiTextAssistSettings,
+} from "@/hooks/useAiTextAssistSettings";
 import { useMsal } from "@azure/msal-react";
 import { getGraphClient } from "@/services/graphService";
 import { AssetsSharePointService } from "@/services/assetsSharePointService";
@@ -102,9 +112,15 @@ const ApiManagement = () => {
 
     // Global Config State (Persisted in Supabase)
     const [apiKey, setApiKey] = useState('');
-    const [apiEndpoint, setApiEndpoint] = useState('');
     const [tickerUrl, setTickerUrl] = useState('https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'); // Default
     const [prompts, setPrompts] = useState<any>({});
+    const [textImproverEnabled, setTextImproverEnabled] = useState(DEFAULT_AI_TEXT_ASSIST_SETTINGS.enabled);
+    const [textImproverModel, setTextImproverModel] = useState(DEFAULT_AI_TEXT_ASSIST_SETTINGS.model);
+    const queryClient = useQueryClient();
+    const { getAppSetting, setAppSetting, isAuthenticated: isGraphReady } = useMicrosoftGraph();
+    // The Gemini key lives in the SharePoint InternalAppSettings list, not Supabase.
+    const [savedApiKey, setSavedApiKey] = useState('');
+    const [isKeyLoading, setIsKeyLoading] = useState(true);
 
     const [isConfigLoading, setIsConfigLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -126,9 +142,10 @@ const ApiManagement = () => {
                     .single();
 
                 if (data) {
-                    setApiKey(data.api_key || '');
-                    setApiEndpoint(data.api_endpoint || '');
                     setPrompts(data.prompts || {});
+                    const assist = parseAiTextAssistSettings(data.prompts);
+                    setTextImproverEnabled(assist.enabled);
+                    setTextImproverModel(assist.model);
                     if (data.prompts?.system_ticker_url) {
                         setTickerUrl(data.prompts.system_ticker_url);
                     }
@@ -142,60 +159,127 @@ const ApiManagement = () => {
         loadSettings();
     }, []);
 
+    // Load the Gemini key from SharePoint once Graph auth is ready
+    useEffect(() => {
+        if (!isGraphReady) return;
+        let cancelled = false;
+        const loadKey = async () => {
+            setIsKeyLoading(true);
+            const value = (await getAppSetting(GEMINI_API_KEY_SETTING_NAME)) || '';
+            if (cancelled) return;
+            setApiKey(value);
+            setSavedApiKey(value);
+            setIsKeyLoading(false);
+        };
+        loadKey();
+        return () => { cancelled = true; };
+    }, [isGraphReady, getAppSetting]);
+
     const handleSaveConfig = async () => {
         setIsSaving(true);
         // Prepare prompts object with ticker url integrated
         const updatedPrompts = {
             ...prompts,
-            system_ticker_url: tickerUrl
+            system_ticker_url: tickerUrl,
+            text_improver_enabled: textImproverEnabled,
+            text_improver_model: textImproverModel,
         };
 
         const settingsData = {
             id: GLOBAL_SETTINGS_ID,
-            api_key: apiKey,
-            api_endpoint: apiEndpoint,
             prompts: updatedPrompts,
             updated_at: new Date().toISOString(),
             last_updated_by: user?.id
         };
 
         try {
+            // Gemini key goes to SharePoint (InternalAppSettings) so every AI feature picks it up.
+            if (apiKey.trim() !== savedApiKey) {
+                const result = await setAppSetting(GEMINI_API_KEY_SETTING_NAME, apiKey.trim());
+                if (!result.success) {
+                    console.error('[ApiManagement] Gemini key save failed:', result.error);
+                    throw new Error(`Could not save the Gemini key to SharePoint. ${result.error || 'Check you have edit access to the InternalAppSettings list.'}`);
+                }
+                setSavedApiKey(apiKey.trim());
+                invalidateGeminiApiKey(queryClient);
+            }
+
             const { error } = await supabase.from('news_api_settings').upsert(settingsData, { onConflict: 'id' });
             if (error) throw error;
             toast.success("Global configurations saved successfully");
             setPrompts(updatedPrompts);
+            // Improve-with-AI buttons read these settings through React Query; refresh them now.
+            queryClient.invalidateQueries({ queryKey: AI_TEXT_ASSIST_SETTINGS_QUERY_KEY });
         } catch (error: any) {
-            toast.error(`Failed to save: ${error.message}`);
+            toast.error("Failed to save", { description: error.message, duration: 20000 });
         } finally {
             setIsSaving(false);
         }
     };
 
+    /**
+     * Tests the key against the models the intranet actually uses:
+     * the Improve-with-AI model chosen above and gemini-2.5-flash (chat assistants).
+     * Shows Google's own error message so a bad key, a retired model or a
+     * restricted key can be told apart.
+     */
     const handleTestGenAI = async () => {
         setIsTestingGenAI(true);
-        try {
-            if (!apiEndpoint || !apiKey) throw new Error("Missing Key or Endpoint");
-            const fullEndpoint = `${apiEndpoint}?key=${apiKey}`;
-            const testBody = {
-                contents: [{ parts: [{ text: "Respond with 'Connection OK'" }] }]
-            };
-            const res = await fetch(fullEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(testBody)
-            });
-            if (!res.ok) throw new Error("API call failed");
-            const data = await res.json();
-            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                toast.success(`Success: ${data.candidates[0].content.parts[0].text}`);
-            } else {
-                throw new Error("Invalid response format");
-            }
-        } catch (error: any) {
-            toast.error(`Test failed: ${error.message}`);
-        } finally {
+        const key = apiKey.trim();
+        if (!key) {
+            toast.error("Enter an API key first.");
             setIsTestingGenAI(false);
+            return;
         }
+
+        const modelsToTest = Array.from(new Set([textImproverModel, 'gemini-2.5-flash']));
+        const testBody = {
+            contents: [{ parts: [{ text: "Respond with exactly: Connection OK" }] }],
+            generationConfig: { maxOutputTokens: 16, temperature: 0 },
+        };
+
+        const results: string[] = [];
+        let allOk = true;
+
+        for (const model of modelsToTest) {
+            try {
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(testBody),
+                    }
+                );
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    allOk = false;
+                    const reason = data?.error?.message || res.statusText || 'Unknown error';
+                    results.push(`${model}: HTTP ${res.status} - ${reason}`);
+                    continue;
+                }
+                const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p?.text ?? '').join('').trim();
+                if (text) {
+                    results.push(`${model}: OK ("${text}")`);
+                } else if (data?.promptFeedback?.blockReason) {
+                    allOk = false;
+                    results.push(`${model}: blocked (${data.promptFeedback.blockReason})`);
+                } else {
+                    allOk = false;
+                    results.push(`${model}: unexpected response shape`);
+                }
+            } catch (error: any) {
+                allOk = false;
+                results.push(`${model}: ${error?.message || 'network error'}`);
+            }
+        }
+
+        if (allOk) {
+            toast.success("Gemini key works", { description: results.join('\n'), duration: 8000 });
+        } else {
+            toast.error("Gemini test failed", { description: results.join('\n'), duration: 15000 });
+        }
+        setIsTestingGenAI(false);
     };
 
     // System Status Helpers
@@ -299,7 +383,7 @@ const ApiManagement = () => {
                             <Activity className="h-5 w-5 text-primary" />
                             Generative AI Configuration
                         </CardTitle>
-                        <CardDescription>Configure the AI service used for Chat and News summarization.</CardDescription>
+                        <CardDescription>The Gemini key used by the AI assistants and the Improve with AI button. Models are fixed in code (gemini-2.5-flash for chat) and chosen below for text improvement.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -309,15 +393,6 @@ const ApiManagement = () => {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="api_endpoint">API Endpoint</Label>
-                            <Input
-                                id="api_endpoint"
-                                value={apiEndpoint}
-                                onChange={e => setApiEndpoint(e.target.value)}
-                                placeholder="https://generativelanguage.googleapis.com..."
-                            />
-                        </div>
-                        <div className="space-y-2">
                             <Label htmlFor="api_key">API Key</Label>
                             <div className="flex gap-2">
                                 <Input
@@ -325,12 +400,63 @@ const ApiManagement = () => {
                                     type="password"
                                     value={apiKey}
                                     onChange={e => setApiKey(e.target.value)}
-                                    placeholder="Enter API Key"
+                                    placeholder={isKeyLoading ? "Loading from SharePoint..." : "Enter API Key"}
+                                    disabled={isKeyLoading}
                                 />
-                                <Button variant="outline" onClick={handleTestGenAI} disabled={isTestingGenAI}>
+                                <Button variant="outline" onClick={handleTestGenAI} disabled={isTestingGenAI || isKeyLoading} title="Test this key against the models the intranet uses">
                                     {isTestingGenAI ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                                 </Button>
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                                Stored in the SharePoint list <span className="font-mono">InternalAppSettings</span> (item <span className="font-mono">GeminiAPIKey</span>). Every AI feature in the intranet reads it from there; changes reach users within a few minutes.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Improve with AI (text assist on form fields) */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Sparkles className="h-5 w-5 text-primary" />
+                            Improve with AI
+                        </CardTitle>
+                        <CardDescription>
+                            The sparkle button on task, ticket, KPI/KRA, project, risk and form fields that fixes grammar or polishes wording. Uses the Gemini key above.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between gap-4 rounded-md border p-3">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="text_improver_enabled">Enable across the intranet</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    When off, the button is hidden on every field. Field text is sent to Google when a user clicks it.
+                                </p>
+                            </div>
+                            <Switch
+                                id="text_improver_enabled"
+                                checked={textImproverEnabled}
+                                onCheckedChange={setTextImproverEnabled}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="text_improver_model">Model</Label>
+                            <Select value={textImproverModel} onValueChange={setTextImproverModel}>
+                                <SelectTrigger id="text_improver_model">
+                                    <SelectValue placeholder="Select model" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {AI_TEXT_ASSIST_MODEL_OPTIONS.map(opt => (
+                                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                    {!AI_TEXT_ASSIST_MODEL_OPTIONS.some(opt => opt.value === textImproverModel) && (
+                                        <SelectItem value={textImproverModel}>{textImproverModel}</SelectItem>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                Flash-Lite is enough for grammar and titles and uses less quota. Changes apply after Save Configuration.
+                            </p>
                         </div>
                     </CardContent>
                 </Card>

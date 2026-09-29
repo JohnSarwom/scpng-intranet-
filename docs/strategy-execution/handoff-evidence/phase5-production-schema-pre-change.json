@@ -1,0 +1,157 @@
+{
+  "preChange": {
+    "snapshotVersion": 1,
+    "label": "pre-change",
+    "capturedAt": "2026-09-10T00:30:50.251Z",
+    "site": {
+      "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#sites(id,displayName,webUrl)/$entity",
+      "id": "scpng1.sharepoint.com,1615181f-7ac2-458b-8584-8586881c3e4e,62ed622f-af08-4519-8ca9-bd27b464ca65",
+      "webUrl": "https://scpng1.sharepoint.com/sites/scpngintranet",
+      "displayName": "SCPNG INTRANET"
+    },
+    "lists": {
+      "Performance_Reports": {
+        "id": "edef001e-ba4c-462f-b5e7-4a1f72ef2174",
+        "displayName": "Performance_Reports",
+        "webUrl": "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Performance_Reports",
+        "relevantColumns": [
+          {
+            "id": "93dab25c-6ac3-4f4d-b2b8-31b94dcb8241",
+            "name": "ReportType",
+            "displayName": "ReportType",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          }
+        ]
+      },
+      "Report_Schedules": {
+        "id": "c1356b99-5aa2-410f-9a51-3bcbf0cb534e",
+        "displayName": "Report_Schedules",
+        "webUrl": "https://scpng1.sharepoint.com/sites/scpngintranet/Lists/Report_Schedules",
+        "relevantColumns": [
+          {
+            "id": "cd213d6e-c46f-4e52-916c-02192031c332",
+            "name": "IsActive",
+            "displayName": "IsActive",
+            "kind": "text",
+            "indexed": false,
+            "enforceUniqueValues": false
+          },
+          {
+            "id": "a224e009-684f-4cfb-99e9-55bc09694ed8",
+            "name": "NextSendAt",
+            "displayName": "NextSendAt",
+            "kind": "date-time",
+            "indexed": false,
+            "enforceUniqueValues": false
+          }
+        ]
+      }
+    }
+  },
+  "authorizedChanges": {
+    "indexesToEnable": [
+      {
+        "list": "Performance_Reports",
+        "column": "ReportType"
+      },
+      {
+        "list": "Report_Schedules",
+        "column": "IsActive"
+      },
+      {
+        "list": "Report_Schedules",
+        "column": "NextSendAt"
+      }
+    ],
+    "columnsToCreate": [
+      {
+        "name": "ArchiveStorageId",
+        "indexed": true,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "SnapshotId",
+        "indexed": true,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "SnapshotChecksum",
+        "indexed": false,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "BindingJSON",
+        "indexed": false,
+        "text": {
+          "allowMultipleLines": true,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 12
+        }
+      },
+      {
+        "name": "DispatchId",
+        "indexed": true,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "DispatchState",
+        "indexed": false,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "LeaseUntil",
+        "indexed": false,
+        "dateTime": {
+          "displayAs": "standard",
+          "format": "dateTime"
+        }
+      },
+      {
+        "name": "LastProviderMessageId",
+        "indexed": false,
+        "text": {
+          "allowMultipleLines": false,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 0,
+          "maxLength": 255
+        }
+      },
+      {
+        "name": "LastError",
+        "indexed": false,
+        "text": {
+          "allowMultipleLines": true,
+          "appendChangesToExistingText": false,
+          "linesForEditing": 12
+        }
+      }
+    ]
+  }
+}

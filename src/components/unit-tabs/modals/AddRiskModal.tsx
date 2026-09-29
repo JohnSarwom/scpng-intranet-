@@ -300,6 +300,7 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 value={formState.title}
                 onChange={handleChange}
                 className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
+                aiAssist={{ mode: 'title', context: 'risk register title', onApply: (v) => setFormState((prev) => ({ ...prev, title: v })) }}
               />
               {errors.title && <p className="text-red-500 text-sm font-medium mt-1">{errors.title}</p>}
             </div>
@@ -315,6 +316,7 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 onChange={handleChange}
                 className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all custom-scrollbar"
                 rows={3}
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'risk description', onApply: (v) => setFormState((prev) => ({ ...prev, description: v })) }}
               />
             </div>
 
@@ -470,6 +472,7 @@ const AddRiskModal: React.FC<AddRiskModalProps> = ({
                 onChange={handleChange}
                 className="dark:bg-gray-800 dark:border-white/10 dark:text-gray-200 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all"
                 rows={3}
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'risk mitigation plan', onApply: (v) => setFormState((prev) => ({ ...prev, mitigationPlan: v })) }}
               />
             </div>
 

@@ -15,10 +15,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3, Trash2, Maximize, Minimize, Database, Briefcase } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { supabase, logger, GLOBAL_SETTINGS_ID } from '@/lib/supabaseClient';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useMsal } from '@azure/msal-react';
-import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
+import { logger } from '@/lib/supabaseClient';
+import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
 import { DIVISION_QUICK_QUESTIONS, DIVISION_QUESTION_LIBRARY } from './divisionQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -28,23 +26,31 @@ import {
 } from '@/components/shared/ai-chat';
 import { UseDivisionDataReturn } from '@/hooks/useDivisionData';
 import { DivisionMetrics } from '@/types/division.types';
+import { useArchivedStrategyAI } from '@/hooks/useArchivedStrategyAI';
+import {
+    assertStrategyAIResponseUsesArchivedNumbers,
+    serializeArchivedStrategyAIContext,
+    strategyAIFilterRowCount,
+    type StrategyAIEvidenceFilter,
+} from '@/services/strategyReportAIService';
 
-type DataSourceFilter = 'all' | 'tasks' | 'projects' | 'strategy' | 'staff';
+type DataSourceFilter = StrategyAIEvidenceFilter;
 
 const DIVISION_AI_SYSTEM_PROMPT = `You are the SCPNG Division Intelligence Assistant — an AI analyst embedded within the Securities Commission of Papua New Guinea's intranet platform, explicitly focused on analyzing division operations.
 
-CRITICAL: You DO have access to live organizational data. The data below has ALREADY been fetched from the organization's SharePoint environment via Microsoft Graph API and is provided to you in real-time. You MUST use this data to answer questions. Do NOT say you cannot access SharePoint or external data — the data is already here, loaded and ready for your analysis.
+CRITICAL: Your only factual source is the checksum-verified immutable report archive below. It is historical evidence, not a live SharePoint view. Never use page data, conversation claims, general knowledge, or assumptions as SCPNG performance evidence.
 
-=== BEGIN LIVE DIVISION DATA (from SharePoint via Microsoft Graph) ===
+=== BEGIN AUTHORIZED ARCHIVED DIVISION EVIDENCE ===
 {divisionDataContext}
-=== END LIVE DIVISION DATA ===
+=== END AUTHORIZED ARCHIVED DIVISION EVIDENCE ===
 
 INSTRUCTIONS:
-- You are analyzing REAL, LIVE data from a specific SCPNG division.
-- Always reference specific Tasks, Projects, KRAs, KPIs, and staff roles directly from the data above.
+- State the frozen scope label and reporting period when answering.
+- Never generalize findings beyond the archived scope.
+- Numeric facts may only be repeated exactly when they appear in the archive context. Do not calculate, estimate, forecast, or invent a new number.
+- Always reference specific Tasks, KRAs and KPIs directly from the archived rows above.
 - If data shows 0 items or empty sections, acknowledge that those areas have no data recorded yet.
-- Focus heavily on operational bottlenecks (Tasks), strategic execution (KRAs/KPIs), and resource allocation (Staff).
-- When asked about individuals or workload, map the staff list to the active work if the data connects them.
+- If the requested evidence is absent, say it is unavailable in this archived snapshot.
 
 Response Format:
 1. Use data-driven analysis — cite specific completion rates, metric scores, and task names.
@@ -61,7 +67,7 @@ interface DivisionAIChatProps {
     metrics: DivisionMetrics;
 }
 
-const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
+const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data }) => {
     const [expanded, setExpanded] = useState(false);
     const [query, setQuery] = useState('');
     const [chatMessages, setChatMessages] = useState<AIChatMessage[]>([
@@ -79,80 +85,31 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
     const [isClearChatDialogOpen, setIsClearChatDialogOpen] = useState(false);
     const [dataSourceFilter, setDataSourceFilter] = useState<DataSourceFilter>('all');
 
-    const [apiKey, setApiKey] = useState('');
-    const [isConfigLoading, setIsConfigLoading] = useState(true);
+    const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
+    const isConfigLoading = !isKeyReady;
     const modelName = 'gemini-2.5-flash';
+    const archivedEvidence = useArchivedStrategyAI({
+        audience: 'division',
+        division: data.division?.name || data.userContext.division,
+    });
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const userScrolledUpRef = useRef(false);
 
-    const { isLoading: isAuthLoading } = useSupabaseAuth();
-    const { inProgress: msalInProgress } = useMsal();
-    const graphContext = useMicrosoftGraph();
-
     const INITIAL_GREETING = `Hello! I'm your Division Intelligence Assistant for the ${data.division?.name || 'Department'}. Ask me anything about our tasks, KRA tracking, KPI success, or operational bottlenecks.`;
 
     // Data source options for the dropdown
     const dataSourceOptions = useMemo(() => [
-        { value: 'all', label: 'All Operations Data', count: data.tasks.length + data.combinedKras.length + data.staff.length },
-        { value: 'tasks', label: 'Tasks Only', count: data.tasks.length },
-        { value: 'projects', label: 'Projects Only', count: data.projects.length },
-        { value: 'strategy', label: 'KRAs & KPIs', count: data.combinedKras.length },
-        { value: 'staff', label: 'Staff Directory', count: data.staff.length },
-    ], [data]);
-
-    const serializeDivisionContext = () => {
-        let context = `TIMESTAMP: ${new Date().toISOString()}\n`;
-        context += `DIVISION: ${data.division?.name || 'Unknown'}\n\n`;
-
-        context += `--- HIGH-LEVEL METRICS ---\n`;
-        context += `Overall Efficiency Score: ${metrics.taskCompletionRate}% (Derived)\n`;
-        context += `Task Completion Rate: ${metrics.taskCompletionRate}%\n`;
-        context += `KPIs On Track: ${metrics.kpiOnTrackPercentage}%\n`;
-        context += `Strategic Alignment Score: ${metrics.strategicAlignmentScore}%\n`;
-        context += `Total Tasks: ${metrics.totalTasks} (Overdue: ${metrics.overdueTasks})\n`;
-        context += `Total Projects: ${metrics.activeProjects} (Overdue: ${metrics.overdueProjects})\n`;
-        context += `At Risk KRAs: ${metrics.atRiskKRAs}\n\n`;
-
-        if (dataSourceFilter === 'all' || dataSourceFilter === 'tasks') {
-            context += `--- TASKS (${data.tasks.length}) ---\n`;
-            data.tasks.forEach(t => {
-                context += `- [${t.status}] ${t.title} (Unit: ${t.unit_id || 'Unknown'}, AssignedTo: ${t.assignee || 'Unassigned'})\n`;
-            });
-            context += `\n`;
-        }
-
-        if (dataSourceFilter === 'all' || dataSourceFilter === 'projects') {
-            context += `--- PROJECTS (${data.projects.length}) ---\n`;
-            data.projects.forEach(p => {
-                context += `- [${p.status}] ${p.name} (${p.progress}% complete, Manager: ${p.manager || 'Unassigned'})\n`;
-            });
-            context += `\n`;
-        }
-
-        if (dataSourceFilter === 'all' || dataSourceFilter === 'strategy') {
-            context += `--- KRAs & KPIs (${data.combinedKras.length} KRAs) ---\n`;
-            data.combinedKras.forEach(kra => {
-                context += `- KRA: ${kra.title} [Status: ${kra.status}, Progress: ${kra.progress}%]\n`;
-                kra.unitKpis?.forEach((kpi: any) => {
-                    context += `   └ KPI: ${kpi.title} [Status: ${kpi.status}, Actual/Target: ${kpi.actual}/${kpi.target}]\n`;
-                });
-            });
-            context += `\n`;
-        }
-
-        if (dataSourceFilter === 'all' || dataSourceFilter === 'staff') {
-            context += `--- STAFF (${data.staff.length}) ---\n`;
-            data.staff.forEach(s => {
-                context += `- ${s.name} (${s.jobTitle}) - Unit: ${s.unit}\n`;
-            });
-            context += `\n`;
-        }
-
-        return context;
-    };
+        { value: 'all', label: 'All Archived Evidence', count: strategyAIFilterRowCount(archivedEvidence.archive, 'all') },
+        { value: 'traceability', label: 'Traceability & Heatmap', count: strategyAIFilterRowCount(archivedEvidence.archive, 'traceability') },
+        { value: 'delivery-risks', label: 'Overdue & Evidence Risks', count: strategyAIFilterRowCount(archivedEvidence.archive, 'delivery-risks') },
+        { value: 'accountability', label: 'Owner Accountability', count: strategyAIFilterRowCount(archivedEvidence.archive, 'accountability') },
+        { value: 'variance', label: 'KPI Variance', count: strategyAIFilterRowCount(archivedEvidence.archive, 'variance') },
+        { value: 'governance', label: 'KPI Governance', count: strategyAIFilterRowCount(archivedEvidence.archive, 'governance') },
+        { value: 'exceptions', label: 'Exceptions & Diagnostics', count: strategyAIFilterRowCount(archivedEvidence.archive, 'exceptions') },
+    ], [archivedEvidence.archive]);
 
     const handleClearChat = () => {
         setChatMessages([{
@@ -237,42 +194,6 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
         }
     }, [chatMessages]);
 
-    useEffect(() => {
-        const fetchAiSettings = async () => {
-            const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-            if (envKey) {
-                setApiKey(envKey);
-                setIsConfigLoading(false);
-                return;
-            }
-
-            if (graphContext.getAppSetting && !isAuthLoading && msalInProgress === 'none') {
-                const spKey = await graphContext.getAppSetting('GeminiAPIKey');
-                if (spKey) {
-                    setApiKey(spKey);
-                    setIsConfigLoading(false);
-                    return;
-                }
-            }
-
-            if (isAuthLoading || msalInProgress !== 'none') return;
-
-            setIsConfigLoading(true);
-            try {
-                const { data, error } = await supabase
-                    .from('news_api_settings')
-                    .select('api_key, api_endpoint')
-                    .eq('id', GLOBAL_SETTINGS_ID)
-                    .single();
-                if (!error && data?.api_key) setApiKey(data.api_key);
-            } catch (err: any) {
-                logger.error('[DivisionAI] Exception fetching AI settings:', err);
-            }
-            setIsConfigLoading(false);
-        };
-        fetchAiSettings();
-    }, [isAuthLoading, msalInProgress, graphContext]);
-
     const isAiTyping =
         chatMessages.length > 0 &&
         chatMessages[chatMessages.length - 1].sender === 'ai' &&
@@ -319,7 +240,19 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
         setQuery('');
         setIsSending(true);
 
-        const effectiveApiKey = import.meta.env.VITE_GEMINI_API_KEY || apiKey;
+        if (archivedEvidence.isLoading || !archivedEvidence.archive) {
+            setChatMessages((prev) => [...prev, {
+                id: uuidv4(), sender: 'ai',
+                text: archivedEvidence.isLoading
+                    ? 'The authorized report archive is still loading. Please try again shortly.'
+                    : archivedEvidence.error?.message || 'No authorized archived Division evidence is available.',
+                isTyping: false, timestamp: new Date(),
+            }]);
+            setIsSending(false);
+            return;
+        }
+
+        const effectiveApiKey = apiKey;
         if (!effectiveApiKey) {
             setChatMessages((prev) => [
                 ...prev,
@@ -335,7 +268,7 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
             return;
         }
 
-        const contextStr = serializeDivisionContext();
+        const contextStr = serializeArchivedStrategyAIContext(archivedEvidence.archive, dataSourceFilter);
         const systemContext = DIVISION_AI_SYSTEM_PROMPT.replace('{divisionDataContext}', contextStr);
 
         const conversationHistory: any[] = [
@@ -347,7 +280,7 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
                 role: 'model',
                 parts: [
                     {
-                        text: `Understood. I have loaded the division context for ${data.division?.name || 'the department'}, explicitly referencing filtered data sets (${dataSourceFilter}). I will analyze this data to provide highly specific division-level insights.`,
+                        text: `Understood. I will use only archived snapshot ${archivedEvidence.archive.record.snapshotId}, preserve its ${archivedEvidence.archive.record.scope.label} scope, and avoid unsupported numeric claims.`,
                     },
                 ],
             },
@@ -386,6 +319,7 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
 
             if (responseData.candidates?.[0]?.content?.parts?.[0]?.text) {
                 let aiResponseText = responseData.candidates[0].content.parts[0].text;
+                assertStrategyAIResponseUsesArchivedNumbers(aiResponseText, contextStr);
                 let followUpQuestions: string[] = [];
 
                 const followUpMatch = aiResponseText.match(/<followups>(.*?)<\/followups>/s);
@@ -545,21 +479,25 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
                 </div>
                 {!isFullScreenInstance && !expanded && (
                     <div className="mt-2 cursor-pointer" onClick={() => setExpanded(true)}>
-                        <CardDescription className="mb-2">AI-powered operational analysis and problem solving</CardDescription>
+                        <CardDescription className="mb-2">
+                            {archivedEvidence.archive
+                                ? `Checksum-verified ${archivedEvidence.archive.record.scope.label} report evidence`
+                                : archivedEvidence.isLoading ? 'Loading authorized archived evidence…' : 'Archived report evidence required'}
+                        </CardDescription>
                         <div className="flex flex-wrap gap-3">
                             <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
                                 <TrendingUp className="w-3 h-3 text-[#83002A]" />
-                                <span>{metrics.taskCompletionRate}% Task Completion</span>
+                                <span>{archivedEvidence.archive?.record.snapshot.summary.averageProgress ?? '—'}% Archived Progress</span>
                             </div>
-                            {metrics.overdueTasks > 0 && (
+                            {(archivedEvidence.archive?.record.snapshot.sections.find(section => section.id === 'overdue')?.rows.length || 0) > 0 && (
                                 <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400">
                                     <AlertTriangle className="w-3 h-3" />
-                                    <span>{metrics.overdueTasks} Overdue Tasks</span>
+                                    <span>{archivedEvidence.archive?.record.snapshot.sections.find(section => section.id === 'overdue')?.rows.length} Archived Overdue Tasks</span>
                                 </div>
                             )}
                             <div className="flex items-center gap-1.5 text-[10px] px-2 py-1 rounded-full bg-muted/50">
                                 <Briefcase className="w-3 h-3 text-blue-500" />
-                                <span>{data.combinedKras.length} Active KRAs</span>
+                                <span>{archivedEvidence.archive?.record.snapshot.summary.evidenceCount ?? '—'} Evidence Records</span>
                             </div>
                         </div>
                     </div>
@@ -580,9 +518,9 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data, metrics }) => {
                                 copiedMessageId={copiedMessageId}
                                 onCopy={handleCopy}
                                 onFollowUpClick={handleFollowUpClick}
-                                disabled={isConfigLoading}
-                                inputPlaceholder="Ask about operational bottlenecks or execution metrics..."
-                                placeholderDisclaimer="This assistant analyzes live SCPNG division data from SharePoint in real-time. Always verify insights against official records."
+                                disabled={isConfigLoading || archivedEvidence.isLoading || !archivedEvidence.archive}
+                                inputPlaceholder="Ask about the archived Division report evidence..."
+                                placeholderDisclaimer="This assistant uses one authorized checksum-verified archived report. It cannot use live page totals or introduce numeric facts absent from that snapshot."
                                 headerSlot={chatHeaderSlot}
                                 className="flex-1"
                             />

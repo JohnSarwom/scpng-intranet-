@@ -101,6 +101,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 value={editedTask.title || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, title: e.target.value })}
                 className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
+                aiAssist={{ mode: 'title', context: 'task title', onApply: (v) => setEditedTask((prev) => ({ ...prev, title: v })) }}
               />
             </div>
             <div className="grid gap-2">
@@ -111,6 +112,7 @@ const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 value={editedTask.description || ''}
                 onChange={(e) => setEditedTask({ ...editedTask, description: e.target.value })}
                 className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'task description', onApply: (v) => setEditedTask((prev) => ({ ...prev, description: v })) }}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

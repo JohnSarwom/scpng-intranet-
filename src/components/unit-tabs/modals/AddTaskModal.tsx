@@ -117,6 +117,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 value={newTask.title}
                 onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                 className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
+                aiAssist={{ mode: 'title', context: 'task title', onApply: (v) => setNewTask((prev) => ({ ...prev, title: v })) }}
               />
             </div>
             <div className="grid gap-2">
@@ -127,6 +128,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 value={newTask.description}
                 onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                 className="dark:bg-gray-800 dark:border-white/10 focus:ring-intranet-primary/50"
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'task description', onApply: (v) => setNewTask((prev) => ({ ...prev, description: v })) }}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">

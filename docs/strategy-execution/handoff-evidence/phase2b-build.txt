@@ -1,0 +1,50 @@
+
+> vite_react_shadcn_ts@0.0.0 build
+> vite build
+
+vite v5.4.19 building for production...
+transforming...
+Browserslist: browsers data (caniuse-lite) is 17 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+node_modules/next-themes/dist/index.module.js (1:1576): A comment
+
+"/*#__PURE__*/"
+
+in "node_modules/next-themes/dist/index.module.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+node_modules/next-themes/dist/index.module.js (1:2992): A comment
+
+"/*#__PURE__*/"
+
+in "node_modules/next-themes/dist/index.module.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+
+/fonts/LEDSledStraight.woff2 referenced in /fonts/LEDSledStraight.woff2 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 5495 modules transformed.
+rendering chunks...
+[plugin:vite:reporter] [plugin vite:reporter]
+(!) C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/sharePointOpsService.ts is dynamically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useComponentVisibility.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/TestGround.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/TestGround.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/Unit.tsx but also statically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/admin/ViewSettingsTab.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/division/tabs/DivisionReportsTab.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/unit-tabs/ReportsTab.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useComponentVisibility.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useSharePointOps.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useTaskGroupPreferences.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/TestGround.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/kraKpiSeedService.ts, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter]
+(!) C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/mockData/demoAssets.ts is dynamically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/sharePointListSetupService.ts but also statically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/sharePointListSetupService.ts, dynamic import will not move module into another chunk.
+
+[plugin:vite:reporter] [plugin vite:reporter]
+(!) C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/sharePointListSetupService.ts is dynamically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useComponentVisibility.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useForms.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/Documents.tsx but also statically imported by C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/admin/ViewSettingsTab.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/components/meeting/MeetingMinutesForm.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/hooks/useSharePointOps.ts, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/AssetManagementNew.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/TestGround.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/pages/Unit.tsx, C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/services/timeAttendanceSharePointService.ts, dynamic import will not move module into another chunk.
+
+computing gzip size...
+dist/index.html                                     1.43 kB │ gzip:     0.66 kB
+
+(!) Some chunks are larger than 1000 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+dist/assets/scpngDocAnalystPrompt-cofe0-rr.txt     35.42 kB │ gzip:    11.40 kB
+dist/assets/index-CHtfQ_j9.css                    229.94 kB │ gzip:    34.92 kB
+dist/assets/browser-zbNCDTYv.js                     0.29 kB │ gzip:     0.24 kB
+dist/assets/mockOfficerProfiles-BcsFxVa8.js        18.94 kB │ gzip:     4.43 kB
+dist/assets/purify.es-C_uT9hQ1.js                  21.98 kB │ gzip:     8.74 kB
+dist/assets/index.es-CLZOKlPk.js                  150.05 kB │ gzip:    51.29 kB
+dist/assets/vendor-C24JW2m2.js                    163.27 kB │ gzip:    53.25 kB
+dist/assets/docx-preview-Dh28_QF_.js              173.57 kB │ gzip:    50.86 kB
+dist/assets/microsoft-BR9Kn5g0.js                 267.13 kB │ gzip:    67.01 kB
+dist/assets/index-BKnpxZhw.js                   8,718.97 kB │ gzip: 2,238.26 kB
+✓ built in 3m

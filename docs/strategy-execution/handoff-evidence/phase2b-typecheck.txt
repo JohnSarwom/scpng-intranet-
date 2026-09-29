@@ -1,0 +1,277 @@
+src/components/admin/database/BusinessUnitLinks.tsx(21,11): error TS2339: Property 'businessUnits' does not exist on type '{ isAdmin: boolean; isAuthenticated: boolean; user: User; session: Session; profile: UserProfile; isLoading: boolean; isSyncingSession: boolean; loginWithEmail: (email: string, password: string) => Promise<...>; loginWithProvider: (provider: "azure" | ... 1 more ... | "google") => Promise<...>; logout: () => Promise...'.
+src/components/admin/database/BusinessUnitLinks.tsx(191,27): error TS2322: Type '"OneDrive" | "SharePoint" | "Supabase"' is not assignable to type '"OneDrive" | "SharePoint"'.
+  Type '"Supabase"' is not assignable to type '"OneDrive" | "SharePoint"'.
+src/components/admin/database/DatabaseTab.tsx(10,19): error TS2339: Property 'msalInstance' does not exist on type 'Window & typeof globalThis'.
+src/components/admin/database/DatabaseTab.tsx(14,37): error TS2339: Property 'msalInstance' does not exist on type 'Window & typeof globalThis'.
+src/components/admin/database/MicrosoftAPIConfig.tsx(108,19): error TS2339: Property 'msalInstance' does not exist on type 'Window & typeof globalThis'.
+src/components/admin/database/MicrosoftAPIConfig.tsx(112,37): error TS2339: Property 'msalInstance' does not exist on type 'Window & typeof globalThis'.
+src/components/admin/DatabaseIntegration.tsx(5,34): error TS2307: Cannot find module './SupabaseDataImporter' or its corresponding type declarations.
+src/components/assets/AssetInfoModal.tsx(300,84): error TS2554: Expected 1 arguments, but got 2.
+src/components/assets/AssetInfoModal.tsx(442,58): error TS2554: Expected 1 arguments, but got 2.
+src/components/assets/AssetInfoModal.tsx(443,65): error TS2554: Expected 1 arguments, but got 2.
+src/components/assets/InvoicesPage.tsx(46,66): error TS2339: Property 'asset_id' does not exist on type 'Asset'.
+src/components/attendance/AttendanceReportExportDialog.tsx(109,28): error TS2554: Expected 1 arguments, but got 0.
+src/components/contacts/OrganizationalStructure.tsx(237,11): error TS2339: Property 'businessUnits' does not exist on type '{ isAdmin: boolean; isAuthenticated: boolean; user: User; session: Session; profile: UserProfile; isLoading: boolean; isSyncingSession: boolean; loginWithEmail: (email: string, password: string) => Promise<...>; loginWithProvider: (provider: "azure" | ... 1 more ... | "google") => Promise<...>; logout: () => Promise...'.
+src/components/dashboard/AddEventModal.tsx(226,35): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/components/dashboard/AddEventModal.tsx(232,35): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/components/dashboard/CalendarEventModal.tsx(34,3): error TS2300: Duplicate identifier 'open'.
+src/components/dashboard/CalendarEventModal.tsx(35,3): error TS2300: Duplicate identifier 'open'.
+src/components/dashboard/CalendarEventModal.tsx(59,33): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/components/dashboard/NewsTicker.tsx(116,20): error TS2322: Type '{ children: string; jsx: true; }' is not assignable to type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.
+  Property 'jsx' does not exist on type 'DetailedHTMLProps<StyleHTMLAttributes<HTMLStyleElement>, HTMLStyleElement>'.
+src/components/dashboard/PersonalKPICards.tsx(134,42): error TS2551: Property 'ID' does not exist on type 'Kra'. Did you mean 'id'?
+src/components/dashboard/ScheduledEvents.tsx(232,21): error TS2322: Type '(options?: RefetchOptions) => Promise<QueryObserverResult<CalendarEvent[], Error>>' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'options' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' has no properties in common with type 'RefetchOptions'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(20,28): error TS2304: Cannot find name 'InsightCategory'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(27,29): error TS2304: Cannot find name 'InsightSeverity'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(34,12): error TS2304: Cannot find name 'AIInsight'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(179,17): error TS2304: Cannot find name 'BottleneckData'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(326,83): error TS2304: Cannot find name 'AIInsight'.
+src/components/division/tabs/DivisionAnalyticsTab.tsx(327,19): error TS2304: Cannot find name 'AIInsight'.
+src/components/DivisionSelector.tsx(9,36): error TS2307: Cannot find module '@/hooks/useDivisionContext' or its corresponding type declarations.
+src/components/forms/LeaveApplicationPage.tsx(130,29): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+src/components/forms/LeaveApplicationPage.tsx(139,29): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+src/components/forms/LeaveApplicationPage.tsx(147,27): error TS2345: Argument of type 'string | number' is not assignable to parameter of type 'string'.
+  Type 'number' is not assignable to type 'string'.
+src/components/forms/LeaveApplicationPage.tsx(235,26): error TS2345: Argument of type 'string' is not assignable to parameter of type '"unit" | "name" | "root" | "division" | "leaveType" | "reason" | "payrollNumber" | "absenceFrom" | "absenceTo" | `root.${string}`'.
+src/components/forms/LeaveApplicationPage.tsx(576,63): error TS2339: Property 'userPrincipalName' does not exist on type 'GraphProfile'.
+src/components/hr/LeaveApprovalDashboard.tsx(114,51): error TS2339: Property 'userPrincipalName' does not exist on type 'GraphProfile'.
+src/components/hr/WorkflowAdmin.tsx(155,30): error TS2550: Property 'replaceAll' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2021' or later.
+src/components/hr/WorkflowAdmin.tsx(769,45): error TS2339: Property 'userPrincipalName' does not exist on type 'GraphProfile'.
+src/components/KRAInsightsTab.tsx(14,32): error TS2307: Cannot find module '@/types/kpi' or its corresponding type declarations.
+src/components/KRATimelineTab.tsx(7,37): error TS2307: Cannot find module '@/types/kpi' or its corresponding type declarations.
+src/components/meeting/MeetingMinutesForm.tsx(25,34): error TS2459: Module '"@/components/common/GlobalAssigneeSelector"' declares 'Employee' locally, but it is not exported.
+src/components/setup-wizard/hooks/useSetupWizard.ts(39,11): error TS2339: Property 'createCsvFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(13,29): error TS2305: Module '"@/hooks/useMicrosoftGraph"' has no exported member 'Document'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(25,28): error TS2339: Property 'loginWithMicrosoft' does not exist on type '{ isAdmin: boolean; isAuthenticated: boolean; user: User; session: Session; profile: UserProfile; isLoading: boolean; isSyncingSession: boolean; loginWithEmail: (email: string, password: string) => Promise<...>; loginWithProvider: (provider: "azure" | ... 1 more ... | "google") => Promise<...>; logout: () => Promise...'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(25,48): error TS2339: Property 'msGraphConfig' does not exist on type '{ isAdmin: boolean; isAuthenticated: boolean; user: User; session: Session; profile: UserProfile; isLoading: boolean; isSyncingSession: boolean; loginWithEmail: (email: string, password: string) => Promise<...>; loginWithProvider: (provider: "azure" | ... 1 more ... | "google") => Promise<...>; logout: () => Promise...'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(29,5): error TS2339: Property 'createFolder' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(30,5): error TS2339: Property 'renameFolder' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(31,5): error TS2339: Property 'deleteFolder' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(33,5): error TS2339: Property 'getAuthStatus' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(107,63): error TS2339: Property 'msalInstance' does not exist on type 'Window & typeof globalThis'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(131,60): error TS2339: Property 'isFolder' does not exist on type 'Document'.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(250,65): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(284,73): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(368,71): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(403,71): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(940,67): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(957,60): error TS2554: Expected 1 arguments, but got 2.
+src/components/setup-wizard/steps/OneDriveSetup.tsx(1129,68): error TS2554: Expected 1 arguments, but got 2.
+src/components/StaffByDivisionList.tsx(3,36): error TS2307: Cannot find module '@/hooks/useDivisionContext' or its corresponding type declarations.
+src/components/StaffByDivisionList.tsx(85,63): error TS2551: Property 'job_title' does not exist on type 'StaffMember'. Did you mean 'jobTitle'?
+src/components/StaffByDivisionList.tsx(90,30): error TS2551: Property 'division_id' does not exist on type 'StaffMember'. Did you mean 'divisionId'?
+src/components/strategy/OfficerProfileModal.tsx(456,34): error TS2339: Property 'recentActivity' does not exist on type 'OfficerProfile'.
+src/components/strategy/OfficerProfileModal.tsx(471,46): error TS2339: Property 'recentActivity' does not exist on type 'OfficerProfile'.
+src/components/ticketing/TicketManager.tsx(344,7): error TS2322: Type 'Element' is not assignable to type 'string & ReactNode'.
+  Type 'ReactElement<any, any>' is not assignable to type 'string & ReactPortal'.
+    Type 'ReactElement<any, any>' is not assignable to type 'string'.
+src/components/unit-tabs/KRAsTab.tsx(229,32): error TS2339: Property 'role' does not exist on type '{ division: string; unit: string; name: string; email: string; }'.
+src/components/unit-tabs/KRAsTab.tsx(1165,39): error TS2339: Property 'cost' does not exist on type 'Kpi'.
+src/components/unit-tabs/KRAsTab.tsx(1165,62): error TS2339: Property 'cost' does not exist on type 'Kpi'.
+src/components/unit-tabs/KRAsTab.tsx(1359,42): error TS2551: Property 'objectiveId' does not exist on type 'Kra'. Did you mean 'objective_id'?
+src/components/unit-tabs/KRAsTab.tsx(1363,42): error TS2551: Property 'objectiveId' does not exist on type 'Kra'. Did you mean 'objective_id'?
+src/components/unit-tabs/modals/AddAssetModal.tsx(119,5): error TS2353: Object literal may only specify known properties, and 'specifications' does not exist in type 'Partial<Asset> | (() => Partial<Asset>)'.
+src/components/unit-tabs/modals/AddAssetModal.tsx(185,7): error TS2353: Object literal may only specify known properties, and 'specifications' does not exist in type 'SetStateAction<Partial<Asset>>'.
+src/components/unit-tabs/modals/AddRiskModal.tsx(22,16): error TS2305: Module '"@/types"' has no exported member 'StaffMember'.
+src/components/unit-tabs/modals/AddTaskModal.tsx(154,48): error TS2551: Property 'job_title' does not exist on type 'StaffMember'. Did you mean 'jobTitle'?
+src/components/unit-tabs/modals/EditTaskModal.tsx(193,204): error TS2339: Property 'split' does not exist on type 'never'.
+src/components/unit-tabs/modals/EditTaskModal.tsx(212,38): error TS2304: Cannot find name 'handleRemoveAssignee'.
+src/components/unit-tabs/modals/EditTaskModal.tsx(227,31): error TS2339: Property 'jobTitle' does not exist on type 'User'.
+src/components/unit-tabs/modals/EditTaskModal.tsx(229,17): error TS2322: Type '{ selected: { id: string; displayName: string; givenName: string; surname: string; mail: string; jobTitle: any; }[]; onSelect: (selectedUsers: any) => void; staffMembers: { id: string; displayName: string; givenName: string; surname: string; mail: string; jobTitle: string; }[]; }' is not assignable to type 'IntrinsicAttributes & GlobalAssigneeSelectorProps'.
+  Property 'onSelect' does not exist on type 'IntrinsicAttributes & GlobalAssigneeSelectorProps'.
+src/components/unit-tabs/OverviewTab.tsx(169,9): error TS2367: This comparison appears to be unintentional because the types '"individual"' and '"unit"' have no overlap.
+src/components/unit-tabs/OverviewTab.tsx(190,9): error TS2367: This comparison appears to be unintentional because the types '"individual"' and '"unit"' have no overlap.
+src/components/unit-tabs/OverviewTab.tsx(215,9): error TS2367: This comparison appears to be unintentional because the types '"individual"' and '"unit"' have no overlap.
+src/components/unit-tabs/OverviewTab.tsx(218,9): error TS2367: This comparison appears to be unintentional because the types '"individual"' and '"division"' have no overlap.
+src/components/unit-tabs/OverviewTab.tsx(597,85): error TS2339: Property 'full_name' does not exist on type 'UserContext'.
+src/components/unit-tabs/StaffMetricsTab.tsx(141,17): error TS2322: Type 'RosterEntry[]' is not assignable to type 'StaffMember[]'.
+  Type 'RosterEntry' is missing the following properties from type 'StaffMember': id, job_title, unit, mobile, and 3 more.
+src/components/unit-tabs/TaskCard.tsx(473,36): error TS2339: Property 'role' does not exist on type 'StaffMember'.
+src/components/unit-tabs/TaskCard.tsx(481,19): error TS2322: Type '{ id: string; name: string; email: string; role: string; department: string; avatarUrl: any; }[]' is not assignable to type 'StaffMember[]'.
+  Type '{ id: string; name: string; email: string; role: string; department: string; avatarUrl: any; }' is missing the following properties from type 'StaffMember': jobTitle, mobile, businessPhone, officeLocation, divisionId
+src/components/unit-tabs/TaskCard.tsx(488,76): error TS2339: Property 'avatarUrl' does not exist on type 'StaffMember'.
+src/components/unit-tabs/TaskCard.tsx(539,50): error TS2339: Property 'avatarUrl' does not exist on type 'StaffMember'.
+src/components/unit-tabs/TasksTab.tsx(245,7): error TS2322: Type 'Element' is not assignable to type 'string & ReactNode'.
+  Type 'ReactElement<any, any>' is not assignable to type 'string & ReactPortal'.
+    Type 'ReactElement<any, any>' is not assignable to type 'string'.
+src/components/unit-tabs/TasksTab.tsx(1946,59): error TS2339: Property 'avatarUrl' does not exist on type 'StaffMember'.
+src/components/unit-tabs/TasksTab.tsx(1946,78): error TS2339: Property 'photoUrl' does not exist on type 'StaffMember'.
+src/config/formTemplates.ts(309,7): error TS2322: Type '"manager_approved"' is not assignable to type '"approval" | "reminder" | "submission" | "rejection"'.
+src/config/formTemplates.ts(314,7): error TS2322: Type '"director_approved"' is not assignable to type '"approval" | "reminder" | "submission" | "rejection"'.
+src/hooks/useCalendarEvents.ts(53,9): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/hooks/useCalendarEvents.ts(73,49): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/hooks/useCalendarEvents.ts(89,54): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/hooks/useCalendarEvents.ts(136,36): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/hooks/useCalendarEvents.ts(156,38): error TS2345: Argument of type 'IPublicClientApplication' is not assignable to parameter of type 'PublicClientApplication'.
+  Property 'controller' is missing in type 'IPublicClientApplication' but required in type 'PublicClientApplication'.
+src/hooks/useCsvSync.ts(30,11): error TS2339: Property 'createCsvFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useCsvSync.ts(30,26): error TS2339: Property 'readCsvFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useCsvSync.ts(30,39): error TS2339: Property 'updateCsvFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useExcelSync.ts(25,11): error TS2339: Property 'createExcelFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useExcelSync.ts(25,28): error TS2339: Property 'readExcelFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useExcelSync.ts(25,43): error TS2339: Property 'updateExcelFile' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useExcelSync.ts(25,60): error TS2339: Property 'getExcelSheets' does not exist on type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }'.
+src/hooks/useHRService.ts(356,22): error TS2554: Expected 8-10 arguments, but got 6.
+src/hooks/useKraState.ts(99,13): error TS2741: Property 'title' is missing in type '{ id: string; name: string; objectiveId: string; objectiveName: string; department: string; responsible: string; startDate: Date; endDate: Date; progress: number; status: "open"; kpis: undefined[]; createdAt: string; updatedAt: string; }' but required in type 'KRA'.
+src/hooks/usePaymentsSharePoint.ts(190,38): error TS2339: Property 'full_name' does not exist on type 'UserRole'.
+src/hooks/useSlideshows.ts(151,26): error TS2552: Cannot find name 'getAllSlideshows'. Did you mean 'useAllSlideshows'?
+src/hooks/useStaffByDivision.ts(4,36): error TS2307: Cannot find module './useDivisionContext' or its corresponding type declarations.
+src/hooks/useStaffByDivision.ts(40,11): error TS2322: Type '{ id: any; name: any; email: any; job_title: any; department: any; mobile: any; business_phone: any; office_location: any; division_id: any; }[]' is not assignable to type 'StaffMember[]'.
+  Type '{ id: any; name: any; email: any; job_title: any; department: any; mobile: any; business_phone: any; office_location: any; division_id: any; }' is missing the following properties from type 'StaffMember': jobTitle, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(54,13): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(56,13): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(60,13): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(63,13): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(74,21): error TS2551: Property 'job_title' does not exist on type 'StaffMember'. Did you mean 'jobTitle'?
+src/hooks/useStaffByDivision.ts(88,11): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(90,11): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(92,11): error TS2322: Type 'StaffMember[]' is not assignable to type 'import("C:/Users/IT_UNIT/Desktop/Coding/scpng-intranet/src/types/staff").StaffMember[]'.
+  Type 'StaffMember' is missing the following properties from type 'StaffMember': jobTitle, department, businessPhone, officeLocation, divisionId
+src/hooks/useStaffByDivision.ts(102,21): error TS2551: Property 'job_title' does not exist on type 'StaffMember'. Did you mean 'jobTitle'?
+src/integrations/supabase/aiChatService.ts(2,31): error TS2307: Cannot find module '@/types/reports' or its corresponding type declarations.
+src/lib/assetAccessPolicy.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/lib/assetMaintenancePolicy.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/lib/assetPermissionPolicy.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/modules/regulatory/components/RegulatoryDashboard.tsx(90,61): error TS2322: Type 'UseMutateAsyncFunction<{ caseId: string; updates: Partial<RegulatoryCase>; }, Error, { caseId: string; updates: Partial<RegulatoryCase>; }, unknown>' is not assignable to type '(caseId: string, updates: Partial<RegulatoryCase>) => Promise<any>'.
+  Types of parameters 'variables' and 'caseId' are incompatible.
+    Type 'string' is not assignable to type '{ caseId: string; updates: Partial<RegulatoryCase>; }'.
+src/modules/regulatory/components/RegulatoryDashboard.tsx(103,75): error TS2322: Type 'UseMutateAsyncFunction<{ caseId: string; updates: Partial<RegulatoryCase>; }, Error, { caseId: string; updates: Partial<RegulatoryCase>; }, unknown>' is not assignable to type '(caseId: string, updates: Partial<RegulatoryCase>) => Promise<any>'.
+  Types of parameters 'variables' and 'caseId' are incompatible.
+    Type 'string' is not assignable to type '{ caseId: string; updates: Partial<RegulatoryCase>; }'.
+src/pages/AIHub.tsx(43,34): error TS2305: Module '"@/hooks/useMicrosoftGraph"' has no exported member 'GraphContextType'.
+src/pages/AIHub.tsx(2041,30): error TS2552: Cannot find name 'Skeleton'. Did you mean 'Selection'?
+src/pages/AIHub.tsx(2043,32): error TS2552: Cannot find name 'Skeleton'. Did you mean 'Selection'?
+src/pages/AIHub.tsx(2044,32): error TS2552: Cannot find name 'Skeleton'. Did you mean 'Selection'?
+src/pages/AIHub.tsx(2046,30): error TS2552: Cannot find name 'Skeleton'. Did you mean 'Selection'?
+src/pages/AIHub.tsx(2175,9): error TS2322: Type '(category: string | null, title: string, description: string, files: FileList | null, links: string[]) => Promise<void>' is not assignable to type '(title: string, description: string, files: FileList, links: string[]) => void'.
+  Target signature provides too few arguments. Expected 5 or more, but got 4.
+src/pages/Approvals.tsx(446,50): error TS2339: Property 'userPrincipalName' does not exist on type 'GraphProfile'.
+src/pages/AssetManagementNew.tsx(326,13): error TS2339: Property 'specifications' does not exist on type 'Asset'.
+src/pages/AssetManagementNew.tsx(540,23): error TS2322: Type '{ isOpen: boolean; onClose: () => void; onAdd: (newAssetData: Partial<Asset>) => Promise<void>; divisions: Division[]; units: Unit[]; staffMembers: StaffMember[]; existingNames: string[]; existingTypes: string[]; existingVendors: string[]; }' is not assignable to type 'IntrinsicAttributes & AddAssetModalProps'.
+  Property 'staffMembers' does not exist on type 'IntrinsicAttributes & AddAssetModalProps'.
+src/pages/AssetManagementNew.tsx(955,235): error TS2345: Argument of type '"brand"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(959,50): error TS2322: Type '"brand"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(963,235): error TS2345: Argument of type '"model"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(967,50): error TS2322: Type '"model"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(971,235): error TS2345: Argument of type '"serial_number"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(975,50): error TS2322: Type '"serial_number"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(979,235): error TS2345: Argument of type '"asset_id"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(983,50): error TS2322: Type '"asset_id"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1051,235): error TS2345: Argument of type '"purchase_cost"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1055,50): error TS2322: Type '"purchase_cost"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1059,235): error TS2345: Argument of type '"vendor"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1063,50): error TS2322: Type '"vendor"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1067,235): error TS2345: Argument of type '"warranty_expiry_date"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1071,50): error TS2322: Type '"warranty_expiry_date"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1075,235): error TS2345: Argument of type '"expiry_date"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1079,50): error TS2322: Type '"expiry_date"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1083,235): error TS2345: Argument of type '"life_expectancy_years"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1087,50): error TS2322: Type '"life_expectancy_years"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1091,235): error TS2345: Argument of type '"depreciated_value"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1095,50): error TS2322: Type '"depreciated_value"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1099,235): error TS2345: Argument of type '"ytd_usage"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1103,50): error TS2322: Type '"ytd_usage"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1107,235): error TS2345: Argument of type '"notes"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1111,50): error TS2322: Type '"notes"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1123,235): error TS2345: Argument of type '"last_updated_by"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1127,50): error TS2820: Type '"last_updated_by"' is not assignable to type 'SortableAssetColumn'. Did you mean '"last_updated"'?
+src/pages/AssetManagementNew.tsx(1131,235): error TS2345: Argument of type '"created_at"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1135,50): error TS2322: Type '"created_at"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1139,235): error TS2345: Argument of type '"created_by"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1143,50): error TS2322: Type '"created_by"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1147,235): error TS2345: Argument of type '"admin_comments"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1151,50): error TS2322: Type '"admin_comments"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1155,235): error TS2345: Argument of type '"invoice_url"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1159,50): error TS2322: Type '"invoice_url"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1163,235): error TS2345: Argument of type '"barcode_url"' is not assignable to parameter of type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1167,50): error TS2322: Type '"barcode_url"' is not assignable to type 'SortableAssetColumn'.
+src/pages/AssetManagementNew.tsx(1239,79): error TS2339: Property 'asset_id' does not exist on type 'Asset'.
+src/pages/AssetManagementNew.tsx(1240,65): error TS2339: Property 'asset_id' does not exist on type 'Asset'.
+src/pages/AssetPublicProfilePage.tsx(199,64): error TS2554: Expected 1 arguments, but got 2.
+src/pages/Documents.tsx(3,29): error TS2305: Module '"@/hooks/useMicrosoftGraph.tsx"' has no exported member 'Document'.
+src/pages/Documents.tsx(613,56): error TS2339: Property 'category' does not exist on type 'DisplayableDocument'.
+src/pages/Documents.tsx(716,20): error TS2339: Property 'isSuperAdmin' does not exist on type 'RoleBasedAuth'.
+src/pages/EditEmployeeProfile.tsx(219,9): error TS2322: Type 'string' is not assignable to type 'Gender'.
+src/pages/LicensingRegistry.tsx(160,24): error TS2352: Conversion of type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[] | null>; getFolderContents: (folderId: string) => Promise<any[] | null>; handleLogin: () => Promise<void>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<boolean>; }' to type 'ExpectedGraphContextType' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ isLoading: boolean; lastError: string; getOneDriveDocuments: () => Promise<Document[]>; getFolderContents: (folderId: string) => Promise<any[]>; handleLogin: () => Promise<...>; ... 12 more ...; moveOneDriveItem: (itemId: string, destinationFolderId: string) => Promise<...>; }' is missing the following properties from type 'ExpectedGraphContextType': getAuthStatus, getAccessToken
+src/pages/MarketData.backup.tsx(295,57): error TS2322: Type '"600"' is not assignable to type 'Scriptable<number | "bold" | "normal" | "bolder" | "lighter", ScriptableTooltipContext<"line">>'.
+src/pages/MarketData.tsx(509,56): error TS2551: Property 'pointHoverBackgroundColor' does not exist on type 'ChartDataset<keyof ChartTypeRegistry, (number | [number, number] | Point | BubbleDataPoint)[]>'. Did you mean 'hoverBackgroundColor'?
+  Property 'pointHoverBackgroundColor' does not exist on type '_DeepPartialObject<{ type: "doughnut"; } & DoughnutControllerDatasetOptions> & ChartDatasetProperties<keyof ChartTypeRegistry, (number | ... 2 more ... | BubbleDataPoint)[]>'.
+src/pages/MarketData.tsx(552,33): error TS2322: Type '(isSilent?: boolean) => Promise<void>' is not assignable to type 'MouseEventHandler<HTMLButtonElement>'.
+  Types of parameters 'isSilent' and 'event' are incompatible.
+    Type 'MouseEvent<HTMLButtonElement, MouseEvent>' is not assignable to type 'boolean'.
+src/pages/PaymentsPage.tsx(31,17): error TS2322: Type '{ children: Element; title: string; }' is not assignable to type 'IntrinsicAttributes & PageLayoutProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & PageLayoutProps'.
+src/pages/PaymentsPage.tsx(178,29): error TS2339: Property 'asset_id' does not exist on type 'Asset'.
+src/pages/Strategy.tsx(345,26): error TS2551: Property 'objectiveId' does not exist on type 'Kra'. Did you mean 'objective_id'?
+src/pages/Strategy.tsx(395,13): error TS2304: Cannot find name 'toast'.
+src/pages/Strategy.tsx(425,13): error TS2304: Cannot find name 'toast'.
+src/pages/Strategy.tsx(432,13): error TS2304: Cannot find name 'toast'.
+src/pages/Strategy.tsx(977,49): error TS2304: Cannot find name 'toast'.
+src/pages/TestGround.tsx(1214,51): error TS2339: Property 'display_name' does not exist on type 'UserRole'.
+src/pages/TestGround.tsx(1215,53): error TS2339: Property 'email' does not exist on type 'UserRole'.
+src/pages/TestGround.tsx(3065,41): error TS2322: Type '{ template: FormTemplate; onSubmit: (data: any) => Promise<void>; isSubmitting: boolean; }' is not assignable to type 'IntrinsicAttributes & FormRendererProps'.
+  Property 'isSubmitting' does not exist on type 'IntrinsicAttributes & FormRendererProps'.
+src/pages/TestGround.tsx(4506,41): error TS2322: Type '{ template: FormTemplate; onSubmit: (data: any) => Promise<void>; isSubmitting: boolean; }' is not assignable to type 'IntrinsicAttributes & FormRendererProps'.
+  Property 'isSubmitting' does not exist on type 'IntrinsicAttributes & FormRendererProps'.
+src/pages/TimeAttendance.tsx(121,51): error TS2339: Property 'full_name' does not exist on type 'UserRole'.
+src/services/hrEmailService.ts(54,6): error TS2550: Property 'replaceAll' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2021' or later.
+src/services/hrSharePointService.ts(1015,30): error TS2367: This comparison appears to be unintentional because the types 'LeaveType' and '"N/A"' have no overlap.
+src/services/hrSharePointService.ts(1150,13): error TS2322: Type 'string | number' is not assignable to type 'string'.
+  Type 'number' is not assignable to type 'string'.
+src/services/meetingDocxService.ts(53,17): error TS2551: Property 'owner' does not exist on type 'ActionItemRecord'. Did you mean 'owners'?
+src/services/meetingDocxService.ts(54,36): error TS2551: Property 'owner' does not exist on type 'ActionItemRecord'. Did you mean 'owners'?
+src/services/meetingShareService.ts(61,7): error TS2353: Object literal may only specify known properties, and 'driveId' does not exist in type '{ id: string; webUrl: string; }'.
+src/services/meetingShareService.ts(156,40): error TS2339: Property 'driveId' does not exist on type '{ id: string; webUrl: string; }'.
+src/services/sharePointOpsService.ts(1700,13): error TS2353: Object literal may only specify known properties, and 'level' does not exist in type 'KRA'.
+src/services/sharePointOpsService.ts(2298,170): error TS2561: Object literal may only specify known properties, but 'created_at' does not exist in type 'Report'. Did you mean to write 'created_by'?
+src/services/sharePointOpsService.ts(2316,13): error TS2561: Object literal may only specify known properties, but 'created_at' does not exist in type 'Report'. Did you mean to write 'created_by'?
+src/services/timeAttendanceSharePointService.ts(431,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(432,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(458,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(459,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(483,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(484,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(485,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(486,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(548,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(549,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(610,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(611,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(612,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(613,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(689,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(690,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(691,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(692,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(693,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(694,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(695,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(696,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(697,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(698,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/services/timeAttendanceSharePointService.ts(699,7): error TS2322: Type 'unknown' is not assignable to type 'string'.
+src/tests/csv-helpers.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/tests/csv-sync.test.ts(1,65): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/tests/csv-sync.test.ts(2,10): error TS2305: Module '"../hooks/useCsvSync"' has no exported member 'initializeCsvFiles'.
+src/tests/pngPublicHolidays.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/tests/sharePointLookupUtils.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/tests/strategyExecutionGraphService.test.ts(1,38): error TS2307: Cannot find module 'vitest' or its corresponding type declarations.
+src/utils/scpngEmailBuilder.ts(157,6): error TS2550: Property 'replaceAll' does not exist on type 'string'. Do you need to change your target library? Try changing the 'lib' compiler option to 'es2021' or later.

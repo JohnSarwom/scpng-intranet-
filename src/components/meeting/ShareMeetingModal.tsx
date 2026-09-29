@@ -139,6 +139,7 @@ export const ShareMeetingModal = ({ isOpen, onClose, data, onSuccess }: ShareMee
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   className="min-h-[120px] bg-slate-50 border-gray-200 focus:ring-[#83002A] focus:border-[#83002A] rounded-xl resize-none text-sm p-4"
+                  aiAssist={{ mode: ['polish', 'grammar'], context: 'message emailed to colleagues when sharing meeting minutes', onApply: setCustomMessage }}
                 />
               </div>
 

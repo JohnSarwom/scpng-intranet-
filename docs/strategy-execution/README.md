@@ -1,5 +1,34 @@
 # Strategy Execution Roadmap
 
+## Developer handoff — start here (10 September 2026)
+
+Read the **[current developer handoff](2026-09-10-developer-handoff.md)** first, then the [9 September consolidated handoff](2026-09-09-developer-handoff.md) for the complete earlier implementation and recovery details. The current handoff adds the scheduler tenant inventory, fail-closed readiness manifest, offline GitHub quality gate, authorized production schema result and locally verified tenant adapters to the reporting, archive, AI, governance and trusted-executor foundation. The older numbered roadmap and sprint documents describe earlier proposals; their phase numbers and completion language must not be treated as the present status.
+
+| Current evidence | Purpose |
+|---|---|
+| [Developer handoff](2026-09-10-developer-handoff.md) | Primary starting point and current Phase 4F continuation instructions |
+| [9 September developer handoff](2026-09-09-developer-handoff.md) | Consolidated Phase 1–4D implementation, recovery and transfer details |
+| [Prior developer handoff](2026-09-08-developer-handoff.md) | Detailed Phase 1–2B implementation and source evidence |
+| [Remediation phases](2026-09-07-remediation-phases.md) | Phase 1 / 2A / 2B results and remaining Phases 3–5 |
+| [Application linkage audit](2026-09-07-task-to-goal-audit.md) | Original 22 findings, code evidence and controlled examples |
+| [LIS source alignment audit](2026-09-07-lis-workplan-source-alignment-audit.md) | Planning-model reference; automated import recommendations are superseded |
+| [Phase 2B implementation report](2026-09-07-phase-2b-activation.md) | Activation, source metadata, storage and recovery changes |
+| [Phase 3 P1B graph integrity](2026-09-08-phase-3-p1b-graph-integrity.md) | Conservation, scoping, exceptions and graph diagnostics |
+| [Phase 3 P1C measurement evidence](2026-09-08-phase-3-p1c-measurement-evidence.md) | Specialized KPI definitions, dated evidence and fail-closed calculations |
+| [Phase 3 P1D activity retirement](2026-09-09-phase-3-p1d-activity-retirement.md) | Reviewed activated-row retirement/reassignment, impact previews and recovery checkpoints |
+| [Phase 3 P1E structure retirement](2026-09-09-phase-3-p1e-structure-retirement.md) | Reviewed goal/source-KRA subtree retirement and reassignment with evidence conservation |
+| [Phase 4C governance history](2026-09-09-phase-4c-governance-history.md) | Authorized read-only retirement history, audit evidence and recovery visibility |
+| [Phase 4D scheduled-delivery executor](2026-09-09-phase-4d-scheduled-delivery-executor.md) | Archive-bound executor protocol, idempotent retries, leases and legacy-flow quarantine |
+| [Phase 4E scheduler tenant readiness](2026-09-10-phase-4e-scheduler-tenant-readiness.md) | GET-only schema/ETag inventory and evidence-gated activation manifest |
+| [Phase 4F offline quality gate](2026-09-10-phase-4f-offline-quality-gate.md) | GitHub-ready local regression, TypeScript-baseline and production-build checks |
+| [Phase 5 production readiness inventory](2026-09-10-phase-5-production-readiness-inventory.md) | Authenticated GET-only production schema/ETag result and exact blockers |
+| [Phase 5A tenant-adapter implementation](2026-09-10-phase-5a-tenant-adapter-implementation.md) | Exact SharePoint archive/journal/checkpoint adapters, idempotent email adapter and controlled-UAT boundary |
+| [Handoff evidence](handoff-evidence/README.md) | Preserved validation outputs and file fingerprints |
+
+**Stop point:** Phase 2B, all Phase 3 integrity/lifecycle slices and Phase 4 implementation are complete. GitHub pull request #1 has green quality and Vercel preview checks. The authenticated [Phase 5 production inventory and schema remediation](2026-09-10-phase-5-production-readiness-inventory.md) confirms both required lists, ETags, fields and indexes; `schemaReadyForAdapterImplementation` is `true`. The [Phase 5A tenant adapters](2026-09-10-phase-5a-tenant-adapter-implementation.md) are implemented and locally tested but remain unwired. Service-identity provisioning, provider configuration, capability UAT, email and activation remain gated; no list items or permissions changed, and no merge or production application deployment has occurred. Independently calculated legacy flows remain hard-quarantined. The LIS document is a planning guide only, and the LIS team will enter its own data manually; no automated LIS import is planned.
+
+---
+
 This package defines the implementation roadmap for turning strategy execution into one connected operating model across the Strategy page, Task Registry, Division/Unit hierarchy, KRAs, KPIs, progress indicators, reporting, and governance.
 
 The target cascade is:
@@ -38,6 +67,8 @@ Start with the introductory summary, then read the phases in order. The sequence
 | 15 | [Sixth Sprint Execution Plan](15-sixth-sprint-execution-plan.md) | Governance, audit visibility, UAT, release readiness, release blockers, and post-release monitoring |
 | 16 | [Controlled Release and Monitoring Plan](16-controlled-release-and-monitoring-plan.md) | Final UAT, sign-off, deployment, monitoring, escalation, rollback, and stabilization playbook |
 | 17 | [Operational Runbook and Continuous Improvement](17-operational-runbook-and-continuous-improvement.md) | Business-as-usual governance cadence, diagnostics, report operations, stewardship, and improvement backlog |
+
+Current local implementation evidence: [Phase 4 immutable report archive and generation history](2026-09-09-phase-4-report-archive.md).
 
 ## Recommended Implementation Sequence
 

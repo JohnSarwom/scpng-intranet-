@@ -103,6 +103,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 value={editedProject.name || ''}
                 onChange={(e) => handleChange('name', e.target.value)}
                 className="h-11 dark:bg-gray-950/50 dark:border-white/10 focus:ring-blue-500/50 dark:text-white placeholder:text-gray-500 transition-all backdrop-blur-sm"
+                aiAssist={{ mode: 'title', context: 'project name', onApply: (v) => handleChange('name', v), container }}
               />
             </div>
             <div className="grid gap-2">
@@ -113,6 +114,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
                 value={editedProject.description || ''}
                 onChange={(e) => handleChange('description', e.target.value)}
                 className="min-h-[100px] dark:bg-gray-950/50 dark:border-white/10 focus:ring-blue-500/50 dark:text-white placeholder:text-gray-500 transition-all backdrop-blur-sm resize-none"
+                aiAssist={{ mode: ['polish', 'grammar', 'expand'], context: 'project description', onApply: (v) => handleChange('description', v), container }}
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -57,6 +57,7 @@ export interface KPI {
 
 export interface KRA {
   id: string;
+  revision?: string;
   name: string;
   objectiveId: string;
   objectiveName: string;
@@ -109,6 +110,7 @@ export interface TaskComment {
 
 export interface Task {
   id: string;
+  revision?: string;
   title: string;
   description: string;
   status: 'todo' | 'in-progress' | 'on-hold' | 'in-review' | 'completed' | 'done';
@@ -324,6 +326,7 @@ export interface User {
 
 export interface Objective {
   id: string | number;
+  revision?: string;
   title: string;
   description?: string;
   // New fields for SharePoint compatibility and consolidation
@@ -350,9 +353,66 @@ export type KpiLevel = 'director' | 'manager' | 'staff';
 export type KpiReviewStatus = 'draft' | 'submitted' | 'under_review' | 'approved' | 'rejected';
 export type KpiReportingFrequency = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual';
 
+export type KpiMeasurementMode =
+  | 'count'
+  | 'percentage'
+  | 'duration-at-most'
+  | 'population'
+  | 'service-level'
+  | 'recurrence'
+  | 'milestone'
+  | 'continuous'
+  | 'as-required';
+
+export interface KpiMeasurementDefinition {
+  mode: KpiMeasurementMode;
+  rawTarget: string;
+  operator?: 'at-least' | 'at-most' | 'equal';
+  target?: number;
+  unit?: string;
+  population?: string;
+  frequency?: string;
+  serviceLevel?: string;
+  timeAllowance?: { value: number; unit: string };
+  milestoneWindow?: string;
+}
+
+export interface KpiMeasurementObservation {
+  value: number;
+  observedAt?: string;
+  evidenceRef?: string;
+}
+
+export interface KpiMeasurementMilestoneEvidence {
+  id: string;
+  title?: string;
+  completed: boolean;
+  dueDate?: string;
+  completedAt?: string;
+  weight?: number;
+  evidenceRef?: string;
+}
+
+/** Dated evidence for one defined reporting window; Tasks remain supporting records. */
+export interface KpiMeasurementEvidence {
+  actual?: number;
+  eligibleCount?: number;
+  compliantCount?: number;
+  expectedOccurrences?: number;
+  completedOccurrences?: number;
+  observations?: KpiMeasurementObservation[];
+  milestones?: KpiMeasurementMilestoneEvidence[];
+  evidenceRefs?: string[];
+  windowStart?: string;
+  windowEnd?: string;
+  asOf?: string;
+  notes?: string;
+}
+
 export interface Kpi {
   tempId?: string;
   id: string | number;
+  revision?: string;
   kra_id?: string | number | null;
   initiative_id?: string | number | null;
   name: string;
@@ -372,6 +432,8 @@ export interface Kpi {
   costAssociated?: number;
   calculationType?: 'manual' | 'checklist' | 'task-completion';
   checklist?: ChecklistItem[];
+  measurementDefinition?: KpiMeasurementDefinition;
+  measurementEvidence?: KpiMeasurementEvidence;
   // Governance fields (Framework §5.1)
   level?: KpiLevel;
   owner?: User;
@@ -386,6 +448,7 @@ export interface Kpi {
 
 export interface Kra {
   id: string | number;
+  revision?: string;
   title: string;
   objective_id?: string | number | null;
   unit?: string | null;

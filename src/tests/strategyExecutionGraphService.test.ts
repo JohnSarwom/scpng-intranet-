@@ -153,8 +153,8 @@ describe('strategyExecutionGraphService (role-recursive)', () => {
       ],
     });
     const manager = findNode(graph.goals, 'm1');
-    // weighted: (100*3 + 0*1)/4 = 75
-    expect(manager.progress?.value).toBe(75);
+    // The second child has no evidence, so it cannot become a false zero in the denominator.
+    expect(manager.progress?.value).toBe(100);
     expect(manager.progress?.source).toBe('weighted');
   });
 

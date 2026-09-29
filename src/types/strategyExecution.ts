@@ -14,6 +14,7 @@ export type ProgressCalculationSource =
   | 'manual'
   | 'checklist'
   | 'task-completion'
+  | 'specialized-measurement'
   | 'weighted'
   | 'average'
   | 'explicit-status'
@@ -45,6 +46,27 @@ export interface ProgressCalculationResult {
   completedChildCount?: number;
   explanation: string;
   warnings?: string[];
+  measurement?: ProgressMeasurementSummary;
+}
+
+export interface ProgressMeasurementSummary {
+  mode: NonNullable<Kpi['measurementDefinition']>['mode'];
+  rawTarget: string;
+  operator?: NonNullable<Kpi['measurementDefinition']>['operator'];
+  target?: number;
+  actual?: number;
+  numerator?: number;
+  denominator?: number;
+  unit?: string;
+  population?: string;
+  frequency?: string;
+  serviceLevel?: string;
+  windowStart?: string;
+  windowEnd?: string;
+  asOf?: string;
+  evidenceCount: number;
+  targetMet?: boolean;
+  state: 'calculated' | 'missing-evidence' | 'invalid';
 }
 
 export interface LinkageDiagnostic {
@@ -67,6 +89,31 @@ export interface StrategyExecutionGraph {
   divisions: DivisionExecutionNode[];
   lookups: StrategyExecutionLookups;
   diagnostics: LinkageDiagnostic[];
+  /** Records that could not be placed on a trustworthy canonical path. */
+  exceptions: StrategyExecutionExceptions;
+  /** Conservation proof for the exact input and active scope. */
+  integrity: StrategyExecutionIntegritySummary;
+}
+
+export interface StrategyExecutionExceptions {
+  performanceRecords: PerformanceNode[];
+  tasks: TaskNode[];
+}
+
+export interface StrategyExecutionIntegritySummary {
+  inputGoalCount: number;
+  inputPerformanceRecordCount: number;
+  inputTaskCount: number;
+  includedPerformanceRecordCount: number;
+  includedTaskCount: number;
+  representedGoalCount: number;
+  representedPerformanceRecordCount: number;
+  representedTaskCount: number;
+  filteredOutPerformanceRecordCount: number;
+  filteredOutTaskCount: number;
+  performanceRecordsConserved: boolean;
+  tasksConserved: boolean;
+  isConserved: boolean;
 }
 
 export interface StrategyExecutionLookups {
@@ -85,10 +132,14 @@ export interface StrategyExecutionLookups {
 
 export interface StrategyExecutionBaseNode {
   id: string;
+  /** Original list item id when the graph id had to be namespaced/quarantined. */
+  sourceId?: string;
   title: string;
   sourceList: string;
   ownerName?: string;
   ownerEmail?: string;
+  /** False means the node is retained only as ancestry context for a scoped view. */
+  inScope?: boolean;
   progress?: ProgressCalculationResult;
   diagnostics?: LinkageDiagnostic[];
 }
@@ -133,6 +184,7 @@ export interface TaskNode extends StrategyExecutionBaseNode {
   dueDate?: string;
   completedAt?: string;
   evidenceCount?: number;
+  createdByEmail?: string;
   raw?: Task;
 }
 
@@ -158,12 +210,20 @@ export interface PerformanceRecord {
   division?: string;
   unit?: string;
   calculationType?: 'manual' | 'checklist' | 'task-completion';
+  checklist?: Kpi['checklist'];
+  measurementDefinition?: Kpi['measurementDefinition'];
+  measurementEvidence?: Kpi['measurementEvidence'];
   target?: number;
   actual?: number;
   weight?: number;
   status?: string;
   progress?: number;
   sourceList?: string;
+  dataSource?: string;
+  reportingFrequency?: Kpi['reportingFrequency'];
+  reviewAuthority?: string;
+  reviewStatus?: Kpi['reviewStatus'];
+  reviewNote?: string;
   /** True when role/parent were inferred by the legacy adapter, not stored. */
   rolesInferred?: boolean;
 }
@@ -172,10 +232,22 @@ export interface PerformanceRecord {
 export interface PerformanceNode extends StrategyExecutionBaseNode {
   ownerRole?: PerformanceRole;
   parentId?: string;
+  /** Original parent lookup retained when an unsafe edge is quarantined. */
+  sourceParentId?: string;
   parentStrategicGoalId?: string;
   division?: string;
   unit?: string;
   calculationType?: PerformanceRecord['calculationType'];
+  checklist?: PerformanceRecord['checklist'];
+  measurementDefinition?: PerformanceRecord['measurementDefinition'];
+  measurementEvidence?: PerformanceRecord['measurementEvidence'];
+  evidenceCount?: number;
+  status?: PerformanceRecord['status'];
+  dataSource?: PerformanceRecord['dataSource'];
+  reportingFrequency?: PerformanceRecord['reportingFrequency'];
+  reviewAuthority?: PerformanceRecord['reviewAuthority'];
+  reviewStatus?: PerformanceRecord['reviewStatus'];
+  reviewNote?: PerformanceRecord['reviewNote'];
   children: PerformanceNode[];
   tasks: TaskNode[];
   rolesInferred?: boolean;
@@ -212,6 +284,19 @@ export interface StrategyTraceabilityReport {
   diagnostics: LinkageDiagnostic[];
   summary: StrategyReportSummary;
   sections: StrategyReportSection[];
+  snapshot: StrategyReportSnapshot;
+  integrity: StrategyExecutionIntegritySummary;
+}
+
+export interface StrategyReportSnapshot {
+  version: 1;
+  graphGeneratedAt: string;
+  capturedAt: string;
+  immutable: true;
+  dateBasis: 'task-interval-overlap-and-completion-events';
+  scopeLabel: string;
+  dataSourceSummary: string;
+  progressFormula: string;
 }
 
 export type StrategyReportType =
@@ -256,4 +341,22 @@ export interface StrategyReportRow {
   evidenceCount?: number;
   diagnosticCount?: number;
   nextAction?: string;
+  divisionName?: string;
+  unitName?: string;
+  dueDate?: string;
+  completedAt?: string;
+  evidenceState?: 'not-applicable' | 'present' | 'missing';
+  sourceList?: string;
+  status?: string;
+  priority?: string;
+  target?: number;
+  actual?: number;
+  variance?: number;
+  varianceState?: 'favorable' | 'unfavorable' | 'on-target' | 'unavailable';
+  measurementMode?: NonNullable<Kpi['measurementDefinition']>['mode'];
+  measurementOperator?: NonNullable<Kpi['measurementDefinition']>['operator'];
+  dataSource?: string;
+  reportingFrequency?: Kpi['reportingFrequency'];
+  reviewAuthority?: string;
+  reviewStatus?: Kpi['reviewStatus'];
 }
