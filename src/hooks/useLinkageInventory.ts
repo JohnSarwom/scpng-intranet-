@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useOpsService } from '@/hooks/useSharePointOps';
 import { buildLinkageInventory, type LinkageInventory } from '@/services/linkageInventoryService';
+import { isOperationalTask } from '@/utils/taskAlignment';
 
 // Unfiltered read: the inventory must resolve links that cross Division lines,
 // so the list readers' scope filters are bypassed here. Who may view the result
@@ -30,7 +31,15 @@ export function useLinkageInventory(divisionName: string | undefined, unitNames:
       return buildLinkageInventory({
         divisionName: divisionName || '',
         unitNames,
-        tasks,
+        tasks: tasks.map(task => ({
+          id: String(task.id),
+          title: task.title,
+          status: task.status,
+          unit_id: task.unit_id,
+          kpi_id: task.kpi_id,
+          kra_id: task.kra_id,
+          operational: isOperationalTask(task.tags),
+        })),
         kpis: kpis.map(kpi => ({ id: String(kpi.id), name: kpi.name, kra_id: kpi.kra_id })),
         kras: kras.map(kra => ({
           id: String(kra.id), title: kra.title, unit: kra.unit, division: kra.division, objective_id: kra.objective_id,

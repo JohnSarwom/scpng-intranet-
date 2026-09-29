@@ -20,6 +20,7 @@ const {
   canViewLinkageInventory,
   linkageIssuesToCsv,
   tracedTaskShare,
+  strategicTaskCount,
   NO_UNIT_LABEL,
 } = load('../services/linkageInventoryService.ts');
 
@@ -71,14 +72,14 @@ test('tasks are classified into exactly one linkage state per unit', () => {
   const inventory = build();
   const it = unitOf(inventory, 'IT Unit');
   assert.deepEqual({ ...it.tasks }, {
-    total: 4, traced: 2, chainIncomplete: 0, kraOnly: 0, brokenLink: 1, unlinked: 1, kraConflict: 1,
+    total: 4, traced: 2, chainIncomplete: 0, kraOnly: 0, brokenLink: 1, unlinked: 1, operational: 0, kraConflict: 1,
   });
   const hr = unitOf(inventory, 'HR Unit');
   assert.deepEqual({ ...hr.tasks }, {
-    total: 3, traced: 0, chainIncomplete: 1, kraOnly: 1, brokenLink: 1, unlinked: 0, kraConflict: 0,
+    total: 3, traced: 0, chainIncomplete: 1, kraOnly: 1, brokenLink: 1, unlinked: 0, operational: 0, kraConflict: 0,
   });
   const t = inventory.totals.tasks;
-  assert.equal(t.traced + t.chainIncomplete + t.kraOnly + t.brokenLink + t.unlinked, t.total);
+  assert.equal(t.traced + t.chainIncomplete + t.kraOnly + t.brokenLink + t.unlinked + t.operational, t.total);
 });
 
 test('tasks with no unit are placed only through a KRA in this division', () => {
@@ -147,4 +148,33 @@ test('CSV export quotes values and neutralises formula injection', () => {
   const lines = linkageIssuesToCsv(inventory).split('\r\n');
   assert.equal(lines[0], 'Division,Unit,Record type,Record ID,Title,Severity,Issue');
   assert.equal(lines[1], `Corporate Services Division,IT Unit,task,t1,"'=HYPERLINK(""x""), ""quoted""",gap,Task is not linked to any KPI or KRA.`);
+});
+
+test('operational tasks are counted separately and leave the traced share', () => {
+  const inventory = buildLinkageInventory({
+    divisionName: 'Corporate Services Division',
+    unitNames: ['IT Unit'],
+    tasks: [
+      { id: 'a', title: 'Linked', unit_id: 'IT Unit', kpi_id: '200' },
+      { id: 'b', title: 'Printer fix', unit_id: 'IT Unit', operational: true },
+      { id: 'c', title: 'Undecided', unit_id: 'IT Unit' },
+      { id: 'd', title: 'Operational flag but linked', unit_id: 'IT Unit', kpi_id: '200', operational: true },
+    ],
+    kpis, kras, objectives,
+  });
+  const it = unitOf(inventory, 'IT Unit');
+  assert.equal(it.tasks.operational, 1);
+  assert.equal(it.tasks.unlinked, 1);
+  assert.equal(it.tasks.traced, 2, 'an existing KPI link wins over the operational flag');
+  assert.equal(strategicTaskCount(it), 3);
+  assert.equal(tracedTaskShare(it), 67);
+  assert.ok(!inventory.issues.some(i => i.recordId === 'b'), 'operational tasks are not listed for review');
+});
+
+test('a scope with only operational tasks has no traced share', () => {
+  const inventory = buildLinkageInventory({
+    divisionName: 'Corporate Services Division', unitNames: ['IT Unit'],
+    tasks: [{ id: 'x', unit_id: 'IT Unit', operational: true }], kpis: [], kras: [], objectives: [],
+  });
+  assert.equal(tracedTaskShare(unitOf(inventory, 'IT Unit')), null);
 });
