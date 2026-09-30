@@ -17,6 +17,7 @@ import DivisionStaffMap from '@/utils/divisionStaffMap';
 import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { divisions as staticDivisions } from '@/data/divisions';
 import { canManageWorkPlan } from '@/utils/workPlanAccess';
+import { scopeRecordsToDivision } from '@/utils/divisionScope';
 
 export interface DivisionInfo {
   id: string;
@@ -164,10 +165,20 @@ export function useDivisionData(divisionIdParam?: string): UseDivisionDataReturn
       }));
   }, [targetDivisionName, officerProfiles]);
 
+  // The shared readers return the viewer's own/unit tasks and organisation-wide KPIs
+  // (and every KRA for admins). Narrow them to this Division so its figures are its own.
+  const scoped = useMemo(() => scopeRecordsToDivision({
+    divisionName: division?.name || targetDivisionName,
+    unitNames: division?.unitNames || [],
+    tasks: taskState.data || [],
+    kpis: kpiState.data || [],
+    kras: kraState.data || [],
+  }), [division, targetDivisionName, taskState.data, kpiState.data, kraState.data]);
+
   // Combine KRAs and KPIs for Overview charts (same pattern as Unit.tsx)
   const combinedKras = useMemo<KRA[]>(() => {
-    const kras = kraState.data || [];
-    const kpis = kpiState.data || [];
+    const kras = scoped.kras;
+    const kpis = scoped.kpis;
     const objectives = objectivesState.data || [];
 
     const kpisByKraId = kpis.reduce((acc, kpi) => {
@@ -221,7 +232,7 @@ export function useDivisionData(divisionIdParam?: string): UseDivisionDataReturn
         unitObjectives: objective ? { title: objective.title } : null,
       };
     });
-  }, [kraState.data, kpiState.data, objectivesState.data]);
+  }, [scoped, objectivesState.data]);
 
   // Strategic objectives for dropdowns
   const strategicObjectives = useMemo(() => {
@@ -259,10 +270,10 @@ export function useDivisionData(divisionIdParam?: string): UseDivisionDataReturn
   return {
     division,
     userContext: divisionContext,
-    tasks: taskState.data || [],
+    tasks: scoped.tasks,
     projects: projectState.data || [],
-    kras: kraState.data || [],
-    kpis: kpiState.data || [],
+    kras: scoped.kras,
+    kpis: scoped.kpis,
     objectives: objectivesState.data || [],
     combinedKras,
     staff,
