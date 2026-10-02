@@ -16,6 +16,7 @@ import PageLayout from '@/components/layout/PageLayout';
 import Index from "./pages/Index";
 import News from "./pages/News";
 import MarketData from "./pages/MarketData";
+import PNGXAnnouncements from "./pages/PNGXAnnouncements";
 import DailyMarketSummary from "./pages/DailyMarketSummary";
 import AIHub from "./pages/AIHub";
 import Admin from "./pages/Admin";
@@ -157,6 +158,11 @@ const AppRoutes = () => {
       <Route path="/market-data" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'market_data', action: 'read' }]}>
           <MarketData />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/pngx-announcements" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'market_data', action: 'read' }]}>
+          <PNGXAnnouncements />
         </RoleProtectedRoute>
       } />
       <Route path="/market-summary" element={

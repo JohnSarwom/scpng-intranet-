@@ -6,7 +6,7 @@ import {
   mainNavItems,
   adminNavItems,
   footerNavItems,
-  NavItem
+  canViewNavItem
 } from '@/config/navItems';
 
 /**
@@ -72,26 +72,7 @@ const MainSidebar: React.FC<MainSidebarProps> = memo(({
       return [...mainNavItems, ...footerNavItems];
     }
 
-    /**
-     * P1: Robust permission validation logic
-     * Follows least-privilege principle: restricted by default unless scope present.
-     */
-    const hasAccess = (item: NavItem): boolean => {
-      // Admin bypass
-      if (isAdmin) return true;
-      // Strict admin-only check
-      if (item.isAdminOnly && !isAdmin) return false;
-      // Public / No resource restriction items
-      if (!item.resource) return true;
-      // No permissions object available
-      if (!userPermissions) return false;
-      // Global wildcard permission
-      if (userPermissions.all?.includes('*')) return true;
-      // Target resource scope validation
-      return !!(userPermissions[item.resource] && userPermissions[item.resource].length > 0);
-    };
-
-    const nav = mainNavItems.filter(hasAccess);
+    const nav = mainNavItems.filter(item => canViewNavItem(item, userPermissions, isAdmin));
 
     // Append Admin items if applicable
     if (isAdmin) {
@@ -165,7 +146,7 @@ const MainSidebar: React.FC<MainSidebarProps> = memo(({
                 )}>
                   <Icon size={20} />
                 </div>
-                <span className="text-[10px] mt-1 font-medium tracking-tight h-3 flex items-center">
+                <span className="mt-1 flex min-h-3 items-center px-1 text-center text-[10px] font-medium leading-tight tracking-tight">
                   {item.label}
                 </span>
               </Link>

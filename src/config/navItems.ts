@@ -36,10 +36,21 @@ export interface NavItem {
      * If null, the item is visible to all authenticated users.
      */
     resource: string | null;
+    /** Required action when visibility needs a specific permission. */
+    action?: string;
     /**
      * If true, the item is only visible to users with Admin role.
      */
     isAdminOnly?: boolean;
+}
+
+export function canViewNavItem(item: NavItem, permissions: Record<string, string[]> | null, isAdmin: boolean): boolean {
+    if (isAdmin) return true;
+    if (item.isAdminOnly) return false;
+    if (!item.resource) return true;
+    if (permissions?.all?.includes('*')) return true;
+    const actions = permissions?.[item.resource];
+    return Array.isArray(actions) && (item.action ? actions.includes(item.action) : actions.length > 0);
 }
 
 export const mainNavItems: NavItem[] = [
@@ -48,6 +59,7 @@ export const mainNavItems: NavItem[] = [
     { icon: Bell, path: '/news', label: 'News', resource: null },
     { icon: Layers, path: '/strategy', label: 'Strategy', resource: 'strategy' },
     { icon: TrendingUp, path: '/market-data', label: 'Market Data', resource: 'market_data' },
+    { icon: FileText, path: '/pngx-announcements', label: 'PNGX Announcements', resource: 'market_data', action: 'read' },
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
     { icon: FormInput, path: '/forms', label: 'Forms', resource: 'forms' },
     { icon: ClipboardCheck, path: '/approvals', label: 'Approvals', resource: null },
