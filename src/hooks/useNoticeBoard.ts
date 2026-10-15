@@ -2,11 +2,14 @@ import { useState, useCallback, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnnouncementsSharePointService } from "@/services/announcementsSharePointService";
+import { EmailAnnouncementsSharePointService } from "@/services/emailAnnouncementsSharePointService";
 import { getGraphClient } from "@/services/graphService";
 import { useToast } from "@/hooks/use-toast";
 
 export function useNoticeBoard() {
-  const { instance: msalInstance } = useMsal();
+  const emailNoticesEnabled = import.meta.env.VITE_ENABLE_EMAIL_NOTICES === "true";
+  const { instance: msalInstance, accounts } = useMsal();
+  const accountId = accounts[0]?.homeAccountId;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [service, setService] = useState<AnnouncementsSharePointService | null>(null);
@@ -45,18 +48,30 @@ export function useNoticeBoard() {
     data: announcements = [],
     isLoading: loading,
     error,
+    isFetching,
+    isFetchedAfterMount,
     refetch: refreshAnnouncements
   } = useQuery({
-    queryKey: ["announcements"],
+    queryKey: ["announcements", accountId, emailNoticesEnabled],
     queryFn: async () => {
       let currentService = service;
       if (!currentService) {
         currentService = await initializeService();
       }
-      return currentService.getAnnouncements();
+      const manual = await currentService.getAnnouncements();
+      if (!emailNoticesEnabled) return manual;
+
+      const graphClient = await getGraphClient(msalInstance);
+      if (!graphClient) throw new Error("Failed to initialize Graph client.");
+      const email = await new EmailAnnouncementsSharePointService(graphClient).getAnnouncements();
+      return [...manual, ...email].sort(
+        (a, b) => b.createdDate.getTime() - a.createdDate.getTime()
+      );
     },
-    enabled: !!msalInstance,
+    enabled: !!accountId,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    refetchOnMount: 'always',
+    meta: { persist: false },
   });
 
   const deleteMutation = useMutation({
@@ -74,11 +89,11 @@ export function useNoticeBoard() {
         description: "Announcement deleted successfully",
       });
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       console.error("Failed to delete announcement:", err);
       toast({
         title: "Error",
-        description: err.message || "Failed to delete announcement",
+        description: err instanceof Error ? err.message : "Failed to delete announcement",
         variant: "destructive",
       });
     }
@@ -88,6 +103,7 @@ export function useNoticeBoard() {
     announcements,
     loading,
     error: error as Error | null,
+    popupReady: isFetchedAfterMount && !isFetching && !error,
     refresh: refreshAnnouncements,
     deleteNotice: deleteMutation.mutateAsync,
   };

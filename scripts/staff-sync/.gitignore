@@ -1,0 +1,6 @@
+config.json
+reports/
+node_modules/
+local.settings.json
+package-source/
+*.zip

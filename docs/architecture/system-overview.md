@@ -117,3 +117,10 @@ Allows users to manage private contacts stored in SharePoint, isolated by `Owner
 | [CUSTOM_CONTACT_SCHEMA.md](database/user-custom-contacts-schema.md) | **Database schema for the User_Custom_Contacts list.** |
 | [UI_PATTERNS.md](guides/ui_patterns.md) | Shared design tokens, modal patterns, and Tailwind rules. |
 | [HISTORY_MAP.md](ARCHIVE_MAP.md) | Index of 100+ archived implementation/fix logs. |
+
+
+## Notice board and staff synchronization (16 October 2026)
+
+Manual notices (`Announcements`), articles (`NewsArticles`) and imported email use separate lists. Email lists enforce audience access in SharePoint and currently remain owner-only; the application email flag is off. The home-screen popup offers fresh, eligible manual staff-wide announcements, with per-account browser-local dismissal and no central read receipt. Updated popup code requires application deployment. See the [notice-board module](../modules/notice-board/overview.md).
+
+The live Power Automate five-day job reconciles Entra profiles and licence details into `Employee_Profiles` and `SCPNG Staff Directory`, with source validation, stable Entra IDs, removal limits and recycling. It does not maintain `Strategy_Officer_Profiles` or email group membership. See the [staff-directory module](../modules/staff-directory/overview.md). The separate News Article Extraction Google Sheets throttle remains unresolved; see the [handover](../history/2026-10-16-notice-board-staff-sync-handover.md).

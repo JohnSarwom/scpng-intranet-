@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Bell, Calendar, ExternalLink, Pin, Loader2, AlertTriangle, Trash2 } from 'lucide-react';
+import { Bell, Calendar, ExternalLink, Pin, AlertTriangle, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -10,6 +10,8 @@ import { IAnnouncement } from '@/types';
 import DOMPurify from 'dompurify';
 import { NoticeBoardSkeleton } from './skeletons/NoticeBoardSkeleton';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { useToast } from '@/hooks/use-toast';
+import StaffAnnouncementWelcome from './StaffAnnouncementWelcome';
 
 const NewsCarousel: React.FC = () => {
   const newsImages = [
@@ -45,8 +47,9 @@ const NewsCarousel: React.FC = () => {
 };
 
 const NoticeBoard = () => {
-  const { announcements, loading, error, deleteNotice } = useNoticeBoard();
+  const { announcements, loading, error, deleteNotice, popupReady } = useNoticeBoard();
   const { isAdmin } = useRoleBasedAuth();
+  const { toast } = useToast();
   const [selectedNotice, setSelectedNotice] = React.useState<IAnnouncement | null>(null);
 
   // Get category badge color and icon
@@ -104,18 +107,33 @@ const NoticeBoard = () => {
   };
 
   // Helper to sanitize HTML content
-  const sanitizeContent = (content: string) => {
-    // 1. First Strip Signature (from raw HTML)
-    const cleanContent = stripSignature(content);
+  const sanitizeContent = (content: string, shorten = false) => {
+    const cleanContent = shorten ? stripSignature(content) : content;
 
     // 2. Then Extract Body if present
     const bodyMatch = cleanContent.match(/<body[^>]*>([\s\S]*)<\/body>/i);
     const contentToSanitize = bodyMatch ? bodyMatch[1] : cleanContent;
 
     return DOMPurify.sanitize(contentToSanitize, {
-      USE_PROFILES: { html: true },
-      ADD_ATTR: ['target', 'class', 'style'],
+      ALLOWED_TAGS: ['p', 'br', 'div', 'span', 'strong', 'b', 'em', 'i', 'u', 'ul', 'ol', 'li', 'blockquote', 'a'],
+      ALLOWED_ATTR: ['href'],
     });
+  };
+
+  const previewText = (content: string) => {
+    const parsed = new DOMParser().parseFromString(sanitizeContent(content, true), 'text/html');
+    return (parsed.body.textContent || '').replace(/\s+/g, ' ').trim();
+  };
+
+  const findEmailInOutlook = async (notice: IAnnouncement) => {
+    const query = `from:${notice.sourceEmail || ''} subject:"${notice.title.replace(/"/g, '')}"`;
+    window.open('https://outlook.cloud.microsoft/mail/', '_blank', 'noopener,noreferrer');
+    try {
+      await navigator.clipboard.writeText(query);
+      toast({ title: 'Outlook search copied', description: 'Paste it into the Outlook search box to find the email and attachments.' });
+    } catch {
+      toast({ title: 'Search in Outlook', description: query });
+    }
   };
 
   if (loading) {
@@ -124,6 +142,7 @@ const NoticeBoard = () => {
 
   return (
     <>
+      <StaffAnnouncementWelcome announcements={announcements} ready={popupReady} onReadNotice={setSelectedNotice} />
       <Card className="bg-white dark:bg-gray-800 rounded-xl shadow-sm animate-fade-in border dark:border-white/10">
         <CardHeader className="pb-2 space-y-0">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold dark:text-gray-100">
@@ -148,7 +167,7 @@ const NoticeBoard = () => {
                 className={`group relative p-2.5 rounded-lg border border-border dark:border-white/10 hover:border-intranet-primary/50 dark:hover:bg-white/5 transition-colors duration-300 cursor-pointer
                   ${notice.isPinned ? 'border-intranet-primary/50 bg-intranet-primary/5 dark:bg-intranet-primary/10' : ''}`}
               >
-                {isAdmin && (
+                {isAdmin && notice.source !== 'email' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -160,23 +179,26 @@ const NoticeBoard = () => {
                     <Trash2 size={14} />
                   </button>
                 )}
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-medium text-sm flex items-center gap-1">
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className="font-medium text-sm leading-snug break-words min-w-0 flex items-start gap-1">
                     {notice.isPinned && <Pin size={12} className="text-intranet-primary animate-pulse" />}
                     {notice.title}
                   </h3>
                   <Badge
                     variant="outline"
-                    className={`flex items-center gap-1 text-white text-xs px-1.5 py-0.5 ${getCategoryDetails(notice.category).color}`}
+                    className={`shrink-0 flex items-center gap-1 text-white text-xs px-1.5 py-0.5 ${getCategoryDetails(notice.category).color}`}
                   >
                     {getCategoryDetails(notice.category).icon}
                   </Badge>
                 </div>
-                <div
-                  className="text-xs text-gray-600 dark:text-gray-300 mb-1 line-clamp-2 prose dark:prose-invert max-w-none [&_*]:inline"
-                  dangerouslySetInnerHTML={{ __html: sanitizeContent(notice.content) }}
-                />
-                <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(notice.createdDate)}</div>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mb-1 line-clamp-2 break-words">
+                  {previewText(notice.content)}
+                </p>
+                <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-wrap gap-x-2">
+                  <span>{formatDate(notice.createdDate)}</span>
+                  {notice.source === 'email' && notice.sourceEmail && <span>From {notice.sourceEmail}</span>}
+                  {notice.audience && <span>{notice.audience}</span>}
+                </div>
               </div>
             ))}
           </div>
@@ -219,6 +241,15 @@ const NoticeBoard = () => {
               <div className="mt-6 pt-4 border-t text-xs text-gray-500">
                 Source: {selectedNotice.sourceEmail}
               </div>
+            )}
+            {selectedNotice?.source === 'email' && (
+              <button
+                type="button"
+                className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-intranet-primary hover:underline"
+                onClick={() => void findEmailInOutlook(selectedNotice)}
+              >
+                <ExternalLink size={16} /> Find email and attachments in Outlook
+              </button>
             )}
           </div>
         </DialogContent>
