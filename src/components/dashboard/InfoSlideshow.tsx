@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { SlideshowItem, SlideshowCategory } from '@/types/slideshow.types';
+import SlideshowImage from './SlideshowImage';
 
 interface InfoSlideshowProps {
   title: string;
@@ -34,17 +35,8 @@ const Slide: React.FC<SlideProps> = ({ item, onReadMore }) => {
     <div className="flex-[0_0_100%] min-w-0 relative">
       <div className="px-4">
         {/* Image Container */}
-        {item.imageUrl && (
           <div className="relative w-full h-[200px] mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-intranet-primary/10 to-intranet-accent/10">
-            <img
-              src={item.imageUrl}
-              alt={item.title}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.currentTarget.src =
-                  'https://via.placeholder.com/1200x675/83002A/FFFFFF?text=SCPNG';
-              }}
-            />
+            <SlideshowImage item={item} />
             {item.priority === 'High' && (
               <div className="absolute top-3 right-3">
                 <Badge className="bg-red-600 text-white font-semibold shadow-lg">
@@ -53,7 +45,6 @@ const Slide: React.FC<SlideProps> = ({ item, onReadMore }) => {
               </div>
             )}
           </div>
-        )}
 
         {/* Content Container */}
         <div className="space-y-3">
@@ -69,10 +60,11 @@ const Slide: React.FC<SlideProps> = ({ item, onReadMore }) => {
 
           {/* Metadata */}
           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2">
-            {item.author && <span>By {item.author}</span>}
-            {item.publishDate && (
+            {(item.sourceName || item.author) && <span>{item.sourceName || item.author}</span>}
+            {(item.sourcePublishedAt || item.reviewedAt) && (
               <span>
-                {new Date(item.publishDate).toLocaleDateString('en-US', {
+                {!item.sourcePublishedAt && 'Reviewed '}
+                {new Date(item.sourcePublishedAt || item.reviewedAt).toLocaleDateString('en-US', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
@@ -80,6 +72,9 @@ const Slide: React.FC<SlideProps> = ({ item, onReadMore }) => {
               </span>
             )}
           </div>
+          {item.category === 'Capital Market Acts' && <p className="text-xs text-gray-500 dark:text-gray-400">
+            {item.legalStatus}{item.instrumentVersion ? ` · ${item.instrumentVersion}` : ''}
+          </p>}
 
           {/* Read More Button */}
           {item.linkUrl && (
@@ -95,7 +90,7 @@ const Slide: React.FC<SlideProps> = ({ item, onReadMore }) => {
                   }
                 }}
               >
-                Learn more <ExternalLink className="ml-1 h-3 w-3" />
+                Read source <ExternalLink className="ml-1 h-3 w-3" />
               </Button>
             </div>
           )}
@@ -117,11 +112,21 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
   icon,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [reducedMotion, setReducedMotion] = useState(true);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   const autoplayOptions = {
     delay: 8000, // 8 seconds per slide
     stopOnInteraction: true,
     stopOnMouseEnter: true,
+    stopOnFocusIn: true,
+    playOnInit: !reducedMotion,
   };
 
   const [emblaRef, emblaApi] = useEmblaCarousel(
@@ -194,7 +199,7 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
   }
 
   // Error State
-  if (error) {
+  if (error && slides.length === 0) {
     return (
       <Card className="shadow-sm animate-fade-in rounded-xl dark:bg-gray-800 dark:border-white/10">
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
@@ -278,7 +283,11 @@ const InfoSlideshow: React.FC<InfoSlideshowProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="h-[420px] flex flex-col">
+      <CardContent className="h-[500px] flex flex-col">
+        {error && <div role="status" className="text-xs text-amber-700 dark:text-amber-300 mb-2">
+          Updates are unavailable. Showing previously loaded content.
+          <button className="underline ml-2" onClick={onRefetch}>Retry</button>
+        </div>}
         {/* Embla Carousel */}
         <div className="overflow-hidden flex-1" ref={emblaRef}>
           <div className="flex touch-pan-y h-full">

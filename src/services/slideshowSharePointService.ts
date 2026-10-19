@@ -1,263 +1,140 @@
-/**
- * SharePoint Service for Information Slideshows
- * Fetches slideshow content from SharePoint InformationSlideshows list
- * Uses Microsoft Graph API
- */
+import type { Client } from '@microsoft/microsoft-graph-client';
+import type { SlideshowItem, SlideshowCategory } from '@/types/slideshow.types';
 
-import { Client } from '@microsoft/microsoft-graph-client';
-import { SlideshowItem, SlideshowCategory } from '@/types/slideshow.types';
+export const SLIDESHOW_SITE = '/sites/scpng1.sharepoint.com:/sites/scpngintranet';
+export const SLIDESHOW_CATEGORIES: SlideshowCategory[] = ['MS Office 365 Tips', 'Capital Market News', 'Capital Market Acts'];
+type Fields = Record<string, unknown>;
+interface Column { name: string; displayName?: string }
+interface ListItem { id: string; fields: Fields }
+const text = (v: unknown) => typeof v === 'string' ? v.trim() : '';
 
-const SITE_PATH = '/sites/scpngintranet';
-const SITE_DOMAIN = 'scpng1.sharepoint.com';
-const LIST_NAME = 'InformationSlideshows';
-
-interface SharePointSlideshowField {
-  Id: number;
-  Title: string;
-  Description?: string;
-  Category?: SlideshowCategory;
-  ImageURL?: string;
-  Priority?: string;
-  PublishDate?: string;
-  ExpiryDate?: string;
-  IsActive?: boolean;
-  Author0?: string;
-  LinkURL?: string;
-  OrderIndex?: number;
+export function safeSlideshowUrl(value: unknown): string | undefined {
+  const raw = typeof value === 'object' && value !== null ? (value as Fields).Url ?? (value as Fields).url : value;
+  try {
+    const url = new URL(text(raw));
+    if (url.protocol === 'https:' && !url.username && !url.password) return url.href;
+  } catch { /* Invalid optional URLs are never rendered. */ }
+  return undefined;
 }
 
-interface SharePointListItem {
-  id: string;
-  fields: SharePointSlideshowField;
+export async function resolveSlideshowImage(client: Client, driveId: string, itemId: string): Promise<string | null> {
+  const metadata = await client.api(`/drives/${encodeURIComponent(driveId)}/items/${encodeURIComponent(itemId)}?$select=file,size,@microsoft.graph.downloadUrl`).get();
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(metadata.file?.mimeType) ||
+    !Number.isFinite(metadata.size) || metadata.size < 0 || metadata.size > 5 * 1024 * 1024) {
+    throw new Error('Unsupported slideshow image.');
+  }
+  return safeSlideshowUrl(metadata['@microsoft.graph.downloadUrl']) || null;
 }
 
-interface SharePointListResponse {
-  value: SharePointListItem[];
+async function pages<T>(client: Client, initial: string): Promise<T[]> {
+  const values: T[] = [];
+  const seen = new Set<string>();
+  let next: string | undefined = initial;
+  while (next) {
+    if (seen.has(next)) throw new Error('Repeated slideshow pagination link.');
+    if (!(next.startsWith('/') && !next.startsWith('//')) && !next.startsWith('https://graph.microsoft.com/v1.0/')) throw new Error('Unexpected slideshow pagination destination.');
+    seen.add(next);
+    const page = await client.api(next).get();
+    if (!page || !Array.isArray(page.value)) throw new Error('Incomplete slideshow response.');
+    values.push(...page.value);
+    const link = page['@odata.nextLink'];
+    if (link !== undefined && (typeof link !== 'string' || !link)) throw new Error('Invalid slideshow pagination link.');
+    next = link;
+  }
+  return values;
 }
 
-/**
- * Transforms SharePoint item to application SlideshowItem type
- */
-function transformSlideshowItem(item: SharePointListItem): SlideshowItem {
-  const fields = item.fields;
+export function isVisibleSlideshow(item: SlideshowItem, now = Date.now()): boolean {
+  const start = Date.parse(item.publishDate);
+  const end = item.expiryDate ? Date.parse(item.expiryDate) : Infinity;
+  const reviewEnd = item.reviewDueAt ? Date.parse(item.reviewDueAt) : item.category === 'Capital Market Acts' ? NaN : Infinity;
+  return item.isActive && Number.isFinite(start) && start <= now && end > now && reviewEnd > now;
+}
+
+/** Missing approvals or dates never imply publication; legacy sample rows stay hidden. */
+export function transformSlideshowItem(item: ListItem): SlideshowItem | null {
+  const f = item.fields;
+  if (!f || !item.id || f.IsActive !== true || f.Status !== 'Published' ||
+    !SLIDESHOW_CATEGORIES.includes(f.Category as SlideshowCategory) ||
+    !text(f.Title) || !text(f.Description) || !text(f.SourceName) || !text(f.ContentKey) ||
+    !text(f.ReviewedBy) || !Number.isFinite(Date.parse(text(f.ReviewedAt))) ||
+    !Number.isFinite(Date.parse(text(f.PublishDate)))) return null;
+  const linkUrl = safeSlideshowUrl(f.CanonicalUrl) || safeSlideshowUrl(f.LinkURL);
+  if (!linkUrl || (text(f.ExpiryDate) && !Number.isFinite(Date.parse(text(f.ExpiryDate))))) return null;
+  const reviewDueAt = text(f.ReviewDueAt);
+  if (reviewDueAt && !Number.isFinite(Date.parse(reviewDueAt))) return null;
+  if (f.Category === 'Capital Market Acts' && (f.LegalStatus !== 'Current' || !reviewDueAt)) return null;
+  const sourcePublishedAt = text(f.SourcePublishedAt);
   return {
-    id: item.id,
-    title: fields.Title || '',
-    description: fields.Description || '',
-    category: fields.Category || 'MS Office 365 Tips',
-    imageUrl: fields.ImageURL,
-    priority: fields.Priority === 'High' ? 'High' : 'Normal',
-    publishDate: fields.PublishDate || new Date().toISOString(),
-    expiryDate: fields.ExpiryDate,
-    isActive: fields.IsActive !== false,
-    author: fields.Author0,
-    linkUrl: fields.LinkURL,
-    orderIndex: fields.OrderIndex || 0,
+    id: item.id, contentKey: text(f.ContentKey), title: text(f.Title), description: text(f.Description),
+    category: f.Category as SlideshowCategory, publishDate: text(f.PublishDate),
+    expiryDate: text(f.ExpiryDate) || undefined, isActive: true, linkUrl,
+    sourceName: text(f.SourceName), author: text(f.Author0),
+    sourcePublishedAt: Number.isFinite(Date.parse(sourcePublishedAt)) ? sourcePublishedAt : undefined,
+    reviewedAt: text(f.ReviewedAt), reviewDueAt: reviewDueAt || undefined,
+    legalStatus: text(f.LegalStatus), instrumentVersion: text(f.InstrumentVersion),
+    effectiveDate: Number.isFinite(Date.parse(text(f.EffectiveDate))) ? text(f.EffectiveDate) : undefined,
+    imageUrl: text(f.ImageRights) ? safeSlideshowUrl(f.ImageURL) : undefined,
+    imageDriveId: text(f.ImageRights) ? text(f.ImageDriveId) : undefined,
+    imageItemId: text(f.ImageRights) ? text(f.ImageItemId) : undefined,
+    imageAlt: text(f.ImageAlt), imageCredit: text(f.ImageCredit),
+    priority: f.Priority === 'High' ? 'High' : 'Normal', orderIndex: Number(f.OrderIndex) || 0,
   };
 }
 
+const REQUIRED = ['Title', 'Description', 'Category', 'PublishDate', 'ExpiryDate', 'IsActive', 'Status',
+  'ContentKey', 'SourceName', 'ReviewedBy', 'ReviewedAt', 'ReviewDueAt', 'LegalStatus'];
+
 export class SlideshowSharePointService {
-  private client: Client;
-  private siteId: string = '';
-  private listId: string = '';
+  private base = '';
+  private keys: Record<string, string> = {};
+  constructor(private client: Client) {}
 
-  constructor(client: Client) {
-    this.client = client;
-  }
-
-  /**
-   * Initialize service: get site ID and list ID
-   */
   async initialize(): Promise<void> {
-    try {
-      // Get Site ID
-      const site = await this.client.api(`/sites/${SITE_DOMAIN}:${SITE_PATH}`).get();
-      this.siteId = site.id;
-
-      // Get List ID
-      const lists = await this.client
-        .api(`/sites/${this.siteId}/lists`)
-        .filter(`displayName eq '${LIST_NAME}'`)
-        .get();
-
-      if (lists.value.length === 0) {
-        throw new Error(
-          `Information Slideshows list '${LIST_NAME}' not found. Please create it in SharePoint first.`
-        );
-      }
-
-      this.listId = lists.value[0].id;
-    } catch (error) {
-      console.error('Error initializing slideshow service:', error);
-      throw error;
+    const site = await this.client.api(SLIDESHOW_SITE).get();
+    if (!site?.id) throw new Error('Slideshow site unavailable.');
+    const lists = await pages<{ id: string; displayName: string }>(this.client, `/sites/${site.id}/lists?$select=id,displayName`);
+    const matches = lists.filter(list => list.displayName === 'InformationSlideshows');
+    if (matches.length !== 1) throw new Error('Published InformationSlideshows list is missing or ambiguous.');
+    const base = `/sites/${site.id}/lists/${matches[0].id}`;
+    const columns = await pages<Column>(this.client, `${base}/columns?$select=name,displayName`);
+    const keys: Record<string, string> = {};
+    for (const column of columns) keys[column.name] = column.name;
+    for (const label of REQUIRED) {
+      const match = columns.filter(c => c.name === label);
+      const candidates = match.length ? match : columns.filter(c => text(c.displayName).toLowerCase() === label.toLowerCase());
+      if (candidates.length !== 1) throw new Error(`Missing or ambiguous slideshow column: ${label}`);
+      keys[label] = candidates[0].name;
     }
+    if (!keys.LinkURL && !keys.CanonicalUrl) throw new Error('Slideshow source-link column is missing.');
+    this.keys = keys;
+    this.base = base;
   }
 
-  /**
-   * Fetches all active slideshows from SharePoint
-   */
   async getAllSlideshows(): Promise<SlideshowItem[]> {
-    try {
-      if (!this.siteId || !this.listId) {
-        await this.initialize();
-      }
-
-      const now = new Date().toISOString();
-
-      // Build filter for active items
-      const filter = `fields/IsActive eq true`;
-
-      const response: SharePointListResponse = await this.client
-        .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
-        .expand('fields')
-        .filter(filter)
-        .top(100)
-        .get();
-
-      // Transform and filter by date
-      const items = response.value
-        .map(transformSlideshowItem)
-        .filter((item) => {
-          const publishDate = new Date(item.publishDate);
-          const currentDate = new Date(now);
-          const isPublished = publishDate <= currentDate;
-
-          if (item.expiryDate) {
-            const expiryDate = new Date(item.expiryDate);
-            return isPublished && expiryDate >= currentDate;
-          }
-
-          return isPublished;
-        })
-        .sort((a, b) => {
-          // Sort by category, then orderIndex, then publishDate
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category);
-          }
-          if ((a.orderIndex || 0) !== (b.orderIndex || 0)) {
-            return (a.orderIndex || 0) - (b.orderIndex || 0);
-          }
-          return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
-        });
-
-      return items;
-    } catch (error) {
-      console.error('Error fetching slideshows from SharePoint:', error);
-      throw error;
-    }
+    if (!this.base) await this.initialize();
+    const rows = await pages<ListItem>(this.client, `${this.base}/items?$expand=fields&$top=200`);
+    const slides = rows.map(row => {
+      if (!row.fields) throw new Error('Incomplete slideshow item.');
+      const fields = { ...row.fields };
+      for (const [label, key] of Object.entries(this.keys)) fields[label] = row.fields[key];
+      return transformSlideshowItem({ ...row, fields });
+    }).filter((slide): slide is SlideshowItem => !!slide);
+    const seen = new Set<string>();
+    return slides.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0) ||
+      Date.parse(b.sourcePublishedAt || b.publishDate) - Date.parse(a.sourcePublishedAt || a.publishDate) || a.id.localeCompare(b.id))
+      .filter(slide => {
+        if (seen.has(slide.contentKey)) return false;
+        seen.add(slide.contentKey);
+        return true;
+      });
   }
 
-  /**
-   * Fetches slideshows filtered by category
-   */
   async getSlideshowsByCategory(category: SlideshowCategory): Promise<SlideshowItem[]> {
-    try {
-      const allSlides = await this.getAllSlideshows();
-      return allSlides.filter((slide) => slide.category === category);
-    } catch (error) {
-      console.error(`Error fetching ${category} slideshows:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Creates a new slideshow item
-   */
-  async createSlideshowItem(item: Omit<SlideshowItem, 'id'>): Promise<SlideshowItem> {
-    try {
-      if (!this.siteId || !this.listId) {
-        await this.initialize();
-      }
-
-      const body = {
-        fields: {
-          Title: item.title,
-          Description: item.description,
-          Category: item.category,
-          ImageURL: item.imageUrl || null,
-          Priority: item.priority || 'Normal',
-          PublishDate: item.publishDate,
-          ExpiryDate: item.expiryDate || null,
-          IsActive: item.isActive,
-          Author0: item.author || null,
-          LinkURL: item.linkUrl || null,
-          OrderIndex: item.orderIndex || 0,
-        },
-      };
-
-      const response = await this.client
-        .api(`/sites/${this.siteId}/lists/${this.listId}/items`)
-        .post(body);
-
-      return transformSlideshowItem(response);
-    } catch (error) {
-      console.error('Error creating slideshow item:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Updates an existing slideshow item
-   */
-  async updateSlideshowItem(
-    id: string,
-    updates: Partial<Omit<SlideshowItem, 'id'>>
-  ): Promise<void> {
-    try {
-      if (!this.siteId || !this.listId) {
-        await this.initialize();
-      }
-
-      const body: any = { fields: {} };
-
-      if (updates.title) body.fields.Title = updates.title;
-      if (updates.description) body.fields.Description = updates.description;
-      if (updates.category) body.fields.Category = updates.category;
-      if (updates.imageUrl !== undefined) body.fields.ImageURL = updates.imageUrl;
-      if (updates.priority) body.fields.Priority = updates.priority;
-      if (updates.publishDate) body.fields.PublishDate = updates.publishDate;
-      if (updates.expiryDate !== undefined) body.fields.ExpiryDate = updates.expiryDate;
-      if (updates.isActive !== undefined) body.fields.IsActive = updates.isActive;
-      if (updates.author !== undefined) body.fields.Author0 = updates.author;
-      if (updates.linkUrl !== undefined) body.fields.LinkURL = updates.linkUrl;
-      if (updates.orderIndex !== undefined) body.fields.OrderIndex = updates.orderIndex;
-
-      await this.client
-        .api(`/sites/${this.siteId}/lists/${this.listId}/items/${id}`)
-        .patch(body);
-    } catch (error) {
-      console.error('Error updating slideshow item:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Deletes a slideshow item (sets IsActive to false)
-   */
-  async deleteSlideshowItem(id: string): Promise<void> {
-    return this.updateSlideshowItem(id, { isActive: false });
+    return (await this.getAllSlideshows()).filter(slide => slide.category === category && isVisibleSlideshow(slide));
   }
 }
-
-// Convenience functions that create a service instance
-// Note: In production, you should pass the authenticated Graph client from your hook
-
-export async function getAllSlideshows(client: Client): Promise<SlideshowItem[]> {
-  const service = new SlideshowSharePointService(client);
-  return service.getAllSlideshows();
-}
-
-export async function getMSOffice365Tips(client: Client): Promise<SlideshowItem[]> {
-  const service = new SlideshowSharePointService(client);
-  return service.getSlideshowsByCategory('MS Office 365 Tips');
-}
-
-export async function getCapitalMarketNews(client: Client): Promise<SlideshowItem[]> {
-  const service = new SlideshowSharePointService(client);
-  return service.getSlideshowsByCategory('Capital Market News');
-}
-
-export async function getCapitalMarketActs(client: Client): Promise<SlideshowItem[]> {
-  const service = new SlideshowSharePointService(client);
-  return service.getSlideshowsByCategory('Capital Market Acts');
-}
+export const getAllSlideshows = (client: Client) => new SlideshowSharePointService(client).getAllSlideshows();
+export const getMSOffice365Tips = (client: Client) => new SlideshowSharePointService(client).getSlideshowsByCategory('MS Office 365 Tips');
+export const getCapitalMarketNews = (client: Client) => new SlideshowSharePointService(client).getSlideshowsByCategory('Capital Market News');
+export const getCapitalMarketActs = (client: Client) => new SlideshowSharePointService(client).getSlideshowsByCategory('Capital Market Acts');

@@ -102,7 +102,7 @@
     "src/pages/aihub.tsx|TS2552|Cannot find name 'Skeleton'. Did you mean 'Selection'?",
     "src/pages/approvals.tsx|TS2339|Property 'userPrincipalName' does not exist on type 'GraphProfile'.",
     "src/pages/assetmanagementnew.tsx|TS2304|Cannot find name 'Database'.",
-    "src/pages/assetmanagementnew.tsx|TS2304|Cannot find name 'msalInstance'.",
+    "src/pages/assetmanagementnew.tsx|TS2552|Cannot find name 'msalInstance'. Did you mean 'instance'?",
     "src/pages/assetmanagementnew.tsx|TS2322|Type '\"admin_comments\"' is not assignable to type 'SortableAssetColumn'.",
     "src/pages/assetmanagementnew.tsx|TS2322|Type '\"asset_id\"' is not assignable to type 'SortableAssetColumn'.",
     "src/pages/assetmanagementnew.tsx|TS2322|Type '\"barcode_url\"' is not assignable to type 'SortableAssetColumn'.",
