@@ -1,3 +1,4 @@
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,7 +87,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-1',
     title: 'Marketing Strategy Meeting',
-    host: 'Alice Smith',
+    host: '',
     location: 'Room A',
     description: 'Discuss Q3 marketing plan results',
     dateRange: { from: subDays(today, 15), to: subDays(today, 15) }, // 15 days ago
@@ -98,7 +99,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-2',
     title: 'Client Onboarding - Beta Inc',
-    host: 'Robert Chen',
+    host: '',
     location: 'Meeting Room 3',
     description: 'Onboard new client Beta Inc',
     dateRange: { from: subDays(today, 8), to: subDays(today, 8) }, // 8 days ago
@@ -135,7 +136,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-3',
     title: 'Team Sync - Today',
-    host: 'Jennifer Lee',
+    host: '',
     location: 'Online',
     description: 'Weekly team sync meeting',
     dateRange: { from: today, to: today }, // Today
@@ -147,7 +148,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-4',
     title: 'Interview Candidate - John Smith',
-    host: 'David Miller',
+    host: '',
     location: 'Interview Room 1',
     description: 'Interview John Smith for Software Engineer role',
     dateRange: { from: today, to: today }, // Today
@@ -159,7 +160,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-8',
     title: 'Project Kickoff - Phoenix Project',
-    host: 'Alice Smith',
+    host: '',
     location: 'Conference Room B',
     description: 'Initial meeting for the Phoenix Project',
     dateRange: { from: addDays(today, 3), to: addDays(today, 3) }, // 3 days from now
@@ -171,7 +172,7 @@ const sampleAppointments: AppointmentData[] = [
    {
     id: 'appt-9',
     title: 'Client Check-in - Gamma LLC',
-    host: 'Robert Chen',
+    host: '',
     location: 'Online',
     description: 'Quarterly check-in with Gamma LLC',
     dateRange: { from: addDays(today, 7), to: addDays(today, 7) }, // 1 week from now
@@ -184,7 +185,7 @@ const sampleAppointments: AppointmentData[] = [
   {
     id: 'appt-5',
     title: 'Company Retreat Planning (Canceled)',
-    host: 'Sophia Garcia',
+    host: '',
     location: 'Conference Room Main',
     description: 'Finalize retreat details - Postponed',
     dateRange: { from: addDays(today, 1), to: addDays(today, 1) }, // Was tomorrow
@@ -300,7 +301,8 @@ const AppointmentView: React.FC = () => {
   };
 
   // Placeholder host options
-  const hostOptions = ["Alice Smith", "Robert Chen", "Jennifer Lee"];
+  const { staffMembers } = useStaffMembers();
+  const hostOptions = staffMembers.map(staff => staff.name);
 
   // --- Navigation Handlers ---
   const goToToday = () => {

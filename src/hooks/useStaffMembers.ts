@@ -1,35 +1,13 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { StaffMember } from '@/data/divisions';
-import { fetchStaffMembers, fetchStaffMemberByEmail } from '@/services/staffService';
+import { useMemo } from 'react';
+import { useStaffRoster } from './useStaffRoster';
+import { toStaffMember, staffInDivision } from '@/lib/staffDirectory';
 
-interface UseStaffMembersReturn {
-  staffMembers: StaffMember[];
-  loading: boolean;
-  error: Error | null;
-  refreshStaffMembers: () => Promise<void>;
-}
-
-export function useStaffMembers(divisionId?: string): UseStaffMembersReturn {
-  const queryClient = useQueryClient();
-  const queryKey = ['staffMembers', divisionId];
-
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey,
-    queryFn: () => fetchStaffMembers(divisionId),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-  });
-
+export function useStaffMembers(divisionId?: string) {
+  const roster = useStaffRoster();
+  const staffMembers = useMemo(() => (roster.data || [])
+    .filter(s => !divisionId || staffInDivision(s.division, divisionId)).map(toStaffMember), [roster.data, divisionId]);
   return {
-    staffMembers: data || [],
-    loading: isLoading,
-    error: error as Error | null,
-    refreshStaffMembers: async () => {
-      await refetch();
-    },
+    staffMembers, loading: roster.isLoading, error: roster.error,
+    refreshStaffMembers: async () => { await roster.refetch(); },
   };
 }
-
-// Re-export the helper if needed, or consumers should import from service
-// Keeping it here for backward compatibility if it was exported before
-export const getStaffMemberByEmail = fetchStaffMemberByEmail;

@@ -1,3 +1,4 @@
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -191,14 +192,14 @@ type ViewMode = 'board' | 'grid' | 'list';
 // Sample initial data
 const initialBoardData: BoardData = {
   todo: [
-    { id: 'TKT-001', title: 'Implement user authentication', description: 'Set up login...', priority: 'High', startDate: 'Jul 25', endDate: 'Jul 26', assignee: { name: 'Alice', avatarFallback: 'A' }, status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-001', title: 'Implement user authentication', description: 'Set up login...', priority: 'High', startDate: 'Jul 25', endDate: 'Jul 26', status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
     { id: 'TKT-002', title: 'Design database schema', description: 'Define tables...', priority: 'Medium', commentsCount: 2, startDate: 'Jul 27', status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ],
   inprogress: [
-    { id: 'TKT-003', title: 'Develop Ticket Board UI', description: 'Create Kanban...', priority: 'Medium', assignee: { name: 'Bob', avatarFallback: 'B' }, commentsCount: 5, startDate: 'Jul 28', endDate: 'Jul 30', status: 'inprogress', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-003', title: 'Develop Ticket Board UI', description: 'Create Kanban...', priority: 'Medium', commentsCount: 5, startDate: 'Jul 28', endDate: 'Jul 30', status: 'inprogress', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ],
   done: [
-    { id: 'TKT-004', title: 'Setup project repository', priority: 'Low', assignee: { name: 'Charlie', avatarFallback: 'C' }, startDate: 'Jul 20', endDate: 'Jul 20', status: 'done', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-004', title: 'Setup project repository', priority: 'Low', startDate: 'Jul 20', endDate: 'Jul 20', status: 'done', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ]
 };
 
@@ -221,12 +222,7 @@ const initialFilters = {
     { id: 'medium', label: 'Medium Priority', checked: false },
     { id: 'low', label: 'Low Priority', checked: false },
   ],
-  assignee: [
-    { id: 'alice', label: 'Alice', checked: false },
-    { id: 'bob', label: 'Bob', checked: false },
-    { id: 'charlie', label: 'Charlie', checked: false },
-    { id: 'unassigned', label: 'Unassigned', checked: false },
-  ],
+  assignee: [{ id: 'unassigned', label: 'Unassigned', checked: false }],
   date: {
     type: null as null | 'preset' | 'custom',
     preset: null as null | 'today' | 'last-24-hours' | 'last-week' | 'last-month',
@@ -764,6 +760,7 @@ const ListView: React.FC<{
 
 // Main TicketManager component
 const TicketManager: React.FC = () => {
+  const { staffMembers } = useStaffMembers();
   // State for the board data
   const [boardData, setBoardData] = useState<BoardData>(initialBoardData);
   const [buckets, setBuckets] = useState(initialBuckets);
@@ -1039,7 +1036,13 @@ const TicketManager: React.FC = () => {
         const filterArray = newFilters[type] as Array<{ id: string, label: string, checked: boolean }>;
         const filterIndex = filterArray.findIndex(f => f.id === id);
         if (filterIndex !== -1) {
-          filterArray[filterIndex].checked = checked;
+          const updated = filterArray.map(filter => filter.id === id ? { ...filter, checked } : filter);
+          if (type === 'assignee') newFilters.assignee = updated;
+          if (type === 'status') newFilters.status = updated;
+          if (type === 'priority') newFilters.priority = updated;
+        } else if (type === 'assignee') {
+          const staff = staffMembers.find(member => member.name.toLowerCase() === id);
+          if (staff) newFilters.assignee = [...prev.assignee, { id, label: staff.name, checked }];
         }
       }
       // Date filter is handled separately in date-specific functions
@@ -1497,7 +1500,8 @@ const TicketManager: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
-              {filters.assignee.map(filter => (
+              {[...staffMembers.map(staff => ({ id: staff.name.toLowerCase(), label: staff.name, checked: filters.assignee.some(f => f.id === staff.name.toLowerCase() && f.checked) })),
+                { id: 'unassigned', label: 'Unassigned', checked: filters.assignee.some(f => f.id === 'unassigned' && f.checked) }].map(filter => (
                 <DropdownMenuCheckboxItem
                   key={filter.id}
                   checked={filter.checked}
