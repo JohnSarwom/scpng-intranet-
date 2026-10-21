@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { persistNewsletterDraft } from "@/lib/newsletters/newsletterDraftActions";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -88,6 +89,7 @@ export default function NewsletterWorkspace() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState("Saving your changes…");
   const [failure, setFailure] = useState("");
   const [notice, setNotice] = useState("");
   const [content, setContent] = useState<Content>(emptyContent);
@@ -189,6 +191,7 @@ export default function NewsletterWorkspace() {
   async function run(task: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
+    setProgress("Saving your changes…");
     setFailure("");
     setNotice("");
     try {
@@ -202,11 +205,15 @@ export default function NewsletterWorkspace() {
   async function save(submit = false) {
     if (!selected) return;
     await run(async () => {
-      const saved = await service.save(selected, content);
-      setBaseline(JSON.stringify(saved.content));
-      applyConfirmedRecord(saved);
-      if (submit) applyConfirmedRecord(await service.action(saved, "submit"));
-      setNotice(submit ? "Newsletter submitted for review." : "Draft saved.");
+      const changed = await persistNewsletterDraft(
+        service, selected, content, submit,
+        (record) => {
+          setBaseline(JSON.stringify(record.content));
+          applyConfirmedRecord(record);
+        },
+        setProgress,
+      );
+      setNotice(submit ? "Newsletter submitted for review." : changed ? "Draft saved." : "All changes are already saved.");
     });
   }
   async function decide(action: string) {
@@ -338,7 +345,7 @@ export default function NewsletterWorkspace() {
         </div>
         {busy && (
           <div role="status" className="flex items-center gap-2 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" />Saving your changes…
+            <Loader2 className="h-4 w-4 animate-spin" />{progress}
           </div>
         )}
         {failure && <NewsletterError error={failure} />}
