@@ -1,3 +1,4 @@
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -84,14 +85,11 @@ const TicketCard: React.FC<TicketCardProps> = ({
   const assigneeDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   
-  // Sample assignees for dropdown
-  const availableAssignees = [
-    { name: 'Alice', avatarFallback: 'A' },
-    { name: 'Bob', avatarFallback: 'B' },
-    { name: 'Charlie', avatarFallback: 'C' },
-    { name: 'Diana', avatarFallback: 'D' },
-    { name: 'Emma', avatarFallback: 'E' }
-  ];
+  const { staffMembers } = useStaffMembers();
+  const availableAssignees = staffMembers.map(staff => ({
+    id: staff.id, email: staff.email, name: staff.name,
+    avatarFallback: staff.name.split(' ').map(part => part[0]).join('').slice(0, 2),
+  }));
 
   // Check if due date is passed (checking endDate if available)
   const isDueDatePassed = React.useMemo(() => {

@@ -1,3 +1,4 @@
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -127,11 +128,11 @@ const sampleVisitors: Visitor[] = [
     company: 'Acme Corporation',
     status: 'checked-in',
     time: '10:15 AM',
-    host: 'Alice Smith',
+    host: '',
     duration: '1h 45m',
     initials: 'JD',
     photoUrl: '/images/visitors/john-doe.jpg', // Sample photo URL
-    assignees: ['Alice Smith']
+    assignees: []
   },
   {
     id: 2,
@@ -140,11 +141,11 @@ const sampleVisitors: Visitor[] = [
     company: 'Tech Innovations Ltd',
     status: 'scheduled',
     time: '2:30 PM',
-    host: 'Robert Chen',
+    host: '',
     duration: 'Today',
     initials: 'SJ',
     photoUrl: '/images/companies/tech-innovations.png', // Sample company logo
-    assignees: ['Robert Chen']
+    assignees: []
   },
   {
     id: 3,
@@ -153,10 +154,10 @@ const sampleVisitors: Visitor[] = [
     company: 'Global Services Inc',
     status: 'checked-out',
     time: '11:45 AM',
-    host: 'Jennifer Lee',
+    host: '',
     duration: '45m',
     initials: 'MP',
-    assignees: ['Jennifer Lee']
+    assignees: []
   },
   {
     id: 4,
@@ -165,11 +166,11 @@ const sampleVisitors: Visitor[] = [
     company: 'Creative Designs Co',
     status: 'scheduled',
     time: '4:00 PM',
-    host: 'David Miller',
+    host: '',
     duration: 'Today',
     initials: 'EW',
     photoUrl: '/images/visitors/emma-wilson.jpg',
-    assignees: ['David Miller']
+    assignees: []
   },
   {
     id: 5,
@@ -178,10 +179,10 @@ const sampleVisitors: Visitor[] = [
     company: 'Financial Advisors LLC',
     status: 'no-show',
     time: '9:30 AM',
-    host: 'Sophia Garcia',
+    host: '',
     duration: 'Today',
     initials: 'TB',
-    assignees: ['Sophia Garcia']
+    assignees: []
   },
   {
     id: 6,
@@ -190,11 +191,11 @@ const sampleVisitors: Visitor[] = [
     company: 'Healthcare Solutions',
     status: 'checked-in',
     time: '1:20 PM',
-    host: 'Kevin Wong',
+    host: '',
     duration: '35m',
     initials: 'LM',
     photoUrl: '/images/companies/healthcare-solutions.png',
-    assignees: ['Kevin Wong']
+    assignees: []
   }
 ];
 
@@ -326,17 +327,8 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
   const timeEditRef = useRef<HTMLDivElement>(null);
   
   // All available staff members for assignee selection
-  const allStaffMembers = [
-    "Alice Smith",
-    "Robert Chen",
-    "Jennifer Lee",
-    "David Miller",
-    "Sophia Garcia",
-    "Kevin Wong",
-    "John Thompson",
-    "Maria Rodriguez",
-    "Ahmed Khan"
-  ];
+  const { staffMembers } = useStaffMembers();
+  const allStaffMembers = staffMembers.map(staff => staff.name);
   
   // Handle assignee change
   const handleAssigneeChange = (assignee: string, isAdding: boolean) => {
@@ -409,14 +401,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
   };
   
   // Host options for dropdown
-  const hostOptions = [
-    "Alice Smith",
-    "Robert Chen",
-    "Jennifer Lee",
-    "David Miller",
-    "Sophia Garcia",
-    "Kevin Wong"
-  ];
+  const hostOptions = allStaffMembers;
   
   useEffect(() => {
     if (showDropdown || showStatusDropdown || showHostDropdown || showTimeEdit || showDurationEdit) {
@@ -900,17 +885,8 @@ const VisitorManagement: React.FC = () => {
   const hostFilterRef = useRef<HTMLDivElement>(null);
   
   // All staff members for assignee selection
-  const allStaffMembers = [
-    "Alice Smith",
-    "Robert Chen",
-    "Jennifer Lee",
-    "David Miller",
-    "Sophia Garcia",
-    "Kevin Wong",
-    "John Thompson",
-    "Maria Rodriguez",
-    "Ahmed Khan"
-  ];
+  const { staffMembers } = useStaffMembers();
+  const allStaffMembers = staffMembers.map(staff => staff.name);
   
   // Filter values
   const [dateFilter, setDateFilter] = useState<{from?: Date; to?: Date}>({});
@@ -1751,7 +1727,7 @@ const VisitorManagement: React.FC = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="w-48">
                           <div className="text-xs font-medium p-2 border-b">Select Host</div>
-                          {uniqueHosts.map(host => (
+                          {allStaffMembers.map(host => (
                             <DropdownMenuItem 
                               key={host}
                               onClick={() => handleInlineHostChange(visitor.id, host)}
@@ -2330,7 +2306,7 @@ Enter the visitor's details below.
                         <SelectValue placeholder="Select a host" />
                       </SelectTrigger>
                       <SelectContent>
-                        {uniqueHosts.map(host => (
+                        {allStaffMembers.map(host => (
                           <SelectItem key={host} value={host}>{host}</SelectItem>
                         ))}
                       </SelectContent>
