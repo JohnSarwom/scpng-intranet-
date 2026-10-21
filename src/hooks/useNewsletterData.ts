@@ -20,6 +20,15 @@ export function useNewsletterData<T>(
     { owner: string; key: string; data?: T; loading: boolean; error?: string }
   >({ owner: "", key: "", loading: true });
   const reload = useCallback(() => setEpoch((value) => value + 1), []);
+  // Apply only confirmed server results to this mounted account's in-memory view.
+  const updateData = useCallback((update: (data: T) => T) => {
+    setState((previous) => {
+      const currentIdentity = (instance.getActiveAccount() || instance.getAllAccounts()[0])?.homeAccountId || "";
+      if (currentIdentity !== identity || previous.owner !== identity ||
+        previous.key !== key || previous.data === undefined) return previous;
+      return { ...previous, data: update(previous.data), loading: false, error: undefined };
+    });
+  }, [instance, identity, key]);
   useEffect(() => {
     let active = true;
     setState((previous) => ({
@@ -55,5 +64,5 @@ export function useNewsletterData<T>(
   const current = state.owner === identity && state.key === key
     ? state
     : { loading: true, data: undefined, error: undefined };
-  return { ...current, service, reload, configured: newslettersConfigured() };
+  return { ...current, service, reload, updateData, configured: newslettersConfigured() };
 }

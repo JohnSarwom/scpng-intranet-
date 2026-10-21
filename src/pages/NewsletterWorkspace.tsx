@@ -79,7 +79,7 @@ function portMoresbyDateTime(iso?: string) {
 export default function NewsletterWorkspace() {
   const navigate = useNavigate();
   const { submissionId } = useParams();
-  const { data, loading, error, configured, reload, service } =
+  const { data, loading, error, configured, reload, updateData, service } =
     useNewsletterData(async (s) => {
       const [session, records] = await Promise.all([s.session(), s.list()]);
       return { ...session, records };
@@ -180,6 +180,12 @@ export default function NewsletterWorkspace() {
   const events = useMemo(() => selected ? [...selected.events].reverse() : [], [
     selected,
   ]);
+  function applyConfirmedRecord(record: Newsletter) {
+    updateData((current) => ({
+      ...current,
+      records: [record, ...current.records.filter((item) => item.id !== record.id)],
+    }));
+  }
   async function run(task: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
@@ -198,9 +204,9 @@ export default function NewsletterWorkspace() {
     await run(async () => {
       const saved = await service.save(selected, content);
       setBaseline(JSON.stringify(saved.content));
-      if (submit) await service.action(saved, "submit");
+      applyConfirmedRecord(saved);
+      if (submit) applyConfirmedRecord(await service.action(saved, "submit"));
       setNotice(submit ? "Newsletter submitted for review." : "Draft saved.");
-      reload();
     });
   }
   async function decide(action: string) {
@@ -227,13 +233,13 @@ export default function NewsletterWorkspace() {
         comment,
         schedule ? new Date(`${schedule}:00+10:00`).toISOString() : undefined,
       );
+      applyConfirmedRecord(next);
       setNotice(
         next.publicationWarning ||
           (action === "publish"
             ? "Newsletter published. Staff email is queued for the background service."
             : "Newsletter updated."),
       );
-      reload();
     });
   }
   function field<K extends keyof Content>(key: K, value: Content[K]) {
@@ -316,12 +322,12 @@ export default function NewsletterWorkspace() {
                   </Button>
                   <Button
                     className={primary}
-                    disabled={busy || !configured || !actor}
+                    disabled={busy || loading || !configured || !actor}
                     onClick={() =>
                       run(async () => {
                         const n = await service.create();
+                        applyConfirmedRecord(n);
                         navigate(`/news/newsletters/workspace/${n.id}`);
-                        reload();
                       })}
                   >
                     <Plus className="mr-2 h-4 w-4" />Create Newsletter
