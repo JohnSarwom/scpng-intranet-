@@ -2,6 +2,7 @@ import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { FRONT_DESK_ACTIONS, FRONT_DESK_RESOURCE } from '@/services/frontDesk/frontDeskConfig';
 
 export interface PermissionMatrixProps {
     permissions: any;
@@ -73,7 +74,11 @@ const RESOURCES = [
     { id: 'documents', label: 'Documents', actions: [{ id: 'read', label: 'Access' }] },
     { id: 'forms', label: 'Forms', actions: [{ id: 'read', label: 'Access' }] },
     { id: 'ai', label: 'AI Hub', actions: [{ id: 'access', label: 'Access' }] },
-    { id: 'tickets', label: 'Tickets', actions: [{ id: 'read', label: 'Access' }] },
+    {
+        id: FRONT_DESK_RESOURCE,
+        label: 'Front Desk',
+        actions: [{ id: 'read', label: 'Access' }, ...FRONT_DESK_ACTIONS.map(action => ({ ...action }))],
+    },
     { id: 'licenses', label: 'Licensing', actions: [{ id: 'read', label: 'Access' }] },
     { id: 'gallery', label: 'Gallery', actions: [{ id: 'read', label: 'Access' }] },
     { id: 'contacts', label: 'Contacts', actions: [{ id: 'read', label: 'Access' }] },

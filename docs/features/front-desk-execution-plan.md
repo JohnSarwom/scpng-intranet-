@@ -376,6 +376,47 @@ All tasks P1.1–P1.11 are implemented on `fix/front-desk-stabilise`. P1.3 shipp
 - Running setup on the live site creates every list and column, and running it again changes nothing.
 - A receptionist (non-admin) account can open `/tickets` and sees only the controls its role allows.
 
+### Phase 2 status (2026-10-21)
+
+Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
+
+**Built:**
+
+| Task | Files |
+|---|---|
+| P2.1 | `services/frontDesk/frontDeskConfig.ts` |
+| P2.2 | `services/frontDesk/frontDeskGraph.ts` |
+| P2.3 | `services/frontDesk/frontDeskListSetup.ts`, plus the TestGround **Front Desk Lists Setup** card (`components/frontDesk/FrontDeskSetupCard.tsx`) |
+| P2.5 | `hooks/frontDesk/useFrontDeskActor.ts`; ticket comments now carry the signed-in user |
+| P2.6 | Role Management and Permission Matrix show **Front Desk** with create / update / delete / manage / export; `hooks/frontDesk/useFrontDeskPermissions.ts` |
+| P2.7 | `hooks/frontDesk/frontDeskQueryKeys.ts`, `useFrontDeskGraph.ts`, `frontDeskToasts.ts`; the Mail TODO toasts are replaced |
+
+**How the five tabs are gated (P2.6):**
+- New buttons are hidden without `create`, and Delete without `delete`.
+- Ticket groups (add, rename, delete) are hidden without `manage`.
+- Edit, the inline pickers and drag-and-drop need `update`. The pickers still show their values but do not open, and dragged cards snap back.
+- The visitor card pickers are gated in place. They are fully replaced in Phase 3.
+
+**Checks:**
+- **Tests:** 15 new Vitest tests (Graph helper, list setup, permissions); the full suite fails only on the two baseline CSV files.
+- **Types:** the same 235 errors as `main`.
+- **Lint:** no new problems.
+- **Browser:**
+  - The setup card's read-only **Check** reaches the live site and reports all 7 lists and the photo library as missing, with their column counts.
+  - As an admin, every Tickets control is still shown.
+  - A ticket comment shows the signed-in user instead of "Current User".
+
+**Live site (2026-10-21):**
+- With the product owner's go-ahead, **Create / repair** created all 7 lists and the `FrontDesk_VisitorPhotos` library on the scpngintranet site.
+- Every list has its Appendix A columns. The indexes are on Visitors `VisitDate` and `Status`, Appointments `StartDateTime`, MailPackages `ReceivedAt`, Inquiries `ReportedAt` and TicketComments `TicketId`.
+- **Check** then reported all 8 as **Ready**.
+- The run took about 95 seconds, and the card shows only a spinner until the end.
+
+**Still open:**
+- P2.4: restrict the new lists and library in SharePoint (manual).
+- Creating the Front Desk role group in Admin → Role Management and assigning the receptionists (manual).
+- The non-admin browser check, which needs a receptionist account.
+
 ---
 
 ## Phase 3 — Visitor Log (replace the paper sheet)

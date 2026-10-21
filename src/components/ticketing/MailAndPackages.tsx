@@ -38,6 +38,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO, isValid, isBefore, addDays, subDays, subMonths, subWeeks, isAfter, startOfDay, endOfDay, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import MailPackageDialog from './MailPackageDialog';
+import { useFrontDeskPermissions } from '@/hooks/frontDesk/useFrontDeskPermissions';
+import { frontDeskSaved } from '@/hooks/frontDesk/frontDeskToasts';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,6 +157,7 @@ type MailFilters = ReturnType<typeof createInitialFilters>;
 
 const MailAndPackages: React.FC = () => {
   const [mailItems, setMailItems] = useState<MailPackageData[]>(initialMailItems);
+  const perms = useFrontDeskPermissions();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<MailFilters>(createInitialFilters);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
@@ -231,7 +234,7 @@ const MailAndPackages: React.FC = () => {
     setMailItems(prev => prev.filter(item => item.id !== itemToDelete.id));
     setItemToDelete(null);
     setIsConfirmDeleteDialogOpen(false);
-    // TODO: Add toast notification for deletion
+    frontDeskSaved(`Deleted ${itemToDelete.name ?? "item"}`);
   }, [itemToDelete]);
 
   const cancelDelete = useCallback(() => {
@@ -250,7 +253,7 @@ const MailAndPackages: React.FC = () => {
       }
     });
     setIsDialogOpen(false);
-     // TODO: Add toast notification for add/update
+     frontDeskSaved(data.id ? `Saved ${data.title}` : `Logged ${data.title}`);
   }, []);
 
   const handleStatusChange = useCallback((id: string, newStatus: MailPackageStatus) => {
@@ -271,7 +274,7 @@ const MailAndPackages: React.FC = () => {
       }
       return item;
     }));
-     // TODO: Add toast notification for status change
+     frontDeskSaved(`Status changed to ${newStatus}`);
   }, []);
 
   // --- Filtering Logic ---
@@ -412,11 +415,11 @@ const MailAndPackages: React.FC = () => {
       {/* Status - Now a Dropdown */}
       <div className="col-span-1 md:col-span-2 flex items-center">
          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                  <Button variant="outline" className={cn("h-auto px-2 py-0.5 text-xs border whitespace-nowrap", statusColors[item.statusColorKey])}>
                      <item.statusIcon className="h-3 w-3 mr-1" />
                      {item.statusLabel}
-                     <ChevronDown className="h-3 w-3 ml-1 opacity-50" />
+                     {perms.canUpdate && <ChevronDown className="h-3 w-3 ml-1 opacity-50" />}
                  </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
@@ -446,25 +449,29 @@ const MailAndPackages: React.FC = () => {
       {/* Actions */}
       <div className="col-span-1 md:col-span-2 flex items-center justify-start md:justify-end space-x-1">
         {/* Edit */}
-        <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            title="Edit Item"
-            onClick={() => item.onEdit(item.id)}
-            >
-          <Pencil className="h-4 w-4" />
-        </Button>
+        {perms.canUpdate && (
+          <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              title="Edit Item"
+              onClick={() => item.onEdit(item.id)}
+              >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        )}
          {/* Delete - Changed color to match pencil */}
-         <Button
-             variant="ghost"
-             size="icon"
-             className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-             title="Delete Item"
-             onClick={() => item.onDelete(item.id)}
-             >
-           <Trash2 className="h-4 w-4" />
-         </Button>
+         {perms.canDelete && (
+           <Button
+               variant="ghost"
+               size="icon"
+               className="h-8 w-8 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+               title="Delete Item"
+               onClick={() => item.onDelete(item.id)}
+               >
+             <Trash2 className="h-4 w-4" />
+           </Button>
+         )}
       </div>
     </div>
   );
@@ -498,6 +505,7 @@ const MailAndPackages: React.FC = () => {
 
          {/* Grid Actions - Updated to cycle through all statuses */}
         <div className="flex items-center justify-end space-x-1 mt-2 -mr-2">
+            {perms.canUpdate && (<>
             {/* Received -> Pending Pickup */}
             { item.status === 'Received' && (
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-blue-600" title="Mark Pending Pickup" onClick={() => item.onStatusChange(item.id, 'Pending Pickup')}><Clock className="h-3.5 w-3.5" /></Button>
@@ -516,7 +524,10 @@ const MailAndPackages: React.FC = () => {
             )}
             {/* Keep Edit and Delete buttons */}
             <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-400 hover:text-gray-600" title="Edit" onClick={() => item.onEdit(item.id)}><Pencil className="h-3.5 w-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" title="Delete" onClick={() => item.onDelete(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            </>)}
+            {perms.canDelete && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:text-red-600" title="Delete" onClick={() => item.onDelete(item.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+            )}
         </div>
     </div>
    );
@@ -625,10 +636,12 @@ const MailAndPackages: React.FC = () => {
           </div>
           {/* Add New Button */}
           <div className="flex items-center gap-2">
-            <Button size="sm" className="flex items-center bg-primary hover:bg-primary/90" onClick={handleCreateItem}>
-              <Plus className="mr-2 h-4 w-4" />
-              <span>New Mail/Package</span>
-            </Button>
+            {perms.canCreate && (
+              <Button size="sm" className="flex items-center bg-primary hover:bg-primary/90" onClick={handleCreateItem}>
+                <Plus className="mr-2 h-4 w-4" />
+                <span>New Mail/Package</span>
+              </Button>
+            )}
           </div>
         </div>
       </div>

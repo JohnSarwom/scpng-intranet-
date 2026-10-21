@@ -54,6 +54,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useStaffMembers } from '@/hooks/useStaffMembers';
+import { useFrontDeskPermissions } from '@/hooks/frontDesk/useFrontDeskPermissions';
 import InquiryDialog from './InquiryDialog';
 import {
   formatReportedAt,
@@ -104,6 +105,7 @@ const GeneralInquiries = (): React.ReactElement => {
   const [inquiries, setInquiries] = useState<InquiryData[]>(initialInquiries);
   const [searchQuery, setSearchQuery] = useState('');
   const { staffMembers } = useStaffMembers();
+  const perms = useFrontDeskPermissions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingInquiry, setEditingInquiry] = useState<InquiryData | null>(null);
   const [inquiryToDelete, setInquiryToDelete] = useState<InquiryData | null>(null);
@@ -389,14 +391,16 @@ const GeneralInquiries = (): React.ReactElement => {
 
           </div>
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={handleCreateInquiry}
-              className="bg-primary text-white hover:bg-primary/90"
-              size="sm"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              New Inquiry
-            </Button>
+            {perms.canCreate && (
+              <Button
+                onClick={handleCreateInquiry}
+                className="bg-primary text-white hover:bg-primary/90"
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New Inquiry
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -472,7 +476,7 @@ const GeneralInquiries = (): React.ReactElement => {
               </div>
               <div className="flex items-center">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -483,7 +487,7 @@ const GeneralInquiries = (): React.ReactElement => {
                       style={getCategoryBadgeClass(inquiry.category)}
                     >
                       <span className="truncate mr-1">{inquiry.category}</span>
-                      <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />
+                      {perms.canUpdate && <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
@@ -507,7 +511,7 @@ const GeneralInquiries = (): React.ReactElement => {
               </div>
               <div className="flex items-center">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -518,7 +522,7 @@ const GeneralInquiries = (): React.ReactElement => {
                       )}
                     >
                       <span className="truncate mr-1">{inquiry.status}</span>
-                      <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />
+                      {perms.canUpdate && <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
@@ -542,7 +546,7 @@ const GeneralInquiries = (): React.ReactElement => {
               </div>
               <div className="flex items-center">
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -560,7 +564,7 @@ const GeneralInquiries = (): React.ReactElement => {
                       ) : (
                         <span className="text-muted-foreground italic mr-1">Unassigned</span>
                       )}
-                      <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />
+                      {perms.canUpdate && <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
@@ -594,6 +598,7 @@ const GeneralInquiries = (): React.ReactElement => {
                 </DropdownMenu>
               </div>
               <div className="flex justify-end items-center">
+                {(perms.canUpdate || perms.canDelete) && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground data-[state=open]:bg-muted">
@@ -602,20 +607,25 @@ const GeneralInquiries = (): React.ReactElement => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEditInquiry(inquiry.id)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Edit</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleDeleteInquiry(inquiry.id)}
-                      className="text-red-600 focus:text-red-600 focus:bg-red-100/50 dark:focus:bg-red-800/30"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
+                    {perms.canUpdate && (
+                      <DropdownMenuItem onClick={() => handleEditInquiry(inquiry.id)}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                    )}
+                    {perms.canUpdate && perms.canDelete && <DropdownMenuSeparator />}
+                    {perms.canDelete && (
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteInquiry(inquiry.id)}
+                        className="text-red-600 focus:text-red-600 focus:bg-red-100/50 dark:focus:bg-red-800/30"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
+                )}
               </div>
             </div>
           ))}
