@@ -1,15 +1,18 @@
 # Front Desk Ticketing System — Execution Plan
 
-Prepared 2026-10-21. Source: [Front Desk Ticketing Audit](../history/FRONT_DESK_TICKETING_AUDIT_2026_10_21.md).
+Prepared 2026-10-21. Sources:
+- [Front Desk Ticketing Audit](../history/FRONT_DESK_TICKETING_AUDIT_2026_10_21.md)
+- [Front Desk back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10_21.md), folded in on 2026-10-21
 
 Every task in this plan closes one or more audit findings, cited in brackets:
 
-- **B1–B12** — bugs
-- **M1–M8** — minor issues
+- **B1–B14** — bugs
+- **M1–M11** — minor issues
 - **G1–G9** — cross-cutting gaps
 - **L1–L6** — paper Visitors Log Sheet comparison (audit section 8)
+- **BE1–BE12** — back-end findings: notifications, automation, assignment
 
-Nothing is in scope that the audit did not raise. Appendix B maps every finding to the tasks that close it.
+Nothing is in scope that the two audits did not raise. Appendix B maps every finding to the tasks that close it.
 
 ---
 
@@ -19,14 +22,15 @@ Nothing is in scope that the audit did not raise. Appendix B maps every finding 
 |---|---|---|---|---|
 | 0 | Decisions & scope | G8, G9, L4, B5, B12 (decisions) | 0.5–1 | Signed-off decision log |
 | 1 | Stabilise the prototype | B1, B2, B3, B4, B6, B7, B8 (partial), B5, B12, B13, B14, G9, M2, M5 (partial), M6 | 2–3 | Every visible control works; nothing fake is shown |
-| 2 | Foundation | G1, G3, G4 | 3–4 | SharePoint lists, service layer, signed-in identity, permission checks |
+| 2 | Foundation, plus a follow-up (P2.8–P2.9) | G1, G3, G4, BE1, BE8, BE12 (columns for BE2, BE3, BE7) | 4–5 | SharePoint lists, service layer, signed-in identity, permission checks, safe concurrent edits |
 | 3 | Visitor Log | L1–L6, B11, M1, M3, B2 (permanent) | 5–6 | Saved visitor log that replaces the paper sheet |
-| 4 | Mail & Packages and Appointments | M4, M5, B1/B4 (on saved data), G6 (appointment → visitor) | 4–5 | Both tabs saved and shared between desks |
-| 5 | Inquiries & Tickets | B3 (saved), B8, B9, B10, M6, G6 (inquiry → ticket), G8 | 5–7 | All tabs saved |
-| 6 | Notifications | G5 | 2–3 | Hosts, mail recipients and assignees are notified |
+| 4 | Mail & Packages and Appointments | M4, M5, B1/B4 (on saved data), G6 (appointment → visitor), BE9 | 4.5–6 | Both tabs saved and shared between desks; appointments in the host's Outlook |
+| 5 | Inquiries & Tickets | B3 (saved), B8, B9, B10, M6, G6 (inquiry → ticket), G8, BE1, BE6, BE7 | 7–10 | All tabs saved; routing rules; assignees outside the front desk can act |
+| 6 | Notifications | G5, BE3, BE4, BE5, BE10, BE11 | 3–4 | Hosts, mail recipients, assignees and reporters are notified; the bell scales |
+| 6B | Scheduled automation | BE2, BE3, BE5, BE12 | 4–6 | Reminders, SLA and overdue alerts, end-of-day sweep, digest, retention |
 | 7 | Reporting & exports | G7, L5, M4 | 3–4 | Printable daily log, on-site list, registers, exports |
 | 8 | Clean-up & documentation | G1, G2, G4, M7, M8, G9 | 1–2 | Accurate docs, no dead code or fake data |
-| | **Total** | | **26–35** | |
+| | **Total** | | **34–47** | |
 
 Estimates assume one developer who knows this codebase. They are ranges, not commitments.
 
@@ -35,18 +39,21 @@ Estimates assume one developer who knows this codebase. They are ranges, not com
 - **After Phase 1 — honest demo.** Every tab and button shown on the page works within a session.
 - **After Phase 3 — paper retired.** Reception logs every visitor in the module.
 - **After Phase 5 — fully saved.** No tab loses data on refresh.
+- **After Phase 6B — automation live.** Reminders, SLA alerts and the end-of-day sweep run without anyone having the page open.
 - **After Phase 7 — reporting live.** Daily log sheet, evacuation list and registers can be printed.
 
 ### Order and dependencies
 
 ```
-P0 ─► P1 ─► P2 ─► P3 ─┬─► P4 ─┬─► P6 ─► P7 ─► P8
-                      └─► P5 ─┘
+P0 ─► P1 ─► P2 ─► P3 ─┬─► P4 ─┬─► P6 ─┬─► P7 ──┬─► P8
+                      └─► P5 ─┘       └─► P6B ─┘
 ```
 
 - Phases 4 and 5 touch different files and lists, so they can run in parallel once Phase 3 is merged.
 - Phase 6 needs the saved data from Phases 3–5.
+- Phase 6B needs Phase 6's "notified" markers, and runs alongside Phase 7. It is mostly Power Automate work, not app code.
 - Phase 7 needs Phases 3 and 4.
+- **P2.4 (locking the lists) waits for nothing else, but must follow D10 and D12.** Locking every list as first planned would block assignees (BE1) and the flows (BE12).
 
 ### Changes from the audit's suggested order
 
@@ -69,7 +76,9 @@ P0 ─► P1 ─► P2 ─► P3 ─┬─► P4 ─┬─► P6 ─► P7 ─�
 | People | Store staff as email + display-name text columns (the same convention as `OwnerEmail` and `RecipientEmail`). Pick staff only from `useStaffMembers()`; no hard-coded names (B8, M6). | `src/hooks/useStaffMembers.ts` |
 | Permissions | `useRoleBasedAuth().hasPermission('tickets', action)`. Define new actions as `extraActions` in Role Management. | `src/hooks/useRoleBasedAuth.ts:109`, `src/components/admin/RoleManagement.tsx:20–55` |
 | Exports | `exceljs`, plus `jspdf` and `jspdf-autotable` | `src/services/attendanceReportExportService.ts` |
-| Notifications | `addNotification` (in-app) and `sendEmailNotification` (Graph `/me/sendMail`) | `src/services/sharePointOpsService.ts:3193`, `:3229` |
+| Notifications | In-app via `addNotification`, email via Graph `/me/sendMail`. Front-desk code calls them only through `frontDeskNotifications.ts` (P6.1), which:<br>- sets `replyTo` to the reception mailbox (D11)<br>- builds links from `VITE_APP_BASE_URL` (BE10)<br>- writes a "notified" marker on the record (BE3) | `src/services/sharePointOpsService.ts:3193`, `:3229` |
+| Scheduled jobs | Power Automate only, never the browser (D12):<br>- standard connectors only<br>- owned by the `automation@scpng.gov.pg` service account<br>- Recurrence in "West Pacific Standard Time"<br>- filter only on indexed columns | Phase 6B |
+| Concurrent edits | Updates send the item's eTag as `If-Match`. On `412`, reload and tell the user (BE8). | `src/services/sharePointOpsService.ts:387–417`, P2.8 |
 | File upload | `useSharePointUpload().uploadFile(file, sitePath, library, folder)` | `src/hooks/useSharePointUpload.ts:58` |
 | List setup | Idempotent "ensure" functions: check what exists and create only what is missing. Run them from TestGround. | `src/services/feedbackService.ts:109`, `src/pages/TestGround.tsx:1108` |
 | Tests | New front-desk tests are Vitest `*.test.ts` files on logic, with a fake Graph client. No component-test library is installed, so keep logic in pure functions. The repo also has `node:test` suites (`*.test.cjs`, `*.test.mjs`) that only run under `node --test`. | `src/services/pngxAnnouncementsSharePointService.test.ts` |
@@ -159,10 +168,27 @@ They replace hard-coded names with `useStaffMembers()`. These edits caused B2, a
 | D3 | Where tickets are stored | (a) reuse `Operations_Tasks` / `Operations_TaskGroups`; (b) new `FrontDesk_Tickets` lists | **(b).** The Division page counts every unit's tasks from the shared task readers (commit `3ba5342`, `src/utils/divisionScope.ts`), so front-desk requests stored there would inflate reception's task figures. Reuse the task board's *patterns* (groups, comments), not its list. | G8 | **Accepted.** (b) New FrontDesk_Tickets lists. |
 | D4 | Minimum fields for a walk-in visitor | — | **Required:** Name, Reason. **Optional:** Company, Host, Phone, Email, Badge No, Photo. This matches the paper sheet. | L4 | **Accepted.** Name and Reason required; all else optional. |
 | D5 | Who gets which permission | — | **Receptionist:** create, update. **Front-desk supervisor:** also delete, manage ticket groups, export. **Everyone else:** no access to `/tickets`. | G4 | **Accepted.** As recommended. |
-| D6 | Notification channel | In-app, email, or both | Both, sent from the receptionist's mailbox (`/me/sendMail`), the same way the rest of the app sends email. | G5 | **Accepted.** In-app and email. |
+| D6 | Notification channel | In-app, email, or both | Both, sent from the receptionist's mailbox (`/me/sendMail`), the same way the rest of the app sends email. | G5 | **Accepted.** In-app and email. The sender is refined by D11. |
 | D7 | Visitor photos | Keep (in a restricted library) or drop | Decide on privacy grounds. If kept, use a dedicated document library with restricted access. | M3 | **Accepted.** Keep photos as an optional field (consistent with D4), stored in a restricted FrontDesk_VisitorPhotos library (D9). |
 | D8 | QR self check-in | Remove; or build a public kiosk page | Remove the button in Phase 1. A self-service page needs anonymous write access to SharePoint, which is a separate security design. | B12 | **Accepted.** Remove the QR button and modal. |
-| D9 | SharePoint list access | Leave site-level access; or restrict the front-desk lists | Restrict. Hiding buttons in the app does not stop anyone with site access from opening the lists in SharePoint and reading visitor phone numbers and photos. | G4 | **Accepted.** Restrict the FrontDesk_ lists and photo library. |
+| D9 | SharePoint list access | Leave site-level access; or restrict the front-desk lists | Restrict. Hiding buttons in the app does not stop anyone with site access from opening the lists in SharePoint and reading visitor phone numbers and photos. | G4 | **Accepted.** Restrict the FrontDesk_ lists and photo library. **Narrowed by D10:** only the lists holding visitor details are restricted. |
+
+### Back-end decisions (2026-10-21)
+
+These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10_21.md), section 6. The product owner accepted every recommendation as written.
+
+| ID | Decision | Options | Recommendation | Finding | Agreed |
+|---|---|---|---|---|---|
+| D10 | How do assignees outside the front desk act, and what may notices contain? | A: restrict only the lists holding visitor details, and add an "Assigned to me" view · B: keep every list locked; assignees respond to Approvals emails | **A.** Restrict `FrontDesk_Visitors`, `FrontDesk_Appointments`, `FrontDesk_MailPackages` and `FrontDesk_VisitorPhotos`. Inquiries, Tickets, TicketComments, TicketGroups and RoutingRules keep site-member access. In-app notices may name the visitor; phone and email never appear. | BE1, BE5 | **Accepted.** Option A. |
+| D11 | Who front-desk emails come from | Receptionist with reply-to the reception shared mailbox · Send As the shared mailbox (needs `Mail.Send.Shared` and admin consent) | Reply-to now; Send As later if wanted | BE4 | **Accepted.** Reply-to the reception shared mailbox. |
+| D12 | Which account owns the flows | A personal account · a service account | `automation@scpng.gov.pg`, with a named co-owner | BE2, BE12 | **Accepted.** Service account plus co-owner. |
+| D13 | Reminder timings and SLA hours | — | Mail: remind the recipient after 2 working days, tell the supervisor after 5. Unassigned inquiry: alert after 1 hour. SLA: High 4 h, Medium 1 working day, Low 3 working days. End-of-day sweep at 17:30, digest at 07:45. All adjustable in `FrontDesk_RoutingRules` (P5.14). | BE2, BE6 | **Accepted.** As recommended. |
+| D14 | Retention | — | Delete visitor photos after 30 days. Anonymise visitor records after 24 months. **Management to confirm** before the retention flow is switched on. | BE2 | **Accepted,** pending management confirmation of the periods. |
+| D15 | Outlook invites for appointments | Yes · No | Yes, organised from the receptionist's calendar | BE9 | **Accepted.** |
+
+**Prerequisites from IT (not code):**
+- A reception shared mailbox for D11. The address is set in `frontDeskConfig.ts`.
+- The `automation@scpng.gov.pg` account (D12), licensed with a mailbox, with a named co-owner for its flows.
 
 **Exit gate:** decision table agreed, and the audit has been walked through with the receptionists.
 
@@ -180,7 +206,13 @@ They replace hard-coded names with `useStaffMembers()`. These edits caused B2, a
 | D6 | P6.1 sends both in-app and email notices. |
 | D7 | P2.3 creates `FrontDesk_VisitorPhotos`; P3.7 follows the "If kept" path. |
 | D8 | P1.7 removes the Check-In QR button and modal. No kiosk page is built. |
-| D9 | P2.4 restricts the lists and library in SharePoint. |
+| D9 | P2.4 restricts the lists and library in SharePoint, narrowed by D10. |
+| D10 | P2.4 restricts only the four lists that hold visitor details. P5.16 adds the "Assigned to me" view. P6.5 allows the visitor's name in notices. |
+| D11 | P6.1 sets `replyTo` on every front-desk email. |
+| D12 | P2.4 grants the service account access to the restricted lists. Phase 6B builds every flow under that account. |
+| D13 | P5.14 seeds `FrontDesk_RoutingRules` with these values. P6B.3–P6B.6 read them. |
+| D14 | P6B.7 is built with these periods, and switched on only after management confirms them. |
+| D15 | P4.10 creates the Outlook event. |
 
 ---
 
@@ -344,8 +376,21 @@ All tasks P1.1–P1.11 are implemented on `fix/front-desk-stabilise`. P1.3 shipp
 - Add a **Front Desk lists** card to `src/pages/TestGround.tsx`, next to the Task Groups setup (around line 1108). It shows each list as present or missing, with a **Create / repair** button.
 - **Tests:** when some columns already exist, only the missing ones are posted.
 
-### P2.4 Restrict list access [G4, D9]
-- If D9 = restrict: break permission inheritance on the `FrontDesk_*` lists and the photo library in SharePoint, and grant access only to the front-desk group and admins.
+### P2.4 Restrict list access [G4, D9, D10, D12, BE1, BE12]
+- **Restrict** (break permission inheritance, then grant access only to the front-desk group, admins and the `automation@scpng.gov.pg` service account):
+  - `FrontDesk_Visitors`
+  - `FrontDesk_Appointments`
+  - `FrontDesk_MailPackages`
+  - `FrontDesk_VisitorPhotos`
+- **Leave at site-member access** (D10), so assignees outside the front desk can update their items:
+  - `FrontDesk_Inquiries`
+  - `FrontDesk_Tickets`
+  - `FrontDesk_TicketComments`
+  - `FrontDesk_TicketGroups`
+  - `FrontDesk_RoutingRules`
+
+  These hold internal work items only. Version history (on, 50 versions) records every change.
+- Do this only after D10 and D12 are in place. Locking every list would block assignees (BE1) and the flows (BE12).
 - This is a manual SharePoint step, not code. Record the exact steps in the Phase 8 feature doc.
 
 ### P2.5 Signed-in identity [G3]
@@ -413,9 +458,35 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 - The run took about 95 seconds, and the card shows only a spinner until the end.
 
 **Still open:**
-- P2.4: restrict the new lists and library in SharePoint (manual).
+- P2.4: restrict the four visitor-detail lists in SharePoint, per D10 and D12 (manual).
 - Creating the Front Desk role group in Admin → Role Management and assigning the receptionists (manual).
 - The non-admin browser check, which needs a receptionist account.
+- The follow-up below (P2.8–P2.9).
+
+### Phase 2 follow-up (back-end audit)
+
+A small PR after PR #12, on its own branch.
+
+#### P2.8 Safe concurrent edits [BE8]
+- `frontDeskGraph.updateFields` and `deleteItem` take an optional eTag and send it as `If-Match`, following `sharePointOpsService.ts:387–417`.
+- `getItems` returns each item's eTag alongside its fields.
+- On `412 Precondition Failed`, the caller reloads the item and shows *"Someone else changed this record. It has been reloaded."*
+- **Tests:** the header is sent when an eTag is given; a 412 surfaces as a typed error.
+
+#### P2.9 New columns and indexes [BE2, BE3, BE6, BE7, BE9]
+- Add the Appendix A columns marked **BE** to `FRONT_DESK_SCHEMAS`:
+  - the notified markers
+  - the assignment-trail columns
+  - the mail reminder counters
+  - `OutlookEventId` on Appointments
+  - `ParentKind` and `IsSystem` on comments
+- Add the `FrontDesk_RoutingRules` list.
+- Index the columns the flows filter on:
+  - MailPackages `Status`
+  - Inquiries `Status`
+  - Tickets `Status` and `DueDate`
+- Run **Create / repair** on the live site. It only adds what is missing.
+- **Tests:** the setup test covers the new list and the new indexes.
 
 ---
 
@@ -509,7 +580,7 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 ## Phase 4 — Mail & Packages and Appointments
 
 **Branch:** `feat/front-desk-mail-appointments` (or two branches, 4A and 4B)
-**Effort:** 4–5 days.
+**Effort:** 4.5–6 days.
 
 ### 4A — Mail & Packages
 
@@ -556,16 +627,25 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 #### P4.9 Remove sample appointments [M8]
 - Delete `sampleAppointments`.
 
+#### P4.10 Outlook invite [BE9, D15]
+- Saving an appointment creates an Outlook event in the receptionist's calendar, using the existing `calendarService` (`Calendars.ReadWrite` is already granted). The host and any staff attendees are invited, so Outlook handles their reminders.
+- The event id is stored in `OutlookEventId`:
+  - editing the appointment updates the event
+  - cancelling it cancels the event
+- If the calendar call fails, the appointment is still saved, and a warning toast says the invite was not sent.
+- **Tests:** mapping an appointment to the event body; external attendees are not invited.
+
 **Exit gate:**
 - Two receptionists on different PCs see the same mail and appointments within 30 seconds.
 - An appointment's external visitor can be signed in from the log without retyping.
+- A test host receives the Outlook invite, and the invite moves when the appointment is edited.
 
 ---
 
 ## Phase 5 — Inquiries & Tickets
 
-**Branch:** `feat/front-desk-inquiries-tickets` (or two branches, 5A and 5B)
-**Effort:** 5–7 days.
+**Branch:** `feat/front-desk-inquiries-tickets` (or three branches: 5A, 5B, and 5C for assignment)
+**Effort:** 7–10 days.
 
 ### 5A — General Inquiries
 
@@ -624,23 +704,64 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 #### P5.13 Ticket Inbox [B5, D2]
 - Only if D2 chose to rebuild it: a read-and-reply view over tickets and their comments. Otherwise it stays removed.
 
+### 5C — Assignment (back-end audit)
+
+#### P5.14 Routing rules [BE6, D13]
+- New `FrontDesk_RoutingRules` list (Appendix A), with one row per inquiry category:
+  - default and backup assignee
+  - SLA hours per priority
+  - escalation contact
+  - active flag
+- Seeded with the D13 values. The assignee fields start empty, for the supervisor to fill.
+- Admin screen modelled on Workflow Admin (`HR_WorkflowApprovers`, `hrSharePointService.ts:2192`). Gated by the `manage` permission.
+- A new inquiry pre-fills the category's default assignee, which stays editable. If the default is away, the backup is offered.
+- The IT Support category can show a link to the IT Request form (`components/forms/ITRequestPage.tsx`) for requests that belong there.
+- **Tests:** picking the assignee from the rules, including inactive rules and the backup.
+
+#### P5.15 Assignment lifecycle [BE7]
+- **Assigning or reassigning** an inquiry or ticket sets `AssignedAt`, `AssignedByEmail` and `AcknowledgedAt` (cleared).
+- **Acknowledged:** the assignee's acknowledgement sets `AcknowledgedAt`, and the card shows an "Acknowledged" badge. The status choices do not change, so the existing Status columns need no edit.
+- **System comments:** each reassignment and status change writes a short comment (`IsSystem = true`) to `FrontDesk_TicketComments`. `ParentKind` records whether it belongs to a ticket or an inquiry.
+- **Reporter:** the inquiry form stores `ReportedByEmail` when the reporter is staff (picked from `useStaffMembers()`). Free text stays for visitors.
+- **Tests:** the pure helper that works out which fields and comments change for a given edit.
+
+#### P5.16 "Assigned to me" view [BE1, D10]
+- New route `/tickets/assigned`, open to every signed-in user (not guarded by `tickets:read`). It lists only the inquiries and tickets whose `AssigneeEmail` is the signed-in user.
+- Actions: **Acknowledge**, **Add note** and **Resolve**.
+  - The app allows these three to the assignee even without the `tickets` permission. All other fields stay read-only there.
+  - This works because Inquiries and Tickets keep site-member access (D10).
+- Notices to assignees outside the front desk link here, not to `/tickets`.
+- **Tests:** the `canActAsAssignee(item, actorEmail)` guard, including case-insensitive email matching.
+
 **Exit gate:**
 - Tickets and inquiries survive a refresh and appear on a second PC.
 - An escalated inquiry links to its ticket in both directions.
 - Deleting a group never loses tickets without confirmation.
+- A staff account with no front-desk role can open `/tickets/assigned`, acknowledge and resolve its own item, and cannot open `/tickets`.
+- A new IT Support inquiry pre-fills the routing rule's assignee.
 
 ---
 
-## Phase 6 — Notifications [G5]
+## Phase 6 — Notifications [G5, BE3, BE4, BE5, BE10, BE11]
 
 **Branch:** `feat/front-desk-notifications`
-**Effort:** 2–3 days.
+**Effort:** 3–4 days.
 
-### P6.1 Notification helper
-- New `src/services/frontDesk/frontDeskNotifications.ts`, exposing `notify({ recipientEmail, title, message, actionUrl })`.
+### P6.1 Notification helper [D6, D11, BE3, BE4, BE10]
+- New `src/services/frontDesk/frontDeskNotifications.ts`, exposing `notify({ recipientEmail, title, message, actionPath })`.
 - It sends both, per D6:
-  - in-app, through `addNotification` (`System_Notifications`, `sharePointOpsService.ts:3193`)
-  - email, through `sendEmailNotification` (`:3229`)
+  - **in-app**, through `addNotification` (`System_Notifications`, `sharePointOpsService.ts:3193`)
+  - **email**, through Graph `/me/sendMail`, called from the helper itself. The existing `sendEmailNotification` (`:3229`) cannot set `replyTo` and swallows errors, so it is not used here.
+- **Email details:**
+  - `replyTo` is the reception shared mailbox (D11, set in `frontDeskConfig.ts`).
+  - The HTML uses the SCPNG template builder (`utils/scpngEmailBuilder.ts`).
+  - Links are built from `VITE_APP_BASE_URL`, not `window.location.origin` (BE10). The base URL defaults to the production domain, so mail sent from a dev session does not link to localhost.
+- **Result:** the helper returns whether the email was sent. The caller writes the record's "notified" marker only on success (BE3):
+  - `HostNotifiedAt` on visitors
+  - `NotifiedAt` on mail
+  - `AssigneeNotifiedAt` and `NotifiedAssigneeEmail` on inquiries and tickets
+
+  Anything left unmarked is picked up by the backstop flow (P6B.2).
 - Failures are logged and shown as a small warning toast. They never block the sign-in or save that triggered them.
 
 ### P6.2 Visitor arrived
@@ -650,20 +771,84 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 - On logging an item with a `RecipientEmail`, the recipient receives: *"A ⟨letter / parcel⟩ is waiting for you at reception."* If the item needs a signature, the message says so.
 - `NotifiedAt` is stored so the message is not repeated.
 
-### P6.4 Assignment
+### P6.4 Assignment [BE1, BE7]
 - When an inquiry or ticket is assigned or reassigned, the new assignee is notified.
+  - Assignees with the front-desk role get a link to `/tickets`.
+  - Everyone else gets a link to `/tickets/assigned` (P5.16).
+- When an inquiry with a `ReportedByEmail` is resolved, the reporter is told (BE7).
 
-### P6.5 Message content
+### P6.5 Message content [D10]
 - Plain SCPNG wording.
-- Never include a visitor's phone number or email address in an email.
+- The visitor's name and company may appear (D10). Never include a visitor's phone number or email address, in email or in-app: `System_Notifications` is readable by every site member.
 
 ### P6.6 Fire only on changes
-- A pure helper decides whether to notify: only when the status changes *to* On Site, or the assignee changes. Plain edits do not notify.
+- A pure helper decides whether to notify. It fires only when:
+  - the status changes *to* On Site
+  - the assignee changes, compared with `NotifiedAssigneeEmail`
+  - an inquiry becomes Resolved
+
+  Plain edits do not notify.
 - **Tests:** that helper.
 
+### P6.7 Notification bell query [BE5]
+This is an app-wide fix to existing code, and the one change this plan makes inside `sharePointOpsService.ts`.
+- Index `RecipientEmail` on `System_Notifications`. Add this to the front-desk Create / repair, as an existing-list repair.
+- `getNotifications` (`sharePointOpsService.ts:3108`) queries `$filter=fields/RecipientEmail eq '<me>'`, newest first, top 50.
+  - Today it reads every user's items and filters them in the browser, every 30 seconds per signed-in user.
+- Old notices are cleaned up by P6B.8.
+- **Tests:** the query builder escapes quotes in the email.
+
+### P6.8 Teams [BE11]
+- No Teams messages from the browser: the app holds no Teams scopes.
+- If reception later wants Teams alerts, add them to the Phase 6B flows with the standard Microsoft Teams connector.
+
 **Exit gate:**
-- A test host receives both the in-app and the email notice.
-- With email failing on purpose, the visitor is still signed in.
+- A test host receives both the in-app and the email notice, and replying to the email goes to the reception mailbox.
+- With email failing on purpose, the visitor is still signed in, and `HostNotifiedAt` stays empty.
+- A staff assignee without the front-desk role gets a link that opens `/tickets/assigned`.
+- The bell's request filters on `RecipientEmail` (checked in the browser's network log).
+
+---
+
+## Phase 6B — Scheduled automation [BE2, BE3, BE5, BE12]
+
+**Goal:** the jobs a web page cannot do, because nobody has it open: reminders, SLA and overdue alerts, the end-of-day sweep, a daily digest and data clean-up.
+**Where:** Power Automate, not app code (D12).
+- Every flow is built in the designer under `automation@scpng.gov.pg`, with a named co-owner.
+- It uses only standard connectors: SharePoint, Office 365 Outlook, Office 365 Users and Recurrence. The tenant already runs flows built from these.
+- Recurrence uses "West Pacific Standard Time" (the site's time zone is Port Moresby, UTC+10).
+
+**Branch:** `feat/front-desk-automation`, for the exported flow definitions and docs only.
+**Effort:** 4–6 days.
+
+**Rules for every flow:**
+- **Filtering:** filter only on indexed columns (P2.3, P2.9). SharePoint rejects other filters once a list passes 5,000 items.
+- **Working days** are Monday to Friday. Public holidays are not skipped in the first version: they are computed in app code (`pngPublicHolidays.ts`), which flows cannot read. Add a holiday list later if holiday reminders prove noisy.
+- **Test mode:** each flow has a `TestMode` variable. When it is on, every email goes to the developer instead of real recipients.
+- **Failures:** a failure branch ("run after: has failed") emails the flow owners, so a broken flow is not silent.
+- **Thresholds:** read from `FrontDesk_RoutingRules` where they exist (D13).
+
+| Task | Flow | When (PNG time) | What it does |
+|---|---|---|---|
+| P6B.1 | — | — | Service account set-up. Create its SharePoint and Outlook connections, add the co-owner, and confirm it can read the restricted lists (P2.4, BE12). |
+| P6B.2 | **FD-Backstop** | Every 15 min | Items with an empty "notified" marker that are more than 10 minutes old get their notice sent, then the marker is set (BE3). Unmarked items older than 1 day are skipped, so a first run never floods old records. |
+| P6B.3 | **FD-EndOfDay** | 17:30 working days | Emails reception and the supervisor the visitors still **On Site** today. Sets today's **Expected** visitors with no `TimeIn` to **No Show**. |
+| P6B.4 | **FD-MailReminders** | 09:00 working days | Uncollected items older than 2 working days: reminds the recipient. Older than 5: tells the supervisor. Updates `ReminderCount` and `LastRemindedAt`, at most one reminder a day. Signature-required items say so. |
+| P6B.5 | **FD-SLA** | Hourly 08:00–17:00 working days | Inquiries unassigned for more than 1 hour: alerts reception. Open inquiries and tickets past their SLA: reminds the assignee and copies the escalation contact. Tickets due tomorrow or overdue: reminds the assignee. One reminder per item per day. |
+| P6B.6 | **FD-DailyDigest** | 07:45 working days | Sends the supervisor yesterday's visitor count, open inquiries by age, uncollected mail and overdue tickets. |
+| P6B.7 | **FD-Retention** | Monthly | Deletes visitor photos older than 30 days. Anonymises visitors older than 24 months: clears Phone, Email, PhotoUrl and Notes, and replaces the name with "Visitor". **Built switched off; switched on after management confirms D14.** |
+| P6B.8 | **Notifications-Cleanup** | Weekly | Deletes read `System_Notifications` items older than 90 days (BE5). |
+| P6B.9 | — | — | Export each flow to `docs/flows/front-desk/`. Document triggers, thresholds and owners in the P8.7 feature doc. |
+
+**Testing:**
+- Each flow is run in test mode on the live site against records titled `[TEST]`.
+- Its run history is checked, and the test records are deleted afterwards.
+
+**Exit gate:**
+- Each flow has run successfully on its schedule at least once.
+- A notice deliberately left unsent is delivered by FD-Backstop.
+- The end-of-day email lists a `[TEST]` visitor left On Site.
+- The flows still work after P2.4 restricts the visitor lists.
 
 ---
 
@@ -713,8 +898,9 @@ Coded on `feat/front-desk-foundation`, based on `main` after PR #11.
 | P8.4 | Rewrite `docs/pages/tickets/README.md` and `docs/ui/ticketing/README.md` to describe the real system. Archive `docs/architecture/database/tickets.md`, which documents a Supabase schema that was never built, with a pointer to Appendix A. | G2 |
 | P8.5 | Supabase `tickets` / `ticket_messages` types: Supabase is being removed app-wide, so these go with the rest of `src/integrations/supabase` in that removal. If that removal hasn't happened by Phase 8, delete the two table entries from `types.ts` here. Then confirm `grep -rn supabase src/components/ticketing src/pages/Tickets.tsx src/services/frontDesk src/hooks/frontDesk` returns nothing. | G1 |
 | P8.6 | `AppUIRole.RECEPTIONIST` (`useUIRoles.ts:58`) is unused: remove it, or document that front-desk access comes from the Role Management group (P2.6) | G4 |
-| P8.7 | New `docs/features/front-desk.md`: lists and columns, setup steps, D9 access steps, permissions, notifications, reports | G2 |
+| P8.7 | New `docs/features/front-desk.md`: lists and columns, setup steps, D9/D10 access steps, permissions, routing rules, notifications, the Phase 6B flows (owners, schedules, thresholds, test mode), reports | G2, BE2 |
 | P8.8 | Placeholder tabs removed in D1 come back only with written requirements and a new plan; they are out of scope here | G9 |
+| P8.9 | Power Automate housekeeping found by the back-end audit (outside front-desk code; report to the flow owner): fix Report Dispatch or stop Report Send, which runs with nothing to send; switch off the test flows ("Test Automations Persmissions", "Button -> Get rows", "Market_Data_Extraction_test"); give every flow a co-owner | back-end audit §3 |
 
 ---
 
@@ -727,6 +913,15 @@ Column types are given as Graph column definitions, for example:
 - `text: { allowMultipleLines: true }`
 
 "Indexed" means `indexed: true`. Every list keeps SharePoint's built-in Created, Modified, Created By and Modified By.
+
+Rows whose Finding starts with **BE** come from the back-end audit. P2.9 adds them through Create / repair.
+
+**Access (D10):**
+
+| Access | Lists |
+|---|---|
+| Restricted to the front-desk group, admins and the service account | Visitors, Appointments, MailPackages, VisitorPhotos |
+| Site members | Inquiries, Tickets, TicketComments, TicketGroups, RoutingRules |
 
 ### FrontDesk_Visitors
 
@@ -752,6 +947,7 @@ Column types are given as Graph column definitions, for example:
 | AppointmentId | text | | `FrontDesk_Appointments` item id | G6 |
 | LoggedByEmail | text | | Receptionist who signed the visitor in | G3 |
 | SignedOutByEmail | text | | | G3 |
+| HostNotifiedAt | dateTime | | Set after the host's notice is sent; empty means the backstop sends it | BE3 |
 
 ### FrontDesk_Appointments
 
@@ -766,6 +962,7 @@ Column types are given as Graph column definitions, for example:
 | Status | choice: Scheduled, Completed, Canceled | yes | | B1 |
 | Description | text, multi-line | | | |
 | CreatedByEmail | text | | | G3 |
+| OutlookEventId | text | | The Outlook event created from this appointment | BE9 |
 
 ### FrontDesk_MailPackages
 
@@ -778,11 +975,13 @@ Column types are given as Graph column definitions, for example:
 | Tracking | text | | | |
 | RecipientEmail / RecipientName / RecipientUnit | text | yes (name) | From the staff directory, or "Other" | M5 |
 | ReceivedAt | dateTime, **indexed** | yes | | B6 |
-| Status | choice: Received, Pending Pickup, Signature Required, Delivered | yes | | |
+| Status | choice: Received, Pending Pickup, Signature Required, Delivered — **indexed** (BE) | yes | | BE2 |
 | CollectedAt / CollectedBy | dateTime / text | | Set on Delivered | M5 |
 | Notes | text, multi-line | | | |
 | LoggedByEmail | text | | | G3 |
 | NotifiedAt | dateTime | | Prevents repeat notices | G5 |
+| ReminderCount | number | | Reminders sent by FD-MailReminders | BE2 |
+| LastRemindedAt | dateTime | | At most one reminder a day | BE2 |
 
 ### FrontDesk_Inquiries
 
@@ -792,13 +991,17 @@ Column types are given as Graph column definitions, for example:
 | Description | text, multi-line | | | |
 | Category | choice: Facilities, IT Support, Supplies, Parking, Food Service, HR, General | yes | Today's `potentialCategories` | |
 | Priority | choice: High, Medium, Low | yes | | |
-| Status | choice: Open, In Progress, Resolved | yes | | |
+| Status | choice: Open, In Progress, Resolved — **indexed** (BE) | yes | | BE2 |
 | AssigneeEmail / AssigneeName | text | | Staff | M6, G5 |
 | ReportedBy | text | | | |
+| ReportedByEmail | text | | When the reporter is staff; told on Resolved | BE7 |
 | ReportedAt | dateTime, **indexed** | yes | | M6 |
 | ResolvedAt | dateTime | | | |
 | EscalatedTicketId | text | | | G6 |
 | LoggedByEmail | text | | | G3 |
+| AssignedAt / AssignedByEmail | dateTime / text | | Set on each (re)assignment | BE7 |
+| AcknowledgedAt | dateTime | | Set by the assignee; cleared on reassignment | BE7 |
+| AssigneeNotifiedAt / NotifiedAssigneeEmail | dateTime / text | | Who was last notified, and when | BE3 |
 
 ### FrontDesk_Tickets
 
@@ -807,14 +1010,17 @@ Column types are given as Graph column definitions, for example:
 | Title | text | yes | | |
 | Description | text, multi-line | | | |
 | Priority | choice: High, Medium, Low | yes | | |
-| Status | choice: New, In Progress, Done | yes | Independent of the group | B10 |
+| Status | choice: New, In Progress, Done — **indexed** (BE) | yes | Independent of the group | B10, BE2 |
 | GroupId | text | yes | `FrontDesk_TicketGroups` item id | B10 |
 | SortOrder | number | | Position within the group | B10 |
-| StartDate / DueDate | dateTime | | ISO, never "MMM d" | B9 |
+| StartDate / DueDate | dateTime; DueDate **indexed** (BE) | | ISO, never "MMM d" | B9, BE2 |
 | AssigneeEmail / AssigneeName | text | | | B8 |
 | Completed / CompletedAt | boolean / dateTime | | | |
 | SourceInquiryId | text | | | G6 |
 | CreatedByEmail | text | | | G3 |
+| AssignedAt / AssignedByEmail | dateTime / text | | Set on each (re)assignment | BE7 |
+| AcknowledgedAt | dateTime | | Set by the assignee; cleared on reassignment | BE7 |
+| AssigneeNotifiedAt / NotifiedAssigneeEmail | dateTime / text | | Who was last notified, and when | BE3 |
 
 ### FrontDesk_TicketGroups
 
@@ -827,9 +1033,28 @@ Column types are given as Graph column definitions, for example:
 
 | Column | Type | Notes |
 |---|---|---|
-| TicketId | text, **indexed** | |
+| TicketId | text, **indexed** | Id of the parent ticket or inquiry |
 | Body | text, multi-line | |
 | AuthorEmail / AuthorName | text | From `useFrontDeskActor` (G3) |
+| ParentKind | choice: Ticket, Inquiry (default Ticket) | Which list `TicketId` points to (BE7) |
+| IsSystem | boolean | Written by the app on reassignment or status change (BE7) |
+
+### FrontDesk_RoutingRules (BE6, D13)
+
+One row per inquiry category.
+
+| Column | Type | Notes |
+|---|---|---|
+| Title | text | Category, matching `INQUIRY_CATEGORIES` |
+| DefaultAssigneeEmail / DefaultAssigneeName | text | Pre-filled on new inquiries |
+| BackupAssigneeEmail / BackupAssigneeName | text | Offered when the default is away |
+| SlaHoursHigh / SlaHoursMedium / SlaHoursLow | number | Seeded 4 / 8 / 24 working hours (D13) |
+| EscalationEmail | text | Copied on SLA breaches |
+| Active | boolean | Inactive rules are ignored |
+
+### System_Notifications (existing list, repaired by P6.7)
+
+- `RecipientEmail` becomes **indexed**, so the bell can filter on the server (BE5).
 
 ### FrontDesk_VisitorPhotos (document library, only if D7 keeps photos)
 
@@ -885,6 +1110,18 @@ Column types are given as Graph column definitions, for example:
 | L6 | No "same as above" / group entry | P3.3 |
 | §2 | Orphaned `InquiryBoardLane` / `InquiryGridView` | P5.3, P8.1 |
 | §8 | Module cannot replace the paper sheet | P3.9 (pilot and sign-off) |
+| BE1 | Assignees outside the front desk cannot act | D10, P2.4, P5.16, P6.4 |
+| BE2 | No scheduled automation | D12, D13, D14, P2.9, P6B.1–P6B.8 |
+| BE3 | Browser-sent notices can be lost silently | P2.9, P6.1, P6B.2 |
+| BE4 | Mail comes from whoever is signed in | D11, P6.1 |
+| BE5 | Notification bell scans the whole list; no clean-up | D10, P6.5, P6.7, P6B.8 |
+| BE6 | No routing rules | D13, P2.9, P5.14 |
+| BE7 | Thin assignment lifecycle | P2.9, P5.15, P6.4 |
+| BE8 | No concurrency check on updates | P2.8 |
+| BE9 | Appointments not in the host's Outlook | D15, P2.9, P4.10 |
+| BE10 | Email links follow the sender's origin | P6.1 |
+| BE11 | No Teams notices | P6.8 |
+| BE12 | Flows lose access once lists are restricted | D12, P2.4, P6B.1, P8.9 |
 
 ---
 
@@ -895,7 +1132,12 @@ Column types are given as Graph column definitions, for example:
 | SharePoint 5,000-item list view threshold | Filtered visitor queries start failing after a year or two | Index the filter columns; always query by an indexed date | P2.3, P3.1 |
 | Visitor personal data readable by anyone with site access | Privacy exposure (phones, photos) | Restrict the lists and library (D9); keep phone and email out of notification emails | P2.4, P6.5 |
 | `/me/sendMail` needs Mail.Send consent for receptionist accounts | Email notices fail | Other services already use it. Confirm with a receptionist account in the Phase 6 exit test; in-app notices still arrive. | P6.1 |
-| Two desks editing the same record | Last write wins | 30-second refetch on busy views; edits update by item id; show who last changed a record | P2.7, P2.5 |
+| Two desks editing the same record | Last write wins | 30-second refetch on busy views; `If-Match` on every update, with a reload on conflict | P2.7, P2.8 |
+| Inquiries and Tickets stay editable by site members (D10) | Someone edits a work item directly in SharePoint | They hold no visitor details; version history (50 versions) keeps every change | D10, P2.4 |
+| The service account is unlicensed, disabled or loses access | Every scheduled job stops | Named co-owner on every flow; failure branch emails the owners; P2.4 grants the account access explicitly | D12, P6B.1 |
+| A flow emails real staff during testing | Confusing or duplicate reminders | `TestMode` sends everything to the developer; test records are titled `[TEST]` and deleted after | P6B testing |
+| Reminders feel like spam | Staff ignore them | At most one reminder per item per day; thresholds editable in `FrontDesk_RoutingRules` | D13, P5.14 |
+| Retention periods not confirmed | Data kept too long, or deleted too soon | FD-Retention is built switched off until management confirms D14 | D14, P6B.7 |
 | Network or Microsoft 365 outage at reception | Visitors cannot be logged | Keep the paper sheet as an outage fallback after the pilot | P3.9 |
 | Uncommitted ticketing edits on `fix/division-scoped-figures` | Phase 1 builds on a branch without them, or conflicts | Land them first (see the prerequisite in section 2) | §2 |
 | Scope creep into the placeholder tabs | Plan slips | Out of scope until written requirements exist | D1, P8.8 |
