@@ -130,7 +130,8 @@ const initialMailItems: MailPackageData[] = [
   { id: 'MP-005', type: 'Mail', title: 'Standard Mail', from: 'Bank of America', tracking: 'No tracking', recipientName: 'Michael Chen', recipientUnit: 'Operations', receivedDate: new Date(2023, 3, 12, 15, 15), status: 'Pending Pickup' },
 ];
 
-const initialFilters = {
+// A factory, so Reset always gets fresh objects that no earlier change can have touched.
+const createInitialFilters = () => ({
   type: [
     { id: 'Mail', label: 'Mail', checked: false },
     { id: 'Package', label: 'Package', checked: false },
@@ -149,12 +150,13 @@ const initialFilters = {
       to: null as Date | null
     }
   }
-};
+});
+type MailFilters = ReturnType<typeof createInitialFilters>;
 
 const MailAndPackages: React.FC = () => {
   const [mailItems, setMailItems] = useState<MailPackageData[]>(initialMailItems);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState<MailFilters>(createInitialFilters);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -166,15 +168,10 @@ const MailAndPackages: React.FC = () => {
   // --- Handlers (Define BEFORE useMemo) ---
 
   const handleFilterChange = useCallback((filterType: 'type' | 'status', id: string, checked: boolean) => {
-    setFilters(prev => {
-      const newFilters = { ...prev };
-      const filterArray = newFilters[filterType] as Array<{ id: string, label: string, checked: boolean }>;
-      const filterIndex = filterArray.findIndex(f => f.id === id);
-      if (filterIndex !== -1) {
-        filterArray[filterIndex].checked = checked;
-      }
-      return newFilters;
-    });
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: prev[filterType].map(filter => (filter.id === id ? { ...filter, checked } : filter)),
+    }));
 
     setActiveFilters(prev => {
       const key = `${filterType}-${id}`;
@@ -186,12 +183,12 @@ const MailAndPackages: React.FC = () => {
     });
   }, []);
 
-  const handleDateFilterChange = useCallback(( newDateFilter: typeof initialFilters.date) => {
+  const handleDateFilterChange = useCallback(( newDateFilter: MailFilters['date']) => {
      setFilters(prev => ({ ...prev, date: newDateFilter }));
 
      // Update active filters based on the new date state
      setActiveFilters(prevActive => {
-       let nextActive = prevActive.filter(f => !f.startsWith('date-')); // Remove old date filters
+       const nextActive = prevActive.filter(f => !f.startsWith('date-')); // Remove old date filters
        if (newDateFilter.type === 'preset' && newDateFilter.preset) {
          nextActive.push(`date-${newDateFilter.preset}`);
        } else if (newDateFilter.type === 'custom' && (newDateFilter.custom.from || newDateFilter.custom.to)) {
@@ -202,7 +199,7 @@ const MailAndPackages: React.FC = () => {
   }, []);
 
   const resetFilters = useCallback(() => {
-    setFilters(initialFilters);
+    setFilters(createInitialFilters());
     setActiveFilters([]);
     setSearchQuery('');
   }, []);
@@ -563,7 +560,7 @@ const MailAndPackages: React.FC = () => {
                        </div>
                        {(filters.date.type !== null) &&
                            <div className="p-2 border-t flex justify-end">
-                               <Button variant="ghost" size="sm" onClick={() => handleDateFilterChange(initialFilters.date)}>Clear Date Filter</Button>
+                               <Button variant="ghost" size="sm" onClick={() => handleDateFilterChange(createInitialFilters().date)}>Clear Date Filter</Button>
                            </div>
                        }
                      </PopoverContent>

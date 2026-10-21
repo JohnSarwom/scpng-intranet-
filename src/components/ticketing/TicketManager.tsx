@@ -25,7 +25,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import TicketCard from './TicketCard';
-import TicketDialog from './TicketDialog';
+import TicketDialog, { type TicketAssignee, type TicketComment } from './TicketDialog';
 import {
   DndContext,
   closestCenter,
@@ -129,9 +129,10 @@ export interface TicketData {
   status?: string;
   startDate?: Date | null;
   endDate?: Date | null;
-  assigneeId?: string;
-  completed: boolean;
-  onComplete: () => void;
+  assignee?: TicketAssignee;
+  comments?: TicketComment[];
+  completed?: boolean;
+  onComplete?: () => void;
   groupId?: string;
   onStatusChange?: (id: string, status: string) => void;
   onPriorityChange?: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
@@ -146,12 +147,14 @@ export interface TicketCardProps {
   priority: "High" | "Medium" | "Low";
   assignee?: {
     name: string;
+    email?: string;
     avatarFallback: string;
     avatarImage?: string;
   };
   startDate?: string;
   endDate?: string;
   commentsCount?: number;
+  comments?: TicketComment[];
   status?: string;
   type?: string;
   createdAt?: string;
@@ -210,8 +213,8 @@ const initialBuckets = [
   { id: 'done', title: 'DONE' }
 ];
 
-// Initial filters
-const initialFilters = {
+// Initial filters: a factory, so Reset always gets fresh objects.
+const createInitialFilters = () => ({
   status: [
     { id: 'todo', label: 'New', checked: false },
     { id: 'inprogress', label: 'In Progress', checked: false },
@@ -231,7 +234,7 @@ const initialFilters = {
       to: null as Date | null
     }
   }
-};
+});
 
 // Board lane component with improved drop handling for empty groups
 const BoardLane = ({ 
@@ -514,6 +517,22 @@ const GridView: React.FC<{
   );
 };
 
+// Due date passed (end date if set, else start date) and not yet completed.
+const isTicketOverdue = (ticket: Pick<TicketCardProps, 'startDate' | 'endDate' | 'completed'>): boolean => {
+  const dateToCheckStr = ticket.endDate || ticket.startDate;
+  if (!dateToCheckStr) return false;
+
+  // Dates are stored either as ISO strings or as "MMM d" (no year), which is read as this year.
+  const date = dateToCheckStr.includes('-') || dateToCheckStr.includes('T')
+    ? parseISO(dateToCheckStr)
+    : new Date(`${dateToCheckStr} ${new Date().getFullYear()}`);
+  if (!isValid(date)) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return isBefore(date, today) && !ticket.completed;
+};
+
 // Add a ListView component for the new list view option
 const ListView: React.FC<{
   tickets: BoardData;
@@ -595,34 +614,8 @@ const ListView: React.FC<{
               const statusLabel = statusLabels[statusKey] || ticket.columnTitle;
               const statusColor = statusColors[statusKey as keyof typeof statusColors] || '';
               
-              // Check if due date is passed (using endDate if available)
-              const isDueDatePassed = useMemo(() => {
-                const dateToCheckStr = ticket.endDate || ticket.startDate;
-                if (!dateToCheckStr) return false;
-                
-                try {
-                  // Parse the date
-                  let date: Date | null = null;
-                  
-                  if (dateToCheckStr.includes('-') || dateToCheckStr.includes('T')) {
-                    date = parseISO(dateToCheckStr);
-                  } else {
-                    const currentYear = new Date().getFullYear();
-                    const fullDateStr = `${dateToCheckStr} ${currentYear}`;
-                    date = new Date(fullDateStr);
-                  }
-                  
-                  if (!isValid(date)) return false;
-                  
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  
-                  return isBefore(date, today) && !ticket.completed;
-                } catch (error) {
-                  console.error("Error parsing date:", error);
-                  return false;
-                }
-              }, [ticket.startDate, ticket.endDate, ticket.completed]);
+              // A plain call, not a hook: hooks inside this loop break whenever the row count changes (B13).
+              const isDueDatePassed = isTicketOverdue(ticket);
               
               return (
                 <tr 
@@ -766,7 +759,7 @@ const TicketManager: React.FC = () => {
   const [buckets, setBuckets] = useState(initialBuckets);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState(createInitialFilters);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   // State for managing the dialog
@@ -871,6 +864,8 @@ const TicketManager: React.FC = () => {
         groupId: columnId,
         startDate: ticket.startDate ? new Date(ticket.startDate) : null,
         endDate: ticket.endDate ? new Date(ticket.endDate) : null,
+        assignee: ticket.assignee,
+        comments: ticket.comments,
         completed: ticket.completed,
         onComplete: () => {}
       };
@@ -986,16 +981,27 @@ const TicketManager: React.FC = () => {
       const targetColumn = (ticketData.groupId || ticketData.status || 'todo') as BoardColumnId;
       if (!newBoard[targetColumn]) newBoard[targetColumn] = []; // Ensure column exists
 
+      // An edit merges onto the existing card, so fields the dialog doesn't carry survive (B8).
+      const existing = ticketData.id
+        ? Object.values(prevBoard).flat().find(t => t.id === ticketData.id)
+        : undefined;
+      const comments = ticketData.comments ?? existing?.comments ?? [];
+      // Sample cards carry a comment count without the comments themselves: keep that count and add real ones.
+      const untrackedComments = Math.max(0, (existing?.commentsCount ?? 0) - (existing?.comments?.length ?? 0));
       const cardData: TicketCardProps = {
+        ...existing,
         id: ticketData.id || `TKT-${Date.now()}`, // Use timestamp for unique ID
         title: ticketData.title,
         description: ticketData.description,
-        priority: ticketData.priority,
+        priority: ticketData.priority || existing?.priority || 'Medium',
         startDate: ticketData.startDate ? format(ticketData.startDate, "MMM d") : undefined,
         endDate: ticketData.endDate ? format(ticketData.endDate, "MMM d") : undefined,
         status: ticketData.status || targetColumn,
-        completed: ticketData.completed,
-        onComplete: () => {}
+        assignee: ticketData.assignee,
+        comments,
+        commentsCount: untrackedComments + comments.length,
+        completed: ticketData.completed ?? existing?.completed ?? false,
+        onComplete: existing?.onComplete ?? (() => {}),
       };
 
       if (ticketData.id) { // Update
@@ -1431,10 +1437,11 @@ const TicketManager: React.FC = () => {
   return (
     <div className="h-full overflow-auto">
       <main className="flex-1">
-        <div className="flex items-center p-4 gap-4">
-          <div className="flex-1">
+        {/* Wraps instead of squeezing the search box to ~46px; the icon lets clicks through to the input (M10). */}
+        <div className="flex flex-wrap items-center p-4 gap-4">
+          <div className="flex-1 min-w-[12rem]">
             <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search tickets..."
@@ -1706,7 +1713,7 @@ const TicketManager: React.FC = () => {
               variant="outline" 
               size="sm"
               onClick={() => {
-                setFilters(initialFilters); 
+                setFilters(createInitialFilters());
                 setActiveFilters([]);
               }}
               className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"

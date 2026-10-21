@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import {
   DownloadIcon,
-  QrCodeIcon,
   PlusIcon,
   SearchIcon,
   CalendarIcon,
@@ -817,7 +816,6 @@ const VisitorManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [showAddVisitorModal, setShowAddVisitorModal] = useState(false);
-  const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [visitors, setVisitors] = useState<Visitor[]>(sampleVisitors);
   const [visitorToDelete, setVisitorToDelete] = useState<number | null>(null);
@@ -893,7 +891,12 @@ const VisitorManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<VisitorStatus | 'all'>('all');
   const [companyFilter, setCompanyFilter] = useState('');
   const [hostFilter, setHostFilter] = useState('');
-  
+
+  // Any change to what is shown starts again at page 1, so a narrower result never lands on an empty page.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchQuery, dateFilter, statusFilter, companyFilter, hostFilter, viewMode]);
+
   // Get unique companies and hosts for filters
   const uniqueCompanies = useMemo(() => {
     const companies = new Set<string>();
@@ -2082,10 +2085,6 @@ const VisitorManagement: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={() => setShowQRCodeModal(true)}>
-            <QrCodeIcon className="h-4 w-4" />
-            Check-In QR
-          </Button>
           <Button size="sm" className="flex items-center gap-2 bg-primary" onClick={() => setShowAddVisitorModal(true)}>
             <PlusIcon className="h-4 w-4" />
             New Visitor
@@ -2354,28 +2353,8 @@ Enter the visitor's details below.
         </DialogContent>
       </Dialog>
 
-      {/* QR Code Modal */}
-      <Dialog open={showQRCodeModal} onOpenChange={setShowQRCodeModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Visitor Check-In QR Code</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-4 py-4">
-            <div className="w-48 h-48 border flex items-center justify-center bg-gray-50 dark:bg-gray-700">
-              <img src="/api/placeholder/200/200" alt="QR Code" className="w-full h-full" />
-            </div>
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              <p>Visitors can scan this QR code to self check-in</p>
-              <p className="mt-1">URL: <strong>https://yourcompany.com/visitor-checkin</strong></p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline">Download QR</Button>
-            <Button>Print QR Code</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
+      {/* QR self check-in removed (plan decision D8): it needs anonymous SharePoint access, a separate security design. */}
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={visitorToDelete !== null} onOpenChange={(open) => !open && setVisitorToDelete(null)}>
         <AlertDialogContent>

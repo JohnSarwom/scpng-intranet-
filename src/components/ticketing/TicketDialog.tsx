@@ -20,20 +20,28 @@ import {
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, User, Send, PaperclipIcon, LinkIcon } from 'lucide-react';
+import { CalendarIcon, User, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import { DateRange } from "react-day-picker";
 import { cn } from '@/lib/utils';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DateRangePicker from '@/components/ui/DateRangePicker';
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 
 // Define the shape of a comment
-interface Comment {
+export interface TicketComment {
   id: string;
   authorName: string;
   authorAvatarFallback: string;
   timestamp: Date;
   text: string;
+}
+type Comment = TicketComment;
+
+export interface TicketAssignee {
+  name: string;
+  email?: string;
+  avatarFallback: string;
 }
 
 // Define the shape of a ticket (can be expanded)
@@ -45,11 +53,22 @@ export interface TicketData {
   status?: string; // e.g., 'todo', 'inprogress', 'done'
   startDate?: Date | null;
   endDate?: Date | null;
-  assigneeId?: string | null; // ID of the assigned user
+  assignee?: TicketAssignee;
   groupId?: string; // The column/group ID
   comments?: Comment[]; // Added comments array
   // Add other relevant fields: reporterId, etc.
 }
+
+const UNASSIGNED = '__unassigned__';
+// Module-level so the default keeps one identity: a fresh array per render re-ran the reset effect
+// after every keystroke and wiped the form (B14).
+const DEFAULT_STATUSES: StatusOption[] = [
+  { id: 'todo', name: 'TO DO' },
+  { id: 'inprogress', name: 'IN PROGRESS' },
+  { id: 'done', name: 'DONE' }
+];
+const avatarFallbackFor = (name: string) =>
+  name.split(/\s+/).filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase();
 
 interface StatusOption {
   id: string;
@@ -72,11 +91,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   onClose,
   onSubmit,
   initialData,
-  statuses = [
-    { id: 'todo', name: 'TO DO' },
-    { id: 'inprogress', name: 'IN PROGRESS' },
-    { id: 'done', name: 'DONE' }
-  ],
+  statuses = DEFAULT_STATUSES,
   defaultStatus,
   buckets = [],
   defaultGroup
@@ -89,8 +104,11 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [comments, setComments] = useState<Comment[]>([]); // State for comments
   const [newCommentText, setNewCommentText] = useState(''); // State for new comment input
-  
+  const { staffMembers } = useStaffMembers();
+  const [assigneeEmail, setAssigneeEmail] = useState(UNASSIGNED);
+
   useEffect(() => {
+    setAssigneeEmail(initialData?.assignee?.email || UNASSIGNED);
     if (initialData) {
       setTitle(initialData.title || '');
       setDescription(initialData.description || '');
@@ -123,6 +141,10 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const staff = staffMembers.find(member => member.email === assigneeEmail);
+    // An assignee who is no longer in the roster is kept as they were, not silently dropped.
+    const keptAssignee = initialData?.assignee?.email && initialData.assignee.email === assigneeEmail
+      ? initialData.assignee : undefined;
     const ticketData: TicketData = {
       id: initialData?.id,
       title,
@@ -132,8 +154,10 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
       groupId,
       startDate: dateRange?.from || null,
       endDate: dateRange?.to || null,
+      assignee: staff
+        ? { name: staff.name, email: staff.email, avatarFallback: avatarFallbackFor(staff.name) }
+        : keptAssignee,
       comments: comments,
-      // Add assigneeId if implemented
     };
     onSubmit(ticketData);
   };
@@ -246,26 +270,20 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
               </div>
               <div className="sm:col-span-2 space-y-1"> 
                 <Label htmlFor="assignee">Assignee</Label>
-                <Select>
-                   <SelectTrigger className="py-3 px-4 rounded-lg">
+                <Select value={assigneeEmail} onValueChange={setAssigneeEmail}>
+                   <SelectTrigger id="assignee" className="py-3 px-4 rounded-lg">
                       <SelectValue placeholder="Assign to team member" />
                    </SelectTrigger>
                    <SelectContent>
-                      <SelectItem value="user1">User One</SelectItem>
-                      <SelectItem value="user2">User Two</SelectItem>
+                      <SelectItem value={UNASSIGNED}>Unassigned</SelectItem>
+                      {initialData?.assignee?.email && !staffMembers.some(s => s.email === initialData.assignee?.email) && (
+                        <SelectItem value={initialData.assignee.email}>{initialData.assignee.name}</SelectItem>
+                      )}
+                      {staffMembers.map(staff => (
+                        <SelectItem key={staff.email} value={staff.email}>{staff.name}</SelectItem>
+                      ))}
                    </SelectContent>
                 </Select>
-              </div>
-              <div className="sm:col-span-2 space-y-1">
-                <Label htmlFor="attachments">Attachments</Label>
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50 dark:bg-gray-800/30">
-                    <Button type="button" variant="outline" size="sm">
-                        <PaperclipIcon className="h-4 w-4 mr-1" /> Add File
-                    </Button>
-                     <Button type="button" variant="outline" size="sm">
-                        <LinkIcon className="h-4 w-4 mr-1" /> Add Link
-                    </Button>
-                </div>
               </div>
             </div>
           </form>
