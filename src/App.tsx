@@ -15,6 +15,8 @@ import RoleProtectedRoute from '@/components/auth/RoleProtectedRoute';
 import PageLayout from '@/components/layout/PageLayout';
 import Index from "./pages/Index";
 import News from "./pages/News";
+import NewsletterReader from "./pages/NewsletterReader";
+import NewsletterWorkspace from "./pages/NewsletterWorkspace";
 import MarketData from "./pages/MarketData";
 import PNGXAnnouncements from "./pages/PNGXAnnouncements";
 import DailyMarketSummary from "./pages/DailyMarketSummary";
@@ -155,6 +157,10 @@ const AppRoutes = () => {
           <News />
         </RoleProtectedRoute>
       } />
+      <Route path="/news/newsletters" element={<ProtectedRoute><NewsletterReader /></ProtectedRoute>} />
+      <Route path="/news/newsletters/workspace" element={<ProtectedRoute><NewsletterWorkspace /></ProtectedRoute>} />
+      <Route path="/news/newsletters/workspace/:submissionId" element={<ProtectedRoute><NewsletterWorkspace /></ProtectedRoute>} />
+      <Route path="/news/newsletters/:id" element={<ProtectedRoute><NewsletterReader /></ProtectedRoute>} />
       <Route path="/market-data" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'market_data', action: 'read' }]}>
           <MarketData />
@@ -307,7 +313,7 @@ const AppRoutes = () => {
 
       {/* Admin-only routes */}
       <Route path="/admin" element={
-        <RoleProtectedRoute requiredRole="super_admin">
+        <RoleProtectedRoute requiredPermissions={[{ resource: "newsletter_routing", action: "manage" }]}>
           <Admin />
         </RoleProtectedRoute>
       } />

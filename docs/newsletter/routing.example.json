@@ -1,0 +1,17 @@
+{
+  "rpDivision": "Research & Publication",
+  "reviewDays": 2,
+  "staff": [
+    { "oid": "REPLACE-AUTHOR-ENTRA-OBJECT-ID", "name": "Contributing officer", "email": "author@example.invalid", "division": "Licensing", "active": true },
+    { "oid": "REPLACE-MANAGER-ENTRA-OBJECT-ID", "name": "Divisional manager", "email": "manager@example.invalid", "division": "Licensing", "active": true },
+    { "oid": "REPLACE-EDITOR-ENTRA-OBJECT-ID", "name": "Publications officer", "email": "editor@example.invalid", "division": "Research & Publication", "active": true },
+    { "oid": "REPLACE-FINAL-APPROVER-ENTRA-OBJECT-ID", "name": "R&P manager", "email": "approver@example.invalid", "division": "Research & Publication", "active": true },
+    { "oid": "REPLACE-PUBLISHER-ENTRA-OBJECT-ID", "name": "Authorised publisher", "email": "publisher@example.invalid", "division": "Research & Publication", "active": true }
+  ],
+  "assignments": [
+    { "oid": "REPLACE-MANAGER-ENTRA-OBJECT-ID", "role": "division_approver", "division": "Licensing" },
+    { "oid": "REPLACE-EDITOR-ENTRA-OBJECT-ID", "role": "editor" },
+    { "oid": "REPLACE-FINAL-APPROVER-ENTRA-OBJECT-ID", "role": "publication_approver" },
+    { "oid": "REPLACE-PUBLISHER-ENTRA-OBJECT-ID", "role": "publisher" }
+  ]
+}

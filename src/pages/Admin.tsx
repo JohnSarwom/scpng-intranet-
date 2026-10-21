@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import UserManagement from '@/components/admin/UserManagement';
 import RoleManagement from '@/components/admin/RoleManagement';
+import NewsletterRoutingTab from '@/components/admin/NewsletterRoutingTab';
 import ThemeCustomization from '@/components/admin/ThemeCustomization';
 
 import ApiManagement from '@/components/admin/ApiManagement';
@@ -154,6 +155,9 @@ const Admin = () => {
 
     // Simple permission check - in a real app this would be more granular per tab
     if (!isAdmin && !hasPermission('admin', 'access')) {
+        if (hasPermission('newsletter_routing', 'manage')) {
+            return <PageLayout><div className="space-y-6"><NewsletterRoutingTab /></div></PageLayout>;
+        }
         return (
             <PageLayout>
                 <div className="p-6">
@@ -183,7 +187,7 @@ const Admin = () => {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-9 h-auto">
+                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
                         <TabsTrigger value="users" className="py-2">
                             <Users className="mr-2 h-4 w-4" />
                             Users
@@ -191,6 +195,10 @@ const Admin = () => {
                         <TabsTrigger value="roles" className="py-2">
                             <Shield className="mr-2 h-4 w-4" />
                             Roles & Groups
+                        </TabsTrigger>
+                        <TabsTrigger value="newsletter-routing" className="py-2">
+                            <FileText className="mr-2 h-4 w-4" />
+                            Newsletter Routing
                         </TabsTrigger>
                         <TabsTrigger value="theme" className="py-2">
                             <Palette className="mr-2 h-4 w-4" />
@@ -243,6 +251,9 @@ const Admin = () => {
                             onUpdateGroup={handleUpdateGroup}
                             onDeleteGroup={handleDeleteGroup}
                         />
+                    </TabsContent>
+                    <TabsContent value="newsletter-routing" className="space-y-4">
+                        <NewsletterRoutingTab />
                     </TabsContent>
 
                     <TabsContent value="theme" className="space-y-4">

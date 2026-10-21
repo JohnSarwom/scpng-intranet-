@@ -27,3 +27,10 @@ dist-ssr
 *.timestamp-*.mjs
 
 .env
+
+# Local newsletter flow packages contain tenant connection references.
+/tmp/newsletter-power-automate/
+
+# Generated knowledge-graph cache and native-flow Python bytecode.
+/graphify-out/cache/
+__pycache__/

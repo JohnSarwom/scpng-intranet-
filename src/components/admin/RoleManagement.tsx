@@ -33,6 +33,7 @@ const SYSTEM_RESOURCES: SystemResource[] = [
   { id: 'contacts', label: 'Employee Directory' },
   { id: 'settings', label: 'Settings' },
   { id: 'admin', label: 'Admin Dashboard' },
+  { id: 'newsletter_routing', label: 'Newsletter appointments', extraActions: [{ id: 'manage', label: 'Manage reviewers and publishers' }] },
   { id: 'strategy', label: 'Strategy' },
   { id: 'ai', label: 'AI & Chat' },
   { id: 'market_data', label: 'Market Data' },
