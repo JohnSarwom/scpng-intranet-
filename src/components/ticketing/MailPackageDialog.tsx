@@ -57,32 +57,29 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
 }) => {
     // Use the defined type for the state
     const [formData, setFormData] = useState<MailPackageFormState>({});
-    // Keep the separate receivedDate state for the calendar component
-    const [receivedDate, setReceivedDate] = useState<Date | undefined>(new Date());
+    const [errors, setErrors] = useState<{ title?: string; recipientName?: string }>({});
 
     useEffect(() => {
+        setErrors({});
         if (isOpen) {
             if (initialData) {
                 // Map initialData to form state, using the correct field name
                 const { recipientUnit, ...restData } = initialData; // Use recipientUnit
-                setFormData({ 
-                    ...restData, 
+                setFormData({
+                    ...restData,
                     recipientUnit: recipientUnit // Use recipientUnit here too
-                }); 
-                setReceivedDate(initialData.receivedDate || new Date());
+                });
             } else {
                 // Default new item data
-                setFormData({ 
-                    type: 'Mail', 
-                    status: 'Received', 
+                setFormData({
+                    type: 'Mail',
+                    status: 'Received',
                     receivedDate: new Date()
                  });
-                setReceivedDate(new Date());
             }
         } else {
             // Reset form on close
             setFormData({});
-            setReceivedDate(new Date());
         }
     }, [isOpen, initialData]);
 
@@ -92,6 +89,7 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
     ) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+        if (name in errors) setErrors(prev => ({ ...prev, [name]: undefined }));
     };
 
     // Specific handler for Select components
@@ -99,18 +97,26 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Specific handler for Date picker
+    // Picking a day in the calendar keeps the time the item was received.
     const handleDateChange = (date: Date | undefined) => {
         if (date) {
-            setFormData(prev => ({ ...prev, receivedDate: date }));
+            setFormData(prev => {
+                const picked = new Date(date);
+                const previous = prev.receivedDate;
+                if (previous) picked.setHours(previous.getHours(), previous.getMinutes(), 0, 0);
+                return { ...prev, receivedDate: picked };
+            });
         }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Basic validation (example)
-        if (!formData.recipientName || !formData.title) {
-            alert('Recipient Name and Title/Subject are required.'); // Replace with better UI feedback
+        const nextErrors = {
+            title: formData.title?.trim() ? undefined : 'Enter a subject or description',
+            recipientName: formData.recipientName?.trim() ? undefined : 'Enter the recipient',
+        };
+        if (nextErrors.title || nextErrors.recipientName) {
+            setErrors(nextErrors);
             return;
         }
         // Map form state back to MailPackageData
@@ -118,7 +124,7 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
         onSubmit({
              ...restForm,
              recipientUnit: recipientUnit, // Use recipientUnit when submitting
-             receivedDate: receivedDate || new Date(), // Ensure date is set
+             receivedDate: formData.receivedDate ?? new Date(),
         } as MailPackageData); // Assert type after validation
         onClose();
     };
@@ -152,19 +158,36 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
                             </Select>
                         </div>
 
-                        {/* Title / Subject / From */}
+                        {/* Title / Subject */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label htmlFor="title" className="text-right">
-                                {formData.type === 'Mail' ? 'Subject/From *' : 'Description *'}
+                                {formData.type === 'Mail' ? 'Subject *' : 'Description *'}
+                            </Label>
+                            <div className="col-span-3 space-y-1">
+                                <Input
+                                    id="title"
+                                    name="title"
+                                    value={formData.title || ''}
+                                    onChange={handleChange}
+                                    className={cn(errors.title && 'border-red-500')}
+                                    placeholder={formData.type === 'Mail' ? 'e.g., Invoice for Q3' : 'e.g., Laptop box'}
+                                />
+                                {errors.title && <p className="text-red-500 text-xs">{errors.title}</p>}
+                            </div>
+                        </div>
+
+                        {/* Sender */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="from" className="text-right">
+                                Sender
                             </Label>
                             <Input
-                                id="title"
-                                name="title"
-                                value={formData.title || ''}
+                                id="from"
+                                name="from"
+                                value={formData.from || ''}
                                 onChange={handleChange}
                                 className="col-span-3"
-                                required
-                                placeholder={formData.type === 'Mail' ? 'e.g., Invoice Q3 / From: Acme Corp' : 'e.g., Laptop Box / Dell XPS 15'}
+                                placeholder="Who sent it (optional)"
                             />
                         </div>
 
@@ -188,15 +211,17 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
                             <Label htmlFor="recipientName" className="text-right">
                                 Recipient *
                             </Label>
-                            <Input
-                                id="recipientName"
-                                name="recipientName"
-                                value={formData.recipientName || ''}
-                                onChange={handleChange}
-                                className="col-span-3"
-                                required
-                                placeholder="Recipient's full name"
-                            />
+                            <div className="col-span-3 space-y-1">
+                                <Input
+                                    id="recipientName"
+                                    name="recipientName"
+                                    value={formData.recipientName || ''}
+                                    onChange={handleChange}
+                                    className={cn(errors.recipientName && 'border-red-500')}
+                                    placeholder="Recipient's full name"
+                                />
+                                {errors.recipientName && <p className="text-red-500 text-xs">{errors.recipientName}</p>}
+                            </div>
                         </div>
 
                         {/* Recipient Unit - Renamed */}
@@ -236,6 +261,7 @@ const MailPackageDialog: React.FC<MailPackageDialogProps> = ({
                                    <Calendar
                                        mode="single"
                                        selected={formData.receivedDate}
+                                       defaultMonth={formData.receivedDate}
                                        onSelect={handleDateChange}
                                        initialFocus
                                    />

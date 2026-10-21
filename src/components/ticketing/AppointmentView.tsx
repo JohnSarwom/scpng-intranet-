@@ -65,6 +65,7 @@ import { DateRange } from 'react-day-picker';
 import { cn } from '@/lib/utils';
 import DateRangePicker from '@/components/ui/DateRangePicker';
 import { Badge } from "@/components/ui/badge";
+import { DAY_END_HOUR, DAY_START_HOUR, daySlotForTime, filterAppointmentsByTab, type DaySlot } from './appointmentFilters';
 
 // Define the shape of appointment data
 interface AppointmentData {
@@ -211,20 +212,13 @@ const sampleAppointments: AppointmentData[] = [
 // Type for ViewMode
 type ViewMode = 'month' | 'day' | 'list' | 'week';
 
-// Function to generate time slots
-const generateTimeSlots = (startHour: number, endHour: number, interval: number = 60) => {
-  const slots = [];
-  let currentTime = new Date();
-  currentTime.setHours(startHour, 0, 0, 0); // Start at the beginning of the hour
+const hourLabel = (hour: number, pattern: string) => format(new Date(2000, 0, 1, hour), pattern);
 
-  const endTime = new Date();
-  endTime.setHours(endHour, 0, 0, 0); // End at the beginning of the hour
-
-  while (currentTime <= endTime) {
-    slots.push(format(currentTime, 'h:mm a'));
-    currentTime.setMinutes(currentTime.getMinutes() + interval);
-  }
-  return slots;
+const daySlotLabel = (slot: DaySlot) => {
+  if (slot === 'untimed') return 'No time';
+  if (slot === 'before') return `Before ${hourLabel(DAY_START_HOUR, 'h a')}`;
+  if (slot === 'after') return `From ${hourLabel(DAY_END_HOUR + 1, 'h a')}`;
+  return hourLabel(slot, 'h:mm a');
 };
 
 const AppointmentView: React.FC = () => {
@@ -312,7 +306,7 @@ const AppointmentView: React.FC = () => {
 
   // --- Filtering Logic ---
   const filteredAppointments = useMemo(() => {
-    let filtered = appointments.filter(appt => appt.status === activeAppointmentFilter);
+    let filtered = filterAppointmentsByTab(appointments, activeAppointmentFilter);
 
     // Apply search query
     if (searchQuery) {
@@ -380,19 +374,27 @@ const AppointmentView: React.FC = () => {
     return days;
   }, [currentDisplayDate]);
   
-  // Day View Time Slots (8 AM to 5 PM)
-  const dayTimeSlots = useMemo(() => generateTimeSlots(8, 17), []); // 8 AM to 5 PM (17:00)
+  // Day view rows: 8 AM to 5 PM, plus "no time", "before" and "after" rows only when something falls there.
+  // filteredAppointments is already limited to currentDisplayDate in day view.
+  const daySlots = useMemo(() => {
+    const shown = filteredAppointments.filter(appt => activeAppointmentFilter === 'canceled' || appt.status !== 'canceled');
+    const bySlot = new Map<DaySlot, AppointmentData[]>();
+    for (const appt of shown) {
+      const slot = daySlotForTime(appt.startTime);
+      bySlot.set(slot, [...(bySlot.get(slot) || []), appt]);
+    }
+    const hours = Array.from({ length: DAY_END_HOUR - DAY_START_HOUR + 1 }, (_, i) => DAY_START_HOUR + i);
+    const ifUsed = (slot: DaySlot) => (bySlot.has(slot) ? [slot] : []);
+    return [...ifUsed('untimed'), ...ifUsed('before'), ...hours, ...ifUsed('after')]
+      .map(slot => ({ slot, slotAppointments: bySlot.get(slot) || [] }));
+  }, [filteredAppointments, activeAppointmentFilter]);
 
-  // Get appointments for a specific time slot in Day View
-  const getAppointmentsForSlot = (timeSlot: string) => {
-    return filteredAppointments.filter(appt => {
-      if (!appt.dateRange?.from || !isSameDay(appt.dateRange.from, currentDisplayDate)) {
-        return false;
-      }
-      // Basic check if start time matches the slot - refine if needed for overlapping
-      return appt.startTime === timeSlot.replace(/ AM| PM/, ''); // Match "HH:MM" format
-    });
-  };
+  const weekRange = { start: startOfWeek(currentDisplayDate, { weekStartsOn: 1 }), end: endOfWeek(currentDisplayDate, { weekStartsOn: 1 }) };
+  const periodTitle = viewMode === 'day'
+    ? format(currentDisplayDate, 'EEEE, d MMMM yyyy')
+    : viewMode === 'week'
+      ? `${format(weekRange.start, 'd MMM')} – ${format(weekRange.end, 'd MMM yyyy')}`
+      : format(currentDisplayDate, 'MMMM yyyy');
 
   // --- useEffect to update form data when editing --- 
   useEffect(() => {
@@ -413,8 +415,9 @@ const AppointmentView: React.FC = () => {
     <div className="container mx-auto px-4 py-6">
       {/* Restore original Tabs and View Options Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 border border-gray-200 dark:border-gray-700">
-         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-           <div className="overflow-x-auto">
+         {/* Stacked until xl, and the tabs never shrink: side by side at md they collapsed to zero width (M9). */}
+         <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
+           <div className="overflow-x-auto xl:shrink-0">
              <div className="flex border-b border-gray-200 dark:border-gray-700">
                {/* Update buttons to set filter state */}
                <button 
@@ -443,7 +446,7 @@ const AppointmentView: React.FC = () => {
                </button>
              </div>
            </div>
-           <div className="flex items-center gap-2">
+           <div className="flex flex-wrap items-center gap-2 min-w-0 xl:justify-end">
              {/* Search Input */}
              <div className="relative">
                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -524,25 +527,13 @@ const AppointmentView: React.FC = () => {
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentDisplayDate(viewMode === 'month' ? subMonths(currentDisplayDate, 1) : subDays(currentDisplayDate, viewMode === 'week' ? 7 : 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <h3 className="text-lg font-semibold">{format(currentDisplayDate, 'MMMM yyyy')}</h3> {/* Restored original format */}
+            <h3 className="text-lg font-semibold">{periodTitle}</h3>
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentDisplayDate(viewMode === 'month' ? addMonths(currentDisplayDate, 1) : addDays(currentDisplayDate, viewMode === 'week' ? 7 : 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
           {/* Action Buttons - Restored original Print/Export */} 
-          <div className="flex items-center space-x-2">
-            {/* Hide Print/Export in Day view for now */}
-            {viewMode !== 'day' && (
-              <>
-                <Button variant="outline" size="sm">
-                  <Printer className="mr-1 h-4 w-4" /> Print
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-1 h-4 w-4" /> Export
-                </Button>
-              </>
-            )}
-          </div>
+          {/* Print / Export come back in Phase 7 (P7.5) once they do something. */}
         </div>
         {/* --- End Header --- */} 
 
@@ -611,23 +602,11 @@ const AppointmentView: React.FC = () => {
              </div> */} 
              <div className="border border-gray-200 dark:border-gray-700 rounded-md overflow-hidden">
               <div className="grid grid-cols-1 divide-y divide-gray-200 dark:divide-gray-700">
-                {/* Time Slot Rendering Logic - Filter from already filteredAppointments */} 
-                 {dayTimeSlots.map((slot, index) => {
-                    const today = new Date();
-                    // Filter the already filtered list for today
-                    const todaysAppointments = filteredAppointments.filter(appt => 
-                        appt.dateRange?.from && isSameDay(new Date(appt.dateRange.from), today) &&
-                        appt.status !== 'canceled'
-                    );
-                    // Filter for the current time slot
-                    const slotAppointments = todaysAppointments.filter(appt => 
-                         appt.startTime && appt.startTime.startsWith(slot.split(':')[0]) // Basic match
-                    );
-                    
+                 {daySlots.map(({ slot, slotAppointments }) => {
                    return (
-                      <div key={slot} className="time-slot relative flex" style={{ minHeight: '60px' }}>
+                      <div key={String(slot)} className="time-slot relative flex" style={{ minHeight: '60px' }}>
                         <div className="w-20 flex-shrink-0 h-full bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-gray-700">
-                          {slot}
+                          {daySlotLabel(slot)}
                         </div>
                         <div className="flex-grow h-full p-2 space-y-2">
                           {slotAppointments.map(appt => (
@@ -658,7 +637,7 @@ const AppointmentView: React.FC = () => {
                                </div>
                              </div>
                            ))}
-                           {slot === '12:00 PM' && slotAppointments.length === 0 && (
+                           {slot === 12 && slotAppointments.length === 0 && (
                              <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-4 h-full flex items-center justify-center">
                               <Utensils className="mr-1 h-4 w-4" /> Lunch
                              </div>

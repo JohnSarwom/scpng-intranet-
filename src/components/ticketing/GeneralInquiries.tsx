@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -43,60 +43,76 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from 'date-fns';
 import DateRangePicker from '@/components/ui/DateRangePicker'; // Reuse DateRangePicker component
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useStaffMembers } from '@/hooks/useStaffMembers';
+import InquiryDialog from './InquiryDialog';
+import {
+  formatReportedAt,
+  inquiryCategories as potentialCategories,
+  inquiryPriorities,
+  inquiryStatuses,
+  reportedWithin,
+  toAssignee,
+  type InquiryAssignee,
+  type InquiryPriority,
+  type InquiryStatus,
+} from './inquiryOptions';
 
 // Interface for Inquiry Data
 export interface InquiryData {
   id: string;
   title: string;
   description: string;
-  priority: 'High' | 'Medium' | 'Low';
+  priority: InquiryPriority;
   category: string;
-  status: 'Open' | 'In Progress' | 'Resolved';
-  assignee?: {
-    name: string;
-    initials: string;
-  };
+  status: InquiryStatus;
+  assignee?: InquiryAssignee;
   reportedBy: string;
-  reportedAt: string; // Could be Date object, using string for simplicity based on HTML
+  reportedAt: string; // ISO 8601
   completed: boolean;
-  // Add more fields as needed
 }
+
+const todayAt = (hours: number, minutes: number) => {
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date.toISOString();
+};
 
 // Sample initial data based on HTML concept
 const initialInquiries: InquiryData[] = [
-  { id: 'INQ-001', title: 'Building access system malfunction', description: 'East wing entry doors not responding to keycards, employees stuck outside...', priority: 'High', category: 'Facilities', status: 'In Progress', assignee: { name: 'David Kim', initials: 'DK' }, reportedBy: 'Security Team', reportedAt: '10:15 AM', completed: false },
-  { id: 'INQ-002', title: 'Conference room AV system issues', description: 'Projector in Boardroom A not connecting to laptops, client meeting at 11AM...', priority: 'Medium', category: 'IT Support', status: 'Open', assignee: { name: 'Michael Chen', initials: 'MC' }, reportedBy: 'Sarah Johnson', reportedAt: '9:30 AM', completed: false },
-  { id: 'INQ-003', title: 'Office supplies restock request', description: 'Marketing department running low on printer paper and pens...', priority: 'Low', category: 'Supplies', status: 'Resolved', assignee: { name: 'Robert Chen', initials: 'RC' }, reportedBy: 'Emily Rodriguez', reportedAt: '2:45 PM', completed: true },
-  { id: 'INQ-004', title: 'Visitor parking full - VIP arrival', description: 'Client CEO arriving in 30 minutes, no visitor parking available...', priority: 'High', category: 'Parking', status: 'Resolved', assignee: { name: 'Sarah Johnson', initials: 'SJ' }, reportedBy: 'Front Desk', reportedAt: '1:15 PM', completed: true },
-  { id: 'INQ-005', title: 'Cafeteria food quality complaint', description: "Several reports of undercooked chicken in today's lunch service...", priority: 'Medium', category: 'Food Service', status: 'In Progress', assignee: { name: 'Emily Rodriguez', initials: 'ER' }, reportedBy: 'Multiple Employees', reportedAt: '12:30 PM', completed: false },
+  { id: 'INQ-001', title: 'Building access system malfunction', description: 'East wing entry doors not responding to keycards, employees stuck outside...', priority: 'High', category: 'Facilities', status: 'In Progress', reportedBy: 'Security Team', reportedAt: todayAt(10, 15), completed: false },
+  { id: 'INQ-002', title: 'Conference room AV system issues', description: 'Projector in Boardroom A not connecting to laptops, client meeting at 11AM...', priority: 'Medium', category: 'IT Support', status: 'Open', reportedBy: 'Front Desk', reportedAt: todayAt(9, 30), completed: false },
+  { id: 'INQ-003', title: 'Office supplies restock request', description: 'Marketing department running low on printer paper and pens...', priority: 'Low', category: 'Supplies', status: 'Resolved', reportedBy: 'Front Desk', reportedAt: todayAt(14, 45), completed: true },
+  { id: 'INQ-004', title: 'Visitor parking full - VIP arrival', description: 'Client CEO arriving in 30 minutes, no visitor parking available...', priority: 'High', category: 'Parking', status: 'Resolved', reportedBy: 'Front Desk', reportedAt: todayAt(13, 15), completed: true },
+  { id: 'INQ-005', title: 'Cafeteria food quality complaint', description: "Several reports of undercooked chicken in today's lunch service...", priority: 'Medium', category: 'Food Service', status: 'In Progress', reportedBy: 'Multiple Employees', reportedAt: todayAt(12, 30), completed: false },
 ];
 
-// Static list of potential assignees and categories for dropdowns
-const potentialAssignees = [
-  { name: 'David Kim', initials: 'DK' },
-  { name: 'Michael Chen', initials: 'MC' },
-  { name: 'Robert Chen', initials: 'RC' },
-  { name: 'Sarah Johnson', initials: 'SJ' },
-  { name: 'Emily Rodriguez', initials: 'ER' },
-  { name: 'System Admin', initials: 'SA' }
-];
-
-const potentialCategories = ['Facilities', 'IT Support', 'Supplies', 'Parking', 'Food Service', 'HR', 'General'];
-const inquiryStatuses: ('Open' | 'In Progress' | 'Resolved')[] = ['Open', 'In Progress', 'Resolved'];
-const inquiryPriorities: InquiryData['priority'][] = ['High', 'Medium', 'Low'];
+const UNASSIGNED = 'Unassigned';
 type StatusTab = 'All Inquiries' | InquiryData['status'];
 
 // Specify return type as React.ReactElement
 const GeneralInquiries = (): React.ReactElement => {
   const [inquiries, setInquiries] = useState<InquiryData[]>(initialInquiries);
   const [searchQuery, setSearchQuery] = useState('');
-  // Add state for filters later
+  const { staffMembers } = useStaffMembers();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingInquiry, setEditingInquiry] = useState<InquiryData | null>(null);
+  const [inquiryToDelete, setInquiryToDelete] = useState<InquiryData | null>(null);
 
   // --- Filter State ---
   const [activeStatusTab, setActiveStatusTab] = useState<StatusTab>('All Inquiries');
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
   const [selectedPriorities, setSelectedPriorities] = useState<Set<InquiryData['priority']>>(new Set());
-  const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(new Set()); // Store assignee names
+  const [selectedAssignees, setSelectedAssignees] = useState<Set<string>>(new Set()); // Assignee emails, or UNASSIGNED
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   // --- End Filter State ---
 
@@ -121,33 +137,16 @@ const GeneralInquiries = (): React.ReactElement => {
 
     // 4. Filter by Selected Assignees
     if (selectedAssignees.size > 0) {
-      filtered = filtered.filter(inquiry => 
-        (inquiry.assignee && selectedAssignees.has(inquiry.assignee.name)) ||
-        (!inquiry.assignee && selectedAssignees.has('Unassigned')) // Handle unassigned case
+      filtered = filtered.filter(inquiry =>
+        inquiry.assignee
+          ? !!inquiry.assignee.email && selectedAssignees.has(inquiry.assignee.email)
+          : selectedAssignees.has(UNASSIGNED)
       );
     }
 
-    // 5. Filter by Date Range (using reportedAt for now, adjust if needed)
+    // 5. Filter by Date Range on reportedAt
     if (dateRange?.from) {
-      filtered = filtered.filter(inquiry => {
-        try {
-          // Basic parsing assuming time format like 'HH:MM AM/PM'. Needs robust parsing.
-          // This is a placeholder. Real implementation needs date parsing/comparison logic.
-          // const inquiryDate = parse(inquiry.reportedAt, 'h:mm a', new Date()); // Example, needs date-fns parse
-          // For now, let's assume reportedAt is comparable or convert to Date if possible
-          // This logic requires reportedAt to be a full date string or Date object.
-          const inquiryDate = new Date(inquiry.reportedAt); // Highly likely to fail with just 'HH:MM AM/PM'
-          if (isNaN(inquiryDate.getTime())) return true; // Skip if date invalid
-
-          let keep = true;
-          if (dateRange.from && inquiryDate < dateRange.from) keep = false;
-          if (dateRange.to && inquiryDate > dateRange.to) keep = false;
-          return keep;
-        } catch (e) {
-          console.error("Date parsing/filtering error for:", inquiry.reportedAt, e);
-          return true; // Keep inquiry if date parsing fails
-        }
-      });
+      filtered = filtered.filter(inquiry => reportedWithin(inquiry.reportedAt, dateRange));
     }
 
     // 6. Filter by Search Query (apply last)
@@ -204,33 +203,38 @@ const GeneralInquiries = (): React.ReactElement => {
   };
 
   const handleCreateInquiry = () => {
-    console.log("Open New Inquiry Dialog");
-    // Implement dialog opening logic here
+    setEditingInquiry(null);
+    setIsDialogOpen(true);
   };
 
   const handleEditInquiry = (id: string) => {
-    console.log("Edit inquiry:", id);
-    // Implement dialog opening logic here
+    const inquiry = inquiries.find(inq => inq.id === id);
+    if (!inquiry) return;
+    setEditingInquiry(inquiry);
+    setIsDialogOpen(true);
+  };
+
+  const handleInquirySubmit = (inquiry: InquiryData) => {
+    setInquiries(prev => prev.some(inq => inq.id === inquiry.id)
+      ? prev.map(inq => (inq.id === inquiry.id ? inquiry : inq))
+      : [inquiry, ...prev]);
+    setIsDialogOpen(false);
+    setEditingInquiry(null);
   };
 
   const handleDeleteInquiry = (id: string) => {
-    console.log("Delete inquiry:", id);
-    // Implement confirmation and deletion logic
-    setInquiries(prev => prev.filter(inq => inq.id !== id));
+    setInquiryToDelete(inquiries.find(inq => inq.id === id) || null);
   };
 
-  const handleToggleComplete = (id: string) => {
-    setInquiries(prev => 
-      prev.map(inq => 
-        inq.id === id ? { ...inq, completed: !inq.completed, status: !inq.completed ? 'Resolved' as const : 'Open' as const } : inq
-      )
-    );
+  const confirmDeleteInquiry = () => {
+    if (inquiryToDelete) setInquiries(prev => prev.filter(inq => inq.id !== inquiryToDelete.id));
+    setInquiryToDelete(null);
   };
 
   // Handlers for inline updates via dropdowns
-  const handleStatusUpdate = (id: string, newStatus: 'Open' | 'In Progress' | 'Resolved') => {
+  const handleStatusUpdate = (id: string, newStatus: InquiryStatus) => {
     setInquiries(prev =>
-      prev.map(inq => (inq.id === id ? { ...inq, status: newStatus } : inq))
+      prev.map(inq => (inq.id === id ? { ...inq, status: newStatus, completed: newStatus === 'Resolved' } : inq))
     );
     // TODO: Add API call to update backend
   };
@@ -242,8 +246,9 @@ const GeneralInquiries = (): React.ReactElement => {
     // TODO: Add API call to update backend
   };
 
-  const handleAssigneeUpdate = (id: string, newAssigneeName: string | null) => {
-    const newAssignee = potentialAssignees.find(a => a.name === newAssigneeName) || undefined; // Allow unassigning
+  const handleAssigneeUpdate = (id: string, newAssigneeEmail: string | null) => {
+    const staff = staffMembers.find(member => member.email === newAssigneeEmail);
+    const newAssignee = staff ? toAssignee(staff) : undefined; // null unassigns
     setInquiries(prev =>
       prev.map(inq => (inq.id === id ? { ...inq, assignee: newAssignee } : inq))
     );
@@ -359,21 +364,21 @@ const GeneralInquiries = (): React.ReactElement => {
                   <User className="mr-2 h-4 w-4" /> Assigned To {selectedAssignees.size > 0 && `(${selectedAssignees.size})`}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
                 <DropdownMenuLabel>Filter by Assignee</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
-                   key="Unassigned"
-                   checked={selectedAssignees.has('Unassigned')}
-                   onCheckedChange={(checked) => handleAssigneeFilterChange('Unassigned', !!checked)}
+                   key={UNASSIGNED}
+                   checked={selectedAssignees.has(UNASSIGNED)}
+                   onCheckedChange={(checked) => handleAssigneeFilterChange(UNASSIGNED, !!checked)}
                  >
                    <span className="italic text-muted-foreground">Unassigned</span>
                  </DropdownMenuCheckboxItem>
-                {potentialAssignees.map(assignee => (
+                {staffMembers.map(staff => toAssignee(staff)).map(assignee => (
                   <DropdownMenuCheckboxItem
-                    key={assignee.initials}
-                    checked={selectedAssignees.has(assignee.name)}
-                    onCheckedChange={(checked) => handleAssigneeFilterChange(assignee.name, !!checked)}
+                    key={assignee.email}
+                    checked={!!assignee.email && selectedAssignees.has(assignee.email)}
+                    onCheckedChange={(checked) => assignee.email && handleAssigneeFilterChange(assignee.email, !!checked)}
                   >
                     <Avatar className="h-5 w-5 mr-2"><AvatarFallback className="text-[10px]">{assignee.initials}</AvatarFallback></Avatar>
                     {assignee.name}
@@ -462,7 +467,7 @@ const GeneralInquiries = (): React.ReactElement => {
                 <div className="font-medium text-sm text-gray-900 dark:text-gray-100">{inquiry.title}</div>
                 <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={inquiry.description}>{inquiry.description}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  Reported by {inquiry.reportedBy} at {inquiry.reportedAt}
+                  Reported{inquiry.reportedBy ? ` by ${inquiry.reportedBy}` : ''} · {formatReportedAt(inquiry.reportedAt)}
                 </div>
               </div>
               <div className="flex items-center">
@@ -558,7 +563,7 @@ const GeneralInquiries = (): React.ReactElement => {
                       <ChevronDown className="h-3 w-3 opacity-50 ml-auto" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
                      <DropdownMenuLabel>Assign To</DropdownMenuLabel>
                      <DropdownMenuSeparator />
                      <DropdownMenuGroup>
@@ -569,10 +574,10 @@ const GeneralInquiries = (): React.ReactElement => {
                            Unassigned
                            {!inquiry.assignee && <Check className="ml-auto h-4 w-4" />}
                          </DropdownMenuItem>
-                       {potentialAssignees.map((assignee) => (
+                       {staffMembers.map(staff => toAssignee(staff)).map((assignee) => (
                          <DropdownMenuItem
-                           key={assignee.initials}
-                           onSelect={() => handleAssigneeUpdate(inquiry.id, assignee.name)}
+                           key={assignee.email}
+                           onSelect={() => handleAssigneeUpdate(inquiry.id, assignee.email || null)}
                            className="text-xs"
                          >
                            <Avatar className="h-5 w-5 mr-1.5">
@@ -581,7 +586,7 @@ const GeneralInquiries = (): React.ReactElement => {
                              </AvatarFallback>
                            </Avatar>
                            {assignee.name}
-                           {inquiry.assignee?.name === assignee.name && <Check className="ml-auto h-4 w-4" />}
+                           {inquiry.assignee?.email === assignee.email && <Check className="ml-auto h-4 w-4" />}
                          </DropdownMenuItem>
                        ))}
                      </DropdownMenuGroup>
@@ -617,8 +622,29 @@ const GeneralInquiries = (): React.ReactElement => {
         </div>
       </div>
 
-      {/* Add Inquiry Dialog Component here */}
-      {/* <InquiryDialog isOpen={isDialogOpen} onClose={...} onSubmit={...} /> */}
+      <InquiryDialog
+        isOpen={isDialogOpen}
+        onClose={() => { setIsDialogOpen(false); setEditingInquiry(null); }}
+        onSubmit={handleInquirySubmit}
+        initialData={editingInquiry}
+      />
+
+      <AlertDialog open={!!inquiryToDelete} onOpenChange={open => { if (!open) setInquiryToDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this inquiry?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete <span className="font-medium">{inquiryToDelete?.title}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteInquiry} className={cn(buttonVariants({ variant: 'destructive' }))}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
