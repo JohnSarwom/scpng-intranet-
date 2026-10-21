@@ -1,4 +1,5 @@
 import { useStaffMembers } from '@/hooks/useStaffMembers';
+import { useFrontDeskPermissions } from '@/hooks/frontDesk/useFrontDeskPermissions';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -290,12 +291,14 @@ const AppointmentView: React.FC = () => {
   
   // Handler to open modal for editing
   const handleEditAppointment = (appointment: AppointmentData) => {
+    if (!perms.canUpdate) return; // without update permission, clicking an appointment does nothing
     setEditingAppointment(appointment);
     setIsAppointmentModalOpen(true);
   };
 
   // Placeholder host options
   const { staffMembers } = useStaffMembers();
+  const perms = useFrontDeskPermissions();
   const hostOptions = staffMembers.map(staff => staff.name);
 
   // --- Navigation Handlers ---
@@ -493,17 +496,19 @@ const AppointmentView: React.FC = () => {
                </Button>
              </div>
              {/* New Appointment Button */}
-             <Button 
-               className="bg-primary text-white hover:bg-primary/90 flex items-center" 
-               size="sm"
-               onClick={() => {
-                 setEditingAppointment(null); // Ensure we are creating
-                 setIsAppointmentModalOpen(true);
-               }} 
-             >
-               <Plus className="mr-2 h-4 w-4" />
-               <span>New Appointment</span>
-             </Button>
+             {perms.canCreate && (
+               <Button
+                 className="bg-primary text-white hover:bg-primary/90 flex items-center"
+                 size="sm"
+                 onClick={() => {
+                   setEditingAppointment(null); // Ensure we are creating
+                   setIsAppointmentModalOpen(true);
+                 }}
+               >
+                 <Plus className="mr-2 h-4 w-4" />
+                 <span>New Appointment</span>
+               </Button>
+             )}
              {/* Today button - now primarily for quick jump to Today in Day view */}
              {viewMode !== 'day' && ( // Restore original Today button position
                <Button 

@@ -123,8 +123,10 @@ const TicketCard: React.FC<TicketCardProps> = ({
   }, [startDate, endDate, completed]);
 
   // Handle editing priority
+  // Each picker only opens when its change handler was passed (the handler is withheld without permission).
   const handlePriorityClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!onPriorityChange) return;
     setShowPriorityDropdown(!showPriorityDropdown);
     setShowAssigneeDropdown(false);
     setShowStatusDropdown(false);
@@ -133,6 +135,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   // Handle editing assignee
   const handleAssigneeClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!onAssigneeChange) return;
     setShowAssigneeDropdown(!showAssigneeDropdown);
     setShowPriorityDropdown(false);
     setShowStatusDropdown(false);
@@ -141,6 +144,7 @@ const TicketCard: React.FC<TicketCardProps> = ({
   // --- Define handleStatusClick BEFORE usage ---
   const handleStatusClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!onStatusChange) return;
     setShowStatusDropdown(!showStatusDropdown);
     setShowPriorityDropdown(false);
     setShowAssigneeDropdown(false);

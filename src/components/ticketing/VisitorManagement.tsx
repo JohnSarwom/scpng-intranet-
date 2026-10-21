@@ -1,4 +1,5 @@
 import { useStaffMembers } from '@/hooks/useStaffMembers';
+import { useFrontDeskPermissions } from '@/hooks/frontDesk/useFrontDeskPermissions';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -300,8 +301,11 @@ const getStatusClass = (status: VisitorStatus) => {
  * The component supports inline editing for certain fields and manages
  * its own dropdown states for actions.
  */
-const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, onTimeChange, onDurationChange, onVisitDateChange, onAssigneeChange, onCompanyChange, isDragging = false }: { 
-  visitor: Visitor, 
+const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, onTimeChange, onDurationChange, onVisitDateChange, onAssigneeChange, onCompanyChange, isDragging = false, canEdit = true, canDelete = true }: {
+  visitor: Visitor,
+  /** Without these permissions the card hides its edit/delete buttons and its pickers do not open. */
+  canEdit?: boolean,
+  canDelete?: boolean,
   onStatusChange: (id: number, status: VisitorStatus) => void,
   onEdit: (id: number) => void,
   onDelete: (id: number) => void,
@@ -361,6 +365,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
   
   const handleStatusClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!canEdit) return;
     setShowStatusDropdown(!showStatusDropdown);
   };
   
@@ -480,30 +485,35 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
   // Create header actions - edit, delete, more options buttons
   const headerActions = (
     <>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" 
-        onClick={(e) => {
-          e.stopPropagation();
-          onEdit(visitor.id);
-        }}
-        title="Edit Visitor"
-      >
-        <PencilIcon className="h-3.5 w-3.5" />
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600" 
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete(visitor.id);
-        }}
-        title="Delete Visitor"
-      >
-        <Trash2Icon className="h-3.5 w-3.5" />
-      </Button>
+      {canEdit && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(visitor.id);
+          }}
+          title="Edit Visitor"
+        >
+          <PencilIcon className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      {canDelete && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(visitor.id);
+          }}
+          title="Delete Visitor"
+        >
+          <Trash2Icon className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      {canEdit && (
       <div className="relative" ref={dropdownRef}>
         <Button 
           variant="ghost" 
@@ -544,6 +554,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
           </div>
         )}
       </div>
+      )}
     </>
   );
 
@@ -623,7 +634,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
       
       <div className="flex items-center text-xs text-muted-foreground relative" ref={timeEditRef}>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!canEdit}>
             <button className="flex items-center hover:text-foreground">
               <Clock className="h-3.5 w-3.5 mr-1" />
               <span>{formatTime(visitor.time)}</span>
@@ -679,7 +690,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
     <>
       <div className="flex items-center relative" ref={hostDropdownRef}>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!canEdit}>
             <button className="flex items-center hover:text-foreground text-xs">
               <UserIcon className="h-3.5 w-3.5 mr-1" />
               <span>{visitor.host}</span>
@@ -707,7 +718,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
       
       {visitor.assignees && visitor.assignees.length > 0 ? (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!canEdit}>
             {/* START CHANGE: Render multiple avatars */}
             <button className="flex items-center -space-x-2 hover:text-foreground">
               {visitor.assignees.slice(0, 3).map((assignee, index) => (
@@ -754,7 +765,7 @@ const VisitorCard = ({ visitor, onStatusChange, onEdit, onDelete, onHostChange, 
         </DropdownMenu>
       ) : (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild disabled={!canEdit}>
             <Button
               variant="ghost"
               size="icon"
@@ -884,6 +895,7 @@ const VisitorManagement: React.FC = () => {
   
   // All staff members for assignee selection
   const { staffMembers } = useStaffMembers();
+  const perms = useFrontDeskPermissions();
   const allStaffMembers = staffMembers.map(staff => staff.name);
   
   // Filter values
@@ -1407,7 +1419,8 @@ const VisitorManagement: React.FC = () => {
     setOverColumnId(null);
     setDropTargetInfo({ columnId: null, overItemId: null, isBottomHalf: false });
 
-    if (!over || !active) return;
+    // Dragging changes the visitor's status: without update permission the card snaps back.
+    if (!over || !active || !perms.canUpdate) return;
 
     const activeId = Number(active.id);
     const overId = String(over.id);
@@ -1503,6 +1516,8 @@ const VisitorManagement: React.FC = () => {
                           <VisitorCard
                             visitor={visitor}
                             isDragging={activeDragItem?.id === visitor.id}
+                            canEdit={perms.canUpdate}
+                            canDelete={perms.canDelete}
                             onStatusChange={handleInlineStatusChange}
                             onEdit={handleEditVisitor}
                             onDelete={handleDeleteVisitor}
@@ -1562,6 +1577,8 @@ const VisitorManagement: React.FC = () => {
               <VisitorCard
                 key={visitor.id}
                 visitor={visitor}
+                canEdit={perms.canUpdate}
+                canDelete={perms.canDelete}
                 onStatusChange={handleInlineStatusChange}
                 onEdit={handleEditVisitor}
                 onDelete={handleDeleteVisitor}
@@ -1622,7 +1639,7 @@ const VisitorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                           <button className="px-2 py-1 rounded-full text-xs font-medium cursor-pointer flex items-center gap-1 w-full justify-start">
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(visitor.status)}`}>
                               {getStatusLabel(visitor.status)}
@@ -1664,7 +1681,7 @@ const VisitorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                           <button className="flex items-center hover:text-foreground gap-1">
                             <Clock className="h-3.5 w-3.5 mr-1" />
                             {formatTime(visitor.time)}
@@ -1721,7 +1738,7 @@ const VisitorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                           <button className="flex items-center hover:text-foreground gap-1">
                             <UserIcon className="h-3.5 w-3.5 mr-1" />
                             {visitor.host}
@@ -1749,7 +1766,7 @@ const VisitorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                           <button className="flex items-center hover:text-foreground gap-1">
                             <BuildingIcon className="h-3.5 w-3.5 mr-1" />
                             {visitor.company}
@@ -1772,7 +1789,7 @@ const VisitorManagement: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
+                        <DropdownMenuTrigger asChild disabled={!perms.canUpdate}>
                           <button className="flex items-center hover:text-foreground gap-1">
                             <Clock className="h-3.5 w-3.5 mr-1" />
                             {formatDuration(visitor)}
@@ -1797,18 +1814,22 @@ const VisitorManagement: React.FC = () => {
                       </DropdownMenu>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button 
-                        className="text-primary hover:text-primary-dark mr-3"
-                        onClick={() => handleEditVisitor(visitor.id)}
-                      >
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button 
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => handleDeleteVisitor(visitor.id)}
-                      >
-                        <Trash2Icon className="h-4 w-4" />
-                      </button>
+                      {perms.canUpdate && (
+                        <button
+                          className="text-primary hover:text-primary-dark mr-3"
+                          onClick={() => handleEditVisitor(visitor.id)}
+                        >
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                      {perms.canDelete && (
+                        <button
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => handleDeleteVisitor(visitor.id)}
+                        >
+                          <Trash2Icon className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -2085,10 +2106,12 @@ const VisitorManagement: React.FC = () => {
         </div>
 
         <div className="flex items-center space-x-3">
-          <Button size="sm" className="flex items-center gap-2 bg-primary" onClick={() => setShowAddVisitorModal(true)}>
-            <PlusIcon className="h-4 w-4" />
-            New Visitor
-          </Button>
+          {perms.canCreate && (
+            <Button size="sm" className="flex items-center gap-2 bg-primary" onClick={() => setShowAddVisitorModal(true)}>
+              <PlusIcon className="h-4 w-4" />
+              New Visitor
+            </Button>
+          )}
         </div>
       </div>
 
