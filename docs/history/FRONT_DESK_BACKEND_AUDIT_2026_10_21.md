@@ -91,7 +91,7 @@ These are the 20 flows visible to the signed-in account:
   - Recurrence
 
   Every Front Desk job in section 5 can be built from these.
-- **Ownership:** these flows are visible to one account. Confirm who owns them and add a co-owner. The report-scheduler docs mention a service account, `automation@scpng.gov.pg`. *Update 2026-10-21: that account is a Global Administrator, so Front Desk flows get a new dedicated non-admin account instead (D12, amended).*
+- **Ownership:** these flows are visible to one account. Confirm who owns them and add a co-owner. The report-scheduler docs mention a service account, `automation@scpng.gov.pg`. *Update 2026-10-21: that account is a Global Administrator. No new account can be created, so the Front Desk flows run under it with safeguards (D12, P6B.1).*
 
 ---
 
@@ -286,7 +286,7 @@ Assignees outside the front desk ──► "Assigned to me" view (Acknowledge / 
 |---|---|---|---|---|
 | D10 | How do assignees outside the front desk act, and what may notices contain? | A: split D9 by sensitivity + "Assigned to me" view · B: keep all lists locked, Approvals by email | **A.** Visitor names may appear in in-app notices; phone and email never. | Accepted |
 | D11 | Who do front-desk emails come from? | Receptionist + reply-to shared mailbox · Send As shared mailbox (admin consent) | **Reply-to now**; Send As later if wanted | Accepted |
-| D12 | Which account owns the flows? | A personal account · service account | **`automation@scpng.gov.pg`**, with a named co-owner | Accepted, then **amended**: `automation@` turned out to be a Global Administrator, so the flows get a new dedicated non-admin account ([scheduler comparison](FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md)) |
+| D12 | Which account owns the flows? | A personal account · service account | **`automation@scpng.gov.pg`**, with a named co-owner | Accepted. Briefly amended to a new non-admin account once `automation@` was found to be a Global Administrator. No new account can be created, so the **final decision is `automation@` with safeguards** (risk accepted; see the [scheduler comparison](FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md), section 8). |
 | D13 | Reminder timings and SLA hours | — | The bracketed defaults in BE2 (SLA: High 4 h, Medium 1 working day, Low 3 working days), adjustable in `FrontDesk_RoutingRules` | Accepted |
 | D14 | Retention | — | Photos 30 days; visitor records 24 months, then anonymise. **Management to confirm.** | Accepted, pending management confirmation |
 | D15 | Calendar invites for appointments | Yes · No | **Yes**, organised by reception | Accepted |

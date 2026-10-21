@@ -1,7 +1,10 @@
 # Scheduled jobs: Power Automate vs Azure Functions
 
 **Date:** 2026-10-21
-**Decision (2026-10-21):** the product owner chose **Power Automate under a new dedicated, non-admin account**. D12 and P6B.1 in the execution plan are updated to match. Azure Functions remains the fallback (section 1).
+**Decision (2026-10-21, final):** **Power Automate under the existing `automation@scpng.gov.pg`, with safeguards.**
+- The first choice was a new dedicated non-admin account, but a new account and licence cannot be created (section 8).
+- D12 and P6B.1 in the execution plan are updated to match.
+- Azure Functions remains the fallback (section 1).
 **Question:** Phase 6B of `docs/features/front-desk-execution-plan.md` puts the seven scheduled Front Desk jobs in Power Automate (decision D12). Would Azure Functions be better?
 
 **Scope:** only the scheduled jobs, P6B.2–P6B.8:
@@ -170,6 +173,30 @@ It is also the account currently signed in to the intranet in the development br
 1. **Azure subscription:** sign in to portal.azure.com → Subscriptions with an admin account. Is there one, and who pays for it?
 2. **If there is none:** confirm with the Azure sign-up page, or the partner that sells your Microsoft 365 licences, that a subscription can be bought and billed from Papua New Guinea.
 3. **`automation@`:** who knows its credentials, and which existing flows depend on its admin roles? Staff sync and the notice-board import appear to need only ordinary user rights.
+
+---
+
+## 8. Update: no new account possible (2026-10-21)
+
+The product owner cannot create a new account or assign it a licence. Two options remained without one:
+- `automation@` with safeguards
+- running the jobs from the reception page while it is open
+
+The product owner chose **`automation@scpng.gov.pg` with safeguards**.
+
+**Why this is acceptable:**
+- `automation@` already owns the tenant's other flows, using the same SharePoint and Outlook connections. So the Global Administrator exposure exists today.
+- The Front Desk flows add no new way in, provided nobody new can edit them.
+
+**The safeguards** (P6B.1 in the plan):
+1. No new co-owners beyond the people who already hold the `automation@` credentials.
+2. Credentials and Authenticator held by two people in IT; flows exported to the repo.
+3. Explicit edit access to the four restricted lists (P2.4).
+4. Emails use Reply To the D11 address. That is a reception shared mailbox if one can be created (no licence needed; none existed on 2026-10-21), otherwise the front-desk supervisor.
+5. Everyday intranet testing uses an ordinary staff account, not `automation@`.
+6. Optional, the tenant admin's call: Conditional Access for `automation@` sign-ins, and a review of its 48 roles.
+
+**Risk accepted:** the flows run as a Global Administrator. Revisit when a dedicated account, a service principal or an Azure subscription becomes possible.
 
 ---
 
