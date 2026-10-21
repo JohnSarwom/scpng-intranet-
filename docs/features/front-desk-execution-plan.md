@@ -3,6 +3,7 @@
 Prepared 2026-10-21. Sources:
 - [Front Desk Ticketing Audit](../history/FRONT_DESK_TICKETING_AUDIT_2026_10_21.md)
 - [Front Desk back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10_21.md), folded in on 2026-10-21
+- [Scheduled jobs: Power Automate vs Azure Functions](../history/FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md), which settled D12
 
 Every task in this plan closes one or more audit findings, cited in brackets:
 
@@ -77,7 +78,7 @@ P0 ─► P1 ─► P2 ─► P3 ─┬─► P4 ─┬─► P6 ─┬─► P7
 | Permissions | `useRoleBasedAuth().hasPermission('tickets', action)`. Define new actions as `extraActions` in Role Management. | `src/hooks/useRoleBasedAuth.ts:109`, `src/components/admin/RoleManagement.tsx:20–55` |
 | Exports | `exceljs`, plus `jspdf` and `jspdf-autotable` | `src/services/attendanceReportExportService.ts` |
 | Notifications | In-app via `addNotification`, email via Graph `/me/sendMail`. Front-desk code calls them only through `frontDeskNotifications.ts` (P6.1), which:<br>- sets `replyTo` to the reception mailbox (D11)<br>- builds links from `VITE_APP_BASE_URL` (BE10)<br>- writes a "notified" marker on the record (BE3) | `src/services/sharePointOpsService.ts:3193`, `:3229` |
-| Scheduled jobs | Power Automate only, never the browser (D12):<br>- standard connectors only<br>- owned by the `automation@scpng.gov.pg` service account<br>- Recurrence in "West Pacific Standard Time"<br>- filter only on indexed columns | Phase 6B |
+| Scheduled jobs | Power Automate only, never the browser (D12):<br>- standard connectors only<br>- owned by the dedicated, non-admin Front Desk flow account<br>- Recurrence in "West Pacific Standard Time"<br>- filter only on indexed columns | Phase 6B |
 | Concurrent edits | Updates send the item's eTag as `If-Match`. On `412`, reload and tell the user (BE8). | `src/services/sharePointOpsService.ts:387–417`, P2.8 |
 | File upload | `useSharePointUpload().uploadFile(file, sitePath, library, folder)` | `src/hooks/useSharePointUpload.ts:58` |
 | List setup | Idempotent "ensure" functions: check what exists and create only what is missing. Run them from TestGround. | `src/services/feedbackService.ts:109`, `src/pages/TestGround.tsx:1108` |
@@ -181,14 +182,18 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 |---|---|---|---|---|---|
 | D10 | How do assignees outside the front desk act, and what may notices contain? | A: restrict only the lists holding visitor details, and add an "Assigned to me" view · B: keep every list locked; assignees respond to Approvals emails | **A.** Restrict `FrontDesk_Visitors`, `FrontDesk_Appointments`, `FrontDesk_MailPackages` and `FrontDesk_VisitorPhotos`. Inquiries, Tickets, TicketComments, TicketGroups and RoutingRules keep site-member access. In-app notices may name the visitor; phone and email never appear. | BE1, BE5 | **Accepted.** Option A. |
 | D11 | Who front-desk emails come from | Receptionist with reply-to the reception shared mailbox · Send As the shared mailbox (needs `Mail.Send.Shared` and admin consent) | Reply-to now; Send As later if wanted | BE4 | **Accepted.** Reply-to the reception shared mailbox. |
-| D12 | Which account owns the flows | A personal account · a service account | `automation@scpng.gov.pg`, with a named co-owner | BE2, BE12 | **Accepted.** Service account plus co-owner. |
+| D12 | What runs the scheduled jobs, and as whom | Power Automate under `automation@scpng.gov.pg` · Power Automate under a new dedicated account · Azure Functions with a managed identity | Power Automate under a **new dedicated, non-admin account** with a named co-owner. `automation@scpng.gov.pg` holds Global Administrator and 47 other admin roles, so it must not own the flows. See the [scheduler comparison](../history/FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md). | BE2, BE12 | **Accepted, amended 2026-10-21.** First recorded as "`automation@` plus co-owner"; changed to a new non-admin account after the comparison. Azure Functions stays the fallback if SCPNG later has an Azure subscription or the jobs need tested code. |
 | D13 | Reminder timings and SLA hours | — | Mail: remind the recipient after 2 working days, tell the supervisor after 5. Unassigned inquiry: alert after 1 hour. SLA: High 4 h, Medium 1 working day, Low 3 working days. End-of-day sweep at 17:30, digest at 07:45. All adjustable in `FrontDesk_RoutingRules` (P5.14). | BE2, BE6 | **Accepted.** As recommended. |
 | D14 | Retention | — | Delete visitor photos after 30 days. Anonymise visitor records after 24 months. **Management to confirm** before the retention flow is switched on. | BE2 | **Accepted,** pending management confirmation of the periods. |
 | D15 | Outlook invites for appointments | Yes · No | Yes, organised from the receptionist's calendar | BE9 | **Accepted.** |
 
 **Prerequisites from IT (not code):**
 - A reception shared mailbox for D11. The address is set in `frontDeskConfig.ts`.
-- The `automation@scpng.gov.pg` account (D12), licensed with a mailbox, with a named co-owner for its flows.
+- A new **Front Desk flow account** (D12):
+  - The name is IT's choice, for example `frontdesk-flows@scpng.gov.pg`.
+  - It takes the spare Business Premium licence (35 of 36 assigned on 2026-10-21) and has its own mailbox.
+  - It holds **no** admin roles.
+  - A named person co-owns its flows.
 
 **Exit gate:** decision table agreed, and the audit has been walked through with the receptionists.
 
@@ -209,7 +214,7 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 | D9 | P2.4 restricts the lists and library in SharePoint, narrowed by D10. |
 | D10 | P2.4 restricts only the four lists that hold visitor details. P5.16 adds the "Assigned to me" view. P6.5 allows the visitor's name in notices. |
 | D11 | P6.1 sets `replyTo` on every front-desk email. |
-| D12 | P2.4 grants the service account access to the restricted lists. Phase 6B builds every flow under that account. |
+| D12 | P6B.1 creates the Front Desk flow account. P2.4 grants it access to the restricted lists. Phase 6B builds every flow under it, never under `automation@scpng.gov.pg`. |
 | D13 | P5.14 seeds `FrontDesk_RoutingRules` with these values. P6B.3–P6B.6 read them. |
 | D14 | P6B.7 is built with these periods, and switched on only after management confirms them. |
 | D15 | P4.10 creates the Outlook event. |
@@ -377,7 +382,7 @@ All tasks P1.1–P1.11 are implemented on `fix/front-desk-stabilise`. P1.3 shipp
 - **Tests:** when some columns already exist, only the missing ones are posted.
 
 ### P2.4 Restrict list access [G4, D9, D10, D12, BE1, BE12]
-- **Restrict** (break permission inheritance, then grant access only to the front-desk group, admins and the `automation@scpng.gov.pg` service account):
+- **Restrict** (break permission inheritance, then grant access only to the front-desk group, admins and the Front Desk flow account from D12):
   - `FrontDesk_Visitors`
   - `FrontDesk_Appointments`
   - `FrontDesk_MailPackages`
@@ -814,7 +819,7 @@ This is an app-wide fix to existing code, and the one change this plan makes ins
 
 **Goal:** the jobs a web page cannot do, because nobody has it open: reminders, SLA and overdue alerts, the end-of-day sweep, a daily digest and data clean-up.
 **Where:** Power Automate, not app code (D12).
-- Every flow is built in the designer under `automation@scpng.gov.pg`, with a named co-owner.
+- Every flow is built in the designer under the Front Desk flow account (D12, created in P6B.1), with a named co-owner. Never under `automation@scpng.gov.pg`, which is a Global Administrator.
 - It uses only standard connectors: SharePoint, Office 365 Outlook, Office 365 Users and Recurrence. The tenant already runs flows built from these.
 - Recurrence uses "West Pacific Standard Time" (the site's time zone is Port Moresby, UTC+10).
 
@@ -830,7 +835,7 @@ This is an app-wide fix to existing code, and the one change this plan makes ins
 
 | Task | Flow | When (PNG time) | What it does |
 |---|---|---|---|
-| P6B.1 | — | — | Service account set-up. Create its SharePoint and Outlook connections, add the co-owner, and confirm it can read the restricted lists (P2.4, BE12). |
+| P6B.1 | — | — | **Front Desk flow account (D12).** Steps listed below the table. |
 | P6B.2 | **FD-Backstop** | Every 15 min | Items with an empty "notified" marker that are more than 10 minutes old get their notice sent, then the marker is set (BE3). Unmarked items older than 1 day are skipped, so a first run never floods old records. |
 | P6B.3 | **FD-EndOfDay** | 17:30 working days | Emails reception and the supervisor the visitors still **On Site** today. Sets today's **Expected** visitors with no `TimeIn` to **No Show**. |
 | P6B.4 | **FD-MailReminders** | 09:00 working days | Uncollected items older than 2 working days: reminds the recipient. Older than 5: tells the supervisor. Updates `ReminderCount` and `LastRemindedAt`, at most one reminder a day. Signature-required items say so. |
@@ -839,6 +844,27 @@ This is an app-wide fix to existing code, and the one change this plan makes ins
 | P6B.7 | **FD-Retention** | Monthly | Deletes visitor photos older than 30 days. Anonymises visitors older than 24 months: clears Phone, Email, PhotoUrl and Notes, and replaces the name with "Visitor". **Built switched off; switched on after management confirms D14.** |
 | P6B.8 | **Notifications-Cleanup** | Weekly | Deletes read `System_Notifications` items older than 90 days (BE5). |
 | P6B.9 | — | — | Export each flow to `docs/flows/front-desk/`. Document triggers, thresholds and owners in the P8.7 feature doc. |
+
+#### P6B.1 Front Desk flow account [D12, BE12]
+
+1. **Create the account.**
+   - IT creates a new cloud user; the name is IT's choice, for example `frontdesk-flows@scpng.gov.pg`.
+   - Display name "SCPNG Front Desk" (the sender staff will see).
+   - Assign the spare Microsoft 365 Business Premium licence, which gives it a mailbox and Power Automate with standard connectors (6,000 requests a day).
+2. **No admin roles.** Confirm in Entra ID that the account holds no directory roles. Its sign-in uses MFA, like every other account.
+3. **SharePoint access.**
+   - Add it as a member (edit, not owner) of the front-desk SharePoint group, so it can read and update the four restricted lists after P2.4.
+   - Site-member access covers the other front-desk lists and `System_Notifications`.
+4. **Connections.** Signed in as this account, create its SharePoint, Office 365 Outlook and Office 365 Users connections. Build P6B.2–P6B.8 under it.
+5. **Co-owner.**
+   - Add one named staff member, not `automation@`, as co-owner of every Front Desk flow, so the flows survive staff changes.
+   - Co-owners can use the flow's connections, so keep the list short.
+6. **Records.** Store the credentials in the organisation's password manager or safe, not with one person. List the account, its owner and its co-owner in the P8.7 feature doc.
+7. **Check.**
+   - A test flow under the account reads `FrontDesk_Visitors` (restricted) and sends one email to the developer. The email shows "SCPNG Front Desk" as the sender.
+   - Then delete the test flow.
+
+**Later upgrade (not required):** Microsoft recommends a service principal as owner for critical flows inside a solution. Consider it once the flows are stable. It draws on the tenant's unlicensed request pool and removes the password altogether.
 
 **Testing:**
 - Each flow is run in test mode on the live site against records titled `[TEST]`.
@@ -920,7 +946,7 @@ Rows whose Finding starts with **BE** come from the back-end audit. P2.9 adds th
 
 | Access | Lists |
 |---|---|
-| Restricted to the front-desk group, admins and the service account | Visitors, Appointments, MailPackages, VisitorPhotos |
+| Restricted to the front-desk group, admins and the Front Desk flow account (D12) | Visitors, Appointments, MailPackages, VisitorPhotos |
 | Site members | Inquiries, Tickets, TicketComments, TicketGroups, RoutingRules |
 
 ### FrontDesk_Visitors
@@ -1134,7 +1160,8 @@ One row per inquiry category.
 | `/me/sendMail` needs Mail.Send consent for receptionist accounts | Email notices fail | Other services already use it. Confirm with a receptionist account in the Phase 6 exit test; in-app notices still arrive. | P6.1 |
 | Two desks editing the same record | Last write wins | 30-second refetch on busy views; `If-Match` on every update, with a reload on conflict | P2.7, P2.8 |
 | Inquiries and Tickets stay editable by site members (D10) | Someone edits a work item directly in SharePoint | They hold no visitor details; version history (50 versions) keeps every change | D10, P2.4 |
-| The service account is unlicensed, disabled or loses access | Every scheduled job stops | Named co-owner on every flow; failure branch emails the owners; P2.4 grants the account access explicitly | D12, P6B.1 |
+| The Front Desk flow account is unlicensed, disabled or loses access | Every scheduled job stops | Named co-owner on every flow; failure branch emails the owners; P2.4 grants the account access explicitly | D12, P6B.1 |
+| Flows or testing run as `automation@scpng.gov.pg`, which is a Global Administrator | A co-owner or anyone with its credentials controls the tenant; testing as an admin hides permission bugs | Flows use the non-admin Front Desk flow account. Test with an ordinary staff account. Review who holds the `automation@` credentials. | D12, P6B.1 |
 | A flow emails real staff during testing | Confusing or duplicate reminders | `TestMode` sends everything to the developer; test records are titled `[TEST]` and deleted after | P6B testing |
 | Reminders feel like spam | Staff ignore them | At most one reminder per item per day; thresholds editable in `FrontDesk_RoutingRules` | D13, P5.14 |
 | Retention periods not confirmed | Data kept too long, or deleted too soon | FD-Retention is built switched off until management confirms D14 | D14, P6B.7 |
