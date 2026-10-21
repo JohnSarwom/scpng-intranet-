@@ -181,14 +181,18 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 | ID | Decision | Options | Recommendation | Finding | Agreed |
 |---|---|---|---|---|---|
 | D10 | How do assignees outside the front desk act, and what may notices contain? | A: restrict only the lists holding visitor details, and add an "Assigned to me" view · B: keep every list locked; assignees respond to Approvals emails | **A.** Restrict `FrontDesk_Visitors`, `FrontDesk_Appointments`, `FrontDesk_MailPackages` and `FrontDesk_VisitorPhotos`. Inquiries, Tickets, TicketComments, TicketGroups and RoutingRules keep site-member access. In-app notices may name the visitor; phone and email never appear. | BE1, BE5 | **Accepted.** Option A. |
-| D11 | Who front-desk emails come from | Receptionist with reply-to the reception shared mailbox · Send As the shared mailbox (needs `Mail.Send.Shared` and admin consent) | Reply-to now; Send As later if wanted | BE4 | **Accepted.** Reply-to the reception shared mailbox. Shared mailboxes need no licence. If one cannot be created, reply-to the front-desk supervisor's address instead. No reception mailbox existed on 2026-10-21. |
-| D12 | What runs the scheduled jobs, and as whom | Power Automate under `automation@scpng.gov.pg` · Power Automate under a new dedicated account · Azure Functions with a managed identity · run the jobs from the reception page | Power Automate under **`automation@scpng.gov.pg` with the P6B.1 safeguards**. A new account and licence cannot be created, and Azure has no confirmed subscription. See the [scheduler comparison](../history/FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md). | BE2, BE12 | **Accepted 2026-10-21, after two amendments.**<br>1. First recorded as "`automation@` plus co-owner".<br>2. Changed to "a new non-admin account" once `automation@` was found to hold Global Administrator and 47 other roles.<br>3. That proved impossible (no new account or licence), so the decision is `automation@` with safeguards.<br><br>**Risk accepted:** the account stays a Global Administrator. It already owns the tenant's other flows with the same connections, so the Front Desk flows add no new way in as long as no new co-owners are added.<br><br>**Revisit** when a dedicated account, a service principal or an Azure subscription becomes possible. |
+| D11 | Who front-desk emails come from | Receptionist with reply-to the reception shared mailbox · Send As the shared mailbox (needs `Mail.Send.Shared` and admin consent) | A reception shared mailbox (no licence). Scheduled flows send **as** it; browser notices reply-to it. | BE4 | **Accepted, updated 2026-10-21.**<br>- **Mailbox:** a reception shared mailbox, for example `reception@scpng.gov.pg`, display name "SCPNG Reception". IT chooses the address. It needs no licence.<br>- **Scheduled flows:** `automation@` sends **as** the shared mailbox, so staff see "SCPNG Reception" and replies land in its inbox.<br>- **Receptionists:** each gets Full Access and Send As, so they read and answer replies in their own Outlook.<br>- **Browser notices:** sent from the receptionist's own mailbox, with reply-to set to the shared mailbox. Sending them *as* the mailbox would need `Mail.Send.Shared` and admin consent, and stays a later option. |
+| D12 | What runs the scheduled jobs, and as whom | Power Automate under `automation@scpng.gov.pg` · Power Automate under a new dedicated account · Azure Functions with a managed identity · run the jobs from the reception page | Power Automate under **`automation@scpng.gov.pg` with the P6B.1 safeguards**. A new account and licence cannot be created, and Azure has no confirmed subscription. See the [scheduler comparison](../history/FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md). | BE2, BE12 | **Accepted 2026-10-21, after two amendments.**<br>1. First recorded as "`automation@` plus co-owner".<br>2. Changed to "a new non-admin account" once `automation@` was found to hold Global Administrator and 47 other roles.<br>3. That proved impossible (no new account or licence), so the decision is `automation@` with safeguards.<br><br>**Sender:** the flows run as `automation@` but send **as** the reception shared mailbox from D11. `automation@` holds Send As on it.<br><br>**Risk accepted:** the account stays a Global Administrator. It already owns the tenant's other flows with the same connections, so the Front Desk flows add no new way in as long as no new co-owners are added.<br><br>**Revisit** when a dedicated account, a service principal or an Azure subscription becomes possible. |
 | D13 | Reminder timings and SLA hours | — | Mail: remind the recipient after 2 working days, tell the supervisor after 5. Unassigned inquiry: alert after 1 hour. SLA: High 4 h, Medium 1 working day, Low 3 working days. End-of-day sweep at 17:30, digest at 07:45. All adjustable in `FrontDesk_RoutingRules` (P5.14). | BE2, BE6 | **Accepted.** As recommended. |
 | D14 | Retention | — | Delete visitor photos after 30 days. Anonymise visitor records after 24 months. **Management to confirm** before the retention flow is switched on. | BE2 | **Accepted,** pending management confirmation of the periods. |
 | D15 | Outlook invites for appointments | Yes · No | Yes, organised from the receptionist's calendar | BE9 | **Accepted.** |
 
 **Prerequisites from IT (not code):**
-- **The D11 reply-to address:** a reception shared mailbox if one can be created (no licence needed), otherwise the front-desk supervisor's address. It is set in `frontDeskConfig.ts` and in each flow.
+- **Reception shared mailbox (D11).** IT creates it in the Exchange admin center. It needs **no licence**.
+  - **Address:** for example `reception@scpng.gov.pg`, with the display name "SCPNG Reception". None existed on 2026-10-21.
+  - **Each receptionist:** Full Access (to read it in Outlook) and Send As.
+  - **`automation@scpng.gov.pg`:** Send As, so the flows can send from it.
+  - **Where the address goes:** `frontDeskConfig.ts` (the browser notices' reply-to) and each flow (the sender).
 - **No new account (D12).** The flows run under the existing `automation@scpng.gov.pg` with the P6B.1 safeguards. That account already holds a Business Premium licence, a mailbox and Power Automate.
 
 **Exit gate:** decision table agreed, and the audit has been walked through with the receptionists.
@@ -209,7 +213,7 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 | D8 | P1.7 removes the Check-In QR button and modal. No kiosk page is built. |
 | D9 | P2.4 restricts the lists and library in SharePoint, narrowed by D10. |
 | D10 | P2.4 restricts only the four lists that hold visitor details. P5.16 adds the "Assigned to me" view. P6.5 allows the visitor's name in notices. |
-| D11 | P6.1 sets `replyTo` on every front-desk email. |
+| D11 | P6.1 sets `replyTo` to the reception shared mailbox on every browser notice. The Phase 6B flows send as that mailbox (P6B.1). |
 | D12 | Phase 6B builds every flow under `automation@scpng.gov.pg`, with the P6B.1 safeguards. P2.4 grants it explicit access to the restricted lists. |
 | D13 | P5.14 seeds `FrontDesk_RoutingRules` with these values. P6B.3–P6B.6 read them. |
 | D14 | P6B.7 is built with these periods, and switched on only after management confirms them. |
@@ -759,7 +763,7 @@ A small PR after PR #12, on its own branch.
   - **in-app**, through `addNotification` (`System_Notifications`, `sharePointOpsService.ts:3193`)
   - **email**, through Graph `/me/sendMail`, called from the helper itself. The existing `sendEmailNotification` (`:3229`) cannot set `replyTo` and swallows errors, so it is not used here.
 - **Email details:**
-  - `replyTo` is the D11 address, set in `frontDeskConfig.ts`: the reception shared mailbox, or the front-desk supervisor until one exists.
+  - `replyTo` is the reception shared mailbox (D11), set in `frontDeskConfig.ts`. The email itself still comes from the signed-in receptionist.
   - The HTML uses the SCPNG template builder (`utils/scpngEmailBuilder.ts`).
   - Links are built from `VITE_APP_BASE_URL`, not `window.location.origin` (BE10). The base URL defaults to the production domain, so mail sent from a dev session does not link to localhost.
 - **Result:** the helper returns whether the email was sent. The caller writes the record's "notified" marker only on success (BE3):
@@ -865,17 +869,19 @@ The flows run under the existing `automation@scpng.gov.pg`:
    - Site-member access covers the other front-desk lists and `System_Notifications`.
 4. **Connections and email.**
    - Use the account's SharePoint, Office 365 Outlook and Office 365 Users connections.
-   - Emails use **Send an email (V2)** with **Reply To** set to the D11 address. Staff replies then reach reception, not the `automation@` mailbox.
-   - Subjects start with `[SCPNG Front Desk]`, so staff know what the mail is.
+   - **Sender:** emails use **Send an email from a shared mailbox (V2)**, with the reception shared mailbox (D11) as the mailbox address. Staff see "SCPNG Reception" as the sender, and their replies land in the shared inbox that every receptionist can open.
+   - **Permission:** `automation@` needs Send As on that mailbox (a D11 prerequisite). Without it, the action fails, and the flow's failure branch reports it.
+   - **Subjects** start with `[SCPNG Front Desk]`, so staff know what the mail is.
 5. **Don't test as `automation@`.**
    - Everyday intranet testing and the outstanding Phase 2 non-admin check use an ordinary staff account, for example a receptionist's.
    - Testing as a Global Administrator hides permission bugs.
 6. **Hardening (the tenant admin's call; no new licence needed).**
    - Business Premium includes Entra ID P1, so a Conditional Access policy can limit `automation@` sign-ins to the office network or trusted devices.
-   - Review which of its 48 roles it actually needs.
+   - Review which of its 48 roles it actually needs. Removing all of them is the cleanest fix: four other Global Administrators remain, so admin work can move to a named admin account. After a removal, check that its existing flows still run.
    - These are tenant security settings, made by the tenant admin, not part of the code work.
 7. **Check.**
-   - A test flow reads `FrontDesk_Visitors` (restricted) and sends one email to the developer, with the D11 Reply-To.
+   - A test flow reads `FrontDesk_Visitors` (restricted) and sends one email to the developer from the reception shared mailbox.
+   - The email shows "SCPNG Reception" as the sender, and a reply to it arrives in the shared inbox.
    - Then delete the test flow.
 
 **Revisit when possible:** move the flows to a dedicated non-admin account, or a service principal inside a solution (Microsoft's recommendation for critical flows), once one can be created. Azure Functions with a managed identity is the alternative if SCPNG gets an Azure subscription.

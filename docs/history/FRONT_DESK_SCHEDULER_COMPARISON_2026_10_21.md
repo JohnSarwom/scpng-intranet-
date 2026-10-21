@@ -192,7 +192,10 @@ The product owner chose **`automation@scpng.gov.pg` with safeguards**.
 1. No new co-owners beyond the people who already hold the `automation@` credentials.
 2. Credentials and Authenticator held by two people in IT; flows exported to the repo.
 3. Explicit edit access to the four restricted lists (P2.4).
-4. Emails use Reply To the D11 address. That is a reception shared mailbox if one can be created (no licence needed; none existed on 2026-10-21), otherwise the front-desk supervisor.
+4. Emails are sent **as a reception shared mailbox**, for example `reception@scpng.gov.pg` ("SCPNG Reception"), which needs no licence:
+   - `automation@` holds Send As on it.
+   - Receptionists hold Full Access and Send As, so replies land in an inbox they all see.
+   - The intranet's own browser notices reply-to the same mailbox.
 5. Everyday intranet testing uses an ordinary staff account, not `automation@`.
 6. Optional, the tenant admin's call: Conditional Access for `automation@` sign-ins, and a review of its 48 roles.
 
