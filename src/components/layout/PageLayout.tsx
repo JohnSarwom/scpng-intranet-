@@ -83,10 +83,7 @@ const PageLayout: React.FC<PageLayoutProps> = ({ children, hideNavAndFooter = fa
   const handleSignOut = async () => {
     logger.info('PageLayout: Initiating MSAL sign out');
     try {
-      await instance.logoutPopup();
-      logger.success('PageLayout: MSAL User signed out successfully');
-      navigate('/login', { replace: true });
-      toast({ title: "Signed Out", description: "You have been signed out successfully." });
+      await instance.logoutRedirect({ postLogoutRedirectUri: window.location.origin + '/login' });
     } catch (error) {
       logger.error('PageLayout: Error during MSAL sign out', error);
       toast({ title: "Sign Out Error", description: "An error occurred during sign out.", variant: "destructive" });
