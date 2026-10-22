@@ -36,3 +36,11 @@ Each decision must be made by its actual appointed account. Do not impersonate r
 ## Release gate
 
 Offline checks cover workflow/routing policy, transport replay handling, shared division labels, request coalescing, navigation, native definitions, staff-roster regressions, the existing strategy suite, the TypeScript baseline and production build. They do not replace the account-based tests above or a realistic concurrency check. Keep the repository release as a draft until the staff pilot and privacy results are recorded. A preview/build is not a live deployment or a go-live approval.
+
+## Observed pilot results — 22 October 2026
+
+- John's submission `3297d1d9-28c8-4d30-8ff6-223751ffe1b3` reached `division_review`, revision 4. Request `38fb80af-42e8-47f1-aebf-2515576691c3` succeeded even though the browser timed out. The refreshed workspace shows Pending Divisional Approval. Do not replay that submission.
+- The parallel-read update was imported as Update into existing Processor `4c0110ba-7f15-4c8c-b1db-4f9a76da77ed`, using Automation's existing connections. It remained Off during import and was re-enabled after checking the empty request queue. No approval assignments, permissions or notification settings changed in this deployment.
+- Post-update read-only run `08584089770769842372699384454CU22` succeeded in 1 minute 26 seconds. John's signed-in workspace was observed loaded within 101 seconds after a fresh reload; this is an observed upper bound including scheduling and browser polling, not an isolated write-latency measurement. The queue was empty afterward and Processor remained On for the pilot.
+- Performance acceptance remains open. This test does not establish a material speed improvement, instant saves, mutation latency, ordinary-staff privacy or multi-user capacity. The scheduled queue still adds waiting time. Keep trigger/request writes serialized while investigating the remaining delay; do not disable concurrency protection merely to clear the service's throttling suggestion.
+- Sam, Rosie and Joy's actual-account approval/publication sequence and the ordinary-staff privacy checks remain pending.
