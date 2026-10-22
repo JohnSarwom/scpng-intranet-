@@ -2,6 +2,16 @@
 
 The newsletter backend is **Power Automate + SharePoint**. The former external function endpoint, function deployment entry, API-key header and newsletter API-token configuration have been removed. Shared TypeScript files under `src/lib/newsletters/` are UI validation and offline regression references; they are not a hosted backend.
 
+## Detailed documentation and handover
+
+The 22 October 2026 documentation pack records what was implemented, the live evidence and the work still pending:
+
+- [Implementation record](implementation-record-2026-10-22.md)
+- [Operational handover](operational-handover-2026-10-22.md)
+- [Performance optimization plan](performance-optimization-plan-2026-10-22.md)
+
+The pilot submission is pending divisional approval. The parallel-read backend update is installed, but the observed 101-second workspace load does not establish a material speed improvement. Performance and full staff-account acceptance remain open.
+
 ## Application paths
 
 - `/news/newsletters`: published newsletter library and archive.
@@ -12,7 +22,7 @@ The newsletter backend is **Power Automate + SharePoint**. The former external f
 ## How requests work
 
 1. The signed-in intranet uses its existing Microsoft Graph connection to create a request in **Newsletter_Requests** on the main intranet site. SharePoint records the real creator. Large inputs are split into creator-owned **Newsletter_RequestParts** rows before the request is queued.
-2. The native **SCPNG Newsletters - Processor** flow drains up to 50 queued requests each minute, sequentially. It resolves the request's SharePoint Author through Office 365 Users, matches the synchronized staff roster, and checks protected routing. Browser-supplied identities, admin flags and staff rosters do not grant authority.
+2. The native **SCPNG Newsletters - Processor** flow is configured for a one-minute schedule and drains up to 50 queued requests per available run, sequentially. Actual dispatch can be delayed by active runs, queue backlog, licensing or throttling. It resolves the request's SharePoint Author through Office 365 Users, matches the synchronized staff roster, and checks protected routing. Browser-supplied identities, admin flags and staff rosters do not grant authority.
 3. Every state change, approval, publication and routing edit is validated by native Power Automate actions and expressions. A private request ledger reserves each request before execution. Reusing its key does not execute a decision twice. SharePoint ETags protect authoritative record updates.
 4. The flow writes a creator-readable result to the request. Large results and downloads use a restricted temporary file with read access granted only to that requester. The frontend polls for a confirmed result for up to three minutes. A timeout is an **unknown outcome**, not permission to replay a mutation.
 5. Scheduled publication, overdue reminders and staff email run in the same serialized processor. The maintenance flow recycles expired delivery files and old completed/orphan input parts; it preserves workflow records, version files, routing audit and the idempotency ledger.
