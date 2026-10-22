@@ -73,6 +73,25 @@ def chain(actions):
         if previous and not value.get('runAfter'): value['runAfter'] = {previous: ['Succeeded']}
         previous = name
     return actions
+def parallel_reads(actions, names, after):
+    """Fan out independent GETs, then join before validation or shared state changes."""
+    names = list(names)
+    prefix = {}
+    if after in actions:
+        for name, step in actions.items():
+            prefix[name] = step
+            if name == after: break
+    reads = {}
+    for name in names:
+        step = actions[name]
+        if name in prefix or step['type'] != 'OpenApiConnection' or step['inputs']['parameters'].get('parameters/method', 'GET') != 'GET':
+            raise ValueError('Parallel groups must contain independent reads after their prerequisite.')
+        step['runAfter'] = {after: ['Succeeded']}
+        reads[name] = step
+    tail = {name: step for name, step in actions.items() if name not in prefix and name not in reads}
+    if not reads or not tail: raise ValueError('Parallel reads require a validation barrier.')
+    next(iter(tail.values()))['runAfter'] = {name: ['Succeeded'] for name in reads}
+    return {**prefix, **reads, **tail}
 def condition(test, yes, no=None): return {'type': 'If', 'expression': ex(test), 'actions': chain(yes), 'else': {'actions': chain(no or {})}, 'runAfter': {}}
 def loop(source, actions): return {'type': 'Foreach', 'foreach': ex(source), 'actions': chain(actions), 'runAfter': {}, 'runtimeConfiguration': {'concurrency': {'repetitions': 1}}}
 def guard(test, message):
@@ -414,7 +433,7 @@ def process_request():
     actions['Refresh_request_routing_value'] = compose(f"if(empty(body('Read_routing')?['d']?['results']),{v('Routing')},setProperty(json(first(body('Read_routing')?['d']?['results'])?['Payload']),'staff',{v('Routing')}?['staff']))")
     actions['Refresh_request_routing'] = setvar('Routing',out('Refresh_request_routing_value'))
     actions['Execute_once'] = condition("empty(body('Find_request_ledger')?['d']?['results'])",fresh,replay)
-    return actions
+    return parallel_reads(actions, ['Find_request_ledger', 'Read_runtime_configuration', 'Read_routing'], 'Trusted_request')
 
 
 def write_queue(status, response=None, error=None):
@@ -503,7 +522,9 @@ def processor(settings):
     # Output can be arrays, objects, null: an object variable cannot hold arrays. Keep JSON as an untyped Compose-backed string instead (see normalize_variables).
     actions={'Deployment_settings':action('Compose',settings),'Apply_changes':action('Compose',False),'Initialize_state':action('InitializeVariable',{'variables':variables}),
              'Validate_deployment':compose("if(and(equals(outputs('Apply_changes'),true),startsWith(outputs('Deployment_settings')?['privateSite'],'https://')),true,div(1,0))")}
-    scope={**preflight(),'Read_queued_requests':http(endpoint('Newsletter_Requests',"/items?$filter=Status eq 'Queued'&$orderby=Id asc&$top=50"),site=MAIN)}
+    checks = preflight()
+    reads = [name for name, step in checks.items() if step['type'] == 'OpenApiConnection']
+    scope={**parallel_reads(checks, reads, 'Validate_deployment'),'Read_queued_requests':http(endpoint('Newsletter_Requests',"/items?$filter=Status eq 'Queued'&$orderby=Id asc&$top=50"),site=MAIN)}
     attempt={'type':'Scope','actions':chain(process_request()),'runAfter':{}}
     catch={'type':'Scope','actions':chain({'Record_failed_request':write_queue("@if(variables('MutationStarted'),'Uncertain','Failed')",error="if(empty(variables('Error')),'Power Automate could not confirm this request. Contact IT before retrying.',variables('Error'))")}),'runAfter':{'Request_try':['Failed','TimedOut']}}
     scope['Drain_requests']=loop(body('Read_queued_requests') + "?['d']?['results']",{'Request_try':attempt,'Request_failure':catch})

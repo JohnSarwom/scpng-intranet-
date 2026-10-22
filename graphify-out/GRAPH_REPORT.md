@@ -1,11 +1,11 @@
 # Graph Report - .  (2026-10-22)
 
 ## Corpus Check
-- 703 files · ~1,954,832 words
+- 703 files · ~1,959,509 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3289 nodes · 4374 edges · 697 communities detected
+- 3296 nodes · 4381 edges · 699 communities detected
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS
 - Token cost: 0 input · 0 output
 
@@ -707,6 +707,8 @@
 - [[_COMMUNITY_Community 694|Community 694]]
 - [[_COMMUNITY_Community 695|Community 695]]
 - [[_COMMUNITY_Community 696|Community 696]]
+- [[_COMMUNITY_Community 697|Community 697]]
+- [[_COMMUNITY_Community 698|Community 698]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `SharePointOpsService` - 121 edges
@@ -715,10 +717,10 @@
 4. `request_actions()` - 34 edges
 5. `WorkPlanActivationService` - 31 edges
 6. `v()` - 30 edges
-7. `AssetsSharePointService` - 27 edges
-8. `NativeDefinitions` - 26 edges
-9. `StrategyService` - 26 edges
-10. `q()` - 25 edges
+7. `NativeDefinitions` - 29 edges
+8. `AssetsSharePointService` - 27 edges
+9. `process_request()` - 26 edges
+10. `StrategyService` - 26 edges
 
 ## Surprising Connections (you probably didn't know these)
 - None detected - all connections are within the same source files.
@@ -734,8 +736,8 @@ Cohesion: 0.04
 Nodes (1): SharePointListSetupService
 
 ### Community 2 - "Community 2"
-Cohesion: 0.18
-Nodes (69): action(), add_event(), appointment_validation(), array_projection(), assign_stage(), body(), can_read(), canonical() (+61 more)
+Cohesion: 0.17
+Nodes (71): action(), add_event(), appointment_validation(), array_projection(), assign_stage(), body(), can_read(), canonical() (+63 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.09
@@ -746,7 +748,7 @@ Cohesion: 0.04
 Nodes (2): handleITRequestSubmit(), loadRecentITRequests()
 
 ### Community 5 - "Community 5"
-Cohesion: 0.08
+Cohesion: 0.07
 Nodes (7): actions(), evaluate(), NativeDefinitions, NativePolicy, Offline native-definition checks, including evaluation of emitted WDL policy., setUpClass(), WDL
 
 ### Community 6 - "Community 6"
@@ -1506,8 +1508,8 @@ Cohesion: 0.5
 Nodes (0):
 
 ### Community 195 - "Community 195"
-Cohesion: 0.67
-Nodes (2): getStatusColor(), getStatusLabel()
+Cohesion: 0.5
+Nodes (0):
 
 ### Community 196 - "Community 196"
 Cohesion: 0.5
@@ -1518,8 +1520,8 @@ Cohesion: 0.5
 Nodes (0):
 
 ### Community 198 - "Community 198"
-Cohesion: 0.5
-Nodes (0):
+Cohesion: 0.67
+Nodes (2): getStatusColor(), getStatusLabel()
 
 ### Community 199 - "Community 199"
 Cohesion: 0.67
@@ -3513,8 +3515,16 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0):
 
+### Community 697 - "Community 697"
+Cohesion: 1.0
+Nodes (1): Power Automate variables are typed. Store polymorphic Output as JSON text.
+
+### Community 698 - "Community 698"
+Cohesion: 1.0
+Nodes (1): WDL action names are global; bind reusable branch fragments lexically.
+
 ## Knowledge Gaps
-- **7 isolated node(s):** `Inject cross-layer edges into graphify graph. This script ONLY modifies graphify`, `Regenerate all graphify outputs (HTML, Obsidian vault, wiki, GRAPH_REPORT). This`, `Native Power Automate + SharePoint newsletter backend; no external runtime.  B`, `Power Automate variables are typed. Store polymorphic Output as JSON text.`, `WDL action names are global; bind reusable branch fragments lexically.` (+2 more)
+- **10 isolated node(s):** `Inject cross-layer edges into graphify graph. This script ONLY modifies graphify`, `Regenerate all graphify outputs (HTML, Obsidian vault, wiki, GRAPH_REPORT). This`, `Native Power Automate + SharePoint newsletter backend; no external runtime.  B`, `Fan out independent GETs, then join before validation or shared state changes.`, `Power Automate variables are typed. Store polymorphic Output as JSON text.` (+5 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 289`** (2 nodes): `consolidate.py`, `update_templates()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -4332,12 +4342,16 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 696`** (1 nodes): `read_docx.ps1`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 697`** (1 nodes): `Power Automate variables are typed. Store polymorphic Output as JSON text.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 698`** (1 nodes): `WDL action names are global; bind reusable branch fragments lexically.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **What connects `Inject cross-layer edges into graphify graph. This script ONLY modifies graphify`, `Regenerate all graphify outputs (HTML, Obsidian vault, wiki, GRAPH_REPORT). This`, `Native Power Automate + SharePoint newsletter backend; no external runtime.  B` to the rest of the system?**
-  _7 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _10 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.03 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
@@ -4347,6 +4361,6 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Community 4` be split into smaller, more focused modules?**
   _Cohesion score 0.04 - nodes in this community are weakly interconnected._
 - **Should `Community 5` be split into smaller, more focused modules?**
-  _Cohesion score 0.08 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07 - nodes in this community are weakly interconnected._
 - **Should `Community 6` be split into smaller, more focused modules?**
   _Cohesion score 0.08 - nodes in this community are weakly interconnected._

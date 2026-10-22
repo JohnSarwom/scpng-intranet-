@@ -82,6 +82,28 @@ def actions(definition):
 
 
 class NativeDefinitions(unittest.TestCase):
+    def test_independent_preflight_reads_join_before_any_validation(self):
+        flow = native.processor({'mainSite':'https://example.sharepoint.com/sites/intranet','privateSite':'https://example.sharepoint.com/sites/intranet'})
+        steps = flow['actions']
+        activation = next(name for name in steps if name.endswith('_Validate_deployment'))
+        reads = {name: step for name, step in steps.items() if step['runAfter'] == {activation:['Succeeded']}}
+        self.assertEqual(len(reads),17)
+        for name, step in reads.items():
+            self.assertEqual(step['type'],'OpenApiConnection',name)
+            self.assertEqual(step['inputs']['parameters']['parameters/method'],'GET',name)
+            self.assertNotIn("variables('",json.dumps(step['inputs']),name)
+        barrier = next(step for name, step in steps.items() if name.endswith('_Restricted_Newsletter_Configuration'))
+        self.assertEqual(barrier['runAfter'],{name:['Succeeded'] for name in reads})
+    def test_request_reads_join_after_trusted_identity_before_configuration(self):
+        steps = native.process_request()
+        reads = ['Find_request_ledger','Read_runtime_configuration','Read_routing']
+        for name in reads:
+            self.assertEqual(steps[name]['runAfter'],{'Trusted_request':['Succeeded']})
+        self.assertEqual(steps['Refresh_runtime_configuration']['runAfter'],{name:['Succeeded'] for name in reads})
+        self.assertLess(list(steps).index('Request_processing_is_enabled'),list(steps).index('Execute_once'))
+    def test_parallel_groups_reject_writes(self):
+        with self.assertRaises(ValueError):
+            native.parallel_reads({'Write':native.http('_api/web','POST'),'Validate':native.compose('true')},['Write'],'Ready')
     def test_confirmed_unit_parent_mappings_and_unresolved_organization(self):
         for raw, expected in [('Finance Unit','Corporate Services Division'),('Supervision Unit','Licensing, Market & Supervision Division'),('Legal Advisory Division','Legal Services Division')]:
             self.assertEqual(evaluate(native.canonical(native.q(raw))),expected)
