@@ -58,6 +58,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { SharePointExplorer } from '@/components/admin/SharePointExplorer';
+import FrontDeskSetupCard from '@/components/frontDesk/FrontDeskSetupCard';
 import { FeedbackSharePointService } from '@/services/feedbackService';
 import { deleteAllPriceHistory } from '@/services/marketDataSharePointService';
 import { generateAllMockData, StaffMember } from '@/data/mockPerformanceDataGenerator';
@@ -3338,6 +3339,8 @@ const TestGround = () => {
                         </div>
                     </CardContent>
                 </Card>
+
+                <FrontDeskSetupCard />
 
                 {/* Operations Lists Setup Card */}
                 <Card className="border-2 border-emerald-500/20">

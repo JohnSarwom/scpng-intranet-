@@ -1,12 +1,20 @@
 import { endOfDay, format, startOfDay } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
+import {
+  INQUIRY_CATEGORIES,
+  INQUIRY_STATUSES,
+  PRIORITIES,
+  type InquiryStatus,
+  type Priority,
+} from '@/services/frontDesk/frontDeskConfig';
 
-export const inquiryCategories = ['Facilities', 'IT Support', 'Supplies', 'Parking', 'Food Service', 'HR', 'General'];
-export const inquiryStatuses = ['Open', 'In Progress', 'Resolved'] as const;
-export const inquiryPriorities = ['High', 'Medium', 'Low'] as const;
+// The SharePoint choice values are the source of truth (frontDeskConfig).
+export const inquiryCategories: string[] = [...INQUIRY_CATEGORIES];
+export const inquiryStatuses = INQUIRY_STATUSES;
+export const inquiryPriorities = PRIORITIES;
 
-export type InquiryStatus = typeof inquiryStatuses[number];
-export type InquiryPriority = typeof inquiryPriorities[number];
+export type { InquiryStatus };
+export type InquiryPriority = Priority;
 
 export interface InquiryAssignee {
   name: string;

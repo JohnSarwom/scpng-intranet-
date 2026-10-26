@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DateRangePicker from '@/components/ui/DateRangePicker';
 import { useStaffMembers } from '@/hooks/useStaffMembers';
+import { useFrontDeskActor } from '@/hooks/frontDesk/useFrontDeskActor';
 
 // Define the shape of a comment
 export interface TicketComment {
@@ -105,6 +106,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   const [comments, setComments] = useState<Comment[]>([]); // State for comments
   const [newCommentText, setNewCommentText] = useState(''); // State for new comment input
   const { staffMembers } = useStaffMembers();
+  const actor = useFrontDeskActor();
   const [assigneeEmail, setAssigneeEmail] = useState(UNASSIGNED);
 
   useEffect(() => {
@@ -165,11 +167,10 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
   // Function to handle adding a new comment
   const handleAddComment = () => {
     if (!newCommentText.trim()) return;
-    const currentUser = { name: "Current User", avatarFallback: "CU" }; 
     const newComment: Comment = {
       id: `comment-${Date.now()}`,
-      authorName: currentUser.name,
-      authorAvatarFallback: currentUser.avatarFallback,
+      authorName: actor.name,
+      authorAvatarFallback: actor.initials,
       timestamp: new Date(),
       text: newCommentText,
     };
@@ -316,7 +317,7 @@ const TicketDialog: React.FC<TicketDialogProps> = ({
             </ScrollArea>
             <div className="flex gap-2 items-start mb-4">
               <Avatar className="h-9 w-9 mt-1">
-                  <AvatarFallback>CU</AvatarFallback>
+                  <AvatarFallback>{actor.initials}</AvatarFallback>
               </Avatar>
               <Textarea
                 placeholder="Add a comment..."
