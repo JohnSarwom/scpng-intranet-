@@ -498,6 +498,40 @@ A small PR after PR #12, on its own branch.
 - Run **Create / repair** on the live site. It only adds what is missing.
 - **Tests:** the setup test covers the new list and the new indexes.
 
+#### Follow-up status (2026-10-26)
+
+PR #12 was squash-merged into `main` as `b8718ed`. P2.8 and P2.9 are coded on `feat/front-desk-phase2-followup`, branched from it.
+
+**P2.8:**
+- `updateFields` and `deleteItem` take an optional eTag and send it as `If-Match`.
+- A `412` becomes `FrontDeskConflictError`, and `frontDeskFailed` shows the reload message for it.
+- `GraphListItem` carries `eTag`.
+- The fake Graph client records request headers.
+
+**P2.9:**
+- `FRONT_DESK_SCHEMAS` has every Appendix A **BE** column.
+- `FrontDesk_RoutingRules` is the eighth list.
+- New indexes on MailPackages, Inquiries and Tickets `Status`, and Tickets `DueDate`.
+- An empty `ParentKind` is read as Ticket. Graph did not keep a column default, so the default was dropped.
+
+**Checks:**
+- **Tests:** 3 new Vitest tests (18 in the Front Desk folders). The full suite fails only on the two baseline CSV files; `node --test` passes 164 of 164.
+- **Types:** the same 235 errors as `main`.
+- **Lint:** clean on the Front Desk folders.
+
+**Live site (2026-10-26):**
+- With the product owner's go-ahead, the branch ran on `localhost:8080`, signed in as `jsarwom@`.
+- **How it was run:** TestGround is limited to the intranet's admin and super_admin roles, and `jsarwom@` holds "manager". So the same `ensureFrontDeskLists` code was run from the page's developer console instead, under the user's own SharePoint permissions.
+- **Create / repair:**
+  - Six lists were **updated** with every new column.
+  - The new indexes are on: MailPackages `Status`, Inquiries `Status`, Tickets `Status` and `DueDate`.
+  - `FrontDesk_RoutingRules` was **created**.
+  - TicketGroups and the photo library needed nothing.
+- **Check** then reported all nine as **Ready**.
+- **Indexes confirmed through Graph:** Visitors `VisitDate`, `Status`; Appointments `StartDateTime`; MailPackages `ReceivedAt`, `Status`; Inquiries `Status`, `ReportedAt`; Tickets `Status`, `DueDate`; TicketComments `TicketId`.
+
+**Note for later phases:** running TestGround's setup cards needs an intranet admin role. Either give `jsarwom@` admin in Admin → Role Management, or run the cards as an admin.
+
 ---
 
 ## Phase 3 — Visitor Log (replace the paper sheet)
@@ -1082,7 +1116,7 @@ Rows whose Finding starts with **BE** come from the back-end audit. P2.9 adds th
 | TicketId | text, **indexed** | Id of the parent ticket or inquiry |
 | Body | text, multi-line | |
 | AuthorEmail / AuthorName | text | From `useFrontDeskActor` (G3) |
-| ParentKind | choice: Ticket, Inquiry (default Ticket) | Which list `TicketId` points to (BE7) |
+| ParentKind | choice: Ticket, Inquiry | Which list `TicketId` points to (BE7). Empty is read as Ticket. |
 | IsSystem | boolean | Written by the app on reassignment or status change (BE7) |
 
 ### FrontDesk_RoutingRules (BE6, D13)

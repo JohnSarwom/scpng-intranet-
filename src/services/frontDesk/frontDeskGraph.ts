@@ -1,4 +1,4 @@
-import type { Client } from '@microsoft/microsoft-graph-client';
+import type { Client, GraphRequest } from '@microsoft/microsoft-graph-client';
 import { FRONT_DESK_SITE_PATH } from './frontDeskConfig';
 
 type Fields = Record<string, unknown>;
@@ -10,6 +10,8 @@ export interface GraphPage<T> {
 
 export interface GraphListItem {
   id: string;
+  /** SharePoint's version tag. Pass it back to `updateFields` / `deleteItem` so a stale edit is refused. */
+  eTag?: string;
   fields?: Fields;
 }
 
@@ -19,6 +21,20 @@ export class FrontDeskListMissingError extends Error {
     this.name = 'FrontDeskListMissingError';
   }
 }
+
+/** The item changed after it was read (HTTP 412). The caller reloads it before the user tries again. */
+export class FrontDeskConflictError extends Error {
+  constructor(public readonly listName: string, public readonly itemId: string) {
+    super(`${listName} item ${itemId} was changed by someone else.`);
+    this.name = 'FrontDeskConflictError';
+  }
+}
+
+const isConflict = (error: unknown) => {
+  const e = error as { statusCode?: number; status?: number; code?: string } | null;
+  const code = String(e?.code || '').toLowerCase();
+  return e?.statusCode === 412 || e?.status === 412 || code === 'preconditionfailed' || code === 'etagmismatch';
+};
 
 // Shared across instances so every hook resolves the site and list IDs once per session.
 let cachedSiteId = '';
@@ -84,7 +100,7 @@ export class FrontDeskGraph {
     return `/sites/${siteId}/lists/${listId}`;
   }
 
-  /** `query` is appended to the items URL, e.g. `&$filter=fields/Status eq 'On Site'`. */
+  /** `query` is appended to the items URL, e.g. `&$filter=fields/Status eq 'On Site'`. Items carry their eTag. */
   async getItems(listName: string, query = ''): Promise<GraphListItem[]> {
     const path = await this.listPath(listName);
     return this.collectPages<GraphListItem>(`${path}/items?$expand=fields&$top=200${query}`);
@@ -95,13 +111,31 @@ export class FrontDeskGraph {
     return await this.client.api(`${path}/items`).post({ fields }) as GraphListItem;
   }
 
-  async updateFields(listName: string, itemId: string, fields: Fields): Promise<Fields> {
+  /** With `eTag`, SharePoint refuses the update if the item changed since it was read (FrontDeskConflictError). */
+  async updateFields(listName: string, itemId: string, fields: Fields, eTag?: string): Promise<Fields> {
     const path = await this.listPath(listName);
-    return await this.client.api(`${path}/items/${itemId}/fields`).patch(fields) as Fields;
+    return this.writeWithRevision(listName, itemId, `${path}/items/${itemId}/fields`, eTag,
+      request => request.patch(fields) as Promise<Fields>);
   }
 
-  async deleteItem(listName: string, itemId: string): Promise<void> {
+  async deleteItem(listName: string, itemId: string, eTag?: string): Promise<void> {
     const path = await this.listPath(listName);
-    await this.client.api(`${path}/items/${itemId}`).delete();
+    await this.writeWithRevision(listName, itemId, `${path}/items/${itemId}`, eTag, request => request.delete());
+  }
+
+  private async writeWithRevision<T>(
+    listName: string,
+    itemId: string,
+    url: string,
+    eTag: string | undefined,
+    write: (request: GraphRequest) => Promise<T>,
+  ): Promise<T> {
+    const request = this.client.api(url);
+    try {
+      return await write(eTag ? request.header('If-Match', eTag) : request);
+    } catch (error) {
+      if (isConflict(error)) throw new FrontDeskConflictError(listName, itemId);
+      throw error;
+    }
   }
 }
