@@ -69,7 +69,7 @@ export const FrontDeskSetupCard: React.FC = () => {
           Front Desk Lists Setup
         </CardTitle>
         <CardDescription>
-          The seven SharePoint lists and the visitor photo library behind the Front Desk module.
+          The eight SharePoint lists and the visitor photo library behind the Front Desk module.
           Check is read-only. Create / repair only adds what is missing, so it is safe to run again.
         </CardDescription>
       </CardHeader>
@@ -98,8 +98,9 @@ export const FrontDeskSetupCard: React.FC = () => {
         )}
 
         <p className="text-xs text-muted-foreground">
-          After creating them, restrict the FrontDesk_ lists and the photo library to the front desk group and
-          admins in SharePoint (plan decision D9). Hiding buttons in the app does not stop site members opening the lists.
+          After creating them, restrict FrontDesk_Visitors, FrontDesk_Appointments, FrontDesk_MailPackages and the
+          photo library to the front desk group, admins and automation@ in SharePoint (plan decisions D10 and D12).
+          Hiding buttons in the app does not stop site members opening the lists.
         </p>
       </CardContent>
     </Card>

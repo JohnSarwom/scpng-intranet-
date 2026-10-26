@@ -1,6 +1,7 @@
 import type { Client } from '@microsoft/microsoft-graph-client';
 import {
   APPOINTMENT_STATUSES,
+  COMMENT_PARENT_KINDS,
   FRONT_DESK_LISTS,
   FRONT_DESK_PHOTO_LIBRARY,
   INQUIRY_CATEGORIES,
@@ -44,6 +45,15 @@ const required = { required: true };
 const indexed = { indexed: true };
 const requiredIndexed = { required: true, indexed: true };
 
+/** Who assigned an inquiry or ticket, when, whether it was acknowledged, and who was last notified (BE3, BE7). */
+const assignmentTrail = (): FrontDeskColumn[] => [
+  moment('AssignedAt'),
+  text('AssignedByEmail'),
+  moment('AcknowledgedAt'),
+  moment('AssigneeNotifiedAt'),
+  text('NotifiedAssigneeEmail'),
+];
+
 /** Appendix A of docs/features/front-desk-execution-plan.md. Every list also has SharePoint's Title column. */
 export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
   {
@@ -69,6 +79,7 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
       text('AppointmentId'),
       text('LoggedByEmail'),
       text('SignedOutByEmail'),
+      moment('HostNotifiedAt'),
     ],
   },
   {
@@ -84,6 +95,7 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
       choice('Status', APPOINTMENT_STATUSES, required),
       note('Description'),
       text('CreatedByEmail'),
+      text('OutlookEventId'),
     ],
   },
   {
@@ -98,12 +110,14 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
       text('RecipientName', required),
       text('RecipientUnit'),
       moment('ReceivedAt', requiredIndexed),
-      choice('Status', MAIL_STATUSES, required),
+      choice('Status', MAIL_STATUSES, requiredIndexed),
       moment('CollectedAt'),
       text('CollectedBy'),
       note('Notes'),
       text('LoggedByEmail'),
       moment('NotifiedAt'),
+      number('ReminderCount'),
+      moment('LastRemindedAt'),
     ],
   },
   {
@@ -113,14 +127,16 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
       note('Description'),
       choice('Category', INQUIRY_CATEGORIES, required),
       choice('Priority', PRIORITIES, required),
-      choice('Status', INQUIRY_STATUSES, required),
+      choice('Status', INQUIRY_STATUSES, requiredIndexed),
       text('AssigneeEmail'),
       text('AssigneeName'),
       text('ReportedBy'),
+      text('ReportedByEmail'),
       moment('ReportedAt', requiredIndexed),
       moment('ResolvedAt'),
       text('EscalatedTicketId'),
       text('LoggedByEmail'),
+      ...assignmentTrail(),
     ],
   },
   {
@@ -129,17 +145,18 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
     columns: [
       note('Description'),
       choice('Priority', PRIORITIES, required),
-      choice('Status', TICKET_STATUSES, required),
+      choice('Status', TICKET_STATUSES, requiredIndexed),
       text('GroupId', required),
       number('SortOrder'),
       moment('StartDate'),
-      moment('DueDate'),
+      moment('DueDate', indexed),
       text('AssigneeEmail'),
       text('AssigneeName'),
       yesNo('Completed'),
       moment('CompletedAt'),
       text('SourceInquiryId'),
       text('CreatedByEmail'),
+      ...assignmentTrail(),
     ],
   },
   {
@@ -149,12 +166,30 @@ export const FRONT_DESK_SCHEMAS: FrontDeskListSchema[] = [
   },
   {
     name: FRONT_DESK_LISTS.ticketComments,
-    description: 'Comments on front desk tickets.',
+    description: 'Comments on front desk tickets and inquiries. TicketId is the parent item; ParentKind says which list (empty means Ticket).',
     columns: [
       text('TicketId', requiredIndexed),
       note('Body', required),
       text('AuthorEmail'),
       text('AuthorName'),
+      // Graph does not keep a default on this column, so readers treat an empty ParentKind as 'Ticket'.
+      choice('ParentKind', COMMENT_PARENT_KINDS),
+      yesNo('IsSystem'),
+    ],
+  },
+  {
+    name: FRONT_DESK_LISTS.routingRules,
+    description: 'Front desk routing rules: one row per inquiry category. Title is the category.',
+    columns: [
+      text('DefaultAssigneeEmail'),
+      text('DefaultAssigneeName'),
+      text('BackupAssigneeEmail'),
+      text('BackupAssigneeName'),
+      number('SlaHoursHigh'),
+      number('SlaHoursMedium'),
+      number('SlaHoursLow'),
+      text('EscalationEmail'),
+      yesNo('Active'),
     ],
   },
 ];

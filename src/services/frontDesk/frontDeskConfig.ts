@@ -14,6 +14,7 @@ export const FRONT_DESK_LISTS = {
   tickets: 'FrontDesk_Tickets',
   ticketGroups: 'FrontDesk_TicketGroups',
   ticketComments: 'FrontDesk_TicketComments',
+  routingRules: 'FrontDesk_RoutingRules',
 } as const;
 
 export type FrontDeskListKey = keyof typeof FRONT_DESK_LISTS;
@@ -30,6 +31,8 @@ export const INQUIRY_CATEGORIES = ['Facilities', 'IT Support', 'Supplies', 'Park
 export const INQUIRY_STATUSES = ['Open', 'In Progress', 'Resolved'] as const;
 export const PRIORITIES = ['High', 'Medium', 'Low'] as const;
 export const TICKET_STATUSES = ['New', 'In Progress', 'Done'] as const;
+/** Which list a comment's `TicketId` points to; comments serve both tickets and inquiries (BE7). Empty means Ticket. */
+export const COMMENT_PARENT_KINDS = ['Ticket', 'Inquiry'] as const;
 
 /** Permission resource for the Front Desk page; `read` opens /tickets, the actions below gate controls (plan D5). */
 export const FRONT_DESK_RESOURCE = 'tickets';
@@ -52,3 +55,4 @@ export type InquiryCategory = typeof INQUIRY_CATEGORIES[number];
 export type InquiryStatus = typeof INQUIRY_STATUSES[number];
 export type Priority = typeof PRIORITIES[number];
 export type TicketStatus = typeof TICKET_STATUSES[number];
+export type CommentParentKind = typeof COMMENT_PARENT_KINDS[number];

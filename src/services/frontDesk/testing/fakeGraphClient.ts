@@ -4,6 +4,8 @@ export interface FakeCall {
   method: 'get' | 'post' | 'patch' | 'delete';
   url: string;
   body?: unknown;
+  /** Only present when the request set headers, e.g. `If-Match`. */
+  headers?: Record<string, string>;
 }
 
 /**
@@ -21,12 +23,22 @@ export function fakeGraphClient(
     return value;
   };
   const client = {
-    api: (url: string) => ({
-      get: async () => { calls.push({ method: 'get', url }); return answer(url); },
-      post: async (body: unknown) => { const call = { method: 'post' as const, url, body }; calls.push(call); return onWrite(call); },
-      patch: async (body: unknown) => { const call = { method: 'patch' as const, url, body }; calls.push(call); return onWrite(call); },
-      delete: async () => { const call = { method: 'delete' as const, url }; calls.push(call); return onWrite(call); },
-    }),
+    api: (url: string) => {
+      const headers: Record<string, string> = {};
+      const record = (call: FakeCall) => {
+        if (Object.keys(headers).length) call.headers = { ...headers };
+        calls.push(call);
+        return call;
+      };
+      const request = {
+        header: (name: string, value: string) => { headers[name] = value; return request; },
+        get: async () => { record({ method: 'get', url }); return answer(url); },
+        post: async (body: unknown) => onWrite(record({ method: 'post', url, body })),
+        patch: async (body: unknown) => onWrite(record({ method: 'patch', url, body })),
+        delete: async () => onWrite(record({ method: 'delete', url })),
+      };
+      return request;
+    },
   } as unknown as Client;
   return { client, calls };
 }
