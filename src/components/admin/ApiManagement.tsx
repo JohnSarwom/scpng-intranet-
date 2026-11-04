@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMicrosoftGraph } from "@/hooks/useMicrosoftGraph";
 import { GEMINI_API_KEY_SETTING_NAME, invalidateGeminiApiKey } from "@/hooks/useGeminiApiKey";
+import { GEMINI_CHAT_MODEL } from "@/config/geminiModels";
 import {
     AI_TEXT_ASSIST_MODEL_OPTIONS,
     AI_TEXT_ASSIST_SETTINGS_QUERY_KEY,
@@ -219,9 +220,11 @@ const ApiManagement = () => {
 
     /**
      * Tests the key against the models the intranet actually uses:
-     * the Improve-with-AI model chosen above and gemini-2.5-flash (chat assistants).
+     * the Improve-with-AI model chosen above and GEMINI_CHAT_MODEL (chat assistants).
      * Shows Google's own error message so a bad key, a retired model or a
-     * restricted key can be told apart.
+     * restricted key can be told apart. A 503 or 429 means Google accepted the
+     * key but the model is overloaded or out of quota, so it is reported as a
+     * warning rather than a key failure.
      */
     const handleTestGenAI = async () => {
         setIsTestingGenAI(true);
@@ -232,7 +235,7 @@ const ApiManagement = () => {
             return;
         }
 
-        const modelsToTest = Array.from(new Set([textImproverModel, 'gemini-2.5-flash']));
+        const modelsToTest = Array.from(new Set([textImproverModel, GEMINI_CHAT_MODEL]));
         const testBody = {
             contents: [{ parts: [{ text: "Respond with exactly: Connection OK" }] }],
             generationConfig: { maxOutputTokens: 16, temperature: 0 },
@@ -240,6 +243,7 @@ const ApiManagement = () => {
 
         const results: string[] = [];
         let allOk = true;
+        let anyFailed = false;
 
         for (const model of modelsToTest) {
             try {
@@ -255,7 +259,13 @@ const ApiManagement = () => {
                 if (!res.ok) {
                     allOk = false;
                     const reason = data?.error?.message || res.statusText || 'Unknown error';
-                    results.push(`${model}: HTTP ${res.status} - ${reason}`);
+                    if (res.status === 503 || res.status === 429) {
+                        const busy = res.status === 503 ? 'Google is overloaded, try again shortly' : 'quota used up for now';
+                        results.push(`${model}: key accepted, but ${busy} (HTTP ${res.status} - ${reason})`);
+                    } else {
+                        anyFailed = true;
+                        results.push(`${model}: HTTP ${res.status} - ${reason}`);
+                    }
                     continue;
                 }
                 const text = data?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p?.text ?? '').join('').trim();
@@ -263,19 +273,24 @@ const ApiManagement = () => {
                     results.push(`${model}: OK ("${text}")`);
                 } else if (data?.promptFeedback?.blockReason) {
                     allOk = false;
+                    anyFailed = true;
                     results.push(`${model}: blocked (${data.promptFeedback.blockReason})`);
                 } else {
                     allOk = false;
+                    anyFailed = true;
                     results.push(`${model}: unexpected response shape`);
                 }
             } catch (error: any) {
                 allOk = false;
+                anyFailed = true;
                 results.push(`${model}: ${error?.message || 'network error'}`);
             }
         }
 
         if (allOk) {
             toast.success("Gemini key works", { description: results.join('\n'), duration: 8000 });
+        } else if (!anyFailed) {
+            toast.warning("Gemini key accepted, model busy", { description: results.join('\n'), duration: 15000 });
         } else {
             toast.error("Gemini test failed", { description: results.join('\n'), duration: 15000 });
         }
@@ -383,7 +398,7 @@ const ApiManagement = () => {
                             <Activity className="h-5 w-5 text-primary" />
                             Generative AI Configuration
                         </CardTitle>
-                        <CardDescription>The Gemini key used by the AI assistants and the Improve with AI button. Models are fixed in code (gemini-2.5-flash for chat) and chosen below for text improvement.</CardDescription>
+                        <CardDescription>The Gemini key used by the AI assistants and the Improve with AI button. Models are fixed in code ({GEMINI_CHAT_MODEL} for chat) and chosen below for text improvement.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">

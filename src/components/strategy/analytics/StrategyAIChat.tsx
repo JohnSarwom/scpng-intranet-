@@ -17,6 +17,7 @@ import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3,
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
+import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
 import { STRATEGY_QUICK_QUESTIONS, STRATEGY_QUESTION_LIBRARY } from './strategyQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -110,7 +111,7 @@ const StrategyAIChat: React.FC<StrategyAIChatProps> = ({
 
     const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
     const isConfigLoading = !isKeyReady;
-    const modelName = 'gemini-2.5-flash';
+    const modelName = GEMINI_CHAT_MODEL;
     const archivedEvidence = useArchivedStrategyAI({ audience: 'strategy' });
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);

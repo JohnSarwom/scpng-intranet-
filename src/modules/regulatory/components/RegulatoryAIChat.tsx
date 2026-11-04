@@ -17,6 +17,7 @@ import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3,
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
+import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
 import { REGULATORY_QUICK_QUESTIONS, REGULATORY_QUESTION_LIBRARY } from './regulatoryQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -78,7 +79,7 @@ const RegulatoryAIChat: React.FC<RegulatoryAIChatProps> = ({ cases, stats }) => 
 
     const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
     const isConfigLoading = !isKeyReady;
-    const modelName = 'gemini-2.5-flash';
+    const modelName = GEMINI_CHAT_MODEL;
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);

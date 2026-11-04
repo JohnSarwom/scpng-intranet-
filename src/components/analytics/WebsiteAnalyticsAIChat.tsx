@@ -17,6 +17,7 @@ import { Bot, ChevronDown, ChevronUp, Zap, Trash2, Maximize, Minimize, Database,
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
+import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
 import { ANALYTICS_QUICK_QUESTIONS, OVERVIEW_QUICK_QUESTIONS, ANALYTICS_QUESTION_LIBRARY } from './analyticsQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -157,7 +158,7 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
 
     const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
     const isConfigLoading = !isKeyReady;
-    const modelName = 'gemini-2.5-flash';
+    const modelName = GEMINI_CHAT_MODEL;
 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);

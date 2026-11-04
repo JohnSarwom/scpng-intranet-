@@ -17,6 +17,7 @@ import { Bot, ChevronDown, ChevronUp, Zap, TrendingUp, AlertTriangle, BarChart3,
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
+import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
 import { DIVISION_QUICK_QUESTIONS, DIVISION_QUESTION_LIBRARY } from './divisionQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -87,7 +88,7 @@ const DivisionAIChat: React.FC<DivisionAIChatProps> = ({ data }) => {
 
     const { apiKey, isReady: isKeyReady } = useGeminiApiKey();
     const isConfigLoading = !isKeyReady;
-    const modelName = 'gemini-2.5-flash';
+    const modelName = GEMINI_CHAT_MODEL;
     const archivedEvidence = useArchivedStrategyAI({
         audience: 'division',
         division: data.division?.name || data.userContext.division,
