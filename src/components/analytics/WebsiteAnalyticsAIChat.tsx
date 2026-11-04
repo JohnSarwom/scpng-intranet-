@@ -18,6 +18,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/supabaseClient';
 import { useGeminiApiKey } from '@/hooks/useGeminiApiKey';
 import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
+import { generateGeminiContent } from '@/services/geminiClient';
 import { ANALYTICS_QUICK_QUESTIONS, OVERVIEW_QUICK_QUESTIONS, ANALYTICS_QUESTION_LIBRARY } from './analyticsQuestions';
 import { cn } from '@/lib/utils';
 import {
@@ -442,15 +443,12 @@ const WebsiteAnalyticsAIChat: React.FC<WebsiteAnalyticsAIChatProps> = ({ data, t
             const controller = new AbortController();
             abortControllerRef.current = controller;
 
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${effectiveApiKey.trim()}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: conversationHistory }),
-                    signal: controller.signal,
-                }
-            );
+            const response = await generateGeminiContent({
+                apiKey: effectiveApiKey,
+                model: modelName,
+                body: { contents: conversationHistory },
+                signal: controller.signal,
+            });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));

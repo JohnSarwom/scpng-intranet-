@@ -7,7 +7,8 @@
  * useGeminiApiKey) and an optional AbortSignal.
  */
 
-import { GEMINI_LITE_MODEL } from '@/config/geminiModels';
+import { GEMINI_LITE_FALLBACK_MODELS, GEMINI_LITE_MODEL } from '@/config/geminiModels';
+import { generateGeminiContent } from '@/services/geminiClient';
 
 export type ImproveMode = 'grammar' | 'polish' | 'title' | 'expand';
 
@@ -164,22 +165,21 @@ export const improveText = async (input: string, options: ImproveOptions): Promi
 
   let response: Response;
   try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey.trim()}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal,
-      }
-    );
+    // Retries Google's temporary 503/429s and falls back to another model if needed.
+    response = await generateGeminiContent({
+      apiKey,
+      model,
+      body,
+      fallbackModels: GEMINI_LITE_FALLBACK_MODELS,
+      signal,
+    });
   } catch (err: unknown) {
     if (err instanceof Error && err.name === 'AbortError') throw err;
     throw new AiTextError('network', 'Could not reach the AI service. Check your connection and try again.');
   }
 
-  if (response.status === 429) {
-    throw new AiTextError('rate-limited', 'AI is busy right now. Try again in a moment.', 429);
+  if (response.status === 429 || response.status === 503) {
+    throw new AiTextError('rate-limited', 'AI is busy right now. Try again in a moment.', response.status);
   }
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

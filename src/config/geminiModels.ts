@@ -18,6 +18,15 @@ export const GEMINI_CHAT_MODEL = 'gemini-3.8-flash';
 export const GEMINI_LITE_MODEL = 'gemini-3.5-flash-lite';
 
 /**
+ * Tried in order when the chat model stays overloaded (503) or is unavailable (404).
+ * gemini-3.6-flash is the previous-generation stable Flash; Flash-Lite is the last resort.
+ */
+export const GEMINI_CHAT_FALLBACK_MODELS: readonly string[] = ['gemini-3.6-flash', GEMINI_LITE_MODEL];
+
+/** Tried when the Flash-Lite model is overloaded or unavailable. */
+export const GEMINI_LITE_FALLBACK_MODELS: readonly string[] = [GEMINI_CHAT_MODEL];
+
+/**
  * Model IDs that are retired, closed to new keys, or no longer offered in the
  * admin dropdown, mapped to the model to use instead. Applied to saved settings
  * so an old value never reaches Google.
