@@ -123,6 +123,17 @@ export class FrontDeskGraph {
     await this.writeWithRevision(listName, itemId, `${path}/items/${itemId}`, eTag, request => request.delete());
   }
 
+  /** Uploads a small file (under 4 MB) into a document library folder; missing folders are created. */
+  async uploadFile(libraryName: string, folder: string, fileName: string, content: Blob): Promise<{ id: string; webUrl: string }> {
+    const path = await this.listPath(libraryName);
+    const drive = await this.client.api(`${path}/drive`).get() as { id?: string };
+    if (!drive?.id) throw new Error(`${libraryName} is not a document library.`);
+    const target = [...folder.split('/').filter(Boolean), fileName].map(encodeURIComponent).join('/');
+    return await this.client.api(`/drives/${drive.id}/root:/${target}:/content`)
+      .header('Content-Type', content.type || 'application/octet-stream')
+      .put(content) as { id: string; webUrl: string };
+  }
+
   private async writeWithRevision<T>(
     listName: string,
     itemId: string,
