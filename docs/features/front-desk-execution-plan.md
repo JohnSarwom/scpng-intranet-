@@ -883,12 +883,56 @@ PR #16 (4A) was squash-merged into `main` as `52f9a80`. 4B is coded on `feat/fro
 #### P5.2 Escalate to ticket [G6]
 - An **Escalate to ticket** action creates a `FrontDesk_Tickets` item. It copies title, description, priority and assignee, and sets `SourceInquiryId`.
 - The inquiry then shows *"Escalated → ⟨ticket⟩"*, and the ticket links back to it.
+- **Moved to 5B (2026-11-10).** `FrontDesk_Tickets.GroupId` is required, and the Ticket Manager still shows sample data until P5.5–P5.12. A ticket escalated in 5A would land in no group and be invisible on the board. P5.2 is done in 5B, after the saved groups (P5.6), and puts the ticket in the first group.
 
 #### P5.3 Orphaned components
 - `InquiryBoardLane.tsx` and `InquiryGridView.tsx`: wire them in as Board / Grid toggles only if the receptionists asked for them in D1. Otherwise they are deleted in P8.1.
+- **Done in 5A.** Per D1 they were not wired in. They, and the `InquiryCard.tsx` they used, were deleted, because they depended on the old in-memory inquiry type.
 
 #### P5.4 Remove sample inquiries [M8]
 - Delete `initialInquiries`.
+
+#### Phase 5A status (2026-11-10)
+
+PR #17 (4B) was squash-merged into `main` as `f8a7c39`. 5A is coded on `feat/front-desk-inquiries`, branched from it, and not yet committed.
+
+**Built:**
+
+| Task | Files |
+|---|---|
+| P5.1 | `services/frontDesk/inquiryRules.ts` (pure rules), `inquiriesService.ts`, `hooks/frontDesk/useInquiries.ts` |
+| P1.4 dialog, saved | `components/frontDesk/inquiries/InquiryDialog.tsx` (moved from `ticketing/`), `inquiryDisplay.ts` |
+| P5.3, P5.4 | `GeneralInquiries.tsx` rewritten, 661 → 396 lines, with no sample data. Removed: `InquiryCard`, `InquiryBoardLane`, `InquiryGridView`, `inquiryOptions` (+ test) |
+
+**What each task does:**
+- **Reading (P5.1):**
+  - Without a date filter, the screen shows every open inquiry, however old, plus the last 30 days of resolved ones. Open inquiries are read with one indexed `Status eq` query per status, and the 30 days with the indexed `ReportedAt`.
+  - With a date filter, it shows only inquiries reported on those PNG days, whatever their status.
+  - It refreshes every 30 seconds. Status tabs show counts.
+- **Saving (P5.1):**
+  - `ReportedAt` is stored as UTC, entered as a PNG date and time.
+  - `ResolvedAt` is stamped when an inquiry becomes Resolved, kept while it stays Resolved, and cleared when it is reopened.
+  - `LoggedByEmail` records who logged it.
+  - Every save, including the inline category, status and assignee menus, sends the eTag. A save over a newer change is refused and the screen reloads.
+- **Assignment trail (field half of P5.15, done early):** a new or changed assignee stamps `AssignedAt` and `AssignedByEmail` and clears `AcknowledgedAt`. Unassigning clears all three. The system comments, acknowledgement and `ReportedByEmail` stay in 5C.
+- **Filters:** the assignee filter lists only the people assigned in the current view, not the whole directory.
+- **Delete:** asks first, suggests Resolved to keep the record, and is gated by `delete`.
+
+**Checks:**
+- **Tests:** 11 new Vitest tests (inquiry rules 8, service 3). Lint is clean, and type errors are the same 235 as `main`.
+- **Browser (2026-11-10, `localhost:8080`, signed in as `automation@`):** one `[TEST]` inquiry, assigned only to a made-up `example.invalid` address so no real staff appeared in test data.
+  - **Validation:** a blank title, on new and edit; the error clears as you type.
+  - **Logging:** the stored item had UTC `ReportedAt`, category, priority, reporter and `LoggedByEmail`.
+  - **Status:** Resolved stamped `ResolvedAt` and showed it; reopening cleared it.
+  - **Assignment:** assigning stamped `AssignedAt` and `AssignedByEmail`; unassigning from the screen cleared both.
+  - **Conflict:** a change made elsewhere just before an inline edit made the edit fail with the conflict message, and the newer change was kept.
+  - **Date filter:** an inquiry reported at 9:19 am PNG on 10 Nov (still 9 Nov in UTC) was left out of a 9 Nov filter and included in 9–10 Nov.
+  - **Edit:** the dialog loaded every field; changing only the title left the rest unchanged.
+  - **Delete:** after confirmation, the list was empty again.
+
+**Not checked:** a non-admin receptionist, and assigning a real staff member (no notice is sent yet; that is P6B).
+
+**Moved:** P5.2 (escalate to ticket) goes to 5B; see P5.2.
 
 ### 5B — Ticket Manager (with D3 = separate lists)
 
@@ -945,7 +989,7 @@ PR #16 (4A) was squash-merged into `main` as `52f9a80`. 4B is coded on `feat/fro
 - **Tests:** picking the assignee from the rules, including inactive rules and the backup.
 
 #### P5.15 Assignment lifecycle [BE7]
-- **Assigning or reassigning** an inquiry or ticket sets `AssignedAt`, `AssignedByEmail` and `AcknowledgedAt` (cleared).
+- **Assigning or reassigning** an inquiry or ticket sets `AssignedAt`, `AssignedByEmail` and `AcknowledgedAt` (cleared). *Done for inquiries in 5A (`inquiryFields`); tickets follow in 5B.*
 - **Acknowledged:** the assignee's acknowledgement sets `AcknowledgedAt`, and the card shows an "Acknowledged" badge. The status choices do not change, so the existing Status columns need no edit.
 - **System comments:** each reassignment and status change writes a short comment (`IsSystem = true`) to `FrontDesk_TicketComments`. `ParentKind` records whether it belongs to a ticket or an inquiry.
 - **Reporter:** the inquiry form stores `ReportedByEmail` when the reporter is staff (picked from `useStaffMembers()`). Free text stays for visitors.
@@ -1154,7 +1198,7 @@ The flows run under the existing `automation@scpng.gov.pg`:
 
 | Task | Action | Finding |
 |---|---|---|
-| P8.1 | Delete `InquiryBoardLane.tsx` and `InquiryGridView.tsx` unless P5.3 wired them in | — (orphaned, audit §2) |
+| P8.1 | Delete `InquiryBoardLane.tsx` and `InquiryGridView.tsx` unless P5.3 wired them in. **Done early in 5A**, with `InquiryCard.tsx`. | — (orphaned, audit §2) |
 | P8.2 | Remove the fake `UserNav` (`TicketManager.tsx:92–121`) and the unused imports across the ticketing folder; lint clean | M7 |
 | P8.3 | Confirm no sample or non-PNG data remains: search the folder for "Acme", "USPS", "FedEx", "lorem", "Laudantium" | M8 |
 | P8.4 | Rewrite `docs/pages/tickets/README.md` and `docs/ui/ticketing/README.md` to describe the real system. Archive `docs/architecture/database/tickets.md`, which documents a Supabase schema that was never built, with a pointer to Appendix A. | G2 |
