@@ -619,6 +619,77 @@ PR #12 was squash-merged into `main` as `b8718ed`. P2.8 and P2.9 are coded on `f
   - Every paper entry for the week exists in the module with a Time In and Time Out.
   - The receptionists agree to retire the paper sheet. Optionally keep it only as a fallback for network outages.
 
+### Phase 3 status (2026-10-26)
+
+PR #14 was squash-merged into `main` as `3eab510`. Phase 3 is coded on `feat/front-desk-visitor-log`, branched from it. It is not yet committed.
+
+**Built:**
+
+| Task | Files |
+|---|---|
+| P3.1 | `services/frontDesk/visitorRules.ts` (pure rules) and `visitorsService.ts` |
+| P3.2 | `hooks/frontDesk/useVisitors.ts`: optimistic status changes with rollback |
+| P3.3 | `components/frontDesk/visitors/QuickSignInBar.tsx` |
+| P3.4 | `statusChange` and `signOutError` in the rules; time corrections in the form |
+| P3.5 | `VisitorTable.tsx` (Log and List), `VisitorBoard.tsx`, `VisitorCard.tsx` |
+| P3.6 | `VisitorFormDialog.tsx` |
+| P3.7 | `VisitorsService.attachPhoto` and `FrontDeskGraph.uploadFile` |
+| P3.8 | `VisitorManagement.tsx` rewritten, 2,517 → 277 lines, with no sample data |
+
+**What each task does:**
+- **P3.1:** a day is read by an indexed `VisitDate` range covering the PNG day; on-site visitors by the indexed `Status`. Date-only values are written as midnight UTC and read back as the PNG day.
+- **P3.2:** sign-in and sign-out show at once and roll back if SharePoint refuses. A conflict reloads the log.
+- **P3.3:** Name and Reason are enough. Enter signs in, and focus returns to Name. "Add another from ⟨Company⟩" shares a `GroupRef`.
+- **P3.4:**
+  - Arrival sets `TimeIn` and leaves `ExpectedStart` alone.
+  - Sign-out writes `TimeOut` and `SignedOutByEmail`.
+  - Duration is calculated from the two times.
+  - The form corrects recorded times but never sets or clears them. Time Out can't be before Time In.
+- **P3.5:**
+  - The **Log** view is the default and has the paper columns.
+  - There is a date picker with previous and next day.
+  - **On site now** counts and filters, and flags visitors not signed out from earlier days.
+  - Dropping a card on another board column changes the status through the same rules as the buttons.
+- **P3.6:** pre-booking saves the visitor as Expected. Only Name and Reason are required (D4), and the host comes from the staff roster.
+- **P3.7:** photos are uploaded as `⟨id⟩-⟨timestamp⟩.⟨ext⟩` into `YYYY/MM` folders, and only the link is stored. Photos are shown as a link that opens SharePoint, not as an image in the page.
+
+**Removed:**
+- the free-text time and duration editors
+- the visitor "assignees", which have no column in Appendix A
+- the Date Range, Status, Company and Host filter menus. The status tabs, the date picker and search cover them.
+
+**Checks:**
+- **Tests:** 27 new Vitest tests (visitor rules 20, service 5, display helpers 2). The full suite fails only on the two baseline CSV files; `node --test` passes 164 of 164.
+- **Types:** the same 235 errors as `main`.
+- **Lint:** clean on the new and changed files.
+- **Live SharePoint (2026-10-26), through the service from the page console:**
+  - Two `[TEST]` visitors were created.
+  - The day filter returned them, and the days either side returned nothing.
+  - The stored `VisitDate` was `2026-10-26T00:00:00Z`.
+  - Sign-in kept the expected time, and sign-out recorded the time and who did it.
+  - A stale eTag was refused as `FrontDeskConflictError`.
+  - Both were deleted, and the list is empty again.
+- **Browser (2026-11-10, `localhost:8080`, signed in as `automation@`, an intranet admin):** four `[TEST]` visitors were used, then deleted through the screen; the list is empty again.
+  - **Sign-in bar:** Name + Company + Reason + Enter signs a walk-in in, Time In fills itself in, and focus returns to Name. "Add another from ⟨Company⟩" pre-fills company and reason, and SharePoint confirms both visitors share one `GroupRef`.
+  - **Log view:** the paper columns, "No visitors signed in today." when empty, and "On site now" counting correctly.
+  - **Sign out** records the time and `SignedOutByEmail`.
+  - **Pre-booking:** the form refuses a blank name and reason, and an expected end before the start. A pre-booked visitor shows "Expected 2:00 pm" and, once signed in, keeps `ExpectedStart`.
+  - **No-show** from the row menu dims the row.
+  - **Edit:** a Time Out before Time In is refused; a valid correction saves.
+  - **Board, Grid and List** show the same data. Dragging a card from On site to Signed out signed the visitor out.
+  - **Navigation:** the On site now filter, search, the status tabs, and the previous day ("No visitors on Mon, 9 Nov 2026"; the sign-in bar is hidden on past days) all work.
+- **Fixed during the check:**
+  - Visitors with no time sorted to the top of the log, because `localeCompare` ranks "~" before digits. The sort now uses a plain comparison, with a test.
+  - Avatar initials took the "[" of "[TEST]". They now skip symbols, with a test.
+- **Not checked:**
+  - the photo upload
+  - the screen as a non-admin receptionist (needs the Front Desk role group)
+  - drag-and-drop with a real mouse (the check used scripted pointer events; the tool's built-in drag was too fast for the drag library)
+
+**Still open:**
+- The walk-through with the receptionists (Phase 0).
+- P3.9, the one-week pilot.
+
 ---
 
 ## Phase 4 — Mail & Packages and Appointments

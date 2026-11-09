@@ -1,7 +1,7 @@
 import type { Client } from '@microsoft/microsoft-graph-client';
 
 export interface FakeCall {
-  method: 'get' | 'post' | 'patch' | 'delete';
+  method: 'get' | 'post' | 'patch' | 'put' | 'delete';
   url: string;
   body?: unknown;
   /** Only present when the request set headers, e.g. `If-Match`. */
@@ -35,6 +35,7 @@ export function fakeGraphClient(
         get: async () => { record({ method: 'get', url }); return answer(url); },
         post: async (body: unknown) => onWrite(record({ method: 'post', url, body })),
         patch: async (body: unknown) => onWrite(record({ method: 'patch', url, body })),
+        put: async (body: unknown) => onWrite(record({ method: 'put', url, body })),
         delete: async () => onWrite(record({ method: 'delete', url })),
       };
       return request;
