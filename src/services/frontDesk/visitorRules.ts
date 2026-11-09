@@ -2,14 +2,14 @@
  * Pure rules for the Front Desk visitor log (plan Phase 3): mapping SharePoint items,
  * PNG dates and times, status changes and validation. No Graph calls, so it is all testable.
  */
-import { getPNGDateKey } from '@/utils/pngPublicHolidays';
 import { VISITOR_STATUSES, type VisitorStatus } from './frontDeskConfig';
 import type { GraphListItem } from './frontDeskGraph';
+import { formatPngTime, isDateKey, pngDateKey } from './pngTime';
 
-export const PNG_TIME_ZONE = 'Pacific/Port_Moresby';
-/** Papua New Guinea has no daylight saving, so the offset never changes. */
-const PNG_OFFSET = '+10:00';
-const DAY_MS = 24 * 60 * 60 * 1000;
+// The PNG date helpers moved to pngTime.ts; re-exported so visitor code keeps one import.
+export {
+  PNG_TIME_ZONE, formatDateKey, formatPngTime, isDateKey, isoToPngTime, pngDateKey, pngDayRange, pngTimeToIso, shiftDateKey,
+} from './pngTime';
 
 export interface FrontDeskVisitor {
   id: string;
@@ -64,26 +64,7 @@ export const VISITOR_STATUS_LABELS: Record<VisitorStatus, string> = {
   'No Show': 'No show',
 };
 
-// ─── PNG dates and times ────────────────────────────────────────────────────
-
-const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-export const isDateKey = (value: string) => DATE_KEY.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
-
-/** PNG calendar day of an instant (or of now). */
-export const pngDateKey = (value: Date | string = new Date()) => getPNGDateKey(typeof value === 'string' ? new Date(value) : value);
-
-/** The date key `days` before or after another (calendar arithmetic, no time zone involved). */
-export function shiftDateKey(dateKey: string, days: number): string {
-  return new Date(Date.parse(`${dateKey}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-}
-
-/** The PNG day as a half-open UTC range, for filtering the indexed VisitDate column. */
-export function pngDayRange(dateKey: string): { start: string; end: string } {
-  const start = new Date(`${dateKey}T00:00:00${PNG_OFFSET}`);
-  return { start: start.toISOString(), end: new Date(start.getTime() + DAY_MS).toISOString() };
-}
+// ─── Visit dates and lengths ────────────────────────────────────────────────
 
 /**
  * The value written to the date-only VisitDate column. SharePoint stores date-only values as
@@ -91,26 +72,6 @@ export function pngDayRange(dateKey: string): { start: string; end: string } {
  * whichever way it converts; reads go back through `pngDateKey`.
  */
 export const visitDateValue = (dateKey: string) => `${dateKey}T00:00:00Z`;
-
-/** "14:30" on a PNG day, as an ISO instant. */
-export function pngTimeToIso(dateKey: string, timeOfDay: string): string {
-  if (!isDateKey(dateKey) || !TIME_OF_DAY.test(timeOfDay)) throw new Error(`Invalid PNG date or time: ${dateKey} ${timeOfDay}`);
-  return new Date(`${dateKey}T${timeOfDay}:00${PNG_OFFSET}`).toISOString();
-}
-
-const pngParts = (iso: string, options: Intl.DateTimeFormatOptions) =>
-  new Intl.DateTimeFormat('en-GB', { timeZone: PNG_TIME_ZONE, ...options }).format(new Date(iso));
-
-/** "14:30" in PNG time, for time inputs. */
-export const isoToPngTime = (iso: string) => pngParts(iso, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-
-/** "2:30 pm" in PNG time, for display. */
-export const formatPngTime = (iso?: string) => (iso ? pngParts(iso, { hour: 'numeric', minute: '2-digit', hour12: true }) : '');
-
-/** "Mon 26 Oct 2026" for a date key. */
-export const formatDateKey = (dateKey: string) =>
-  new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
-    .format(new Date(`${dateKey}T00:00:00Z`));
 
 /** "1h 05m", "45m", or '' when the visitor has not arrived. Open visits count up to `nowIso`. */
 export function visitDuration(timeIn?: string, timeOut?: string, nowIso = new Date().toISOString()): string {
