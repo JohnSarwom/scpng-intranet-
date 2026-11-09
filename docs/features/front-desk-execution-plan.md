@@ -717,6 +717,41 @@ PR #14 was squash-merged into `main` as `3eab510`. Phase 3 is coded on `feat/fro
 #### P4.4 Remove sample mail [M8]
 - Delete `initialMailItems` (US carriers, 2023 dates).
 
+#### Phase 4A status (2026-11-10)
+
+PR #15 was squash-merged into `main` as `4cac1c6`. 4A is coded on `feat/front-desk-mail`, branched from it, and not yet committed. 4B (Appointments) follows on its own branch.
+
+**Built:**
+
+| Task | Files |
+|---|---|
+| P4.1 | `services/frontDesk/mailRules.ts` (pure rules), `mailPackagesService.ts`, `hooks/frontDesk/useMailPackages.ts` |
+| P4.2 | `MailPackageDialog.tsx` rewritten |
+| P4.3 | `components/frontDesk/mail/CollectionDialog.tsx` |
+| P4.4 | `MailAndPackages.tsx` rewritten, 779 → 395 lines, with no sample data |
+| Shared | The PNG date helpers moved from `visitorRules.ts` to `services/frontDesk/pngTime.ts`, re-exported for the visitor code |
+
+**What each task does:**
+- **P4.1:** the chosen period (Today, Last 7 days, Last 30 days, or a custom range) filters the indexed `ReceivedAt`. Items still waiting are read with one indexed `Status` equality query per outstanding status, so they always show whatever the period. Updates and deletes send the eTag.
+- **P4.2:** the recipient picker lists the roster with each person's unit and fills `RecipientEmail`, `RecipientName` and `RecipientUnit`. **Other (not in directory)** keeps free text.
+- **P4.3:** marking an item Collected asks who collected it (the recipient by default) and when (now by default), never earlier than it arrived. Undo or any other status clears both. Collected items show the record, and the edit form can correct it.
+- **Also:** the Carrier field, items waiting from earlier days flagged "Waiting N days", and a received time in the future refused.
+
+**Checks:**
+- **Tests:** 16 new Vitest tests (mail rules 13, service 3). Lint is clean, and type errors are the same 235 as `main`.
+- **Browser (2026-11-10, `localhost:8080`, signed in as `automation@`):** two `[TEST]` items with "Other" recipients, so no real staff appear in test data, were deleted through the screen afterwards; both lists are empty again.
+  - The empty state and the recipient picker: 29 staff with units, plus Other.
+  - Validation: missing subject and recipient, and a future date.
+  - Logging an item, which updates the waiting count.
+  - An item received on 1 October shows under "Last 7 days" and "Today" flagged "Waiting 40 days".
+  - Collection, with defaults, a blank-name refusal and the collected record; Undo; a status change from the menu.
+  - Edit, which pre-fills the Other recipient; the grid view; delete with confirmation.
+- **Fixed during the check:**
+  - The recipient picker showed no placeholder: Radix Select 1.x needs `undefined`, not `''`.
+  - The grid's "Collected" button read like a status; it is now "Collect".
+  - Row parts were components declared inside the screen, so React remounted them on every 30-second refresh, which would close an open status menu. They are now render functions.
+- **Not checked:** a non-admin receptionist, and a real staff recipient. The latter wasn't used, to keep test data off real people.
+
 ### 4B — Appointments
 
 #### P4.5 Service and hooks [G1]
