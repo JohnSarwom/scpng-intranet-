@@ -51,7 +51,8 @@ export function resetFrontDeskGraphCache() {
  * paging, and item create / update / delete. Each list's service maps the fields.
  */
 export class FrontDeskGraph {
-  constructor(private readonly client: Client) {}
+  // Readable so helpers such as OutlookEvents can reuse the same signed-in client.
+  constructor(readonly client: Client) {}
 
   async collectPages<T>(firstUrl: string): Promise<T[]> {
     const items: T[] = [];

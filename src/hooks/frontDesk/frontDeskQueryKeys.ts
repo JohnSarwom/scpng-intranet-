@@ -4,6 +4,7 @@ export const frontDeskKeys = {
   visitors: (dateKey: string) => ['front-desk', 'visitors', dateKey] as const,
   visitorsOnSite: () => ['front-desk', 'visitors', 'on-site'] as const,
   appointments: () => ['front-desk', 'appointments'] as const,
+  appointmentsBetween: (start: string, end: string) => ['front-desk', 'appointments', start, end] as const,
   mailPackages: () => ['front-desk', 'mail-packages'] as const,
   mailInPeriod: (start: string, end: string) => ['front-desk', 'mail-packages', 'period', start, end] as const,
   mailOutstanding: () => ['front-desk', 'mail-packages', 'outstanding'] as const,

@@ -1,27 +1,4 @@
-import { startOfDay } from 'date-fns';
-
-export type AppointmentTab = 'all' | 'upcoming' | 'completed' | 'canceled';
-export type AppointmentStatus = 'scheduled' | 'completed' | 'canceled';
-
-interface FilterableAppointment {
-  status: AppointmentStatus;
-  dateRange?: { from?: Date };
-}
-
-/** Tabs are views over the appointments, not status values: "All" and "Upcoming" never match a status. */
-export function filterAppointmentsByTab<T extends FilterableAppointment>(
-  appointments: T[],
-  tab: AppointmentTab,
-  now: Date = new Date(),
-): T[] {
-  if (tab === 'all') return appointments;
-  if (tab === 'upcoming') {
-    const today = startOfDay(now);
-    return appointments.filter(appt =>
-      appt.status === 'scheduled' && !!appt.dateRange?.from && new Date(appt.dateRange.from) >= today);
-  }
-  return appointments.filter(appt => appt.status === tab);
-}
+/** Day-view rows for appointments. The tab filter lives in services/frontDesk/appointmentRules.ts. */
 
 export const DAY_START_HOUR = 8;
 export const DAY_END_HOUR = 17;

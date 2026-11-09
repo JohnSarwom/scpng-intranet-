@@ -185,7 +185,7 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 | D12 | What runs the scheduled jobs, and as whom | Power Automate under `automation@scpng.gov.pg` · Power Automate under a new dedicated account · Azure Functions with a managed identity · run the jobs from the reception page | Power Automate under **`automation@scpng.gov.pg` with the P6B.1 safeguards**. A new account and licence cannot be created, and Azure has no confirmed subscription. See the [scheduler comparison](../history/FRONT_DESK_SCHEDULER_COMPARISON_2026_10_21.md). | BE2, BE12 | **Accepted 2026-10-21, after two amendments.**<br>1. First recorded as "`automation@` plus co-owner".<br>2. Changed to "a new non-admin account" once `automation@` was found to hold Global Administrator and 47 other roles.<br>3. That proved impossible (no new account or licence), so the decision is `automation@` with safeguards.<br><br>**Sender:** the flows run as `automation@` but send **as** the reception shared mailbox from D11. `automation@` holds Send As on it.<br><br>**Risk accepted:** the account stays a Global Administrator. It already owns the tenant's other flows with the same connections, so the Front Desk flows add no new way in as long as no new co-owners are added.<br><br>**Revisit** when a dedicated account, a service principal or an Azure subscription becomes possible. |
 | D13 | Reminder timings and SLA hours | — | Mail: remind the recipient after 2 working days, tell the supervisor after 5. Unassigned inquiry: alert after 1 hour. SLA: High 4 h, Medium 1 working day, Low 3 working days. End-of-day sweep at 17:30, digest at 07:45. All adjustable in `FrontDesk_RoutingRules` (P5.14). | BE2, BE6 | **Accepted.** As recommended. |
 | D14 | Retention | — | Delete visitor photos after 30 days. Anonymise visitor records after 24 months. **Management to confirm** before the retention flow is switched on. | BE2 | **Accepted,** pending management confirmation of the periods. |
-| D15 | Outlook invites for appointments | Yes · No | Yes, organised from the receptionist's calendar | BE9 | **Accepted.** |
+| D15 | Outlook invites for appointments | Yes · No | Yes, organised from the receptionist's calendar | BE9 | **Accepted.** Updated 2026-11-10: once the reception shared mailbox exists, invites move to its calendar so any desk can change them (P4.11). |
 
 **Prerequisites from IT (not code):**
 - **Reception shared mailbox (D11).** IT creates it in the Exchange admin center. It needs **no licence**.
@@ -193,6 +193,7 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
   - **Each receptionist:** Full Access (to read it in Outlook) and Send As.
   - **`automation@scpng.gov.pg`:** Send As, so the flows can send from it.
   - **Where the address goes:** `frontDeskConfig.ts` (the browser notices' reply-to) and each flow (the sender).
+  - **For appointment invites (P4.11):** the app registration gains the delegated `Calendars.ReadWrite.Shared` permission with admin consent. If Full Access is not enough for Graph, receptionists also get Editor on the mailbox's Calendar folder.
 - **No new account (D12).** The flows run under the existing `automation@scpng.gov.pg` with the P6B.1 safeguards. That account already holds a Business Premium licence, a mailbox and Power Automate.
 
 **Exit gate:** decision table agreed, and the audit has been walked through with the receptionists.
@@ -217,7 +218,7 @@ These come from the [back-end audit](../history/FRONT_DESK_BACKEND_AUDIT_2026_10
 | D12 | Phase 6B builds every flow under `automation@scpng.gov.pg`, with the P6B.1 safeguards. P2.4 grants it explicit access to the restricted lists. |
 | D13 | P5.14 seeds `FrontDesk_RoutingRules` with these values. P6B.3–P6B.6 read them. |
 | D14 | P6B.7 is built with these periods, and switched on only after management confirms them. |
-| D15 | P4.10 creates the Outlook event. |
+| D15 | P4.10 creates the Outlook event; P4.11 moves it to the reception calendar. |
 
 ---
 
@@ -785,10 +786,85 @@ PR #15 was squash-merged into `main` as `4cac1c6`. 4A is coded on `feat/front-de
 - If the calendar call fails, the appointment is still saved, and a warning toast says the invite was not sent.
 - **Tests:** mapping an appointment to the event body; external attendees are not invited.
 
+#### P4.11 Invites from the reception calendar (follow-up) [BE9, D11, D15]
+
+**Why:** under P4.10 an invite lives in the calendar of the receptionist who booked it, so no other desk can update or cancel it; they only get a warning.
+
+**What changes:** invites are sent from the reception shared mailbox's calendar (D11).
+- Any receptionist can update or cancel them.
+- Hosts see "SCPNG Reception" as the organiser.
+- Accept and decline replies land in the shared inbox.
+
+**Prerequisites (IT, not code):**
+- The reception shared mailbox exists (the D11 prerequisite).
+- Each receptionist has Full Access to it, as already planned. If Graph refuses calendar writes with only that, also grant Editor permission on the mailbox's Calendar folder (`Add-MailboxFolderPermission -Identity reception@…:\Calendar -User … -AccessRights Editor`).
+- The intranet's app registration gains the delegated permission `Calendars.ReadWrite.Shared`, with admin consent. A Global Administrator can grant it. The scope is then added to the app's MSAL scopes (`config/microsoft-auth.ts`, `graphService.ts`).
+
+**Code (about half a day):**
+- `frontDeskConfig.ts` gains the reception mailbox address, the same one D11 uses for reply-to.
+- `OutlookEvents` writes to `/users/{reception mailbox}/events` when the address is set, and to `/me/events` until then.
+- A new `OutlookOrganizer` column on `FrontDesk_Appointments` (added by Create / repair) records which calendar holds each event, so older invites from personal calendars are still found. For those, the warning names the receptionist to ask.
+- **Tests:** the event URL for each organiser, and the fallback for events made before the switch.
+
+**Exit gate:** an invite booked at one desk is moved and then canceled from a second desk, and the test host receives both the update and the cancellation.
+
+**Not chosen:**
+- Power Automate creating the invites: another moving part, running as `automation@`.
+- Re-sending from the second desk: hosts would get duplicates, and the old invite could not be canceled.
+
 **Exit gate:**
 - Two receptionists on different PCs see the same mail and appointments within 30 seconds.
 - An appointment's external visitor can be signed in from the log without retyping.
 - A test host receives the Outlook invite, and the invite moves when the appointment is edited.
+
+#### Phase 4B status (2026-11-10)
+
+PR #16 (4A) was squash-merged into `main` as `52f9a80`. 4B is coded on `feat/front-desk-appointments`, branched from it, and not yet committed.
+
+**Built:**
+
+| Task | Files |
+|---|---|
+| P4.5 | `services/frontDesk/appointmentRules.ts` (pure rules), `appointmentsService.ts`, `hooks/frontDesk/useAppointments.ts` |
+| P4.6 | `components/frontDesk/appointments/AppointmentDialog.tsx` |
+| P4.7, P4.9 | `AppointmentView.tsx` rewritten, 995 → 338 lines, with no sample data |
+| P4.8 | `planExpectedVisitors` and `AppointmentsService.syncExpectedVisitors` |
+| P4.10 | `services/frontDesk/outlookEvents.ts` and `AppointmentsService.syncInvite` |
+
+**What each task does:**
+- **P4.5:** each view reads its own day, week (Monday–Sunday) or month on the indexed `StartDateTime`. The list view shows the month. Saves and deletes send the eTag.
+- **P4.6:**
+  - Staff attendees come from the directory.
+  - External visitors are typed in with their company.
+  - A date, both times and a host are required, and the end must be after the start.
+  - Delete asks first, and is gated by `delete`.
+- **P4.7:** the Upcoming, Completed and Canceled tabs and the day-view hour rows (P1.1, P1.2) work on saved data.
+- **P4.8:**
+  - **Matching:** each external guest has one Expected visitor, matched by name, so edits never duplicate a guest.
+  - **Edits:** a moved appointment moves its guests, a dropped guest is removed, and a canceled or deleted appointment removes guests who have not arrived. Arrivals are never touched.
+  - **Reading:** guests are found through the indexed `VisitDate` (old and new day), not the un-indexed `AppointmentId`.
+- **P4.10:**
+  - **Invites:** the host and staff attendees are invited from the receptionist's own calendar; external guests never are.
+  - **Changes:** edits update the event, and cancel or delete cancels it.
+  - **Other desks:** an event made at another desk is reported, not duplicated.
+  - **The checkbox:** a "Send an Outlook invite" box (ticked for new bookings) lets reception skip it.
+  - **Not via `calendarService`:** the calls go through the Front Desk Graph client rather than the existing `calendarService`, so they are tested with the fake client.
+- **Failures:** if the visitor log or invite step fails after a save, a warning shows and the appointment stays saved.
+
+**Checks:**
+- **Tests:** 19 new Vitest tests (appointment rules 13, service 4, `pngTime` 2). Lint is clean, and type errors are the same 235 as `main`.
+- **Browser (2026-11-10, `localhost:8080`, signed in as `automation@`):** two `[TEST]` appointments, booked with the invite unticked so no one was emailed.
+  - **Validation:** blank fields, and an end before the start.
+  - **Booking:** the guest appeared in the visitor log as Expected at the right time, with company, host and reason.
+  - **Edits:** moving the time and adding and removing guests kept the log in step with no duplicates. A guest who had signed in stayed after the appointment was canceled.
+  - **Views:** week, month and list, with canceled appointments struck through.
+  - **Deletes:** deleting from the list and from the dialog removed guests who had not arrived.
+  - All test data was deleted; appointments, visitors and mail are empty again.
+- **Outlook:** create, update and delete were tested against Graph with an event that had no attendees, so nobody was emailed. The event had the right UTC times, location and guest list in the body, and was gone after the delete.
+
+**Not checked:** an invite actually reaching a host (that needs a willing test host), and a non-admin receptionist.
+
+**Limitation:** an invite can only be changed from the calendar it was sent from. P4.11 removes this by sending invites from the reception shared mailbox's calendar.
 
 ---
 
@@ -1304,7 +1380,7 @@ One row per inquiry category.
 | BE6 | No routing rules | D13, P2.9, P5.14 |
 | BE7 | Thin assignment lifecycle | P2.9, P5.15, P6.4 |
 | BE8 | No concurrency check on updates | P2.8 |
-| BE9 | Appointments not in the host's Outlook | D15, P2.9, P4.10 |
+| BE9 | Appointments not in the host's Outlook | D15, P2.9, P4.10, P4.11 |
 | BE10 | Email links follow the sender's origin | P6.1 |
 | BE11 | No Teams notices | P6.8 |
 | BE12 | Flows lose access once lists are restricted | D12, P2.4, P6B.1, P8.9 |

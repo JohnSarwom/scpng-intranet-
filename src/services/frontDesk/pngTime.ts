@@ -48,3 +48,9 @@ export const formatDateKey = (dateKey: string) =>
 /** "26 Oct 2026, 2:30 pm" in PNG time. */
 export const formatPngDateTime = (iso?: string) =>
   (iso ? `${pngParts(iso, { day: 'numeric', month: 'short', year: 'numeric' })}, ${formatPngTime(iso)}` : '');
+
+/** The first day of the month `months` before or after the month of a date key. */
+export function shiftMonthKey(dateKey: string, months: number): string {
+  const [year, month] = dateKey.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1 + months, 1)).toISOString().slice(0, 10);
+}

@@ -53,6 +53,8 @@ export interface VisitorInput {
   badgeNo?: string;
   notes?: string;
   groupRef?: string;
+  /** Set on visitors created from an appointment's external attendees (plan P4.8). */
+  appointmentId?: string;
   timeIn?: string;
   timeOut?: string;
 }
@@ -133,6 +135,7 @@ const FIELD_NAMES: Record<keyof Omit<VisitorInput, 'name' | 'visitDate'>, string
   badgeNo: 'BadgeNo',
   notes: 'Notes',
   groupRef: 'GroupRef',
+  appointmentId: 'AppointmentId',
   timeIn: 'TimeIn',
   timeOut: 'TimeOut',
 };
