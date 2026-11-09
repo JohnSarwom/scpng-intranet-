@@ -84,6 +84,7 @@ export const VisitorFormDialog: React.FC<{
       hostEmail: host?.email, hostName: host?.name,
       phone: form.phone, email: form.email, badgeNo: form.badgeNo, notes: form.notes,
       groupRef: visitor?.groupRef,
+      appointmentId: visitor?.appointmentId,
       timeIn: at(timeInDay, form.timeIn), timeOut: at(timeOutDay, form.timeOut),
     };
     const found = validateVisitorInput(input);

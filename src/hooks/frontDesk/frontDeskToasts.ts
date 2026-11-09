@@ -6,6 +6,11 @@ export function frontDeskSaved(message: string) {
   toast.success(message);
 }
 
+/** The main save worked but a follow-on step (an invite, the visitor log) did not. */
+export function frontDeskWarning(message: string, detail?: string) {
+  toast.warning(message, detail ? { description: detail } : undefined);
+}
+
 /** On a FrontDeskConflictError the caller must also reload the record (invalidate its query). */
 export function frontDeskFailed(action: string, error: unknown) {
   const detail = error instanceof FrontDeskListMissingError

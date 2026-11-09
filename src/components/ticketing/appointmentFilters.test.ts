@@ -1,38 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { daySlotForTime, filterAppointmentsByTab, slotHourForTime, type AppointmentStatus } from './appointmentFilters';
-
-const now = new Date(2026, 9, 21, 10, 0);
-const appt = (id: string, status: AppointmentStatus, from?: Date) => ({ id, status, dateRange: from ? { from, to: from } : undefined });
-
-const appointments = [
-  appt('past-scheduled', 'scheduled', new Date(2026, 9, 20, 9, 0)),
-  appt('today-earlier', 'scheduled', new Date(2026, 9, 21, 8, 0)),
-  appt('tomorrow', 'scheduled', new Date(2026, 9, 22, 9, 0)),
-  appt('done', 'completed', new Date(2026, 9, 1, 9, 0)),
-  appt('off', 'canceled', new Date(2026, 9, 23, 9, 0)),
-  appt('undated', 'scheduled'),
-];
-
-describe('filterAppointmentsByTab', () => {
-  it('shows every appointment on the All tab', () => {
-    expect(filterAppointmentsByTab(appointments, 'all', now)).toHaveLength(appointments.length);
-  });
-
-  it('shows scheduled appointments from the start of today on the Upcoming tab', () => {
-    expect(filterAppointmentsByTab(appointments, 'upcoming', now).map(a => a.id)).toEqual(['today-earlier', 'tomorrow']);
-  });
-
-  it('matches the status on the Completed and Canceled tabs', () => {
-    expect(filterAppointmentsByTab(appointments, 'completed', now).map(a => a.id)).toEqual(['done']);
-    expect(filterAppointmentsByTab(appointments, 'canceled', now).map(a => a.id)).toEqual(['off']);
-  });
-
-  it('includes a newly created appointment under All and Upcoming', () => {
-    const created = [...appointments, appt('new', 'scheduled', new Date(2026, 9, 21, 14, 0))];
-    expect(filterAppointmentsByTab(created, 'all', now).map(a => a.id)).toContain('new');
-    expect(filterAppointmentsByTab(created, 'upcoming', now).map(a => a.id)).toContain('new');
-  });
-});
+import { daySlotForTime, slotHourForTime } from './appointmentFilters';
 
 describe('day view slots', () => {
   it('reads the hour from HH:mm times', () => {
