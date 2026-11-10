@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle, Repeat, CheckSquare, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
+import { formatTaskDateRange } from '@/utils/taskBoardUtils';
+import { isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PremiumKanbanCard } from '@/components/ui/PremiumKanban';
 import {
@@ -217,6 +218,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   }, [startDate, endDate, completed]);
 
+  const dateRangeLabel = formatTaskDateRange(startDate, endDate);
+
   const subtaskProgress = React.useMemo(() => {
     if (!subtasks || subtasks.length === 0) return null;
     const completedCount = subtasks.filter(s => s.completed).length;
@@ -404,14 +407,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <CalendarDays className="h-3 w-3 mr-1.5 flex-shrink-0" />
-                <span>
-                  {startDate ? format(new Date(startDate), 'MMM d') : ''}
-                  {endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}
-                </span>
+                <span>{dateRangeLabel}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p>Date Range: {startDate ? format(new Date(startDate), 'MMM d') : ''}{endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}</p>
+              <p>Date Range: {dateRangeLabel}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
