@@ -155,11 +155,18 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
+// Follows JSON.stringify's handling of undefined (omitted object keys, null array entries) and
+// toJSON (Dates become ISO strings): archives are stored as JSON, so the checksum must survive that round trip.
 function canonicalJson(value: unknown): string {
+  if (value === undefined) return 'null';
+  if (value !== null && typeof (value as { toJSON?: unknown }).toJSON === 'function') {
+    return canonicalJson((value as { toJSON(): unknown }).toJSON());
+  }
   if (value === null || typeof value !== 'object') return JSON.stringify(value);
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
-  return `{${Object.keys(value as Record<string, unknown>).sort().map(key =>
-    `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`).join(',')}}`;
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record).filter(key => record[key] !== undefined).sort().map(key =>
+    `${JSON.stringify(key)}:${canonicalJson(record[key])}`).join(',')}}`;
 }
 
 async function checksum(value: unknown): Promise<string> {

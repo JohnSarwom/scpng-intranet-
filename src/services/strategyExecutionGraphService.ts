@@ -635,7 +635,8 @@ export function legacyToPerformanceRecords(input: {
       ownerRole: 'manager',
       parentId: objId ? nsObj(objId) : null,
       assignedByEmail: k.createdByEmail,
-      division: k.department || undefined,
+      // mapKRA fills `department` from the Unit column, so prefer the explicit Division column.
+      division: (k as { division?: string | null }).division || k.department || undefined,
       unit: k.unit || undefined,
       status: k.status,
       progress: (k as any).progress,
