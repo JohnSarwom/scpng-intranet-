@@ -6,6 +6,10 @@ This document indexes the 100+ historical documentation files moved to `docs/his
 
 - [16 October 2026 handover](../history/2026-10-16-notice-board-staff-sync-handover.md): Live routing/import, owner-only access, staff cleanup, popup implementation and unresolved news throttling.
 
+## Strategy fixes and live verification
+
+- [10 November 2026 handover](../history/2026-11-10-strategy-fixes-live-verification-handover.md): Report archive checksums, KRA division scope, task card dates, Division page figures and Gemini models (#19, #20, #21, #7); live checks; the repair of two pre-fix report archives; and removal of the unused redirect address from the Azure app. The script used for the repair is kept as [a record](../history/2026-11-10-reseal-report-archives.console.js).
+
 ---
 
 ## 🔐 Auth & Access Control (RBAC)
