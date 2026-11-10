@@ -104,6 +104,8 @@ export interface TaskCardProps {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   startDate?: Date | null;
   endDate?: string | null;
+  /** Task records carry `dueDate`; it ends the range when no explicit `endDate` is passed. */
+  dueDate?: string | null;
   commentsCount?: number;
   status?: string;
   recurrence?: string;
@@ -156,7 +158,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   assignees,
   priority = 'medium',
   startDate,
-  endDate,
+  endDate: endDateProp,
+  dueDate,
   commentsCount = 0,
   status,
   recurrence,
@@ -176,6 +179,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   availableAssignees = [],
   container
 }) => {
+  // Without this, the start date alone drove the overdue check, so started tasks showed as overdue.
+  const endDate = endDateProp || dueDate || null;
   // Init local state from props, but allow instant toggle
   const [isCompletedOptimistic, setIsCompletedOptimistic] = useState(completed);
   // "idle" | "completing" | "done"
