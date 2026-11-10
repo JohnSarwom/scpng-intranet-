@@ -38,6 +38,8 @@ import AIHubSkeleton from '@/components/ai-hub/skeletons/AIHubSkeleton';
 import { useUIRoles } from '@/hooks/useUIRoles';
 import { cn } from '@/lib/utils';
 import { supabase, logger } from '@/lib/supabaseClient';
+import { GEMINI_CHAT_MODEL } from '@/config/geminiModels';
+import { generateGeminiContent } from '@/services/geminiClient';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useMsal } from '@azure/msal-react';
 import { useMicrosoftGraph, type GraphContextType } from '@/hooks/useMicrosoftGraph';
@@ -997,7 +999,7 @@ const AIHub = () => {
   const apiKey = sharedApiKey || '';
 
   const isConfigLoading = !isSharedKeyReady;
-  const [modelName, setModelName] = useState('gemini-2.5-flash');
+  const [modelName, setModelName] = useState<string>(GEMINI_CHAT_MODEL);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -1319,21 +1321,18 @@ const AIHub = () => {
     try {
       // logger.info('[AIHub Chat] Sending message to Gemini API directly...', { mode: currentMode?.title });
 
-      const cleanApiKey = effectiveApiKey.trim();
-      const targetModel = modelName || 'gemini-2.5-flash';
-      let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${targetModel}:generateContent?key=${cleanApiKey}`;
+      const targetModel = modelName || GEMINI_CHAT_MODEL;
 
       // Create new AbortController for this request
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-        signal: controller.signal
+      // Retries Google's temporary 503/429s and falls back to another model if needed.
+      const response = await generateGeminiContent({
+        apiKey: effectiveApiKey,
+        model: targetModel,
+        body: requestBody,
+        signal: controller.signal,
       });
 
       if (!response.ok) {

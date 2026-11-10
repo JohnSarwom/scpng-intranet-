@@ -28,7 +28,9 @@ const GEMINI_API_KEY = PROPS.getProperty('GEMINI_API_KEY');
 function _getSpreadsheet() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
-const GEMINI_URL     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+// gemini-2.5-flash is closed to new API keys and shuts down from 2026-12-01.
+// Keep in step with GEMINI_CHAT_MODEL in src/config/geminiModels.ts.
+const GEMINI_URL     = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent';
 
 const QUEUE_HEADERS = [
   'RunId', 'UserEmail', 'UserName', 'ManagerEmail', 'Unit', 'Division',
