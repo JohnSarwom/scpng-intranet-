@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, MessageSquare, User, AlertCircle, Circle, CheckCircle, Repeat, CheckSquare, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isBefore, parseISO, isValid, addDays } from 'date-fns';
+import { formatTaskDateRange } from '@/utils/taskBoardUtils';
+import { isBefore, parseISO, isValid, addDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PremiumKanbanCard } from '@/components/ui/PremiumKanban';
 import {
@@ -104,6 +105,8 @@ export interface TaskCardProps {
   priority?: 'low' | 'medium' | 'high' | 'urgent';
   startDate?: Date | null;
   endDate?: string | null;
+  /** Task records carry `dueDate`; it ends the range when no explicit `endDate` is passed. */
+  dueDate?: string | null;
   commentsCount?: number;
   status?: string;
   recurrence?: string;
@@ -156,7 +159,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   assignees,
   priority = 'medium',
   startDate,
-  endDate,
+  endDate: endDateProp,
+  dueDate,
   commentsCount = 0,
   status,
   recurrence,
@@ -176,6 +180,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   availableAssignees = [],
   container
 }) => {
+  // Without this, the start date alone drove the overdue check, so started tasks showed as overdue.
+  const endDate = endDateProp || dueDate || null;
   // Init local state from props, but allow instant toggle
   const [isCompletedOptimistic, setIsCompletedOptimistic] = useState(completed);
   // "idle" | "completing" | "done"
@@ -211,6 +217,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       return false;
     }
   }, [startDate, endDate, completed]);
+
+  const dateRangeLabel = formatTaskDateRange(startDate, endDate);
 
   const subtaskProgress = React.useMemo(() => {
     if (!subtasks || subtasks.length === 0) return null;
@@ -399,14 +407,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <CalendarDays className="h-3 w-3 mr-1.5 flex-shrink-0" />
-                <span>
-                  {startDate ? format(new Date(startDate), 'MMM d') : ''}
-                  {endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}
-                </span>
+                <span>{dateRangeLabel}</span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              <p>Date Range: {startDate ? format(new Date(startDate), 'MMM d') : ''}{endDate && endDate !== (startDate ? format(new Date(startDate), 'MMM d') : '') ? ` - ${format(new Date(endDate), 'MMM d')}` : ''}</p>
+              <p>Date Range: {dateRangeLabel}</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

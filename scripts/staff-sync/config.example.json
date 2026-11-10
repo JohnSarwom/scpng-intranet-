@@ -1,0 +1,17 @@
+{
+  "hostname": "scpng1.sharepoint.com",
+  "sitePath": "/sites/scpngintranet",
+  "reportDirectory": "reports",
+  "allowedDomains": ["scpng.gov.pg"],
+  "excludedEmails": ["automation@scpng.gov.pg", "allstaff@scpng.gov.pg", "allofficers@scpng.gov.pg", "boardroom@scpng.gov.pg"],
+  "targets": [
+    {
+      "name": "Employee_Profiles",
+      "fields": {"id": "EntraUserId", "mail": "Title", "department": "Department", "jobTitle": "Designation"}
+    },
+    {
+      "name": "SCPNG Staff Directory",
+      "fields": {"id": "EntraUserId", "mail": "Email", "displayName": "Title", "surname": "Surname", "jobTitle": "Designation", "officeLocation": "Division"}
+    }
+  ]
+}

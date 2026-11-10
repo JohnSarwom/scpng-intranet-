@@ -23,6 +23,18 @@ export interface SlideshowItem {
   author?: string;
   linkUrl?: string;
   orderIndex?: number;
+  contentKey?: string;
+  sourceName?: string;
+  sourcePublishedAt?: string;
+  reviewedAt?: string;
+  reviewDueAt?: string;
+  legalStatus?: string;
+  instrumentVersion?: string;
+  effectiveDate?: string;
+  imageDriveId?: string;
+  imageItemId?: string;
+  imageAlt?: string;
+  imageCredit?: string;
 }
 
 export interface SlideshowHookReturn {

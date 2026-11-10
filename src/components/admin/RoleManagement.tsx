@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { PermissionGroup } from '@/services/userSharePointService';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FRONT_DESK_ACTIONS, FRONT_DESK_RESOURCE } from '@/services/frontDesk/frontDeskConfig';
 
 interface RoleManagementProps {
   groups: PermissionGroup[];
@@ -49,7 +50,7 @@ const SYSTEM_RESOURCES: SystemResource[] = [
     ],
   },
   { id: 'reports', label: 'Reports' },
-  { id: 'tickets', label: 'IT Tickets' },
+  { id: FRONT_DESK_RESOURCE, label: 'Front Desk', extraActions: FRONT_DESK_ACTIONS.map(action => ({ ...action })) },
   { id: 'licenses', label: 'Licensing Registry' },
   { id: 'assets', label: 'Asset Management' },
   { id: 'payments', label: 'Payments' },

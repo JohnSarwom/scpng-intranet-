@@ -1,3 +1,4 @@
+import { useStaffMembers } from '@/hooks/useStaffMembers';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -24,7 +25,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import TicketCard from './TicketCard';
-import TicketDialog from './TicketDialog';
+import TicketDialog, { type TicketAssignee, type TicketComment } from './TicketDialog';
+import { useFrontDeskPermissions } from '@/hooks/frontDesk/useFrontDeskPermissions';
 import {
   DndContext,
   closestCenter,
@@ -128,9 +130,10 @@ export interface TicketData {
   status?: string;
   startDate?: Date | null;
   endDate?: Date | null;
-  assigneeId?: string;
-  completed: boolean;
-  onComplete: () => void;
+  assignee?: TicketAssignee;
+  comments?: TicketComment[];
+  completed?: boolean;
+  onComplete?: () => void;
   groupId?: string;
   onStatusChange?: (id: string, status: string) => void;
   onPriorityChange?: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
@@ -145,12 +148,14 @@ export interface TicketCardProps {
   priority: "High" | "Medium" | "Low";
   assignee?: {
     name: string;
+    email?: string;
     avatarFallback: string;
     avatarImage?: string;
   };
   startDate?: string;
   endDate?: string;
   commentsCount?: number;
+  comments?: TicketComment[];
   status?: string;
   type?: string;
   createdAt?: string;
@@ -191,14 +196,14 @@ type ViewMode = 'board' | 'grid' | 'list';
 // Sample initial data
 const initialBoardData: BoardData = {
   todo: [
-    { id: 'TKT-001', title: 'Implement user authentication', description: 'Set up login...', priority: 'High', startDate: 'Jul 25', endDate: 'Jul 26', assignee: { name: 'Alice', avatarFallback: 'A' }, status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-001', title: 'Implement user authentication', description: 'Set up login...', priority: 'High', startDate: 'Jul 25', endDate: 'Jul 26', status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
     { id: 'TKT-002', title: 'Design database schema', description: 'Define tables...', priority: 'Medium', commentsCount: 2, startDate: 'Jul 27', status: 'todo', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ],
   inprogress: [
-    { id: 'TKT-003', title: 'Develop Ticket Board UI', description: 'Create Kanban...', priority: 'Medium', assignee: { name: 'Bob', avatarFallback: 'B' }, commentsCount: 5, startDate: 'Jul 28', endDate: 'Jul 30', status: 'inprogress', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-003', title: 'Develop Ticket Board UI', description: 'Create Kanban...', priority: 'Medium', commentsCount: 5, startDate: 'Jul 28', endDate: 'Jul 30', status: 'inprogress', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ],
   done: [
-    { id: 'TKT-004', title: 'Setup project repository', priority: 'Low', assignee: { name: 'Charlie', avatarFallback: 'C' }, startDate: 'Jul 20', endDate: 'Jul 20', status: 'done', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
+    { id: 'TKT-004', title: 'Setup project repository', priority: 'Low', startDate: 'Jul 20', endDate: 'Jul 20', status: 'done', completed: false, onComplete: () => {}, onStatusChange: () => {}, onPriorityChange: () => {}, onAssigneeChange: () => {} },
   ]
 };
 
@@ -209,8 +214,8 @@ const initialBuckets = [
   { id: 'done', title: 'DONE' }
 ];
 
-// Initial filters
-const initialFilters = {
+// Initial filters: a factory, so Reset always gets fresh objects.
+const createInitialFilters = () => ({
   status: [
     { id: 'todo', label: 'New', checked: false },
     { id: 'inprogress', label: 'In Progress', checked: false },
@@ -221,12 +226,7 @@ const initialFilters = {
     { id: 'medium', label: 'Medium Priority', checked: false },
     { id: 'low', label: 'Low Priority', checked: false },
   ],
-  assignee: [
-    { id: 'alice', label: 'Alice', checked: false },
-    { id: 'bob', label: 'Bob', checked: false },
-    { id: 'charlie', label: 'Charlie', checked: false },
-    { id: 'unassigned', label: 'Unassigned', checked: false },
-  ],
+  assignee: [{ id: 'unassigned', label: 'Unassigned', checked: false }],
   date: {
     type: null as null | 'preset' | 'custom',
     preset: null as null | 'today' | 'last-24-hours' | 'last-week' | 'last-month',
@@ -235,7 +235,7 @@ const initialFilters = {
       to: null as Date | null
     }
   }
-};
+});
 
 // Board lane component with improved drop handling for empty groups
 const BoardLane = ({ 
@@ -257,16 +257,17 @@ const BoardLane = ({
   id: string; 
   title: string; 
   tickets: TicketCardProps[];
-  onAddTicket: () => void;
-  onEditTicket: (ticketId: string) => void;
-  onDeleteTicket: (ticketId: string) => void;
-  onDeleteGroup: (groupId: string) => void;
+  // Handlers are left out when the user lacks the permission, which hides their controls.
+  onAddTicket?: () => void;
+  onEditTicket?: (ticketId: string) => void;
+  onDeleteTicket?: (ticketId: string) => void;
+  onDeleteGroup?: (groupId: string) => void;
   isOver?: boolean;
-  onRenameGroup: (groupId: string, newTitle: string) => void;
-  onToggleComplete: (id: string, completed: boolean) => void;
-  onPriorityChange: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
-  onAssigneeChange: (id: string, assignee: { name: string; avatarFallback: string }) => void;
-  onStatusChange: (id: string, status: string) => void;
+  onRenameGroup?: (groupId: string, newTitle: string) => void;
+  onToggleComplete?: (id: string, completed: boolean) => void;
+  onPriorityChange?: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
+  onAssigneeChange?: (id: string, assignee: { name: string; avatarFallback: string }) => void;
+  onStatusChange?: (id: string, status: string) => void;
   dropTargetInfo: {
     columnId: string | null;
     overItemId: string | null;
@@ -292,13 +293,14 @@ const BoardLane = ({
   }, [isEditing]);
 
   const handleDoubleClick = () => {
+    if (!onRenameGroup) return;
     setIsEditing(true);
     setTempTitle(title);
   };
 
   const handleBlur = () => {
     if (tempTitle.trim()) {
-      onRenameGroup(id, tempTitle);
+      onRenameGroup?.(id, tempTitle);
     }
     setIsEditing(false);
   };
@@ -306,7 +308,7 @@ const BoardLane = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       if (tempTitle.trim()) {
-        onRenameGroup(id, tempTitle);
+        onRenameGroup?.(id, tempTitle);
       }
       setIsEditing(false);
     } else if (e.key === 'Escape') {
@@ -317,24 +319,28 @@ const BoardLane = ({
 
   const headerActions = (
     <>
-      <Button 
-        variant="ghost" 
-        size="icon"
-        className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-white/10"
-        onClick={onAddTicket}
-        title="Add Ticket"
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </Button>
-      <Button 
-        variant="ghost" 
-        size="icon"
-        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 hover:bg-white/10"
-        onClick={() => onDeleteGroup(id)}
-        title="Delete Group"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </Button>
+      {onAddTicket && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-white/10"
+          onClick={onAddTicket}
+          title="Add Ticket"
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      )}
+      {onDeleteGroup && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600 hover:bg-white/10"
+          onClick={() => onDeleteGroup(id)}
+          title="Delete Group"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </>
   );
 
@@ -372,15 +378,17 @@ const BoardLane = ({
             <div className="border-2 border-dashed border-gray-200/50 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center p-8 text-center h-[200px] bg-white/5 backdrop-blur-sm">
               <Kanban className="h-10 w-10 text-muted-foreground/20 mb-3" />
               <p className="text-xs font-medium text-muted-foreground/30 mb-4 uppercase tracking-widest">No tickets in this group</p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAddTicket}
-                className="pointer-events-auto border-white/10 hover:bg-white/5 font-bold text-xs uppercase tracking-tighter"
-              >
-                <Plus className="mr-2 h-3.5 w-3.5" />
-                Add Ticket
-              </Button>
+              {onAddTicket && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAddTicket}
+                  className="pointer-events-auto border-white/10 hover:bg-white/5 font-bold text-xs uppercase tracking-tighter"
+                >
+                  <Plus className="mr-2 h-3.5 w-3.5" />
+                  Add Ticket
+                </Button>
+              )}
             </div>
           )}
 
@@ -396,8 +404,8 @@ const BoardLane = ({
               <TicketCard
                 {...ticket}
                 id={ticket.id}
-                onEdit={() => onEditTicket(ticket.id)}
-                onDelete={() => onDeleteTicket(ticket.id)}
+                onEdit={onEditTicket ? () => onEditTicket(ticket.id) : undefined}
+                onDelete={onDeleteTicket ? () => onDeleteTicket(ticket.id) : undefined}
                 onComplete={onToggleComplete}
                 onPriorityChange={onPriorityChange}
                 onAssigneeChange={onAssigneeChange}
@@ -441,8 +449,8 @@ const BoardLane = ({
                       key={ticket.id}
                       id={ticket.id}
                       {...ticket}
-                      onEdit={() => onEditTicket(ticket.id)}
-                      onDelete={() => onDeleteTicket(ticket.id)}
+                      onEdit={onEditTicket ? () => onEditTicket(ticket.id) : undefined}
+                      onDelete={onDeleteTicket ? () => onDeleteTicket(ticket.id) : undefined}
                       onComplete={onToggleComplete}
                       onPriorityChange={onPriorityChange}
                       onAssigneeChange={onAssigneeChange}
@@ -463,14 +471,14 @@ const BoardLane = ({
 // Grid view component
 const GridView: React.FC<{
   tickets: BoardData;
-  onEditTicket: (id: string) => void;
-  onDeleteTicket: (id: string) => void;
-  onToggleComplete: (id: string, completed: boolean) => void;
-  onPriorityChange: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
-  onAssigneeChange: (id: string, assignee: { name: string; avatarFallback: string }) => void;
-  onStatusChange: (id: string, status: string) => void;
-  onRenameGroup: (groupId: string, newTitle: string) => void;
-}> = ({ tickets, onEditTicket, onDeleteTicket, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange, onRenameGroup }) => {
+  onEditTicket?: (id: string) => void;
+  onDeleteTicket?: (id: string) => void;
+  onToggleComplete?: (id: string, completed: boolean) => void;
+  onPriorityChange?: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
+  onAssigneeChange?: (id: string, assignee: { name: string; avatarFallback: string }) => void;
+  onStatusChange?: (id: string, status: string) => void;
+  onRenameGroup?: (groupId: string, newTitle: string) => void;
+}> = ({ tickets, onEditTicket, onDeleteTicket, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange }) => {
   // Flatten all tickets from all columns
   const allTickets = useMemo(() => {
     const flattened: TicketCardProps[] = [];
@@ -505,9 +513,9 @@ const GridView: React.FC<{
             commentsCount={ticket.commentsCount}
             status={ticket.status}
             completed={ticket.completed}
-            onEdit={() => onEditTicket(ticket.id)}
-            onDelete={() => onDeleteTicket(ticket.id)}
-            onComplete={(id, completed) => onToggleComplete(id, completed)}
+            onEdit={onEditTicket ? () => onEditTicket(ticket.id) : undefined}
+            onDelete={onDeleteTicket ? () => onDeleteTicket(ticket.id) : undefined}
+            onComplete={onToggleComplete}
             onPriorityChange={onPriorityChange}
             onAssigneeChange={onAssigneeChange}
             onStatusChange={onStatusChange}
@@ -518,17 +526,33 @@ const GridView: React.FC<{
   );
 };
 
+// Due date passed (end date if set, else start date) and not yet completed.
+const isTicketOverdue = (ticket: Pick<TicketCardProps, 'startDate' | 'endDate' | 'completed'>): boolean => {
+  const dateToCheckStr = ticket.endDate || ticket.startDate;
+  if (!dateToCheckStr) return false;
+
+  // Dates are stored either as ISO strings or as "MMM d" (no year), which is read as this year.
+  const date = dateToCheckStr.includes('-') || dateToCheckStr.includes('T')
+    ? parseISO(dateToCheckStr)
+    : new Date(`${dateToCheckStr} ${new Date().getFullYear()}`);
+  if (!isValid(date)) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return isBefore(date, today) && !ticket.completed;
+};
+
 // Add a ListView component for the new list view option
 const ListView: React.FC<{
   tickets: BoardData;
   buckets: Bucket[];
-  onEditTicket: (id: string) => void;
-  onDeleteTicket: (id: string) => void;
-  onToggleComplete: (id: string, completed: boolean) => void;
-  onPriorityChange: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
-  onAssigneeChange: (id: string, assignee: { name: string; avatarFallback: string }) => void;
-  onStatusChange: (id: string, status: string) => void;
-}> = ({ tickets, buckets, onEditTicket, onDeleteTicket, onToggleComplete, onPriorityChange, onAssigneeChange, onStatusChange }) => {
+  onEditTicket?: (id: string) => void;
+  onDeleteTicket?: (id: string) => void;
+  onToggleComplete?: (id: string, completed: boolean) => void;
+  onPriorityChange?: (id: string, priority: 'Low' | 'Medium' | 'High') => void;
+  onAssigneeChange?: (id: string, assignee: { name: string; avatarFallback: string }) => void;
+  onStatusChange?: (id: string, status: string) => void;
+}> = ({ tickets, buckets, onEditTicket, onDeleteTicket, onToggleComplete, onStatusChange }) => {
   // Flatten all tickets from all columns and sort by status and completion
   const allTickets = useMemo(() => {
     const flattened: (TicketCardProps & { columnId: string, columnTitle: string })[] = [];
@@ -599,34 +623,8 @@ const ListView: React.FC<{
               const statusLabel = statusLabels[statusKey] || ticket.columnTitle;
               const statusColor = statusColors[statusKey as keyof typeof statusColors] || '';
               
-              // Check if due date is passed (using endDate if available)
-              const isDueDatePassed = useMemo(() => {
-                const dateToCheckStr = ticket.endDate || ticket.startDate;
-                if (!dateToCheckStr) return false;
-                
-                try {
-                  // Parse the date
-                  let date: Date | null = null;
-                  
-                  if (dateToCheckStr.includes('-') || dateToCheckStr.includes('T')) {
-                    date = parseISO(dateToCheckStr);
-                  } else {
-                    const currentYear = new Date().getFullYear();
-                    const fullDateStr = `${dateToCheckStr} ${currentYear}`;
-                    date = new Date(fullDateStr);
-                  }
-                  
-                  if (!isValid(date)) return false;
-                  
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  
-                  return isBefore(date, today) && !ticket.completed;
-                } catch (error) {
-                  console.error("Error parsing date:", error);
-                  return false;
-                }
-              }, [ticket.startDate, ticket.endDate, ticket.completed]);
+              // A plain call, not a hook: hooks inside this loop break whenever the row count changes (B13).
+              const isDueDatePassed = isTicketOverdue(ticket);
               
               return (
                 <tr 
@@ -637,17 +635,19 @@ const ListView: React.FC<{
                   )}
                 >
                   <td className="p-3 text-center">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-5 w-5 p-0 text-muted-foreground hover:text-primary" 
-                      onClick={() => onToggleComplete(ticket.id, !ticket.completed)}
-                    >
-                      {ticket.completed ? 
-                        <CheckCircle className="h-4 w-4 text-green-600" /> : 
-                        <Circle className="h-4 w-4" />
-                      }
-                    </Button>
+                    {onToggleComplete ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5 p-0 text-muted-foreground hover:text-primary"
+                        onClick={() => onToggleComplete(ticket.id, !ticket.completed)}
+                      >
+                        {ticket.completed ?
+                          <CheckCircle className="h-4 w-4 text-green-600" /> :
+                          <Circle className="h-4 w-4" />
+                        }
+                      </Button>
+                    ) : ticket.completed && <CheckCircle className="h-4 w-4 text-green-600 mx-auto" />}
                   </td>
                   <td className="p-3">
                     <div className={cn("font-medium text-sm", ticket.completed && "line-through text-muted-foreground")}>
@@ -666,11 +666,16 @@ const ListView: React.FC<{
                   </td>
                   <td className="p-3">
                     {/* Wrap Badge in Dropdown for Status */}
+                    {!onStatusChange ? (
+                      <Badge variant="outline" className={cn("px-1.5 py-0.5 text-xs font-normal border", statusColor)}>
+                        {statusLabel}
+                      </Badge>
+                    ) : (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Badge 
-                          variant="outline" 
-                          className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer hover:opacity-80", statusColor)}                          
+                        <Badge
+                          variant="outline"
+                          className={cn("px-1.5 py-0.5 text-xs font-normal border cursor-pointer hover:opacity-80", statusColor)}
                         >
                           {statusLabel}
                         </Badge>
@@ -690,6 +695,7 @@ const ListView: React.FC<{
                         ))}
                       </DropdownMenuContent>
                     </DropdownMenu>
+                    )}
                   </td>
                   <td className="p-3">
                     <Badge 
@@ -734,22 +740,26 @@ const ListView: React.FC<{
                   </td>
                   <td className="p-3">
                     <div className="flex items-center gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground" 
-                        onClick={() => onEditTicket(ticket.id)}
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600" 
-                        onClick={() => onDeleteTicket(ticket.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      {onEditTicket && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => onEditTicket(ticket.id)}
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {onDeleteTicket && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 p-0 text-muted-foreground hover:text-red-600"
+                          onClick={() => onDeleteTicket(ticket.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -764,12 +774,14 @@ const ListView: React.FC<{
 
 // Main TicketManager component
 const TicketManager: React.FC = () => {
+  const { staffMembers } = useStaffMembers();
+  const perms = useFrontDeskPermissions();
   // State for the board data
   const [boardData, setBoardData] = useState<BoardData>(initialBoardData);
   const [buckets, setBuckets] = useState(initialBuckets);
   const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filters, setFilters] = useState(initialFilters);
+  const [filters, setFilters] = useState(createInitialFilters);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   // State for managing the dialog
@@ -874,6 +886,8 @@ const TicketManager: React.FC = () => {
         groupId: columnId,
         startDate: ticket.startDate ? new Date(ticket.startDate) : null,
         endDate: ticket.endDate ? new Date(ticket.endDate) : null,
+        assignee: ticket.assignee,
+        comments: ticket.comments,
         completed: ticket.completed,
         onComplete: () => {}
       };
@@ -989,16 +1003,27 @@ const TicketManager: React.FC = () => {
       const targetColumn = (ticketData.groupId || ticketData.status || 'todo') as BoardColumnId;
       if (!newBoard[targetColumn]) newBoard[targetColumn] = []; // Ensure column exists
 
+      // An edit merges onto the existing card, so fields the dialog doesn't carry survive (B8).
+      const existing = ticketData.id
+        ? Object.values(prevBoard).flat().find(t => t.id === ticketData.id)
+        : undefined;
+      const comments = ticketData.comments ?? existing?.comments ?? [];
+      // Sample cards carry a comment count without the comments themselves: keep that count and add real ones.
+      const untrackedComments = Math.max(0, (existing?.commentsCount ?? 0) - (existing?.comments?.length ?? 0));
       const cardData: TicketCardProps = {
+        ...existing,
         id: ticketData.id || `TKT-${Date.now()}`, // Use timestamp for unique ID
         title: ticketData.title,
         description: ticketData.description,
-        priority: ticketData.priority,
+        priority: ticketData.priority || existing?.priority || 'Medium',
         startDate: ticketData.startDate ? format(ticketData.startDate, "MMM d") : undefined,
         endDate: ticketData.endDate ? format(ticketData.endDate, "MMM d") : undefined,
         status: ticketData.status || targetColumn,
-        completed: ticketData.completed,
-        onComplete: () => {}
+        assignee: ticketData.assignee,
+        comments,
+        commentsCount: untrackedComments + comments.length,
+        completed: ticketData.completed ?? existing?.completed ?? false,
+        onComplete: existing?.onComplete ?? (() => {}),
       };
 
       if (ticketData.id) { // Update
@@ -1039,7 +1064,13 @@ const TicketManager: React.FC = () => {
         const filterArray = newFilters[type] as Array<{ id: string, label: string, checked: boolean }>;
         const filterIndex = filterArray.findIndex(f => f.id === id);
         if (filterIndex !== -1) {
-          filterArray[filterIndex].checked = checked;
+          const updated = filterArray.map(filter => filter.id === id ? { ...filter, checked } : filter);
+          if (type === 'assignee') newFilters.assignee = updated;
+          if (type === 'status') newFilters.status = updated;
+          if (type === 'priority') newFilters.priority = updated;
+        } else if (type === 'assignee') {
+          const staff = staffMembers.find(member => member.name.toLowerCase() === id);
+          if (staff) newFilters.assignee = [...prev.assignee, { id, label: staff.name, checked }];
         }
       }
       // Date filter is handled separately in date-specific functions
@@ -1167,11 +1198,12 @@ const TicketManager: React.FC = () => {
     setOverColumnId(null);
     setDropTargetInfo({ columnId: null, overItemId: null, isBottomHalf: false });
 
-    if (!over || !active) return;
+    // Moving a ticket is an edit: without update permission the card snaps back.
+    if (!over || !active || !perms.canUpdate) return;
 
     const activeId = String(active.id);
     const overId = String(over.id);
-    
+
     const { columnId: originalColumnId } = findTicketAndColumn(activeId) || {};
     if (!originalColumnId) return; // Should not happen if drag started correctly
 
@@ -1425,13 +1457,26 @@ const TicketManager: React.FC = () => {
     });
   };
 
+  // Handlers are passed only with the matching permission; a missing handler hides its control (plan P2.6).
+  const allowed = {
+    onEditTicket: perms.canUpdate ? handleEditTicket : undefined,
+    onDeleteTicket: perms.canDelete ? handleDeleteTicket : undefined,
+    onToggleComplete: perms.canUpdate ? handleToggleComplete : undefined,
+    onPriorityChange: perms.canUpdate ? handlePriorityChange : undefined,
+    onAssigneeChange: perms.canUpdate ? handleAssigneeChange : undefined,
+    onStatusChange: perms.canUpdate ? handleStatusChange : undefined,
+    onRenameGroup: perms.canManage ? handleRenameGroup : undefined,
+    onDeleteGroup: perms.canManage ? handleDeleteGroup : undefined,
+  };
+
   return (
     <div className="h-full overflow-auto">
       <main className="flex-1">
-        <div className="flex items-center p-4 gap-4">
-          <div className="flex-1">
+        {/* Wraps instead of squeezing the search box to ~46px; the icon lets clicks through to the input (M10). */}
+        <div className="flex flex-wrap items-center p-4 gap-4">
+          <div className="flex-1 min-w-[12rem]">
             <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder="Search tickets..."
@@ -1497,7 +1542,8 @@ const TicketManager: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36">
-              {filters.assignee.map(filter => (
+              {[...staffMembers.map(staff => ({ id: staff.name.toLowerCase(), label: staff.name, checked: filters.assignee.some(f => f.id === staff.name.toLowerCase() && f.checked) })),
+                { id: 'unassigned', label: 'Unassigned', checked: filters.assignee.some(f => f.id === 'unassigned' && f.checked) }].map(filter => (
                 <DropdownMenuCheckboxItem
                   key={filter.id}
                   checked={filter.checked}
@@ -1687,14 +1733,16 @@ const TicketManager: React.FC = () => {
           </DropdownMenu>
           
           {/* Add New Ticket Button */}
-          <Button 
-            onClick={handleCreateTicket}
-            className="bg-primary text-white hover:bg-primary/90 h-8"
-            size="sm"
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            New Ticket
-          </Button>
+          {perms.canCreate && (
+            <Button
+              onClick={handleCreateTicket}
+              className="bg-primary text-white hover:bg-primary/90 h-8"
+              size="sm"
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              New Ticket
+            </Button>
+          )}
           
           {/* Reset Filter Button */}
           {activeFilters.length > 0 && (
@@ -1702,7 +1750,7 @@ const TicketManager: React.FC = () => {
               variant="outline" 
               size="sm"
               onClick={() => {
-                setFilters(initialFilters); 
+                setFilters(createInitialFilters());
                 setActiveFilters([]);
               }}
               className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
@@ -1764,21 +1812,21 @@ const TicketManager: React.FC = () => {
                     id={columnId}
                     title={bucket.title}
                     tickets={columnTickets}
-                    onAddTicket={() => handleAddTicketToColumn(columnId)}
-                    onEditTicket={handleEditTicket}
-                    onDeleteTicket={handleDeleteTicket}
-                    onDeleteGroup={handleDeleteGroup}
+                    onAddTicket={perms.canCreate ? () => handleAddTicketToColumn(columnId) : undefined}
+                    onEditTicket={allowed.onEditTicket}
+                    onDeleteTicket={allowed.onDeleteTicket}
+                    onDeleteGroup={allowed.onDeleteGroup}
                     isOver={overColumnId === columnId}
-                    onRenameGroup={handleRenameGroup}
-                    onToggleComplete={handleToggleComplete}
-                    onPriorityChange={handlePriorityChange}
-                    onAssigneeChange={handleAssigneeChange}
-                    onStatusChange={handleStatusChange}
+                    onRenameGroup={allowed.onRenameGroup}
+                    onToggleComplete={allowed.onToggleComplete}
+                    onPriorityChange={allowed.onPriorityChange}
+                    onAssigneeChange={allowed.onAssigneeChange}
+                    onStatusChange={allowed.onStatusChange}
                     dropTargetInfo={dropTargetInfo}
                   />
                 );
               })}
-              {isAddingGroup ? (
+              {!perms.canManage ? null : isAddingGroup ? (
                 <div className="w-80 flex-shrink-0">
                   <div className="bg-white/50 dark:bg-black/20 backdrop-blur-md rounded-2xl p-4 border border-gray-200/50 dark:border-white/10 shadow-sm">
                     <Input
@@ -1817,24 +1865,24 @@ const TicketManager: React.FC = () => {
           ) : viewMode === "grid" ? (
             <GridView 
               tickets={getFilteredTickets()} 
-              onEditTicket={handleEditTicket} 
-              onDeleteTicket={handleDeleteTicket} 
-              onToggleComplete={handleToggleComplete}
-              onPriorityChange={handlePriorityChange}
-              onAssigneeChange={handleAssigneeChange}
-              onStatusChange={handleStatusChange}
-              onRenameGroup={handleRenameGroup}
+              onEditTicket={allowed.onEditTicket} 
+              onDeleteTicket={allowed.onDeleteTicket} 
+              onToggleComplete={allowed.onToggleComplete}
+              onPriorityChange={allowed.onPriorityChange}
+              onAssigneeChange={allowed.onAssigneeChange}
+              onStatusChange={allowed.onStatusChange}
+              onRenameGroup={allowed.onRenameGroup}
             />
           ) : (
             <ListView
               tickets={getFilteredTickets()}
               buckets={buckets}
-              onEditTicket={handleEditTicket}
-              onDeleteTicket={handleDeleteTicket}
-              onToggleComplete={handleToggleComplete}
-              onPriorityChange={handlePriorityChange}
-              onAssigneeChange={handleAssigneeChange}
-              onStatusChange={handleStatusChange}
+              onEditTicket={allowed.onEditTicket}
+              onDeleteTicket={allowed.onDeleteTicket}
+              onToggleComplete={allowed.onToggleComplete}
+              onPriorityChange={allowed.onPriorityChange}
+              onAssigneeChange={allowed.onAssigneeChange}
+              onStatusChange={allowed.onStatusChange}
             />
           )}
           

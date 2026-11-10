@@ -1,6 +1,6 @@
 # SCPNG Intranet Documentation
 > [!NOTE]
-> **Last Updated:** 2026-03-29 11:53
+> **Last Updated:** 2026-10-16
 
 Welcome to the SCPNG Intranet documentation repository. This documentation is organized hierarchically to match the application's application architecture and feature sets.
 
@@ -14,6 +14,9 @@ The source of truth for the application's core systems, tech stack, and data flo
 
 ### 📦 [Modules](modules/)
 Feature-specific documentation and business logic.
+- **[Notice Board](modules/notice-board/overview.md)**: Email feed, permissions, themed welcome popup and deployment status.
+- **[Staff Directory](modules/staff-directory/overview.md)**: Live five-day staff cleanup and operations.
+- **[October 2026 Handover](history/2026-10-16-notice-board-staff-sync-handover.md)**: Completed work, verification and outstanding release tasks.
 - **[Admin Dashboard](modules/admin-dashboard.md)**: User, role, and permission management.
 - **[Task Registry](modules/task-registry/overview.md)**: Managing daily tasks and operational workflows.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.

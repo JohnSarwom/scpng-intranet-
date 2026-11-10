@@ -55,6 +55,7 @@ function transformAnnouncement(item: SharePointAnnouncementItem): IAnnouncement 
     sourceEmail: fields.SourceEmail,
     author: fields.Author?.Title,
     createdDate: new Date(fields.Created),
+    source: "manual",
   };
 }
 
@@ -138,7 +139,22 @@ export class AnnouncementsSharePointService {
         .top(100)
         .get();
 
-      const items = response.value
+      // Do not miss new staff notices once the list grows beyond the first page.
+      const allItems: SharePointAnnouncementItem[] = [...(response.value || [])];
+      let nextPage: string | undefined = response['@odata.nextLink'];
+      while (nextPage) {
+        const page = await this.client.api(nextPage).get();
+        allItems.push(...(page.value || []));
+        nextPage = page['@odata.nextLink'];
+      }
+
+      const items = allItems
+        .filter((item: SharePointAnnouncementItem) => {
+          // The old mail flow imported Microsoft service digests and failures as notices.
+          const sourceEmail = item.fields?.SourceEmail?.trim().toLowerCase();
+          return sourceEmail !== "powerautomatenoreply@microsoft.com" &&
+            sourceEmail !== "microsoft-noreply@microsoft.com";
+        })
         .map(transformAnnouncement)
         .sort((a, b) => b.createdDate.getTime() - a.createdDate.getTime());
 

@@ -1,0 +1,9 @@
+{
+  "name": "scpng-staff-list-sync",
+  "private": true,
+  "type": "module",
+  "main": "cloud.mjs",
+  "engines": {"node": ">=20"},
+  "scripts": {"test": "node --test core.test.mjs runner.test.mjs", "start": "func start"},
+  "dependencies": {"@azure/functions": "^4.0.0", "@azure/identity": "^4.0.0", "@azure/storage-blob": "^12.0.0"}
+}

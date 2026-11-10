@@ -1,9 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
 const baselinePath = resolve('docs', 'strategy-execution', 'handoff-evidence', 'phase4f-release-typecheck.json');
-const tscPath = resolve('node_modules', 'typescript', 'bin', 'tsc');
+// Use Node's module lookup so a git worktree without its own node_modules
+// finds TypeScript in a parent checkout.
+const tscPath = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const diagnosticPattern = /^(.*?\.tsx?)\(\d+,\d+\): error (TS\d+): (.*)$/gm;
 const writeBaseline = process.argv.includes('--write-baseline');
 

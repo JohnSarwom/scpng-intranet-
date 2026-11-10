@@ -167,6 +167,43 @@ test('SharePoint adapter stores and restores the archive envelope without recomp
   assert.equal(loadedDeliveries[0].record.eventChecksum, delivery.record.eventChecksum);
 });
 
+test('archives with undefined fields and Dates still verify after the SharePoint JSON round trip', async () => {
+  // saveReport stores `content` as JSON text, so undefined keys vanish, undefined array
+  // entries become null and Dates become ISO strings before history() re-checks the checksum.
+  const persisted = [];
+  const gateway = {
+    async saveReport(report) {
+      persisted.push({ ...JSON.parse(JSON.stringify(report)), id: `sp-${persisted.length + 1}` });
+      return persisted[persisted.length - 1];
+    },
+    async getReports() { return persisted.map(item => JSON.parse(JSON.stringify(item))); },
+  };
+  const service = new StrategyReportArchiveService(
+    new SharePointStrategyReportArchiveStore(gateway),
+    { async current() { return actor(); } },
+    () => '2027-02-01T00:01:00.000Z',
+    () => 'event-1',
+  );
+  const report = snapshot();
+  report.goals = [{
+    id: 'g1', title: 'Goal', description: undefined,
+    tasks: [{ id: 't1', startDate: new Date('2027-01-05T00:00:00.000Z'), dueDate: undefined }],
+  }];
+  report.summary = { notes: ['first', undefined], owner: undefined };
+
+  const saved = await service.archive(report, {}, { division: 'Licensing' });
+  const stored = persisted[0].content.archive;
+  assert.equal(stored.snapshotChecksum, saved.record.snapshotChecksum);
+  assert.equal(stored.snapshot.goals[0].tasks[0].startDate, '2027-01-05T00:00:00.000Z');
+  assert.equal('description' in stored.snapshot.goals[0], false);
+  assert.deepEqual(stored.snapshot.summary.notes, ['first', null]);
+
+  const history = await service.history();
+  assert.equal(history.length, 1);
+  assert.equal(history[0].storageId, 'sp-1');
+  assert.equal(history[0].record.snapshotChecksum, saved.record.snapshotChecksum);
+});
+
 test('schedule binding freezes the exact authorized archive identity for dispatch', async () => {
   const { service } = harness();
   const archive = await service.archive(snapshot(), {}, { division: 'Licensing' });

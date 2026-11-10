@@ -196,6 +196,41 @@ describe('strategyExecutionGraphService (role-recursive)', () => {
     expect(byId['obj:o1'].rolesInferred).toBe(true);
   });
 
+  it('legacy KRAs take their division from the Division column, not the Unit column', () => {
+    // mapKRA fills `department` and `unit` from the Unit column and `division` from Division.
+    const legacyInput = {
+      strategicGoals: [goal('g1', 'Goal')],
+      unitObjectives: [{ id: 'o1', title: 'Obj', goalType: 'unit', parentGoalId: 'g1', division: 'Licensing', unit: 'Supervision' } as any],
+      performanceKras: [{
+        id: 'k1', title: 'KRA', objective_id: 'o1',
+        department: 'Supervision', unit: 'Supervision', division: 'Licensing',
+      } as any],
+    };
+    const kra = legacyToPerformanceRecords(legacyInput).find((r) => r.id === 'kra:k1')!;
+    expect(kra.division).toBe('Licensing');
+    expect(kra.unit).toBe('Supervision');
+
+    const divisionGraph = buildStrategyExecutionGraph({
+      ...legacyInput,
+      scope: 'division',
+      scopeContext: { division: 'Licensing' },
+    });
+    expect(findNode(divisionGraph.goals, 'kra:k1')).not.toBeNull();
+
+    const unitGraph = buildStrategyExecutionGraph({
+      ...legacyInput,
+      scope: 'unit',
+      scopeContext: { division: 'Licensing', unit: 'Supervision' },
+    });
+    expect(findNode(unitGraph.goals, 'kra:k1')).not.toBeNull();
+
+    // A KRA without a Division value still falls back to `department`.
+    const fallback = legacyToPerformanceRecords({
+      performanceKras: [{ id: 'k2', title: 'KRA', department: 'Licensing' } as any],
+    });
+    expect(fallback[0].division).toBe('Licensing');
+  });
+
   it('normalizes "none"/null parent ids (no false links)', () => {
     const graph = buildStrategyExecutionGraph({
       strategicGoals: [goal('g1', 'Goal')],

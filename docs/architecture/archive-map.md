@@ -2,6 +2,10 @@
 
 This document indexes the 100+ historical documentation files moved to `docs/history/`. These files contain valuable context on specific bug fixes and feature implementations but are archived to keep the primary `ARCHITECTURE.md` clean.
 
+## Notice board and staff automation
+
+- [16 October 2026 handover](../history/2026-10-16-notice-board-staff-sync-handover.md): Live routing/import, owner-only access, staff cleanup, popup implementation and unresolved news throttling.
+
 ---
 
 ## 🔐 Auth & Access Control (RBAC)

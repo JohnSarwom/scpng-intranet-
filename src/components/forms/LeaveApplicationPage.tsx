@@ -230,7 +230,7 @@ const LeaveApplicationPage: React.FC = () => {
   };
 
   const onSubmit = async (data: any) => {
-    const failSubmission = (message: string, fields: string[] = []) => {
+    const failSubmission = (message: string, fields: Parameters<typeof methods.setError>[0][] = []) => {
       fields.forEach((fieldName) => {
         methods.setError(fieldName, { type: 'manual', message });
       });

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageLayout from '@/components/layout/PageLayout';
-import TicketInbox from '@/components/ticketing/TicketInbox';
 import TicketManager from '../components/ticketing/TicketManager';
 import VisitorManagement from '../components/ticketing/VisitorManagement';
 import AppointmentView from '../components/ticketing/AppointmentView';
@@ -9,39 +8,27 @@ import MailAndPackages from '../components/ticketing/MailAndPackages';
 import GeneralInquiries from '../components/ticketing/GeneralInquiries';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Ticket, 
   Users, 
   Calendar, 
   Mail, 
   Phone, 
-  LifeBuoy, 
-  CalendarDays, 
-  MessageSquare,
   ArrowLeft,
   LayoutGrid
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
+// Ticket Inbox and the Employee Support, Event Prep and Feedback & Complaints tabs were removed
+// (front-desk plan decisions D1 and D2) until they have requirements and real behaviour.
 type TicketCategory = 
-  | 'ticket-inbox' 
   | 'ticket-manager'
   | 'visitor-management' 
   | 'appointments' 
   | 'mail-packages' 
-  | 'general-inquiries' 
-  | 'employee-support' 
-  | 'event-prep' 
-  | 'feedback-complaints';
+  | 'general-inquiries';
 
 const Tickets: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TicketCategory>('ticket-manager');
   const navigate = useNavigate();
-
-  const PlaceholderContent: React.FC<{ title: string }> = ({ title }) => (
-    <div className="flex items-center justify-center p-6 bg-gray-50 dark:bg-gray-900 min-h-[500px] rounded-lg">
-      <h2 className="text-2xl font-semibold text-gray-600 dark:text-gray-400">{title} Content</h2>
-    </div>
-  );
 
   const tabs = [
     { 
@@ -49,12 +36,6 @@ const Tickets: React.FC = () => {
       label: 'Ticket Manager', 
       icon: LayoutGrid, 
       content: <TicketManager />
-    },
-    { 
-      id: 'ticket-inbox' as TicketCategory, 
-      label: 'Ticket Inbox', 
-      icon: Ticket,
-      content: <TicketInbox /> 
     },
     { 
       id: 'visitor-management' as TicketCategory, 
@@ -79,24 +60,6 @@ const Tickets: React.FC = () => {
       label: 'General Inquiries', 
       icon: Phone,
       content: <GeneralInquiries /> 
-    },
-    { 
-      id: 'employee-support' as TicketCategory, 
-      label: 'Employee Support', 
-      icon: LifeBuoy,
-      content: <PlaceholderContent title="Employee Support" /> 
-    },
-    { 
-      id: 'event-prep' as TicketCategory, 
-      label: 'Event Prep', 
-      icon: CalendarDays,
-      content: <PlaceholderContent title="Event Prep" /> 
-    },
-    { 
-      id: 'feedback-complaints' as TicketCategory, 
-      label: 'Feedback & Complaints', 
-      icon: MessageSquare,
-      content: <PlaceholderContent title="Feedback & Complaints" /> 
     },
   ];
 

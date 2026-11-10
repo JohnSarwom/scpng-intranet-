@@ -484,4 +484,7 @@ export interface IAnnouncement {
   sourceEmail?: string;
   author?: string;
   createdDate: Date;
+  source?: "manual" | "email";
+  audience?: "All Staff" | "All Officers" | "Both groups";
+  internetMessageId?: string;
 }
