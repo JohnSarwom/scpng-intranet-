@@ -292,7 +292,7 @@ const MarketData = () => {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: 'rgba(0,0,0,0.8)',
-                        titleFont: { family: 'DM Sans', weight: '600' },
+                        titleFont: { family: 'DM Sans', weight: 600 },
                         bodyFont: { family: 'Space Mono' },
                         padding: 12,
                         cornerRadius: 8,
