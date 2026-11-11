@@ -22,6 +22,7 @@ Feature-specific documentation and business logic.
 - **[Task Registry](modules/task-registry/overview.md)**: Managing daily tasks and operational workflows.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.
 - **[Strategy Execution Roadmap](strategy-execution/README.md)**: Forward-looking roadmap for linking Strategic Goals, KRAs, KPIs, Tasks, progress indicators, Division/Unit tracking, and Reports.
+- **[Workflow Studio](modules/workflows/overview.md)**: The Workflows page — built-in workflows drawn as implemented (starting with Task Registry → Strategic Goal), step simulation, saved workflows in `Workflow_Definitions`, and the AI workflow builder.
 - **[Performance](modules/performance/)**: KRAs, KPIs, and Initiatives.
 - **[Leave Application](modules/leave-application/)**: Employee leave management system.
 - **[Meeting Minutes](modules/meeting-minutes/overview.md)**: In-browser meeting minutes generator with Word and PDF export.
