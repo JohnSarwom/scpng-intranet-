@@ -1,0 +1,8 @@
+{
+  "enabled": false,
+  "requestGraphSiteId": "REPLACE_WITH_MAIN_INTRAnET_GRAPH_SITE_ID",
+  "schedulingEnabled": false,
+  "emailEnabled": false,
+  "staffEmail": "",
+  "intranetUrl": "https://your-intranet.example"
+}

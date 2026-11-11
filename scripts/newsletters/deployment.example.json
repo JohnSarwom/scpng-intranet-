@@ -1,0 +1,6 @@
+{
+  "mainSite": "https://scpng1.sharepoint.com/sites/scpngintranet",
+  "privateSite": "https://scpng1.sharepoint.com/sites/scpngintranet",
+  "directoryFields": { "Division": "field_3", "Email": "field_5" },
+  "description": "Newsletter stores use the existing intranet site. Private workflow lists and libraries must have unique, restricted permissions."
+}

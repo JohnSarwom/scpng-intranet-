@@ -13,6 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import TradingViewTicker from '@/components/custom/TradingViewTicker';
 import ScpngNewsUploadForm from '@/components/custom/ScpngNewsUploadForm';
+import { Link } from 'react-router-dom';
+import PublishedNewsletters from '@/components/newsletters/PublishedNewsletters';
 import ScpngArticleModal, { NewsArticle as ModalNewsArticle } from '@/components/custom/ScpngArticleModal';
 import { useMicrosoftGraph } from '@/hooks/useMicrosoftGraph';
 import { NewsSharePointService } from '@/services/newsSharePointService';
@@ -364,6 +366,7 @@ const News = () => {
             ))}
           </div>
 
+          <PublishedNewsletters compact />
           {/* Existing layout logic based on canUploadNews */}
           {canUploadNews ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -412,6 +415,10 @@ const News = () => {
         </div>
         {/* The subtitle can remain below or be adjusted if needed */}
         <p className="text-gray-500 mt-2">Stay updated with the latest organizational news and unit announcements</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Button asChild variant="outline"><Link to="/news/newsletters">Read Newsletters</Link></Button>
+          <Button asChild><Link to="/news/newsletters/workspace">Newsletter Workspace</Link></Button>
+        </div>
       </div>
 
       <Tabs defaultValue="News Dashboard" className="w-full">

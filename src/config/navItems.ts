@@ -50,7 +50,7 @@ export function canViewNavItem(item: NavItem, permissions: Record<string, string
     if (!item.resource) return true;
     if (permissions?.all?.includes('*')) return true;
     const actions = permissions?.[item.resource];
-    return Array.isArray(actions) && (item.action ? actions.includes(item.action) : actions.length > 0);
+    return Array.isArray(actions) && (item.action ? actions.includes(item.action) || actions.includes('*') : actions.length > 0);
 }
 
 export const mainNavItems: NavItem[] = [
@@ -63,6 +63,7 @@ export const mainNavItems: NavItem[] = [
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
     { icon: FormInput, path: '/forms', label: 'Forms', resource: 'forms' },
     { icon: ClipboardCheck, path: '/approvals', label: 'Approvals', resource: null },
+    { icon: FileText, path: '/admin?tab=newsletter-routing', label: 'Newsletter appointments', resource: 'newsletter_routing', action: 'manage' },
     { icon: CalendarClock, path: '/time-attendance', label: 'Attendance', resource: null },
     { icon: MessageSquare, path: '/ai-hub', label: 'AI Hub', resource: null },
     { icon: GalleryHorizontal, path: '/gallery', label: 'Gallery', resource: 'gallery' },

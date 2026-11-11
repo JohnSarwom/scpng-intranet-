@@ -100,8 +100,9 @@ function NotificationItem({
 
 export function NotificationPanel() {
     const [open, setOpen] = useState(false);
+    const [newsletterRequested, setNewsletterRequested] = useState(false);
     const navigate = useNavigate();
-    const { notifications, unreadCount, isLoading, markRead, markAllRead } = useNotifications();
+    const { notifications, unreadCount, isLoading, newsletterLoading, newsletterError, markRead, markAllRead, refresh } = useNotifications(newsletterRequested);
 
     const handleNavigate = (url: string) => {
         setOpen(false);
@@ -109,7 +110,7 @@ export function NotificationPanel() {
     };
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={(next) => { setOpen(next); if (next) setNewsletterRequested(true); }}>
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
@@ -134,6 +135,9 @@ export function NotificationPanel() {
             >
                 <div className="flex items-center justify-between px-4 py-3">
                     <h4 className="font-semibold text-sm">Notifications</h4>
+                    <Button variant="ghost" size="sm" disabled={newsletterLoading} onClick={() => refresh()}>
+                        Refresh
+                    </Button>
                     {unreadCount > 0 && (
                         <Button
                             variant="ghost"
@@ -147,6 +151,8 @@ export function NotificationPanel() {
                     )}
                 </div>
                 <Separator className="shrink-0" />
+                {newsletterLoading && <p role="status" className="px-4 py-2 text-xs text-muted-foreground">Checking newsletter updates…</p>}
+                {newsletterError && <p role="status" className="px-4 py-2 text-xs text-muted-foreground">Newsletter updates are unavailable. Refresh to check again.</p>}
                 <ScrollArea className="flex-1 overflow-y-auto">
                     {isLoading ? (
                         <div className="py-8 text-center text-sm text-muted-foreground">
@@ -156,7 +162,7 @@ export function NotificationPanel() {
                         <div className="py-8 text-center">
                             <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                             <p className="text-sm text-muted-foreground">No notifications</p>
-                            <p className="text-xs text-muted-foreground/60 mt-1">You're all caught up</p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">{newsletterLoading ? 'Newsletter updates are being checked.' : 'Use Refresh to check for new newsletter updates.'}</p>
                         </div>
                     ) : (
                         <div className="divide-y">

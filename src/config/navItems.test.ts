@@ -16,3 +16,19 @@ describe('PNGX announcements navigation access', () => {
     expect(canViewNavItem(item!, null, true)).toBe(true);
   });
 });
+
+describe('newsletter appointment navigation access', () => {
+  const item = mainNavItems.find(entry => entry.path === '/admin?tab=newsletter-routing')!;
+
+  it('shows the appointment screen to scoped delegates and intranet administrators', () => {
+    expect(canViewNavItem(item, { newsletter_routing: ['read', 'manage'] }, false)).toBe(true);
+    expect(canViewNavItem(item, { newsletter_routing: ['*'] }, false)).toBe(true);
+    expect(canViewNavItem(item, null, true)).toBe(true);
+  });
+
+  it('does not offer appointment management to read-only staff or general page readers', () => {
+    expect(canViewNavItem(item, { newsletter_routing: ['read'] }, false)).toBe(false);
+    expect(canViewNavItem(item, { admin: ['read'] }, false)).toBe(false);
+    expect(canViewNavItem(item, {}, false)).toBe(false);
+  });
+});

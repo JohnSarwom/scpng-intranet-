@@ -38,6 +38,7 @@ export default function Login() {
       await instance.loginRedirect({
         ...loginRequest,
         redirectUri: window.location.origin + '/',
+        prompt: 'select_account',
       });
     } catch (msalError: any) {
       logger.error('MSAL loginRedirect error', msalError);

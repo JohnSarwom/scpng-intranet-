@@ -1,3 +1,4 @@
+import NewsletterQueueAudit from '@/components/admin/NewsletterQueueAudit';
 import React, { useState, useEffect } from 'react';
 import PageLayout from '@/components/layout/PageLayout';
 import StrategyGraphDebugPanel from '@/components/strategy/StrategyGraphDebugPanel';
@@ -2409,6 +2410,7 @@ const TestGround = () => {
                 <Separator />
 
                 {/* Strategy Execution Graph — read-only debug (Phase 3) */}
+                <NewsletterQueueAudit />
                 <StrategyGraphDebugPanel />
 
                 {/* User Info Card */}
