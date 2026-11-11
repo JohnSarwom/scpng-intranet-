@@ -7,10 +7,12 @@
  * drafts new workflows using the app's existing AI configuration.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
-  Bot, Copy, Download, Loader2, Maximize, Move, PanelRight, Play, RotateCcw, Save, Search,
-  Trash2, Upload, Workflow as WorkflowIcon, ZoomIn, ZoomOut, LayoutGrid, X,
+  Bot, Copy, Download, Expand, Loader2, Move, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose,
+  PanelRightOpen, Play, RotateCcw, Save, Scan, Search, Shrink, Trash2, Upload, Workflow as WorkflowIcon,
+  ZoomIn, ZoomOut, LayoutGrid, X,
 } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -45,6 +47,26 @@ const STATUS_BADGE: Record<WorkflowStatus, { label: string; className: string }>
   published: { label: 'Published', className: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300' },
   draft: { label: 'Draft', className: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300' },
 };
+
+/** Grid columns for each combination of visible side panels (lg and up). */
+const GRID_COLUMNS: Record<string, string> = {
+  'library+panel': 'lg:grid-cols-[250px_minmax(0,1fr)_380px]',
+  'library': 'lg:grid-cols-[250px_minmax(0,1fr)]',
+  'panel': 'lg:grid-cols-[minmax(0,1fr)_380px]',
+  '': 'lg:grid-cols-[minmax(0,1fr)]',
+};
+const PANELS_STORAGE_KEY = 'workflowStudio.panels';
+/** Classes for the studio host while it covers the whole window. */
+const FULLSCREEN_HOST = 'fixed inset-0 z-50 flex flex-col overflow-y-auto bg-gray-100 p-3 dark:bg-gray-950 lg:overflow-hidden';
+
+function readPanelPreference(): { library: boolean; panel: boolean } {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PANELS_STORAGE_KEY) || '{}');
+    return { library: saved.library !== false, panel: saved.panel !== false };
+  } catch {
+    return { library: true, panel: true };
+  }
+}
 
 const selectionKey = (selection: Selection) =>
   selection.kind === 'built-in' ? `built-in:${selection.id}` : selection.kind === 'saved' ? `saved:${selection.itemId}` : 'draft';
@@ -89,6 +111,60 @@ const Workflows = () => {
   const [pendingRun, setPendingRun] = useState<RunState | null>(null);
   const transferCounter = useRef(0);
   const canvasRef = useRef<WorkflowCanvasHandle>(null);
+
+  // --- Full screen and side panels -------------------------------------------
+  // The studio renders into one host element that never changes, so entering or
+  // leaving full screen moves it without remounting anything (the AI chat and
+  // the simulation keep their state). Normally the host sits in the page; in
+  // full screen it moves to <body>, outside the page layout's transformed
+  // wrapper, and covers the window.
+  const [fullscreen, setFullscreen] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(() => readPanelPreference().library);
+  const [showPanel, setShowPanel] = useState(() => readPanelPreference().panel);
+  const [studioHost] = useState(() => document.createElement('div'));
+  const placeholderRef = useRef<HTMLDivElement>(null);
+
+  // One effect places the host and takes it away again, so attach and detach
+  // can never run out of order (on unmount, hot reload or a full-screen switch).
+  useLayoutEffect(() => {
+    if (fullscreen) {
+      studioHost.className = FULLSCREEN_HOST;
+      document.body.appendChild(studioHost);
+      // The page underneath must not scroll behind the overlay.
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previousOverflow;
+        studioHost.remove();
+      };
+    }
+    studioHost.className = '';
+    placeholderRef.current?.appendChild(studioHost);
+    return () => { studioHost.remove(); };
+  }, [fullscreen, studioHost]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PANELS_STORAGE_KEY, JSON.stringify({ library: showLibrary, panel: showPanel }));
+    } catch { /* preference only */ }
+  }, [showLibrary, showPanel]);
+
+  const enterFullscreen = () => {
+    setFullscreen(true);
+    // Also hide the browser's own chrome where allowed; the overlay works without it.
+    document.documentElement.requestFullscreen?.().catch(() => undefined);
+  };
+  const exitFullscreen = useCallback(() => {
+    setFullscreen(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => undefined);
+  }, []);
+
+  // Leaving browser full screen (for example with Esc) leaves the studio's too.
+  useEffect(() => {
+    const onChange = () => { if (!document.fullscreenElement) setFullscreen(false); };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
 
   const savedWorkflows = saved.data?.workflows || [];
   const selectedSaved = selection.kind === 'saved' ? savedWorkflows.find(item => item.itemId === selection.itemId) || null : null;
@@ -191,6 +267,29 @@ const Workflows = () => {
     if (run?.finished) canvasRef.current?.fit();
   }, [run?.finished]);
 
+  // When full screen or a side panel changes the canvas size, reframe it once
+  // the new layout has settled: the active step during a run, otherwise the whole workflow.
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const current = runRef.current;
+      if (current && !current.finished && current.active[0]) canvasRef.current?.focusOn(current.active[0]);
+      else canvasRef.current?.fit();
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [fullscreen, showLibrary, showPanel]);
+
+  // Esc leaves full screen (browser full screen handles its own Esc).
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !document.fullscreenElement && confirm === null) exitFullscreen();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen, confirm, exitFullscreen]);
+
   // Automatic steps (and decisions taken from an earlier answer) move on by themselves.
   useEffect(() => {
     if (!run || !definition || traveling || run.finished) return;
@@ -213,6 +312,7 @@ const Workflows = () => {
       setSelectedNode(state.active[0]);
       setTab('steps');
       setPanel('inspector');
+      setShowPanel(true); // the steps are filled in on the side panel
       setEditing(false);
     } catch (error: any) {
       toast({ title: 'Cannot start', description: error?.message, variant: 'destructive' });
@@ -374,7 +474,7 @@ const Workflows = () => {
               </p>
             </div>
             <Button
-              onClick={() => setPanel('ai')}
+              onClick={() => { setPanel('ai'); setShowPanel(true); }}
               className="h-auto rounded-2xl bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-intranet-primary shadow-xl hover:bg-white/90"
             >
               <Bot className="mr-2 h-5 w-5" />Create with AI
@@ -409,9 +509,19 @@ const Workflows = () => {
           </div>
         )}
 
-        <div className="grid gap-4 lg:h-[calc(100vh-120px)] lg:min-h-[560px] lg:grid-cols-[250px_minmax(0,1fr)_380px]">
+        {/* The studio is rendered into studioHost, which sits here unless full screen moves it to <body>. */}
+        <div ref={placeholderRef} />
+        {createPortal(
+        <div className={cn(
+          'grid gap-4',
+          GRID_COLUMNS[[showLibrary && 'library', showPanel && 'panel'].filter(Boolean).join('+')],
+          fullscreen ? 'min-h-0 flex-1 lg:h-full' : 'lg:h-[calc(100vh-120px)] lg:min-h-[560px]',
+        )}>
           {/* Library */}
-          <aside className="flex min-h-0 flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900/60">
+          <aside
+            aria-label="Workflow list"
+            className={cn(showLibrary ? 'flex' : 'hidden', 'min-h-0 flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900/60')}
+          >
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search workflows" className="pl-8" aria-label="Search workflows" />
@@ -446,7 +556,11 @@ const Workflows = () => {
           </aside>
 
           {/* Canvas */}
-          <section className="flex min-h-[520px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60">
+          <section className={cn(
+            'flex min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60',
+            // In full screen on small screens the chart gets the whole screen; the panels scroll below it.
+            fullscreen ? 'min-h-[calc(100dvh-1.5rem)] lg:min-h-0' : 'min-h-[520px]',
+          )}>
             <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 p-3 dark:border-white/10">
               <div className="mr-auto min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -464,10 +578,42 @@ const Workflows = () => {
                 )}
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(1.2)} title="Zoom in" aria-label="Zoom in"><ZoomIn className="h-4 w-4" /></Button>
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(0.82)} title="Zoom out" aria-label="Zoom out"><ZoomOut className="h-4 w-4" /></Button>
-                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.fit()} title="Fit the whole workflow" aria-label="Fit the whole workflow"><Maximize className="h-4 w-4" /></Button>
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.fit()} title="Fit the whole workflow" aria-label="Fit the whole workflow"><Scan className="h-4 w-4" /></Button>
                 <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => { setEditing(value => !value); if (run) resetRun(); }} title="Drag steps to rearrange them" className={editing ? 'bg-intranet-primary text-white hover:bg-intranet-secondary' : undefined}>
                   <Move className="mr-1.5 h-4 w-4" />{editing ? 'Done' : 'Edit layout'}
                 </Button>
+                <span className="mx-0.5 hidden h-6 w-px bg-gray-200 dark:bg-white/10 sm:block" aria-hidden="true" />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn('h-8 w-8', !showLibrary && 'text-muted-foreground')}
+                  onClick={() => setShowLibrary(value => !value)}
+                  aria-pressed={showLibrary}
+                  title={showLibrary ? 'Hide the workflow list' : 'Show the workflow list'}
+                  aria-label={showLibrary ? 'Hide the workflow list' : 'Show the workflow list'}
+                >
+                  {showLibrary ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn('h-8 w-8', !showPanel && 'text-muted-foreground')}
+                  onClick={() => setShowPanel(value => !value)}
+                  aria-pressed={showPanel}
+                  title={showPanel ? 'Hide the inspector and AI panel' : 'Show the inspector and AI panel'}
+                  aria-label={showPanel ? 'Hide the inspector and AI panel' : 'Show the inspector and AI panel'}
+                >
+                  {showPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                </Button>
+                {fullscreen ? (
+                  <Button size="sm" variant="outline" onClick={exitFullscreen} title="Leave full screen (Esc)">
+                    <Shrink className="mr-1.5 h-4 w-4" />Exit full screen
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={enterFullscreen} title="Show the studio full screen">
+                    <Expand className="mr-1.5 h-4 w-4" />Full screen
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -480,7 +626,7 @@ const Workflows = () => {
                   waitingIds={run?.waiting || []}
                   completedIds={run?.completed || []}
                   selectedId={selectedNode}
-                  onSelect={id => { setSelectedNode(id); if (!run || id !== inputNodeId) setTab('details'); else setTab('steps'); setPanel('inspector'); }}
+                  onSelect={id => { setSelectedNode(id); if (!run || id !== inputNodeId) setTab('details'); else setTab('steps'); setPanel('inspector'); setShowPanel(true); }}
                   transfer={transfer}
                   onTransferDone={onTransferDone}
                   editing={editing}
@@ -509,6 +655,17 @@ const Workflows = () => {
                 Scroll to zoom · drag the background to pan · click a step for details
                 {run && !run.finished && (traveling ? ' · data moving…' : inputNodeId ? ` · waiting for: ${definition?.nodes.find(node => node.id === inputNodeId)?.label}` : '')}
               </p>
+              {/* With the side panel hidden, a step waiting for input still needs a way in. */}
+              {!showPanel && inputNodeId && (
+                <Button
+                  size="sm"
+                  onClick={() => { setShowPanel(true); setPanel('inspector'); setTab('steps'); }}
+                  className="absolute right-3 top-3 max-w-[calc(100%-1.5rem)] truncate bg-intranet-primary text-white shadow-md hover:bg-intranet-secondary"
+                >
+                  <PanelRightOpen className="mr-1.5 h-4 w-4" />
+                  Fill in “{definition?.nodes.find(node => node.id === inputNodeId)?.label}”
+                </Button>
+              )}
             </div>
 
             {/* Workflow actions */}
@@ -545,8 +702,11 @@ const Workflows = () => {
             </div>
           </section>
 
-          {/* Inspector / AI */}
-          <aside className="flex min-h-[520px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60 lg:min-h-0">
+          {/* Inspector / AI — hidden rather than unmounted, so the AI conversation survives. */}
+          <aside
+            aria-label="Inspector and AI builder"
+            className={cn(showPanel ? 'flex' : 'hidden', 'min-h-[520px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60 lg:min-h-0')}
+          >
             <div className="flex gap-1 border-b border-gray-100 p-2 dark:border-white/10" role="tablist" aria-label="Side panel">
               {([['inspector', 'Inspector', PanelRight], ['ai', 'AI builder', Bot]] as const).map(([id, label, Icon]) => (
                 <button
@@ -587,7 +747,9 @@ const Workflows = () => {
               <WorkflowAIBuilder current={definition} onDraft={onAiDraft} />
             </div>
           </aside>
-        </div>
+        </div>,
+        studioHost,
+        )}
       </div>
 
       <AlertDialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>

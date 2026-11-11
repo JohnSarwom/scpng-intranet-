@@ -12,6 +12,7 @@ The page lists the workflows in the system, draws the selected one on a canvas, 
 | Canvas (centre) | Pan by dragging the background; zoom with the scroll wheel or the buttons; **Fit** shows the whole workflow. **Simulate** walks a sample record through the steps, with an animated data packet on each connection. **Edit layout** lets you drag steps, and **Tidy** re-lays them out. |
 | Inspector (right) | Four tabs:<br>**Steps**: the active step's form, **Submit & cascade**, and **Fill example**.<br>**Details**: where the step happens, what it writes, its rules, and the source files.<br>**Live data**: what has been submitted.<br>**Changes**: the history. |
 | AI builder (right) | Chat to draft or change a workflow. A valid answer appears on the canvas as an unsaved draft. |
+| Full screen and panels | **Full screen** makes the studio fill the window (and hides the browser's own toolbar where allowed); **Exit full screen** or Esc leaves it. The two panel buttons in the canvas toolbar turn the workflow list (left) and the inspector/AI panel (right) on or off; the choice is remembered in the browser. Hidden panels keep their state (the AI conversation, the simulation). If a simulation step needs input while the right panel is off, a **Fill in "…"** button opens it. |
 
 Simulations run in the browser only. Nothing in a simulation is saved or sent to SharePoint.
 
