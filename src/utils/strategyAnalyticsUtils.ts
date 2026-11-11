@@ -336,7 +336,7 @@ export function serializeStrategyContext(
     ).join('\n');
 
     const unitObjSummary = unitObjectives.map((o: any, i: number) =>
-        `${i + 1}. "${o.title}" — Progress: ${o.progress || 0}%, Status: ${o.status || 'N/A'}, Division: ${o.division || 'N/A'}, Unit: ${o.unit || 'N/A'}, Goal Type: ${o.goalType || 'N/A'}, Parent Objective ID: ${o.parentGoalId || 'N/A'}, Key Deliverable: ${o.linkedDeliverable || 'N/A'}${o.owner ? `, Owner: ${o.owner}` : ''}${o.description ? `, Description: ${o.description}` : ''}`
+        `${i + 1}. "${o.title}" — Progress: ${o.progress || 0}%, Status: ${o.status || 'N/A'}, Division: ${o.division || 'N/A'}, Unit: ${o.unit || 'N/A'}, Goal Type: ${o.goalType || 'N/A'}, Strategic Goal ID: ${o.strategicGoalId || 'none'}, Key Deliverable: ${o.linkedDeliverable || 'N/A'}${o.owner ? `, Owner: ${o.owner}` : ''}${o.description ? `, Description: ${o.description}` : ''}`
     ).join('\n');
 
     const kraSummary = kras.map((k, i) =>
@@ -378,11 +378,11 @@ export function serializeStrategyContext(
     return [
         summary,
         '',
-        `STRATEGIC OBJECTIVES (${totalObjs} items) — from Strategic_Objectives SharePoint list:`,
-        objSummary || '(No strategic objectives data available)',
+        `STRATEGIC GOALS (${totalObjs} items) — from the Strategic_Goals SharePoint list:`,
+        objSummary || '(No strategic goals data available)',
         '',
         `UNIT-LEVEL OBJECTIVES (${totalUnitObjs} items) — from Unit_Objectives SharePoint list:`,
-        `These are division/unit-level objectives that cascade from strategic objectives. Each has a parentGoalId linking it to a strategic objective, a division, a unit, and a Key Deliverable.`,
+        `These are division/unit-level objectives that cascade from the Strategic Goals. Each has a Strategic Goal ID (an item in Strategic_Goals) when linked, a division, a unit, and a Key Deliverable. "Strategic Goal ID: none" means the objective is not linked to any goal.`,
         unitObjSummary || '(No unit objectives data available)',
         '',
         `KEY RESULT AREAS - KRAs (${kras.length} items) — from Performance_KRAs SharePoint list:`,

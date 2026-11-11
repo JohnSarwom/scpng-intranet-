@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMsal } from '@azure/msal-react';
 import { useOpsService } from '@/hooks/useSharePointOps';
+import { getGraphClient } from '@/services/graphService';
+import { StrategyService } from '@/services/strategyService';
 import { buildLinkageInventory, type LinkageInventory } from '@/services/linkageInventoryService';
 import { isOperationalTask, triageUpdateFor, type TriageAction } from '@/utils/taskAlignment';
 
@@ -9,7 +12,7 @@ import { isOperationalTask, triageUpdateFor, type TriageAction } from '@/utils/t
 const UNFILTERED_READ = { division: '', unit: '', email: '', name: '', role: 'admin' };
 
 /** Bump when the inventory's shape changes. */
-const LINKAGE_INVENTORY_VERSION = 3;
+const LINKAGE_INVENTORY_VERSION = 4;
 
 export interface InventoryTaskMeta {
   revision?: string;
@@ -28,6 +31,15 @@ export interface LinkageInventoryResult extends LinkageInventory {
  */
 export function useLinkageInventory(divisionName: string | undefined, unitNames: string[], enabled: boolean) {
   const getService = useOpsService();
+  const { instance: msalInstance } = useMsal();
+
+  const loadStrategicGoals = async () => {
+    const graphClient = await getGraphClient(msalInstance);
+    if (!graphClient) throw new Error('Failed to get Graph client');
+    const strategyService = new StrategyService(graphClient);
+    await strategyService.initialize();
+    return strategyService.fetchStrategicGoals();
+  };
 
   return useQuery<LinkageInventoryResult, Error>({
     // Versioned key and no persistence: an inventory saved by an older build (missing
@@ -38,11 +50,12 @@ export function useLinkageInventory(divisionName: string | undefined, unitNames:
     staleTime: 5 * 60 * 1000,
     queryFn: async () => {
       const service = await getService();
-      const [tasks, kpis, kras, objectives] = await Promise.all([
+      const [tasks, kpis, kras, objectives, goals] = await Promise.all([
         service.getTasks('Unit', UNFILTERED_READ),
         service.getKPIs(),
         service.getKRAs('Division', UNFILTERED_READ),
         service.getObjectives('Division', UNFILTERED_READ),
+        loadStrategicGoals(),
       ]);
       const inventory = buildLinkageInventory({
         divisionName: divisionName || '',
@@ -66,9 +79,9 @@ export function useLinkageInventory(divisionName: string | undefined, unitNames:
           goalType: objective.goalType,
           unit: objective.unit,
           division: objective.division,
-          parentGoalId: objective.parentGoalId,
-          linkedDeliverable: objective.linkedDeliverable,
+          strategicGoalId: objective.strategicGoalId,
         })),
+        goals: goals.map((goal: any) => ({ id: String(goal.id), title: goal.title })),
       });
       const taskMeta: Record<string, InventoryTaskMeta> = {};
       for (const task of tasks) taskMeta[String(task.id)] = { revision: task.revision, tags: task.tags || [] };

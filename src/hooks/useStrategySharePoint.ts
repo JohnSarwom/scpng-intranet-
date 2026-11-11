@@ -85,13 +85,26 @@ export const useStrategySharePoint = () => {
         }
     });
 
+    const updateGoalMutation = useMutation({
+        mutationFn: async ({ id, data }: { id: string, data: any }) => {
+            const service = await getService();
+            return await service.updateStrategicGoal(id, data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['strategyData'] });
+        },
+    });
+
     return {
         strategyData: query.data || mockStrategyData,
+        /** False while loading or after a failure, when strategyData is the built-in sample data. */
+        isLive: !!query.data,
         isLoading: query.isLoading,
         error: query.error,
         updateStrategy: updateMutation.mutateAsync,
         updateObjective: (id: string, data: any) => updateObjectiveMutation.mutateAsync({ id, data }),
-        isUpdating: updateMutation.isPending || updateObjectiveMutation.isPending,
+        updateStrategicGoal: (id: string, data: any) => updateGoalMutation.mutateAsync({ id, data }),
+        isUpdating: updateMutation.isPending || updateObjectiveMutation.isPending || updateGoalMutation.isPending,
         refreshStrategy: () => queryClient.invalidateQueries({ queryKey: ['strategyData'] })
     };
 };

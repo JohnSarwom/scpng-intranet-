@@ -13,6 +13,8 @@
 
 import { Client } from '@microsoft/microsoft-graph-client';
 import { SharePointOpsService } from './sharePointOpsService';
+import { StrategyService } from './strategyService';
+import { matchGoalByTitle } from '@/utils/strategicGoalLink';
 
 // ─── TYPE DEFINITIONS ─────────────────────────────────────────────────────────
 
@@ -249,7 +251,7 @@ const KPIS: KpiRecord[] = [
 export class KraKpiSeedService {
     private opsService: SharePointOpsService;
 
-    constructor(client: Client) {
+    constructor(private client: Client) {
         this.opsService = new SharePointOpsService(client);
     }
 
@@ -270,6 +272,25 @@ export class KraKpiSeedService {
 
         log('Initializing SharePoint connection...');
         await this.opsService.initialize();
+
+        // Strategic_Goals is the official goal list. When the StrategicGoal column
+        // exists, each seeded goal is linked to the Strategic_Goals item with the
+        // matching title. A seeded goal with no match (Goal 5 is not in the
+        // Corporate Plan) is left unlinked and shows up for review.
+        const strategicGoalIdFor: Record<string, string | undefined> = {};
+        const columnStatus = await this.opsService.getStrategicGoalColumnStatus();
+        if (columnStatus.columnExists && columnStatus.targetsStrategicGoals) {
+            const strategyService = new StrategyService(this.client);
+            await strategyService.initialize();
+            const goals = (await strategyService.fetchStrategicGoals()).map((g: any) => ({ id: String(g.id), title: String(g.title || '') }));
+            for (const goal of STRATEGIC_GOALS) {
+                const match = matchGoalByTitle(goal.title, goals);
+                strategicGoalIdFor[goal.id] = match?.goal.id;
+                log(match ? `Goal link: ${goal.title} → Strategic_Goals #${match.goal.id} "${match.goal.title}"` : `Goal link: ${goal.title} → no matching Strategic_Goals item (left unlinked)`);
+            }
+        } else {
+            log('Strategic Goal column not found on Unit_Objectives; objectives will be created unlinked. Use "Strategic Goal links" to create it.');
+        }
 
         // ── 1. DELETE all KPIs ─────────────────────────────────────────────
         log('Fetching existing KPIs to delete...');
@@ -348,6 +369,7 @@ export class KraKpiSeedService {
                 year: '2025/26',
                 parentGoalId: parentGoalSpId,
                 linkedDeliverable: goalRecord.title,
+                ...(strategicGoalIdFor[kra.goalId] ? { strategicGoalId: strategicGoalIdFor[kra.goalId] } : {}),
             });
             kdIdMap[kra.id] = String(kd.id);
             log(`  Created KD: [${kra.division}] ${kra.title}`);
@@ -375,6 +397,7 @@ export class KraKpiSeedService {
                 year: '2025/26',
                 parentGoalId: kdSpId,
                 linkedDeliverable: kra.title,
+                ...(strategicGoalIdFor[kra.goalId] ? { strategicGoalId: strategicGoalIdFor[kra.goalId] } : {}),
             });
             log(`  Created Initiative: [${kra.division}] ${kra.title}`);
         }
