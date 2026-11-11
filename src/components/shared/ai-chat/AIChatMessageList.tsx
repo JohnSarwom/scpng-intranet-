@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import type { AIChatMessage } from './types';
+import { AI_PROVIDER_NAMES } from '@/config/aiProviders';
 
 interface AIChatMessageListProps {
     messages: AIChatMessage[];
@@ -76,6 +77,8 @@ const AIChatMessageList: React.FC<AIChatMessageListProps> = ({
                                             <ReactMarkdown
                                                 remarkPlugins={[remarkGfm]}
                                                 components={{
+                                img: () => null,
+                                a: ({ href, children }) => <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,
                                                     p: ({ node, ...props }) => {
                                                         const children = React.Children.toArray(props.children);
                                                         const firstChild = children[0];
@@ -136,6 +139,7 @@ const AIChatMessageList: React.FC<AIChatMessageListProps> = ({
                                             >
                                                 {message.text}
                                             </ReactMarkdown>
+                                            {message.route && <p className="mt-2 text-xs text-muted-foreground">{AI_PROVIDER_NAMES[message.route.provider]} · {message.route.model}{message.route.usedFallback ? ' · Automatic fallback' : ''} · {message.sourceLabel}</p>}
                                         </div>
                                     ) : (
                                         message.text

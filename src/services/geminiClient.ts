@@ -15,7 +15,7 @@
  * `response.json()` handling. On total failure the last error response is returned.
  */
 
-import { GEMINI_CHAT_FALLBACK_MODELS, GEMINI_CHAT_MODEL } from '@/config/geminiModels';
+import { GEMINI_CHAT_FALLBACK_MODELS, GEMINI_CHAT_MODEL } from '../config/geminiModels.ts';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
