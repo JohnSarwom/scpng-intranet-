@@ -24,11 +24,12 @@ const {
   NO_UNIT_LABEL,
 } = load('../services/linkageInventoryService.ts');
 
+const goals = [{ id: 'g1', title: 'Goal 1' }];
 const objectives = [
   { id: '1', title: 'Org goal', goalType: 'Org', division: '', unit: '' },
-  { id: '10', title: 'IT objective', goalType: 'Unit', division: 'Corporate Services Division', unit: 'IT Unit', linkedDeliverable: 'Goal 1' },
+  { id: '10', title: 'IT objective', goalType: 'Unit', division: 'Corporate Services Division', unit: 'IT Unit', strategicGoalId: 'g1' },
   { id: '11', title: 'Orphan objective', goalType: 'Unit', division: 'Corporate Services', unit: 'HR Unit' },
-  { id: '12', title: 'Legal objective', goalType: 'Unit', division: 'Legal Division', unit: 'Legal Unit', parentGoalId: 3 },
+  { id: '12', title: 'Legal objective', goalType: 'Unit', division: 'Legal Division', unit: 'Legal Unit', strategicGoalId: 'g1' },
 ];
 const kras = [
   { id: '100', title: 'Traced KRA', division: 'Corporate Services Division', unit: 'IT Unit', objective_id: '10' },
@@ -61,7 +62,7 @@ function build() {
   return buildLinkageInventory({
     divisionName: 'Corporate Services Division',
     unitNames: ['IT Unit', 'HR Unit', 'Finance Unit'],
-    tasks, kpis, kras, objectives,
+    tasks, kpis, kras, objectives, goals,
     generatedAt: '2026-09-29T00:00:00.000Z',
   });
 }
@@ -114,11 +115,46 @@ test('KPIs without a resolvable KRA are reported organisation-wide, not per unit
   assert.deepEqual({ ...unitOf(inventory, 'HR Unit').kpis }, { total: 1, traced: 0, noTasks: 0 });
 });
 
-test('org-level objectives are skipped and unit objectives need a strategic parent', () => {
+test('org-level objectives are skipped and unit objectives need a Strategic Goal', () => {
   const inventory = build();
-  assert.deepEqual({ ...unitOf(inventory, 'IT Unit').objectives }, { total: 1, noParent: 0 });
-  assert.deepEqual({ ...unitOf(inventory, 'HR Unit').objectives }, { total: 1, noParent: 1 });
+  assert.deepEqual({ ...unitOf(inventory, 'IT Unit').objectives }, { total: 1, noGoal: 0, brokenGoal: 0 });
+  assert.deepEqual({ ...unitOf(inventory, 'HR Unit').objectives }, { total: 1, noGoal: 1, brokenGoal: 0 });
   assert.equal(inventory.totals.objectives.total, 2);
+});
+
+test('a task traces only when its objective reaches an existing Strategic Goal', () => {
+  const unit = 'IT Unit';
+  const division = 'Corporate Services Division';
+  const inventory = buildLinkageInventory({
+    divisionName: division,
+    unitNames: [unit],
+    goals: [{ id: 'g1', title: 'Policy Development' }],
+    objectives: [
+      { id: 'o1', title: 'Linked', goalType: 'Unit', division, unit, strategicGoalId: 'g1' },
+      { id: 'o2', title: 'Deleted goal', goalType: 'Unit', division, unit, strategicGoalId: 'g9' },
+      // Legacy fields are not goal links, even when they look like one.
+      { id: 'o3', title: 'Legacy only', goalType: 'Unit', division, unit, parentGoalId: 'g1', linkedDeliverable: 'Policy Development' },
+    ],
+    kras: [
+      { id: 'k1', title: 'K1', division, unit, objective_id: 'o1' },
+      { id: 'k2', title: 'K2', division, unit, objective_id: 'o2' },
+      { id: 'k3', title: 'K3', division, unit, objective_id: 'o3' },
+    ],
+    kpis: [{ id: 'p1', kra_id: 'k1' }, { id: 'p2', kra_id: 'k2' }, { id: 'p3', kra_id: 'k3' }],
+    tasks: [
+      { id: 't1', unit_id: unit, kpi_id: 'p1' },
+      { id: 't2', unit_id: unit, kpi_id: 'p2' },
+      { id: 't3', unit_id: unit, kpi_id: 'p3' },
+    ],
+  });
+  const it = unitOf(inventory, unit);
+  assert.equal(it.tasks.traced, 1);
+  assert.equal(it.tasks.chainIncomplete, 2);
+  assert.deepEqual({ ...it.kras }, { total: 3, traced: 1, noObjective: 0, brokenObjective: 0, noKpis: 0 });
+  assert.deepEqual({ ...it.kpis }, { total: 3, traced: 1, noTasks: 0 });
+  assert.deepEqual({ ...it.objectives }, { total: 3, noGoal: 1, brokenGoal: 1 });
+  const objectiveIssues = inventory.issues.filter(i => i.recordType === 'objective').map(i => [i.recordId, i.code]);
+  assert.deepEqual(objectiveIssues, [['o2', 'objective_broken_goal'], ['o3', 'objective_no_goal']]);
 });
 
 test('the inventory does not mutate its input records', () => {
@@ -160,7 +196,7 @@ test('operational tasks are counted separately and leave the traced share', () =
       { id: 'c', title: 'Undecided', unit_id: 'IT Unit' },
       { id: 'd', title: 'Operational flag but linked', unit_id: 'IT Unit', kpi_id: '200', operational: true },
     ],
-    kpis, kras, objectives,
+    kpis, kras, objectives, goals,
   });
   const it = unitOf(inventory, 'IT Unit');
   assert.equal(it.tasks.operational, 1);

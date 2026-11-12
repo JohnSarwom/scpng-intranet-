@@ -1,0 +1,910 @@
+/**
+ * Workflow Studio (/workflows)
+ *
+ * Lists the workflows in the system — built-in ones that describe the code as
+ * it is, and saved ones from the Workflow_Definitions list — and draws the
+ * selected one on a canvas that can be simulated step by step. An AI panel
+ * drafts new workflows using the app's existing AI configuration.
+ */
+
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import {
+  Bot, ChevronsDownUp, ChevronsUpDown, Copy, Download, Expand, Loader2, Move, PanelLeftClose, PanelLeftOpen,
+  PanelRight, PanelRightClose, PanelRightOpen, Play, RotateCcw, Save, Scan, Search, Shrink, Trash2, Upload,
+  Workflow as WorkflowIcon, ZoomIn, ZoomOut, LayoutGrid, X,
+} from 'lucide-react';
+import PageLayout from '@/components/layout/PageLayout';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import WorkflowCanvas, { type CanvasTransfer, type WorkflowCanvasHandle } from '@/components/workflows/WorkflowCanvas';
+import WorkflowInspector, { type InspectorTab } from '@/components/workflows/WorkflowInspector';
+import WorkflowAIBuilder from '@/components/workflows/WorkflowAIBuilder';
+import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import {
+  useCanManageWorkflows, useSavedWorkflows, useWorkflowListReadiness, useWorkflowMutations,
+} from '@/hooks/useWorkflowDefinitions';
+import { BUILT_IN_WORKFLOWS } from '@/workflows/builtInWorkflows';
+import {
+  appStatusCounts, autoLayout, isHierarchy, layoutHierarchy, reportingChain, workflowToJson,
+} from '@/workflows/workflowSchema';
+import {
+  advanceRun, derivedChoice, exampleValues, startRun, type RunState, type Transfer,
+} from '@/workflows/workflowRun';
+import type { SavedWorkflow, WorkflowDefinition, WorkflowStatus } from '@/workflows/workflowTypes';
+
+type Selection = { kind: 'built-in'; id: string } | { kind: 'saved'; itemId: string } | { kind: 'draft' };
+type Positions = Record<string, { x: number; y: number }>;
+type Confirm = 'prepare' | 'delete' | 'discard' | null;
+
+const STATUS_BADGE: Record<WorkflowStatus, { label: string; className: string }> = {
+  implemented: { label: 'As implemented', className: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' },
+  target: { label: 'Target design', className: 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-300' },
+  published: { label: 'Published', className: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300' },
+  draft: { label: 'Draft', className: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300' },
+};
+
+/** Grid columns for each combination of visible side panels (lg and up). */
+const GRID_COLUMNS: Record<string, string> = {
+  'library+panel': 'lg:grid-cols-[250px_minmax(0,1fr)_380px]',
+  'library': 'lg:grid-cols-[250px_minmax(0,1fr)]',
+  'panel': 'lg:grid-cols-[minmax(0,1fr)_380px]',
+  '': 'lg:grid-cols-[minmax(0,1fr)]',
+};
+const PANELS_STORAGE_KEY = 'workflowStudio.panels';
+/** Classes for the studio host while it covers the whole window. */
+const FULLSCREEN_HOST = 'fixed inset-0 z-50 flex flex-col overflow-y-auto bg-gray-100 p-3 dark:bg-gray-950 lg:overflow-hidden';
+
+function readPanelPreference(): { library: boolean; panel: boolean } {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PANELS_STORAGE_KEY) || '{}');
+    return { library: saved.library !== false, panel: saved.panel !== false };
+  } catch {
+    return { library: true, panel: true };
+  }
+}
+
+/** "17 steps", or "49 units and posts" for a structure chart. */
+const sizeLabel = (definition: WorkflowDefinition) =>
+  `${definition.nodes.length} ${isHierarchy(definition) ? 'units and posts' : 'steps'}`;
+
+const selectionKey = (selection: Selection) =>
+  selection.kind === 'built-in' ? `built-in:${selection.id}` : selection.kind === 'saved' ? `saved:${selection.itemId}` : 'draft';
+
+function downloadJson(definition: WorkflowDefinition) {
+  const blob = new Blob([workflowToJson(definition)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${definition.id}.workflow.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const Workflows = () => {
+  const { toast } = useToast();
+  const { isAdmin } = useRoleBasedAuth();
+  const canManage = useCanManageWorkflows();
+  const readiness = useWorkflowListReadiness();
+  const listReady = !!readiness.data?.exists && readiness.data.problems.length === 0;
+  const saved = useSavedWorkflows(listReady);
+  const mutations = useWorkflowMutations();
+
+  const [selection, setSelection] = useState<Selection>({ kind: 'built-in', id: BUILT_IN_WORKFLOWS[0].id });
+  const [draft, setDraft] = useState<WorkflowDefinition | null>(null);
+  /** The saved workflow a draft will update, when it started from one. */
+  const [draftBase, setDraftBase] = useState<SavedWorkflow | null>(null);
+  const [positions, setPositions] = useState<Record<string, Positions>>({});
+  const [search, setSearch] = useState('');
+  const [panel, setPanel] = useState<'inspector' | 'ai'>('inspector');
+  const [tab, setTab] = useState<InspectorTab>('steps');
+  const [editing, setEditing] = useState(false);
+  const [confirm, setConfirm] = useState<Confirm>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const [run, setRun] = useState<RunState | null>(null);
+  const [inputs, setInputs] = useState<Record<string, Record<string, string>>>({});
+  const [runError, setRunError] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [queue, setQueue] = useState<Transfer[]>([]);
+  const [transfer, setTransfer] = useState<CanvasTransfer | null>(null);
+  const [pendingRun, setPendingRun] = useState<RunState | null>(null);
+  const transferCounter = useRef(0);
+  const canvasRef = useRef<WorkflowCanvasHandle>(null);
+
+  // Structure charts: closed branches, the "find" box, and how to frame the chart once it has redrawn.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [findText, setFindText] = useState('');
+  const [pendingView, setPendingView] = useState<
+    { kind: 'fit' } | { kind: 'centre'; id: string } | { kind: 'focus'; id: string } | null
+  >(null);
+
+  // --- Full screen and side panels -------------------------------------------
+  // The studio renders into one host element that never changes, so entering or
+  // leaving full screen moves it without remounting anything (the AI chat and
+  // the simulation keep their state). Normally the host sits in the page; in
+  // full screen it moves to <body>, outside the page layout's transformed
+  // wrapper, and covers the window.
+  const [fullscreen, setFullscreen] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(() => readPanelPreference().library);
+  const [showPanel, setShowPanel] = useState(() => readPanelPreference().panel);
+  const [studioHost] = useState(() => document.createElement('div'));
+  const placeholderRef = useRef<HTMLDivElement>(null);
+
+  // One effect places the host and takes it away again, so attach and detach
+  // can never run out of order (on unmount, hot reload or a full-screen switch).
+  useLayoutEffect(() => {
+    if (fullscreen) {
+      studioHost.className = FULLSCREEN_HOST;
+      document.body.appendChild(studioHost);
+      // The page underneath must not scroll behind the overlay.
+      const previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = previousOverflow;
+        studioHost.remove();
+      };
+    }
+    studioHost.className = '';
+    placeholderRef.current?.appendChild(studioHost);
+    return () => { studioHost.remove(); };
+  }, [fullscreen, studioHost]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(PANELS_STORAGE_KEY, JSON.stringify({ library: showLibrary, panel: showPanel }));
+    } catch { /* preference only */ }
+  }, [showLibrary, showPanel]);
+
+  const enterFullscreen = () => {
+    setFullscreen(true);
+    // Also hide the browser's own chrome where allowed; the overlay works without it.
+    document.documentElement.requestFullscreen?.().catch(() => undefined);
+  };
+  const exitFullscreen = useCallback(() => {
+    setFullscreen(false);
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => undefined);
+  }, []);
+
+  // Leaving browser full screen (for example with Esc) leaves the studio's too.
+  useEffect(() => {
+    const onChange = () => { if (!document.fullscreenElement) setFullscreen(false); };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, []);
+
+  const savedWorkflows = saved.data?.workflows || [];
+  const selectedSaved = selection.kind === 'saved' ? savedWorkflows.find(item => item.itemId === selection.itemId) || null : null;
+
+  const baseDefinition: WorkflowDefinition | null = useMemo(() => {
+    if (selection.kind === 'built-in') return BUILT_IN_WORKFLOWS.find(item => item.id === selection.id) || null;
+    if (selection.kind === 'saved') return selectedSaved?.definition || null;
+    return draft;
+  }, [selection, selectedSaved, draft]);
+
+  const key = selectionKey(selection);
+  const definition: WorkflowDefinition | null = useMemo(() => {
+    if (!baseDefinition) return null;
+    const moved = positions[key];
+    if (!moved) return baseDefinition;
+    return { ...baseDefinition, nodes: baseDefinition.nodes.map(node => (moved[node.id] ? { ...node, ...moved[node.id] } : node)) };
+  }, [baseDefinition, positions, key]);
+  const layoutChanged = !!positions[key] && Object.keys(positions[key]).length > 0;
+
+  const chart = !!definition && isHierarchy(definition);
+  const chartLayout = useMemo(
+    () => (definition && isHierarchy(definition) ? layoutHierarchy(definition, collapsed) : null),
+    [definition, collapsed],
+  );
+  /** What the canvas draws: for a chart, only the open branches, laid out top-down. */
+  const canvasDefinition = useMemo(
+    () => (definition && chartLayout ? { ...definition, nodes: chartLayout.nodes, edges: chartLayout.edges } : definition),
+    [definition, chartLayout],
+  );
+  const collapsedIds = useMemo(() => [...collapsed], [collapsed]);
+  const statusCounts = useMemo(() => (definition ? appStatusCounts(definition) : null), [definition]);
+
+  /** Opens the branches above a box so it is on the chart, then centres it. */
+  const revealBox = useCallback((nodeId: string) => {
+    if (!definition) return;
+    const above = reportingChain(definition, nodeId).slice(0, -1).map(node => node.id);
+    setCollapsed(previous => {
+      if (!above.some(id => previous.has(id))) return previous;
+      const next = new Set(previous);
+      above.forEach(id => next.delete(id));
+      return next;
+    });
+    setPendingView({ kind: 'focus', id: nodeId });
+  }, [definition]);
+
+  // Frame the chart once it has redrawn: the whole chart, or one box.
+  useEffect(() => {
+    if (!pendingView) return;
+    const timer = setTimeout(() => {
+      if (pendingView.kind === 'fit') canvasRef.current?.fit();
+      else if (pendingView.kind === 'centre') canvasRef.current?.centreOn(pendingView.id);
+      else canvasRef.current?.focusOn(pendingView.id, 0.8);
+      setPendingView(null);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [pendingView, chartLayout]);
+
+  /** Opens or closes one branch; the box stays in the middle of the view. */
+  const toggleBranch = useCallback((nodeId: string) => {
+    setCollapsed(previous => {
+      const next = new Set(previous);
+      if (next.has(nodeId)) next.delete(nodeId); else next.add(nodeId);
+      return next;
+    });
+    setPendingView({ kind: 'centre', id: nodeId });
+  }, []);
+
+  const openAllBranches = () => {
+    setCollapsed(new Set());
+    setPendingView({ kind: 'fit' });
+  };
+
+  /** Keeps the top three levels open (Board, CEO, and what reports to the CEO) and closes the rest. */
+  const closeBranches = () => {
+    if (!definition || !chartLayout) return;
+    setCollapsed(new Set(definition.nodes
+      .filter(node => (chartLayout.childCounts[node.id] || 0) > 0 && reportingChain(definition, node.id).length - 1 >= 3)
+      .map(node => node.id)));
+    setPendingView({ kind: 'fit' });
+  };
+
+  /** Selects the next box whose name or subtitle contains the text, opening its branch. */
+  const findBox = () => {
+    const term = findText.trim().toLowerCase();
+    if (!definition || !term) return;
+    const found = definition.nodes.filter(node =>
+      node.rank !== 'group' && [node.label, node.sub].some(value => (value || '').toLowerCase().includes(term)));
+    if (!found.length) {
+      toast({ title: 'Nothing found', description: `No unit or post on this chart matches “${findText.trim()}”.` });
+      return;
+    }
+    const next = found[(found.findIndex(node => node.id === selectedNode) + 1) % found.length];
+    setSelectedNode(next.id);
+    setPanel('inspector');
+    setShowPanel(true);
+    revealBox(next.id);
+  };
+
+  const traveling = !!transfer || queue.length > 0;
+
+  const resetRun = useCallback(() => {
+    setRun(null);
+    setPendingRun(null);
+    setQueue([]);
+    setTransfer(null);
+    setRunError(null);
+    setInputs({});
+  }, []);
+
+  // A different workflow starts with a clean run.
+  useEffect(() => {
+    resetRun();
+    setSelectedNode(null);
+    setEditing(false);
+    setCollapsed(new Set());
+    setFindText('');
+  }, [key, definition?.id, resetRun]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fall back to the built-in workflow if the selected saved one disappears.
+  useEffect(() => {
+    if (selection.kind === 'saved' && saved.isSuccess && !selectedSaved) {
+      setSelection({ kind: 'built-in', id: BUILT_IN_WORKFLOWS[0].id });
+    }
+  }, [selection, saved.isSuccess, selectedSaved]);
+
+  /** The active step waiting for a person: an input, or a decision not decided automatically. */
+  const inputNodeId = useMemo(() => {
+    if (!run || !definition || traveling || run.finished) return null;
+    return run.active.find(id => {
+      const node = definition.nodes.find(item => item.id === id);
+      if (!node) return false;
+      if (node.type === 'input') return true;
+      return node.type === 'gate' && node.gate?.mode !== 'and' && !derivedChoice(definition, id, run.values);
+    }) || null;
+  }, [run, definition, traveling]);
+
+  const applyAdvance = useCallback((state: RunState, nodeId: string, values: Record<string, string>) => {
+    if (!definition) return;
+    try {
+      const result = advanceRun(definition, state, nodeId, values);
+      setRunError(null);
+      if (result.transfers.length) {
+        setPendingRun(result.state);
+        setQueue(result.transfers);
+      } else {
+        setRun(result.state);
+      }
+    } catch (error: any) {
+      setRunError(error?.message || 'This step could not be completed.');
+    }
+  }, [definition]);
+
+  // Play queued transfers one at a time, then show the new state.
+  useEffect(() => {
+    if (transfer || queue.length === 0) return;
+    transferCounter.current += 1;
+    setTransfer({ ...queue[0], key: transferCounter.current });
+  }, [queue, transfer]);
+
+  const onTransferDone = useCallback(() => {
+    setTransfer(null);
+    setQueue(previous => previous.slice(1));
+  }, []);
+
+  // When the last transfer lands, show the run's new state.
+  useEffect(() => {
+    if (transfer || queue.length > 0 || !pendingRun) return;
+    setRun(pendingRun);
+    setPendingRun(null);
+    const next = pendingRun.active[0];
+    if (next) { setSelectedNode(next); setTab('steps'); }
+  }, [transfer, queue, pendingRun]);
+
+  // Follow the simulation: keep the step being worked on centred and readable.
+  const followId = run && !run.finished ? run.active[0] : null;
+  useEffect(() => {
+    if (followId) canvasRef.current?.focusOn(followId);
+  }, [followId]);
+  // At the end, show the whole workflow with the completed path highlighted.
+  useEffect(() => {
+    if (run?.finished) canvasRef.current?.fit();
+  }, [run?.finished]);
+
+  // When full screen or a side panel changes the canvas size, reframe it once
+  // the new layout has settled: the active step during a run, otherwise the whole workflow.
+  const runRef = useRef(run);
+  runRef.current = run;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const current = runRef.current;
+      if (current && !current.finished && current.active[0]) canvasRef.current?.focusOn(current.active[0]);
+      else canvasRef.current?.fit();
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [fullscreen, showLibrary, showPanel]);
+
+  // Esc leaves full screen (browser full screen handles its own Esc).
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !document.fullscreenElement && confirm === null) exitFullscreen();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [fullscreen, confirm, exitFullscreen]);
+
+  // Automatic steps (and decisions taken from an earlier answer) move on by themselves.
+  useEffect(() => {
+    if (!run || !definition || traveling || run.finished) return;
+    const automatic = run.active.find(id => {
+      const node = definition.nodes.find(item => item.id === id);
+      return !!node && (node.type === 'auto' || node.type === 'end' ||
+        (node.type === 'gate' && (node.gate?.mode === 'and' || !!derivedChoice(definition, id, run.values))));
+    });
+    if (!automatic) return;
+    const timer = setTimeout(() => applyAdvance(run, automatic, derivedChoice(definition, automatic, run.values) || {}), 550);
+    return () => clearTimeout(timer);
+  }, [run, definition, traveling, applyAdvance]);
+
+  const startSimulation = () => {
+    if (!definition) return;
+    try {
+      resetRun();
+      const state = startRun(definition);
+      setRun(state);
+      setSelectedNode(state.active[0]);
+      setTab('steps');
+      setPanel('inspector');
+      setShowPanel(true); // the steps are filled in on the side panel
+      setEditing(false);
+    } catch (error: any) {
+      toast({ title: 'Cannot start', description: error?.message, variant: 'destructive' });
+    }
+  };
+
+  const submitStep = () => {
+    if (!run || !inputNodeId) return;
+    applyAdvance(run, inputNodeId, inputs[inputNodeId] || {});
+  };
+
+  const onDraftChange = (field: string, value: string) => {
+    if (!inputNodeId) return;
+    setInputs(previous => ({ ...previous, [inputNodeId]: { ...(previous[inputNodeId] || {}), [field]: value } }));
+  };
+
+  const fillExample = () => {
+    if (!definition || !inputNodeId) return;
+    setInputs(previous => ({ ...previous, [inputNodeId]: exampleValues(definition, inputNodeId) }));
+  };
+
+  const moveNode = (nodeId: string, x: number, y: number) => {
+    setPositions(previous => ({ ...previous, [key]: { ...(previous[key] || {}), [nodeId]: { x, y } } }));
+  };
+
+  /** The definition as currently shown, including moved positions. */
+  const currentDefinition = () => definition!;
+
+  const openDraft = (next: WorkflowDefinition, base: SavedWorkflow | null) => {
+    resetRun();
+    setSelectedNode(null);
+    setDraft(next);
+    setDraftBase(base);
+    setPositions(previous => { const copy = { ...previous }; delete copy.draft; return copy; });
+    setSelection({ kind: 'draft' });
+  };
+
+  const duplicateAsDraft = () => {
+    if (!definition) return;
+    const existing = new Set([...savedWorkflows.map(item => item.definition.id), ...BUILT_IN_WORKFLOWS.map(item => item.id)]);
+    let id = `${definition.id}-copy`.slice(0, 60);
+    for (let n = 2; existing.has(id); n += 1) id = `${definition.id}-copy-${n}`.slice(0, 64);
+    openDraft({ ...currentDefinition(), id, title: `${definition.title} (copy)`, status: 'draft', source: 'manual' }, null);
+    toast({ title: 'Draft created', description: 'Change it with the AI panel or Edit layout, then save it.' });
+  };
+
+  const onAiDraft = (next: WorkflowDefinition) => {
+    // Refining a saved workflow keeps it as the save target; anything else is a new draft.
+    const base = selection.kind === 'saved' ? selectedSaved : selection.kind === 'draft' ? draftBase : null;
+    openDraft(next, base);
+  };
+
+  const saveDraft = async () => {
+    if (!draft) return;
+    const toSave: WorkflowDefinition = { ...currentDefinition(), status: draftBase?.definition.status === 'published' ? 'published' : 'draft' };
+    setBusy('Saving…');
+    try {
+      const result = draftBase
+        ? await mutations.update.mutateAsync({ saved: draftBase, definition: { ...toSave, id: draftBase.definition.id } })
+        : await mutations.create.mutateAsync(toSave);
+      setDraft(null);
+      setDraftBase(null);
+      setSelection({ kind: 'saved', itemId: result.itemId });
+      toast({ title: 'Workflow saved', description: `${result.definition.title} is in the Workflow_Definitions list.` });
+    } catch (error: any) {
+      toast({ title: 'Not saved', description: error?.message || 'The workflow could not be saved.', variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveSavedChanges = async (status?: WorkflowStatus) => {
+    if (!selectedSaved || !definition) return;
+    setBusy(status ? 'Updating status…' : 'Saving layout…');
+    try {
+      await mutations.update.mutateAsync({ saved: selectedSaved, definition: { ...currentDefinition(), status: status || selectedSaved.definition.status } });
+      setPositions(previous => { const copy = { ...previous }; delete copy[key]; return copy; });
+      toast({ title: status ? (status === 'published' ? 'Published' : 'Moved back to draft') : 'Layout saved' });
+    } catch (error: any) {
+      toast({ title: 'Not saved', description: error?.message, variant: 'destructive' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const runConfirmed = async () => {
+    const action = confirm;
+    setConfirm(null);
+    if (action === 'prepare') {
+      setBusy('Creating the list…');
+      try {
+        await mutations.prepare.mutateAsync();
+        toast({ title: 'Workflow_Definitions list created' });
+      } catch (error: any) {
+        toast({ title: 'List not created', description: error?.message, variant: 'destructive' });
+      } finally {
+        setBusy(null);
+      }
+    } else if (action === 'delete' && selectedSaved) {
+      setBusy('Deleting…');
+      try {
+        await mutations.remove.mutateAsync(selectedSaved);
+        setSelection({ kind: 'built-in', id: BUILT_IN_WORKFLOWS[0].id });
+        toast({ title: 'Workflow deleted' });
+      } catch (error: any) {
+        toast({ title: 'Not deleted', description: error?.message, variant: 'destructive' });
+      } finally {
+        setBusy(null);
+      }
+    } else if (action === 'discard') {
+      setDraft(null);
+      setDraftBase(null);
+      setSelection(draftBase ? { kind: 'saved', itemId: draftBase.itemId } : { kind: 'built-in', id: BUILT_IN_WORKFLOWS[0].id });
+    }
+  };
+
+  const term = search.trim().toLowerCase();
+  const matches = (item: WorkflowDefinition) =>
+    !term || [item.title, item.summary, item.area].some(value => (value || '').toLowerCase().includes(term));
+
+  const libraryItem = (item: WorkflowDefinition, target: Selection, subtitle?: string) => {
+    const active = selectionKey(target) === key;
+    const badge = STATUS_BADGE[item.status];
+    return (
+      <button
+        key={selectionKey(target)}
+        type="button"
+        onClick={() => setSelection(target)}
+        aria-current={active ? 'true' : undefined}
+        className={cn(
+          'w-full rounded-xl border p-3 text-left transition-colors',
+          active
+            ? 'border-intranet-primary bg-intranet-primary/5 dark:border-rose-400/60 dark:bg-rose-950/20'
+            : 'border-gray-200 bg-white hover:border-intranet-primary/40 dark:border-white/10 dark:bg-gray-900 dark:hover:border-rose-400/40',
+        )}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-sm font-semibold leading-snug">{item.title}</span>
+          <Badge variant="outline" className={cn('shrink-0 text-[10px]', badge.className)}>{badge.label}</Badge>
+        </div>
+        <p className="mt-1 text-[11px] text-muted-foreground">{subtitle || `${item.area ? `${item.area} · ` : ''}${sizeLabel(item)}`}</p>
+      </button>
+    );
+  };
+
+  return (
+    <PageLayout>
+      <div className="space-y-6 pb-10">
+        {/* Hero, matching the Strategy Hub */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#400010] to-[#800020] p-6 text-white shadow-xl md:p-8">
+          <div className="relative z-10 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div className="space-y-2">
+              <Badge variant="outline" className="border-white/20 bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                <WorkflowIcon className="mr-2 inline h-3 w-3" />Workflow Studio
+              </Badge>
+              <h1 className="text-3xl font-black tracking-tight md:text-4xl">Workflows</h1>
+              <p className="max-w-2xl text-sm text-white/80 md:text-base">
+                See how SCPNG is organised and how work moves through the intranet, step by step, and draft new workflows with AI.
+              </p>
+            </div>
+            <Button
+              onClick={() => { setPanel('ai'); setShowPanel(true); }}
+              className="h-auto rounded-2xl bg-white px-5 py-3 text-xs font-black uppercase tracking-widest text-intranet-primary shadow-xl hover:bg-white/90"
+            >
+              <Bot className="mr-2 h-5 w-5" />Create with AI
+            </Button>
+          </div>
+        </div>
+
+        {/* Saved-workflow list status */}
+        {readiness.isError && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+            Saved workflows could not be checked: {(readiness.error as Error)?.message}
+          </div>
+        )}
+        {readiness.data && !readiness.data.exists && (
+          <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200 md:flex-row md:items-center md:justify-between">
+            <span>
+              {isAdmin
+                ? 'Saving workflows needs the Workflow_Definitions SharePoint list, which has not been created yet. Built-in workflows and AI drafts work without it.'
+                : 'Saved workflows are not available yet: an administrator needs to create the Workflow_Definitions list. Built-in workflows and AI drafts still work.'}
+            </span>
+            {isAdmin && (
+              <Button size="sm" onClick={() => setConfirm('prepare')} disabled={!!busy} className="shrink-0 bg-intranet-primary text-white hover:bg-intranet-secondary">
+                Create list
+              </Button>
+            )}
+          </div>
+        )}
+        {readiness.data?.exists && readiness.data.problems.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+            The Workflow_Definitions list needs attention: {readiness.data.problems.join(' ')}
+            {isAdmin && <Button size="sm" variant="outline" className="ml-3" onClick={() => setConfirm('prepare')}>Repair columns</Button>}
+          </div>
+        )}
+
+        {/* The studio is rendered into studioHost, which sits here unless full screen moves it to <body>. */}
+        <div ref={placeholderRef} />
+        {createPortal(
+        <div className={cn(
+          'grid gap-4',
+          GRID_COLUMNS[[showLibrary && 'library', showPanel && 'panel'].filter(Boolean).join('+')],
+          fullscreen ? 'min-h-0 flex-1 lg:h-full' : 'lg:h-[calc(100vh-120px)] lg:min-h-[560px]',
+        )}>
+          {/* Library */}
+          <aside
+            aria-label="Workflow list"
+            className={cn(showLibrary ? 'flex' : 'hidden', 'min-h-0 flex-col gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-gray-900/60')}
+          >
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input value={search} onChange={event => setSearch(event.target.value)} placeholder="Search workflows" className="pl-8" aria-label="Search workflows" />
+            </div>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+              <section className="space-y-2">
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Built in</h2>
+                {BUILT_IN_WORKFLOWS.filter(matches).map(item => libraryItem(item, { kind: 'built-in', id: item.id }))}
+              </section>
+              {draft && (
+                <section className="space-y-2">
+                  <h2 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Unsaved draft</h2>
+                  {libraryItem(draft, { kind: 'draft' }, draftBase ? `Changes to “${draftBase.definition.title}”` : `${sizeLabel(draft)} · not saved`)}
+                </section>
+              )}
+              <section className="space-y-2">
+                <h2 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Saved</h2>
+                {!listReady && <p className="text-xs text-muted-foreground">{readiness.isLoading ? 'Checking…' : 'Not available yet.'}</p>}
+                {listReady && saved.isLoading && <p className="text-xs text-muted-foreground"><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />Loading…</p>}
+                {listReady && saved.isError && <p className="text-xs text-red-600">{(saved.error as Error)?.message}</p>}
+                {listReady && saved.isSuccess && savedWorkflows.length === 0 && <p className="text-xs text-muted-foreground">No saved workflows yet.</p>}
+                {savedWorkflows.filter(item => matches(item.definition)).map(item =>
+                  libraryItem(item.definition, { kind: 'saved', itemId: item.itemId },
+                    `${sizeLabel(item.definition)}${item.modifiedBy ? ` · ${item.modifiedBy}` : ''}`))}
+                {(saved.data?.unreadable || []).map(item => (
+                  <div key={item.itemId} className="rounded-xl border border-red-200 bg-red-50 p-2 text-[11px] text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
+                    <strong>{item.title}</strong> can't be opened: {item.errors[0]}
+                  </div>
+                ))}
+              </section>
+            </div>
+          </aside>
+
+          {/* Canvas */}
+          <section className={cn(
+            'flex min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60',
+            // In full screen on small screens the chart gets the whole screen; the panels scroll below it.
+            fullscreen ? 'min-h-[calc(100dvh-1.5rem)] lg:min-h-0' : 'min-h-[520px]',
+          )}>
+            <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 p-3 dark:border-white/10">
+              <div className="mr-auto min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="truncate text-sm font-bold">{definition?.title || 'No workflow selected'}</h2>
+                  {definition && <Badge variant="outline" className={cn('text-[10px]', STATUS_BADGE[definition.status].className)}>{STATUS_BADGE[definition.status].label}</Badge>}
+                  {definition?.source === 'ai' && <Badge variant="secondary" className="text-[10px]">AI drafted</Badge>}
+                </div>
+                {definition?.summary && <p className="line-clamp-1 text-[11px] text-muted-foreground" title={definition.summary}>{definition.summary}</p>}
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {chart ? (
+                  <>
+                    <form role="search" className="relative" onSubmit={event => { event.preventDefault(); findBox(); }}>
+                      <Search className="pointer-events-none absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={findText}
+                        onChange={event => setFindText(event.target.value)}
+                        placeholder="Find a post or unit"
+                        aria-label="Find a post or unit on the chart (Enter finds the next match)"
+                        title="Enter finds the next match"
+                        className="h-8 w-40 pl-7 text-xs sm:w-48"
+                      />
+                    </form>
+                    <Button size="sm" variant="outline" onClick={openAllBranches} disabled={collapsed.size === 0} title="Open every branch">
+                      <ChevronsUpDown className="mr-1.5 h-4 w-4" />Open all
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={closeBranches} title="Keep the top levels open and close the teams beneath">
+                      <ChevronsDownUp className="mr-1.5 h-4 w-4" />Close branches
+                    </Button>
+                  </>
+                ) : run ? (
+                  <Button size="sm" variant="outline" onClick={resetRun} title="Stop and clear the simulation"><RotateCcw className="mr-1.5 h-4 w-4" />Reset</Button>
+                ) : (
+                  <Button size="sm" onClick={startSimulation} disabled={!definition} className="bg-intranet-primary text-white hover:bg-intranet-secondary"><Play className="mr-1.5 h-4 w-4" />Simulate</Button>
+                )}
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(1.2)} title="Zoom in" aria-label="Zoom in"><ZoomIn className="h-4 w-4" /></Button>
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(0.82)} title="Zoom out" aria-label="Zoom out"><ZoomOut className="h-4 w-4" /></Button>
+                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.fit()} title="Fit the whole workflow" aria-label="Fit the whole workflow"><Scan className="h-4 w-4" /></Button>
+                {!chart && (
+                  <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => { setEditing(value => !value); if (run) resetRun(); }} title="Drag steps to rearrange them" className={editing ? 'bg-intranet-primary text-white hover:bg-intranet-secondary' : undefined}>
+                    <Move className="mr-1.5 h-4 w-4" />{editing ? 'Done' : 'Edit layout'}
+                  </Button>
+                )}
+                <span className="mx-0.5 hidden h-6 w-px bg-gray-200 dark:bg-white/10 sm:block" aria-hidden="true" />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn('h-8 w-8', !showLibrary && 'text-muted-foreground')}
+                  onClick={() => setShowLibrary(value => !value)}
+                  aria-pressed={showLibrary}
+                  title={showLibrary ? 'Hide the workflow list' : 'Show the workflow list'}
+                  aria-label={showLibrary ? 'Hide the workflow list' : 'Show the workflow list'}
+                >
+                  {showLibrary ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className={cn('h-8 w-8', !showPanel && 'text-muted-foreground')}
+                  onClick={() => setShowPanel(value => !value)}
+                  aria-pressed={showPanel}
+                  title={showPanel ? 'Hide the inspector and AI panel' : 'Show the inspector and AI panel'}
+                  aria-label={showPanel ? 'Hide the inspector and AI panel' : 'Show the inspector and AI panel'}
+                >
+                  {showPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+                </Button>
+                {fullscreen ? (
+                  <Button size="sm" variant="outline" onClick={exitFullscreen} title="Leave full screen (Esc)">
+                    <Shrink className="mr-1.5 h-4 w-4" />Exit full screen
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={enterFullscreen} title="Show the studio full screen">
+                    <Expand className="mr-1.5 h-4 w-4" />Full screen
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <div className="relative min-h-0 flex-1">
+              {canvasDefinition ? (
+                <WorkflowCanvas
+                  ref={canvasRef}
+                  definition={canvasDefinition}
+                  collapsedIds={collapsedIds}
+                  childCounts={chartLayout?.childCounts}
+                  onToggleCollapse={toggleBranch}
+                  statusCounts={statusCounts}
+                  fitKey={chart && definition ? `${key}:${definition.nodes.length}` : undefined}
+                  activeIds={traveling ? [] : run?.active || []}
+                  waitingIds={run?.waiting || []}
+                  completedIds={run?.completed || []}
+                  selectedId={selectedNode}
+                  onSelect={id => { setSelectedNode(id); if (!run || id !== inputNodeId) setTab('details'); else setTab('steps'); setPanel('inspector'); setShowPanel(true); }}
+                  transfer={transfer}
+                  onTransferDone={onTransferDone}
+                  editing={editing}
+                  onMoveNode={moveNode}
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading…</div>
+              )}
+              {editing && (
+                <div className="absolute left-3 top-3 max-w-xs rounded-xl border border-gray-200 bg-white/95 p-3 text-xs shadow-sm backdrop-blur dark:border-white/10 dark:bg-gray-900/95">
+                  <p className="font-semibold">Edit layout</p>
+                  <p className="mt-1 text-muted-foreground">
+                    Drag steps to rearrange them.{' '}
+                    {selection.kind === 'built-in' ? 'Built-in layouts are not saved; duplicate it to keep a layout.' : selection.kind === 'saved' ? 'Save layout to keep the change.' : 'The layout is saved with the draft.'}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Button size="sm" variant="outline" onClick={() => definition && setPositions(previous => ({
+                      ...previous,
+                      [key]: Object.fromEntries(autoLayout(baseDefinition!, true).nodes.map(node => [node.id, { x: node.x!, y: node.y! }])),
+                    }))}><LayoutGrid className="mr-1 h-3.5 w-3.5" />Tidy</Button>
+                    {layoutChanged && <Button size="sm" variant="outline" onClick={() => setPositions(previous => { const copy = { ...previous }; delete copy[key]; return copy; })}>Undo moves</Button>}
+                  </div>
+                </div>
+              )}
+              <p className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm dark:bg-gray-900/90">
+                {chart
+                  ? 'Scroll to zoom · drag the background to pan · click a box for its reporting line · + / − opens or closes a branch'
+                  : 'Scroll to zoom · drag the background to pan · click a step for details'}
+                {run && !run.finished && (traveling ? ' · data moving…' : inputNodeId ? ` · waiting for: ${definition?.nodes.find(node => node.id === inputNodeId)?.label}` : '')}
+              </p>
+              {/* With the side panel hidden, a step waiting for input still needs a way in. */}
+              {!showPanel && inputNodeId && (
+                <Button
+                  size="sm"
+                  onClick={() => { setShowPanel(true); setPanel('inspector'); setTab('steps'); }}
+                  className="absolute right-3 top-3 max-w-[calc(100%-1.5rem)] truncate bg-intranet-primary text-white shadow-md hover:bg-intranet-secondary"
+                >
+                  <PanelRightOpen className="mr-1.5 h-4 w-4" />
+                  Fill in “{definition?.nodes.find(node => node.id === inputNodeId)?.label}”
+                </Button>
+              )}
+            </div>
+
+            {/* Workflow actions */}
+            <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 p-3 dark:border-white/10">
+              <Button size="sm" variant="outline" onClick={() => definition && downloadJson(currentDefinition())} disabled={!definition}><Download className="mr-1.5 h-4 w-4" />Export JSON</Button>
+              {selection.kind !== 'draft' && (
+                <Button size="sm" variant="outline" onClick={duplicateAsDraft} disabled={!definition}><Copy className="mr-1.5 h-4 w-4" />Duplicate as draft</Button>
+              )}
+              {selection.kind === 'draft' && (
+                <>
+                  <Button
+                    size="sm"
+                    onClick={saveDraft}
+                    disabled={!canManage || !listReady || !!busy}
+                    title={!canManage ? 'You need permission to create and edit workflows.' : !listReady ? 'The Workflow_Definitions list is not ready.' : undefined}
+                    className="bg-intranet-primary text-white hover:bg-intranet-secondary"
+                  >
+                    <Save className="mr-1.5 h-4 w-4" />{draftBase ? 'Save changes' : 'Save workflow'}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setConfirm('discard')} disabled={!!busy}><X className="mr-1.5 h-4 w-4" />Discard draft</Button>
+                </>
+              )}
+              {selection.kind === 'saved' && selectedSaved && canManage && (
+                <>
+                  {layoutChanged && <Button size="sm" onClick={() => saveSavedChanges()} disabled={!!busy} className="bg-intranet-primary text-white hover:bg-intranet-secondary"><Save className="mr-1.5 h-4 w-4" />Save layout</Button>}
+                  {selectedSaved.definition.status === 'draft'
+                    ? <Button size="sm" variant="outline" onClick={() => saveSavedChanges('published')} disabled={!!busy}><Upload className="mr-1.5 h-4 w-4" />Publish</Button>
+                    : <Button size="sm" variant="outline" onClick={() => saveSavedChanges('draft')} disabled={!!busy}>Move to draft</Button>}
+                  <Button size="sm" variant="outline" onClick={() => setConfirm('delete')} disabled={!!busy} className="text-red-600 hover:text-red-700"><Trash2 className="mr-1.5 h-4 w-4" />Delete</Button>
+                </>
+              )}
+              {selection.kind === 'draft' && !canManage && <span className="text-xs text-muted-foreground">You can export this draft; saving needs the "Create and edit workflows" permission.</span>}
+              {busy && <span className="text-xs text-muted-foreground"><Loader2 className="mr-1 inline h-3 w-3 animate-spin" />{busy}</span>}
+            </div>
+          </section>
+
+          {/* Inspector / AI — hidden rather than unmounted, so the AI conversation survives. */}
+          <aside
+            aria-label="Inspector and AI builder"
+            className={cn(showPanel ? 'flex' : 'hidden', 'min-h-[520px] min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-white/10 dark:bg-gray-900/60 lg:min-h-0')}
+          >
+            <div className="flex gap-1 border-b border-gray-100 p-2 dark:border-white/10" role="tablist" aria-label="Side panel">
+              {([['inspector', 'Inspector', PanelRight], ['ai', 'AI builder', Bot]] as const).map(([id, label, Icon]) => (
+                <button
+                  key={id}
+                  role="tab"
+                  aria-selected={panel === id}
+                  onClick={() => setPanel(id)}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-bold transition-colors',
+                    panel === id ? 'bg-intranet-primary text-white' : 'text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800',
+                  )}
+                >
+                  <Icon className="h-4 w-4" />{label}
+                </button>
+              ))}
+            </div>
+            <div className={cn('min-h-0 flex-1 p-3', panel !== 'inspector' && 'hidden')}>
+              {definition && (
+                <WorkflowInspector
+                  definition={definition}
+                  run={run}
+                  traveling={traveling}
+                  inputNodeId={inputNodeId}
+                  selectedId={selectedNode}
+                  tab={tab}
+                  onTabChange={setTab}
+                  draft={(inputNodeId && inputs[inputNodeId]) || {}}
+                  onDraftChange={onDraftChange}
+                  onSubmit={submitStep}
+                  onFillExample={fillExample}
+                  onStart={startSimulation}
+                  error={runError}
+                  onSelectNode={id => {
+                    setSelectedNode(id);
+                    if (chart) revealBox(id);
+                    else { setTab('details'); canvasRef.current?.centreOn(id); }
+                  }}
+                />
+              )}
+            </div>
+            {/* Kept mounted so the conversation survives switching panels. */}
+            <div className={cn('min-h-0 flex-1', panel !== 'ai' && 'hidden')}>
+              <WorkflowAIBuilder current={definition} onDraft={onAiDraft} />
+            </div>
+          </aside>
+        </div>,
+        studioHost,
+        )}
+      </div>
+
+      <AlertDialog open={confirm !== null} onOpenChange={open => { if (!open) setConfirm(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirm === 'prepare' && 'Create the Workflow_Definitions list?'}
+              {confirm === 'delete' && `Delete “${selectedSaved?.definition.title}”?`}
+              {confirm === 'discard' && 'Discard this draft?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirm === 'prepare' && 'Creates a SharePoint list on the intranet site (or adds its missing columns) to store saved workflows as JSON. No other list is changed.'}
+              {confirm === 'delete' && 'Removes the saved workflow from the Workflow_Definitions list for everyone. Export it first if you may need it again.'}
+              {confirm === 'discard' && 'The unsaved draft and any AI changes to it will be lost.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={runConfirmed} className={confirm === 'delete' ? 'bg-red-600 hover:bg-red-700' : undefined}>
+              {confirm === 'prepare' ? 'Create list' : confirm === 'delete' ? 'Delete' : 'Discard'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </PageLayout>
+  );
+};
+
+export default Workflows;

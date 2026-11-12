@@ -25,6 +25,7 @@ import Documents from "./pages/Documents";
 import Contacts from "./pages/Contacts";
 
 import Strategy from "./pages/Strategy";
+import Workflows from "./pages/Workflows";
 import HRProfiles from "./pages/HRProfiles";
 import Unit from "./pages/Unit";
 import Division from "./pages/Division";
@@ -255,6 +256,11 @@ const AppRoutes = () => {
       <Route path="/strategy" element={
         <RoleProtectedRoute requiredPermissions={[{ resource: 'strategy', action: 'read' }]}>
           <Strategy />
+        </RoleProtectedRoute>
+      } />
+      <Route path="/workflows" element={
+        <RoleProtectedRoute requiredPermissions={[{ resource: 'strategy', action: 'read' }]}>
+          <Workflows />
         </RoleProtectedRoute>
       } />
       <Route path="/test-ground" element={

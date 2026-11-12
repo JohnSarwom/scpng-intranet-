@@ -561,7 +561,11 @@ export class SharePointOpsService {
                 ParentGoalIdLookupId: objective.parentGoalId ? Number(objective.parentGoalId) : null,
                 Icon: objective.icon,
                 Deliverables: objective.deliverables?.join(', '),
-                LinkedDeliverable: objective.linkedDeliverable
+                LinkedDeliverable: objective.linkedDeliverable,
+                // Only sent when set, so lists without the StrategicGoal column still accept new objectives.
+                ...(objective.strategicGoalId !== undefined
+                    ? { StrategicGoalLookupId: normalizeLookupNumber(objective.strategicGoalId) }
+                    : {}),
             }
         };
 
@@ -598,6 +602,7 @@ export class SharePointOpsService {
         if (objective.icon !== undefined) fields.Icon = objective.icon;
         if (objective.deliverables !== undefined) fields.Deliverables = objective.deliverables?.join(', ');
         if (objective.linkedDeliverable !== undefined) fields.LinkedDeliverable = objective.linkedDeliverable;
+        if (objective.strategicGoalId !== undefined) fields.StrategicGoalLookupId = normalizeLookupNumber(objective.strategicGoalId);
 
         const payload = { fields };
 
@@ -628,6 +633,67 @@ export class SharePointOpsService {
 
         console.log(`🗑️ [SP Ops] Deleting Objective ${id}`);
         await this.deleteWithRevision(itemUrl, revision, `Objective ${id}`);
+    }
+
+    // --- Strategic Goal link (Unit_Objectives.StrategicGoal → Strategic_Goals) ---
+
+    private async getStrategicGoalsListId(): Promise<string | null> {
+        const lists = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists`).select('id,displayName'),
+            'finding the Strategic_Goals list'
+        );
+        return lists.find((list: any) => list.displayName === 'Strategic_Goals')?.id || null;
+    }
+
+    /**
+     * Read-only check of the StrategicGoal lookup column on Unit_Objectives.
+     * Nothing is created here; creating the column is a separate, explicit step.
+     */
+    async getStrategicGoalColumnStatus(): Promise<{
+        objectivesListFound: boolean;
+        goalsListId: string | null;
+        columnExists: boolean;
+        targetsStrategicGoals: boolean;
+    }> {
+        await this.initialize();
+        const objectivesListId = this.listIds['OBJECTIVES'];
+        const goalsListId = await this.getStrategicGoalsListId();
+        if (!objectivesListId) {
+            return { objectivesListFound: false, goalsListId, columnExists: false, targetsStrategicGoals: false };
+        }
+        const columns = await this.client
+            .api(`/sites/${this.siteId}/lists/${objectivesListId}/columns`)
+            .filter("name eq 'StrategicGoal'")
+            .get();
+        const column = columns?.value?.[0];
+        return {
+            objectivesListFound: true,
+            goalsListId,
+            columnExists: !!column,
+            targetsStrategicGoals: !!column && !!goalsListId && column.lookup?.listId === goalsListId,
+        };
+    }
+
+    /**
+     * Creates the StrategicGoal lookup column (Unit_Objectives → Strategic_Goals).
+     * A schema change: call only after an administrator has approved it.
+     */
+    async createStrategicGoalColumn(): Promise<void> {
+        const status = await this.getStrategicGoalColumnStatus();
+        if (!status.objectivesListFound) throw new Error('Unit_Objectives list not found.');
+        if (!status.goalsListId) throw new Error('Strategic_Goals list not found.');
+        if (status.columnExists) {
+            if (!status.targetsStrategicGoals) {
+                throw new Error('A StrategicGoal column already exists on Unit_Objectives but does not look up Strategic_Goals. Review it in SharePoint list settings.');
+            }
+            return;
+        }
+        await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/columns`).post({
+            name: 'StrategicGoal',
+            displayName: 'Strategic Goal',
+            description: 'The organisational goal (Strategic_Goals) this objective serves.',
+            lookup: { listId: status.goalsListId, columnName: 'Title' },
+        });
     }
 
     async getKRAs(scope: FilterScope = 'Division', context?: UserContext): Promise<KRA[]> {
@@ -1874,6 +1940,8 @@ export class SharePointOpsService {
             owner: f.Owner, // Text field usually, or expand if person
             parentGoalId: f.ParentGoalIdLookupId,
             parentGoalTitle: f.ParentGoalIdLookupValue,
+            strategicGoalId: normalizeLookupString(f.StrategicGoalLookupId),
+            strategicGoalTitle: f.StrategicGoalLookupValue || undefined,
             icon: f.Icon,
             isFeatured: f.IsFeatured === true || f.IsFeatured === 1 || f.IsFeatured === "1",
             deliverables: f.Deliverables ? f.Deliverables.split(',').map((s: string) => s.trim()) : [],
@@ -2678,9 +2746,10 @@ export class SharePointOpsService {
             );
 
             const objectiveIdNum = Number(objectiveId);
+            // Retired KRAs are hidden everywhere else, so they must not dilute the stored figure.
             const linkedKras = kraItems.filter((item: any) => {
                 const lookupId = item.fields?.UnitObjectiveLookupId;
-                return Number(lookupId) === objectiveIdNum;
+                return Number(lookupId) === objectiveIdNum && item.fields?.IsRetired !== true;
             });
 
             // 2. Calculate average progress

@@ -1,10 +1,16 @@
 # SCPNG Intranet Documentation
 > [!NOTE]
-> **Last Updated:** 2026-11-10
+> **Last Updated:** 2026-11-13
 
 Welcome to the SCPNG Intranet documentation repository. This documentation is organized hierarchically to match the application's application architecture and feature sets.
 
 ## 🗺 Documentation Map
+
+### 📝 [Change records](changes/README.md)
+Every change since 11 November 2026, newest first: why it was made, what changed, how it was checked, its status, and how to undo it. Start here to find out where things stand.
+
+### 🧭 Programmes
+- **[Organisation and approvals](programmes/org-and-approvals/README.md)**: the plan, step status, decisions register and data fixes for one org model, approvals, task review, and totals by unit and division.
 
 ### 🏛 [Architecture](architecture/system-overview.md)
 The source of truth for the application's core systems, tech stack, and data flow.
@@ -22,6 +28,7 @@ Feature-specific documentation and business logic.
 - **[Task Registry](modules/task-registry/overview.md)**: Managing daily tasks and operational workflows.
   - **[Unit Tabs & Kanban](modules/task-registry/unit-tabs.md)**: Deep dive into the `unit-tabs` component layer.
 - **[Strategy Execution Roadmap](strategy-execution/README.md)**: Forward-looking roadmap for linking Strategic Goals, KRAs, KPIs, Tasks, progress indicators, Division/Unit tracking, and Reports.
+- **[Workflow Studio](modules/workflows/overview.md)**: The Workflows page — built-in workflows drawn as implemented (starting with Task Registry → Strategic Goal), step simulation, saved workflows in `Workflow_Definitions`, and the AI workflow builder.
 - **[Performance](modules/performance/)**: KRAs, KPIs, and Initiatives.
 - **[Leave Application](modules/leave-application/)**: Employee leave management system.
 - **[Meeting Minutes](modules/meeting-minutes/overview.md)**: In-browser meeting minutes generator with Word and PDF export.

@@ -186,7 +186,8 @@ interface KRAsTabProps {
   onDeleteKra: (kraId: string | number) => Promise<void>;
   onSaveKpi: (kpi: Partial<Kpi>) => Promise<void>;
   onDeleteKpi: (kpiId: string | number) => Promise<void>;
-  strategicObjectives?: { id: string | number; title: string; deliverables?: string[] }[];
+  /** Items in Strategic_Goals; `deliverables` are the Strategic KRAs filed under each goal. */
+  strategicGoals?: { id: string | number; title: string; deliverables?: string[] }[];
   canEdit?: boolean;
   onEditTask?: (id: string, task: Partial<Task>, options?: { suppressToast?: boolean }) => Promise<void | boolean> | void;
   onSubmitForReview?: (kpiId: string | number, reviewerEmail: string) => Promise<void>;
@@ -213,7 +214,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   onDeleteKra,
   onSaveKpi,
   onDeleteKpi,
-  strategicObjectives = [],
+  strategicGoals = [],
   canEdit = false,
   onEditTask,
   onSubmitForReview,
@@ -276,7 +277,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
     division: '',
     unit: '',
     owner: '',
-    parentGoalId: '',
+    strategicGoalId: '',
     linkedDeliverable: ''
   });
   const [isOwnerPopoverOpen, setIsOwnerPopoverOpen] = useState(false);
@@ -855,7 +856,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       division: userDivision,
       unit: userUnit,
       owner: ownerName,
-      parentGoalId: '',
+      strategicGoalId: '',
       linkedDeliverable: ''
     });
     setIsObjectiveModalOpen(true);
@@ -873,7 +874,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       division: objective.division,
       unit: objective.unit,
       owner: objective.owner,
-      parentGoalId: objective.parentGoalId?.toString() || '',
+      strategicGoalId: objective.strategicGoalId?.toString() || '',
       linkedDeliverable: objective.linkedDeliverable || ''
     });
     setIsObjectiveModalOpen(true);
@@ -885,7 +886,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
     setNewObjectiveData({
       unit: '',
       owner: '',
-      parentGoalId: '',
+      strategicGoalId: '',
       linkedDeliverable: ''
     });
   };
@@ -905,8 +906,8 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
         }
       }
 
-      // Reset linked deliverable if parent goal changes
-      if (field === 'parentGoalId') {
+      // Reset linked deliverable if the Strategic Goal changes
+      if (field === 'strategicGoalId') {
         updated.linkedDeliverable = '';
       }
 
@@ -917,6 +918,16 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
   const handleSaveObjective = async () => {
     if (!newObjectiveData.title || newObjectiveData.title.trim() === '') {
       toast({ title: "Error", description: "Objective name cannot be empty.", variant: "destructive" });
+      return;
+    }
+
+    // New initiatives must say which Strategic Goal they serve, the same way new
+    // tasks must pick a KPI. Existing ones can still be saved while unlinked.
+    const chosenGoalId = newObjectiveData.strategicGoalId && newObjectiveData.strategicGoalId !== 'none'
+      ? String(newObjectiveData.strategicGoalId)
+      : null;
+    if (!editingObjective && strategicGoals.length > 0 && !chosenGoalId) {
+      toast({ title: "Choose a Strategic Goal", description: "Pick the Strategic Goal this initiative contributes to.", variant: "destructive" });
       return;
     }
 
@@ -939,7 +950,9 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
       division: newObjectiveData.division || userContext?.division || '',
       unit: newObjectiveData.unit || userContext?.unit || '',
       owner: newObjectiveData.owner,
-      parentGoalId: newObjectiveData.parentGoalId || null,
+      // Only the StrategicGoal link is written; the legacy ParentGoalId is left as it is.
+      // The field is sent only when a goal is chosen or an existing link is being cleared.
+      ...(chosenGoalId || editingObjective?.strategicGoalId ? { strategicGoalId: chosenGoalId } : {}),
       linkedDeliverable: newObjectiveData.linkedDeliverable || null
     };
 
@@ -1343,15 +1356,17 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                           </PremiumTableRow>
                         );
                         return userInitiatives.map((objective) => {
-                          // Initiative.parentGoalId → Key Deliverable (Unit obj)
-                          // KD.parentGoalId → Strategic Goal (Org obj)
-                          // KRAs link to the KD, so progress reads through the KD.
+                          // Seeded placeholder initiatives point at a Key Deliverable (Unit obj)
+                          // through ParentGoalId, and KRAs link to that KD, so progress reads
+                          // through the KD. The goal shown is the StrategicGoal link: the
+                          // initiative's own, or else its KD's.
                           const parentKd = objectivesData.find(o =>
                             String(o.id) === String(objective.parentGoalId) && o.goalType === 'Unit'
                           );
-                          const strategicGoal = parentKd
-                            ? strategicObjectives.find(so => String(so.id) === String(parentKd.parentGoalId))
-                            : strategicObjectives.find(so => String(so.id) === String(objective.parentGoalId));
+                          const goalId = objective.strategicGoalId || parentKd?.strategicGoalId;
+                          const strategicGoal = goalId
+                            ? strategicGoals.find(goal => String(goal.id) === String(goalId))
+                            : undefined;
 
                           const kdLinkedKras = parentKd
                             ? kras.filter(k =>
@@ -1374,7 +1389,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                                     {strategicGoal.title}
                                   </Badge>
                                 ) : (
-                                  <span className="text-muted-foreground dark:text-gray-500 text-[10px] italic">Direct/Board</span>
+                                  <span className="text-muted-foreground dark:text-gray-500 text-[10px] italic">Not linked</span>
                                 )}
                             </PremiumTableCell>
                             <PremiumTableCell>
@@ -1506,26 +1521,29 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 <Label className="text-right whitespace-nowrap dark:text-gray-300">Strategic Goals</Label>
                 <div className="col-span-3">
                   <Select
-                    value={newObjectiveData.parentGoalId?.toString() || 'none'}
-                    onValueChange={(val) => handleObjectiveFormChange('parentGoalId', val === 'none' ? null : val)}
+                    value={newObjectiveData.strategicGoalId?.toString() || 'none'}
+                    onValueChange={(val) => handleObjectiveFormChange('strategicGoalId', val === 'none' ? null : val)}
                     disabled={isSavingObjective}
                   >
                     <SelectTrigger className="dark:bg-gray-900 dark:border-white/10 dark:text-gray-100">
                       <SelectValue placeholder="Select a Strategic Goal..." />
                     </SelectTrigger>
                     <SelectContent className="dark:bg-gray-950 dark:border-white/10">
-                      <SelectItem value="none">No Strategic Goal</SelectItem>
-                      {(strategicObjectives.length > 0 ? strategicObjectives : objectivesData)
-                        .map(obj => (
-                          <SelectItem key={obj.id} value={obj.id.toString()}>
-                            {obj.title}
-                          </SelectItem>
-                        ))
-                      }
+                      {/* Clearing is only offered when editing; new initiatives must choose a goal. */}
+                      {(editingObjective || strategicGoals.length === 0) && (
+                        <SelectItem value="none">No Strategic Goal</SelectItem>
+                      )}
+                      {strategicGoals.map(goal => (
+                        <SelectItem key={goal.id} value={goal.id.toString()}>
+                          {goal.title}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-1">
-                    Link this unit initiative to a high-level Strategic Goal.
+                    {strategicGoals.length > 0
+                      ? 'The organisational goal (from the Strategic_Goals list) this initiative contributes to.'
+                      : 'No Strategic Goals could be loaded, so this initiative can only be saved without one.'}
                   </p>
                 </div>
               </div>
@@ -1537,7 +1555,7 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                 </Label>
                 <div className="col-span-3">
                   {(() => {
-                    if (!newObjectiveData.parentGoalId || newObjectiveData.parentGoalId === 'none') {
+                    if (!newObjectiveData.strategicGoalId || newObjectiveData.strategicGoalId === 'none') {
                       return (
                         <div className="p-3 rounded-md border border-dashed dark:border-white/20 text-sm text-muted-foreground dark:text-gray-500 bg-muted/30 dark:bg-gray-900/50">
                           Please select a <strong>Strategic Goal</strong> above to see linked Organizational KRAs.
@@ -1545,11 +1563,11 @@ export const KRAsTab = forwardRef<KRAsTabHandle, KRAsTabProps>(({
                       );
                     }
 
-                    const parentParams = (strategicObjectives.length > 0 ? strategicObjectives : objectivesData).find(o => o.id.toString() === newObjectiveData.parentGoalId);
-                    const deliverables = parentParams?.deliverables || [];
+                    const selectedGoal = strategicGoals.find(goal => goal.id.toString() === String(newObjectiveData.strategicGoalId));
+                    const deliverables = selectedGoal?.deliverables || [];
 
                     if (deliverables.length === 0) {
-                      return <p className="text-sm text-red-500 pt-2 font-medium">No Organizational KRAs found for the selected Strategic Goal.</p>;
+                      return <p className="text-sm text-muted-foreground pt-2">No Strategic KRAs are filed under this goal yet. You can still save the initiative.</p>;
                     }
 
                     return (
