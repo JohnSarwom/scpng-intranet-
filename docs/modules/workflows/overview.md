@@ -36,6 +36,20 @@ The diagram also shows two side tracks (Corporate Plan KRAs, and the admin goal-
 
 When this behaviour changes in code, update the definition in the same change. A test checks that every source file cited in `details.code` exists.
 
+### Target designs (added 12 November 2026)
+
+Three built-ins describe the agreed design rather than the code. The library marks them **Target design**. They come from the three layered HTML drafts ("01 Reporting Hierarchy", "02 Task Assignment Workflow", "03 Organisational Structure"), checked against the app and refined. The review and the open decisions are in [2026-11-12-organisation-and-task-flow-review.md](2026-11-12-organisation-and-task-flow-review.md).
+
+| Workflow | Kind | Definition |
+|---|---|---|
+| Task assignment and review | process (16 steps, can be simulated) | [taskAssignmentReview.ts](../../../src/workflows/definitions/taskAssignmentReview.ts) |
+| Reporting hierarchy | structure chart (49 posts) | [reportingHierarchy.ts](../../../src/workflows/definitions/reportingHierarchy.ts) |
+| Organisational structure | structure chart (22 units) | [organisationalStructure.ts](../../../src/workflows/definitions/organisationalStructure.ts) |
+
+Each step or box is tagged **In app**, **Partly** or **Not yet** (`appStatus`), and its details say what the app does today (`details.today`). The canvas shows the totals in a key at the top left, and the inspector shows them as a bar. A test checks that every step and box in a target design has both.
+
+Structure charts are drawn top-down like an org chart, with the SCPNG maroon shades by level. Clicking a box shows its role, its reporting line and the boxes directly beneath it, each of which can be clicked. The **+ / −** button on a box opens or closes its branch; the toolbar has **Find a post or unit** (Enter finds the next match), **Open all** and **Close branches** (keeps the top three levels open). Structure charts can't be simulated or rearranged.
+
 To add a built-in workflow:
 1. Add a file under `src/workflows/definitions/`.
 2. Add it to `builtInWorkflows.ts`.
@@ -65,6 +79,8 @@ The types are in [workflowTypes.ts](../../../src/workflows/workflowTypes.ts); va
   - at most 40 steps and 80 connections, and 60,000 characters of JSON.
 
   Positions are optional; missing ones are laid out bottom-up.
+- **Structure charts** set `"kind": "hierarchy"`. Every box has `type: "org"` and a `rank` (`board`, `executive`, `office`, `group`, `division`, `director`, `unit`, `manager`, `senior`, `officer`); `group` is a layout-only box that is left out of reporting lines and totals. Each `flow` connection runs from a box to one directly beneath it; a `reads` connection draws a dotted line. Checks: exactly one top box, every other box has exactly one parent and is connected to the top, no fields or decisions, at most 80 boxes and 120 connections.
+- **Target designs** use `status: "target"`, and their steps or boxes carry `appStatus` (`built`, `partial`, `missing`) and `details.today`. The AI builder keeps these where they already exist but never adds them.
 
 The simulation engine is [workflowRun.ts](../../../src/workflows/workflowRun.ts). A merge step waits only for branches that were actually started.
 
@@ -112,6 +128,7 @@ Component: [WorkflowAIBuilder.tsx](../../../src/components/workflows/WorkflowAIB
 - `src/tests/workflowSchema.test.cjs`: validation, layout, AI parsing, and that the built-in workflow is valid and its cited files exist.
 - `src/tests/workflowRun.test.cjs`: or/and/andor routing, merges, feedback, and the Task Registry run through the KPI and operational branches.
 - `src/tests/workflowDefinitionsService.test.cjs`: list preparation, paging, round-trips, invalid items, and version conflicts against a fake Graph client.
+- `src/tests/workflowTargetDesigns.test.cjs`: every built-in is valid and cites real files; target designs tag every step; the agreed reporting lines (divisions don't report through the General Counsel); chart layout and closing branches; chart validation messages; and the task assignment design simulated through the KPI, operational, return, escalation and query paths.
 
 The menu entry is covered in `src/config/navItems.test.ts` (Vitest).
 

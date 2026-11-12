@@ -60,12 +60,17 @@ Step (node):
 Connection (edge): { "from": "stepId", "to": "stepId", "label": "Optional short label", "when": "gate option", "kind": "flow" | "feedback" | "reads" }
 - "flow" (the default) moves the work on. "feedback" sends it back to an earlier step, for example "Return for revision". "reads" shows that a step uses information from a side step and does not move the work.
 
+STRUCTURE CHARTS (org charts and reporting lines)
+- For a structure rather than a process, add "kind": "hierarchy". Every node then has "type": "org" and a "rank": one of board, executive, office, group, division, director, unit, manager, senior, officer. Use "group" only for a box drawn to tidy the layout that is not a real unit or post.
+- Each edge goes from the senior box to the box beneath it ("flow"). There is exactly one top box, and every other box has exactly one parent. A "reads" edge draws a dotted line. No fields, gates, "when" or outcomes; "details.rules" may describe the role. Up to ${WORKFLOW_LIMITS.chartNodes} boxes.
+
 RULES THE STUDIO CHECKS
 - Exactly one starting step: the only main-track step with no incoming flow connection. Inputs that feed in from elsewhere use "track": "side"; clean-up or review loops use "track": "feedback".
 - Every main-track step must be reachable from the start and must lead on, unless it is an "end" step.
 - IDs are unique. At most ${WORKFLOW_LIMITS.nodes} steps and ${WORKFLOW_LIMITS.edges} connections; aim for 6 to 20 steps and keep labels short.
 - Describe roles (for example "Line manager", "HR Officer"), never named people. Do not include personal data, passwords, keys or account numbers.
 - Do not claim a workflow already exists in the intranet. Everything you design is a draft for people to review.
+- "appStatus" and "details.today" record what the live app does. Keep them where the current workflow has them, but never add them to new steps.
 
 WORKED EXAMPLE (the built-in Task Registry workflow, as implemented):
 <example>${example}</example>`;

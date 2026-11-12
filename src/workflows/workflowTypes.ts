@@ -14,7 +14,34 @@ export type WorkflowNodeType =
   /** The flow splits; see WorkflowGate. */
   | 'gate'
   /** The flow ends here. */
-  | 'end';
+  | 'end'
+  /** A unit or post in a structure chart. Only used when the workflow's kind is 'hierarchy'. */
+  | 'org';
+
+/**
+ * 'process' (the default) is a flow of steps that can be simulated.
+ * 'hierarchy' is a structure chart: one top box, every other box has exactly
+ * one parent, drawn top-down. It has no fields, decisions or simulation.
+ */
+export type WorkflowKind = 'process' | 'hierarchy';
+
+/** Level of a box in a structure chart; sets its colour and caption. */
+export type OrgRank =
+  | 'board'
+  | 'executive'
+  /** A unit or post reporting straight to the executive (e.g. Secretariat, Internal Audit). */
+  | 'office'
+  /** A grouping drawn for layout only; not a unit or post. */
+  | 'group'
+  | 'division'
+  | 'director'
+  | 'unit'
+  | 'manager'
+  | 'senior'
+  | 'officer';
+
+/** How much of a step, unit or post the app supports today. */
+export type AppStatus = 'built' | 'partial' | 'missing';
 
 export type WorkflowGateMode =
   /** Exactly one route is taken: the chosen option. */
@@ -64,6 +91,8 @@ export interface WorkflowNodeDetails {
   rules?: string[];
   /** Source files (repository paths) that implement the step. */
   code?: string[];
+  /** How the app handles this step today, for target designs. */
+  today?: string;
 }
 
 export interface WorkflowNode {
@@ -86,6 +115,10 @@ export interface WorkflowNode {
   details?: WorkflowNodeDetails;
   /** Main path, a side track feeding in, or a feedback loop. Display only. */
   track?: 'main' | 'side' | 'feedback';
+  /** Structure charts only: the box's level. */
+  rank?: OrgRank;
+  /** Target designs: whether the app does this today (see details.today). */
+  appStatus?: AppStatus;
 }
 
 export type WorkflowEdgeKind =
@@ -108,6 +141,8 @@ export interface WorkflowEdge {
 export type WorkflowStatus =
   /** Built in: describes what the code does today. */
   | 'implemented'
+  /** Built in: the agreed design. Each step's appStatus says how much the app does today. */
+  | 'target'
   | 'draft'
   | 'published';
 
@@ -123,6 +158,8 @@ export interface WorkflowDefinition {
   area?: string;
   status: WorkflowStatus;
   source: WorkflowSource;
+  /** 'process' when left out. */
+  kind?: WorkflowKind;
   /** Short notes shown above the canvas, e.g. "A task link does not mean KPI achievement." */
   notes?: string[];
   nodes: WorkflowNode[];

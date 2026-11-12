@@ -7,7 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import type { WorkflowDefinition, WorkflowField, WorkflowNode } from '@/workflows/workflowTypes';
+import { APP_STATUS_LABEL, RANK_LABEL } from '@/components/workflows/WorkflowCanvas';
+import { appStatusCounts, hierarchyChildren, isHierarchy, reportingChain } from '@/workflows/workflowSchema';
+import type { AppStatus, WorkflowDefinition, WorkflowField, WorkflowNode } from '@/workflows/workflowTypes';
 import type { RunState } from '@/workflows/workflowRun';
 
 export type InspectorTab = 'steps' | 'details' | 'data' | 'history';
@@ -27,6 +29,53 @@ interface WorkflowInspectorProps {
   onFillExample: () => void;
   onStart: () => void;
   error: string | null;
+  /** Selects another box or step (structure charts link to the boxes above and beneath). */
+  onSelectNode?: (nodeId: string) => void;
+}
+
+const STATUS_TONE: Record<AppStatus, { box: string; dot: string }> = {
+  built: { box: 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100', dot: 'bg-emerald-500' },
+  partial: { box: 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100', dot: 'bg-amber-500' },
+  missing: { box: 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900/60 dark:bg-rose-950/30 dark:text-rose-100', dot: 'bg-rose-500' },
+};
+
+/** "In the app / Partly built / Not built yet", with how the app handles it today. */
+function AppToday({ node }: { node: WorkflowNode }) {
+  if (!node.appStatus && !node.details?.today) return null;
+  const tone = STATUS_TONE[node.appStatus || 'partial'];
+  return (
+    <div className={cn('rounded-lg border p-3 text-xs leading-relaxed', tone.box)}>
+      <p className="mb-1 flex items-center gap-1.5 font-bold">
+        <span className={cn('h-2 w-2 rounded-full', tone.dot)} aria-hidden="true" />
+        {node.appStatus ? APP_STATUS_LABEL[node.appStatus] : 'In the app today'}
+      </p>
+      {node.details?.today && <p>{node.details.today}</p>}
+    </div>
+  );
+}
+
+function StatusSummary({ definition }: { definition: WorkflowDefinition }) {
+  const counts = appStatusCounts(definition);
+  if (!counts) return null;
+  const total = counts.built + counts.partial + counts.missing;
+  return (
+    <div className="space-y-2 rounded-lg border border-gray-200 p-3 dark:border-white/10">
+      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Against the app today</p>
+      <div className="flex h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800" aria-hidden="true">
+        {(['built', 'partial', 'missing'] as AppStatus[]).map(status => (
+          <span key={status} className={STATUS_TONE[status].dot} style={{ width: `${(counts[status] / total) * 100}%` }} />
+        ))}
+      </div>
+      <ul className="space-y-1 text-xs">
+        {(['built', 'partial', 'missing'] as AppStatus[]).map(status => (
+          <li key={status} className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-1.5"><span className={cn('h-2 w-2 rounded-full', STATUS_TONE[status].dot)} aria-hidden="true" />{APP_STATUS_LABEL[status]}</span>
+            <strong>{counts[status]} of {total}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
 const TABS: Array<{ id: InspectorTab; label: string }> = [
@@ -36,7 +85,7 @@ const TABS: Array<{ id: InspectorTab; label: string }> = [
   { id: 'history', label: 'Changes' },
 ];
 
-const TYPE_LABEL: Record<WorkflowNode['type'], string> = { input: 'Input', auto: 'Automatic', gate: 'Decision', end: 'End' };
+const TYPE_LABEL: Record<WorkflowNode['type'], string> = { input: 'Input', auto: 'Automatic', gate: 'Decision', end: 'End', org: 'Box' };
 
 function Notice({ tone = 'info', children }: { tone?: 'info' | 'ok' | 'error'; children: React.ReactNode }) {
   return (
@@ -131,11 +180,78 @@ function List({ title, items, mono = false }: { title: string; items?: string[];
 
 export default function WorkflowInspector({
   definition, run, traveling, inputNodeId, selectedId, tab, onTabChange,
-  draft, onDraftChange, onSubmit, onFillExample, onStart, error,
+  draft, onDraftChange, onSubmit, onFillExample, onStart, error, onSelectNode,
 }: WorkflowInspectorProps) {
   const nodeById = (id: string | null) => (id ? definition.nodes.find(node => node.id === id) : undefined);
   const inputNode = nodeById(inputNodeId);
   const selected = nodeById(selectedId);
+  const chart = isHierarchy(definition);
+
+  const boxLink = (node: WorkflowNode, current = false) => (
+    <button
+      type="button"
+      onClick={() => onSelectNode?.(node.id)}
+      disabled={current}
+      aria-current={current ? 'true' : undefined}
+      className={cn(
+        'w-full rounded-md border px-2 py-1.5 text-left text-xs transition-colors',
+        current
+          ? 'border-intranet-primary/40 bg-intranet-primary/5 font-semibold dark:border-rose-400/40 dark:bg-rose-950/20'
+          : 'border-gray-100 bg-white hover:border-intranet-primary/40 dark:border-white/10 dark:bg-gray-900 dark:hover:border-rose-400/40',
+      )}
+    >
+      <span className="block">{node.label}</span>
+      <span className="block text-[10px] text-muted-foreground">
+        {node.rank ? RANK_LABEL[node.rank] : ''}{node.sub ? ` · ${node.sub}` : ''}
+      </span>
+    </button>
+  );
+
+  /** Structure charts: one panel for the selected box. */
+  const chartPanel = () => {
+    if (!selected) {
+      return (
+        <div className="space-y-3">
+          <Notice>
+            Click a box to see its reporting line, what it covers and how the app records it today.
+            Use + and − on a box to open or close the branch beneath it.
+          </Notice>
+          <StatusSummary definition={definition} />
+        </div>
+      );
+    }
+    // Grouping boxes are drawn for layout only, so they are left out of the line.
+    const chain = reportingChain(definition, selected.id).filter(node => node.rank !== 'group' || node.id === selected.id);
+    const beneath = hierarchyChildren(definition, selected.id);
+    return (
+      <div className="space-y-4">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-intranet-primary dark:text-rose-300">{selected.rank ? RANK_LABEL[selected.rank] : 'Box'}</p>
+          <h3 className="text-base font-bold leading-snug">{selected.label}</h3>
+          {selected.sub && <p className="mt-0.5 text-xs text-muted-foreground">{selected.sub}</p>}
+        </div>
+        <AppToday node={selected} />
+        <List title="Role" items={selected.details?.rules} />
+        {chain.length > 1 && (
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Reporting line</p>
+            <ol className="space-y-1">
+              {chain.map((node, index) => (
+                <li key={node.id} style={{ paddingLeft: `${Math.min(index, 6) * 8}px` }}>{boxLink(node, node.id === selected.id)}</li>
+              ))}
+            </ol>
+          </div>
+        )}
+        {beneath.length > 0 && (
+          <div className="space-y-1">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Directly beneath ({beneath.length})</p>
+            <ul className="space-y-1">{beneath.map(node => <li key={node.id}>{boxLink(node)}</li>)}</ul>
+          </div>
+        )}
+        <List title="Where the app records it" items={selected.details?.code} mono />
+      </div>
+    );
+  };
 
   const steps = () => {
     if (!run) {
@@ -148,6 +264,7 @@ export default function WorkflowInspector({
           <Button onClick={onStart} className="w-full bg-intranet-primary text-white hover:bg-intranet-secondary">
             <Play className="mr-2 h-4 w-4" />Start simulation
           </Button>
+          <StatusSummary definition={definition} />
         </div>
       );
     }
@@ -185,7 +302,14 @@ export default function WorkflowInspector({
   };
 
   const details = () => {
-    if (!selected) return <Notice>Select a step on the canvas to see where it happens and what it writes.</Notice>;
+    if (!selected) {
+      return (
+        <div className="space-y-3">
+          <Notice>Select a step on the canvas to see where it happens and what it writes.</Notice>
+          <StatusSummary definition={definition} />
+        </div>
+      );
+    }
     const info = selected.details || {};
     return (
       <div className="space-y-4">
@@ -197,6 +321,7 @@ export default function WorkflowInspector({
           </div>
           {selected.sub && <p className="text-xs text-muted-foreground mt-1">{selected.sub}</p>}
         </div>
+        <AppToday node={selected} />
         {info.screen && (
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Where</p>
@@ -212,8 +337,8 @@ export default function WorkflowInspector({
         <List title="Writes" items={info.writes} />
         <List title="Rules" items={info.rules} />
         <List title="Fields" items={(selected.fields || []).map(field => `${field.label}${field.options ? ` (${field.options.join(' / ')})` : ''}`)} />
-        <List title="Implemented in" items={info.code} mono />
-        {!info.screen && !info.writes && !info.rules && !info.code && !selected.fields && (
+        <List title={selected.appStatus ? 'Related code' : 'Implemented in'} items={info.code} mono />
+        {!info.screen && !info.writes && !info.rules && !info.code && !selected.fields && !info.today && (
           <p className="text-xs text-muted-foreground">No details recorded for this step.</p>
         )}
       </div>
@@ -256,6 +381,23 @@ export default function WorkflowInspector({
     );
   };
 
+  const notes = definition.notes?.length ? (
+    <div className={cn('flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200', !chart && 'mt-3')}>
+      <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+      <div className="space-y-1">{definition.notes.map(note => <p key={note}>{note}</p>)}</div>
+    </div>
+  ) : null;
+
+  if (chart) {
+    // A structure chart has nothing to simulate: one panel, no tabs.
+    return (
+      <div className="flex h-full min-h-0 flex-col gap-3">
+        {notes}
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">{chartPanel()}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-900" role="tablist" aria-label="Inspector">
@@ -274,12 +416,7 @@ export default function WorkflowInspector({
           </button>
         ))}
       </div>
-      {definition.notes?.length ? (
-        <div className="mt-3 flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <div className="space-y-1">{definition.notes.map(note => <p key={note}>{note}</p>)}</div>
-        </div>
-      ) : null}
+      {notes}
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto pr-1" role="tabpanel">
         {tab === 'steps' ? steps() : tab === 'details' ? details() : tab === 'data' ? data() : history()}
       </div>

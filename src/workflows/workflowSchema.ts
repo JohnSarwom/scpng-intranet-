@@ -7,6 +7,8 @@
  */
 
 import type {
+  AppStatus,
+  OrgRank,
   WorkflowDefinition,
   WorkflowEdge,
   WorkflowEdgeKind,
@@ -18,18 +20,29 @@ export const WORKFLOW_SCHEMA_VERSION = 1;
 export const WORKFLOW_LIMITS = {
   nodes: 40,
   edges: 80,
+  /** Structure charts have one box per unit or post, so they may be larger. */
+  chartNodes: 80,
+  chartEdges: 120,
   fieldsPerNode: 12,
   optionsPerField: 20,
   jsonChars: 60000,
 } as const;
 
 const NODE_TYPES = ['input', 'auto', 'gate', 'end'];
+const CHART_NODE_TYPE = 'org';
 const GATE_MODES = ['or', 'and', 'andor'];
 const FIELD_KINDS = ['text', 'textarea', 'date', 'number', 'select'];
 const EDGE_KINDS = ['flow', 'feedback', 'reads'];
-const STATUSES = ['implemented', 'draft', 'published'];
+const CHART_EDGE_KINDS = ['flow', 'reads'];
+const STATUSES = ['implemented', 'target', 'draft', 'published'];
 const SOURCES = ['built-in', 'ai', 'manual'];
 const TRACKS = ['main', 'side', 'feedback'];
+const KINDS = ['process', 'hierarchy'];
+export const ORG_RANKS: OrgRank[] = ['board', 'executive', 'office', 'group', 'division', 'director', 'unit', 'manager', 'senior', 'officer'];
+export const APP_STATUSES: AppStatus[] = ['built', 'partial', 'missing'];
+
+/** True for structure charts (org charts, reporting lines). */
+export const isHierarchy = (definition: Pick<WorkflowDefinition, 'kind'>): boolean => definition.kind === 'hierarchy';
 
 const WORKFLOW_ID = /^[a-z0-9][a-z0-9-]{1,63}$/;
 const NODE_ID = /^[a-z][a-z0-9_-]{0,39}$/i;
@@ -117,11 +130,14 @@ function normaliseNode(raw: unknown): WorkflowNode {
       ...(textList(details.writes) ? { writes: textList(details.writes) } : {}),
       ...(textList(details.rules) ? { rules: textList(details.rules) } : {}),
       ...(textList(details.code) ? { code: textList(details.code) } : {}),
+      ...(optionalText(details.today) ? { today: optionalText(details.today) } : {}),
     };
     if (Object.keys(cleaned).length) result.details = cleaned;
   }
   const track = text(node.track);
   if (track && track !== 'main') result.track = track as WorkflowNode['track'];
+  if (optionalText(node.rank)) result.rank = optionalText(node.rank) as OrgRank;
+  if (optionalText(node.appStatus)) result.appStatus = optionalText(node.appStatus) as AppStatus;
   return result;
 }
 
@@ -152,6 +168,8 @@ export function normaliseWorkflow(raw: unknown, overrides: Partial<Pick<Workflow
     nodes: Array.isArray(source.nodes) ? source.nodes.map(normaliseNode) : [],
     edges: Array.isArray(source.edges) ? source.edges.map(normaliseEdge) : [],
   };
+  const kind = text(source.kind);
+  if (kind && kind !== 'process') definition.kind = kind as WorkflowDefinition['kind'];
   if (optionalText(source.summary)) definition.summary = optionalText(source.summary);
   if (optionalText(source.area)) definition.area = optionalText(source.area);
   if (textList(source.notes)) definition.notes = textList(source.notes);
@@ -171,12 +189,16 @@ export function validateWorkflow(definition: WorkflowDefinition): string[] {
   if (!STATUSES.includes(definition.status)) add(`Status must be one of: ${STATUSES.join(', ')}.`);
   if (!SOURCES.includes(definition.source)) add(`Source must be one of: ${SOURCES.join(', ')}.`);
   if ((definition.summary || '').length > 600) add('The summary must be at most 600 characters.');
+  if (definition.kind !== undefined && !KINDS.includes(definition.kind)) add(`Kind must be one of: ${KINDS.join(', ')}.`);
 
+  const chart = isHierarchy(definition);
+  const nodeLimit = chart ? WORKFLOW_LIMITS.chartNodes : WORKFLOW_LIMITS.nodes;
+  const edgeLimit = chart ? WORKFLOW_LIMITS.chartEdges : WORKFLOW_LIMITS.edges;
   const nodes = definition.nodes || [];
   const edges = definition.edges || [];
   if (nodes.length === 0) add('The workflow has no steps.');
-  if (nodes.length > WORKFLOW_LIMITS.nodes) add(`At most ${WORKFLOW_LIMITS.nodes} steps are allowed (found ${nodes.length}).`);
-  if (edges.length > WORKFLOW_LIMITS.edges) add(`At most ${WORKFLOW_LIMITS.edges} connections are allowed (found ${edges.length}).`);
+  if (nodes.length > nodeLimit) add(`At most ${nodeLimit} ${chart ? 'boxes' : 'steps'} are allowed (found ${nodes.length}).`);
+  if (edges.length > edgeLimit) add(`At most ${edgeLimit} connections are allowed (found ${edges.length}).`);
 
   const ids = new Set<string>();
   for (const node of nodes) {
@@ -186,7 +208,16 @@ export function validateWorkflow(definition: WorkflowDefinition): string[] {
     ids.add(node.id);
     if (!node.label || node.label.length > 80) add(`Step "${node.id}" needs a label of at most 80 characters.`);
     if ((node.sub || '').length > 120) add(`Step "${name}" has a subtitle longer than 120 characters.`);
-    if (!NODE_TYPES.includes(node.type)) add(`Step "${name}" has type "${node.type}"; use one of: ${NODE_TYPES.join(', ')}.`);
+    if (chart) {
+      if (node.type !== CHART_NODE_TYPE) add(`Box "${name}" in a structure chart needs type "${CHART_NODE_TYPE}".`);
+      if (!node.rank || !ORG_RANKS.includes(node.rank)) add(`Box "${name}" needs a rank: one of ${ORG_RANKS.join(', ')}.`);
+      if (node.fields?.length || node.gate) add(`Box "${name}" is in a structure chart, which has no fields or decisions.`);
+    } else {
+      if (!NODE_TYPES.includes(node.type)) add(`Step "${name}" has type "${node.type}"; use one of: ${NODE_TYPES.join(', ')}.`);
+      if (node.rank) add(`Step "${name}" has a rank, which only boxes in a structure chart use.`);
+    }
+    if (node.appStatus && !APP_STATUSES.includes(node.appStatus)) add(`"${name}" has appStatus "${node.appStatus}"; use one of: ${APP_STATUSES.join(', ')}.`);
+    if ((node.details?.today || '').length > 600) add(`"${name}" has a "today" note longer than 600 characters.`);
     if (node.track && !TRACKS.includes(node.track)) add(`Step "${name}" has an unknown track "${node.track}".`);
     if ((node.outcome || '').length > 300) add(`Step "${name}" has an outcome longer than 300 characters.`);
 
@@ -206,7 +237,9 @@ export function validateWorkflow(definition: WorkflowDefinition): string[] {
   const edgeKeys = new Set<string>();
   for (const edge of edges) {
     const kind = edgeKind(edge);
-    if (!EDGE_KINDS.includes(kind)) add(`Connection ${edge.from} → ${edge.to} has an unknown kind "${kind}".`);
+    if (chart && !CHART_EDGE_KINDS.includes(kind)) add(`Connection ${edge.from} → ${edge.to} in a structure chart must be "flow" (reports to) or "reads" (dotted line).`);
+    else if (!EDGE_KINDS.includes(kind)) add(`Connection ${edge.from} → ${edge.to} has an unknown kind "${kind}".`);
+    if (chart && edge.when) add(`Connection ${edge.from} → ${edge.to} has "when", which structure charts don't use.`);
     if (!ids.has(edge.from)) add(`A connection starts at "${edge.from}", which is not a step.`);
     if (!ids.has(edge.to)) add(`A connection ends at "${edge.to}", which is not a step.`);
     if (edge.from === edge.to) add(`Step "${edge.from}" connects to itself.`);
@@ -215,6 +248,14 @@ export function validateWorkflow(definition: WorkflowDefinition): string[] {
     edgeKeys.add(key);
   }
   if (errors.length) return errors;
+
+  if (chart) {
+    validateHierarchyShape(definition, add);
+    if (!errors.length && workflowToJson(definition).length > WORKFLOW_LIMITS.jsonChars) {
+      add(`The chart is too large to save (over ${WORKFLOW_LIMITS.jsonChars.toLocaleString()} characters).`);
+    }
+    return errors;
+  }
 
   // Structure: one start, gates that can route, no dead ends, everything reachable.
   const starts = startCandidates(definition);
@@ -286,12 +327,166 @@ export function validateWorkflow(definition: WorkflowDefinition): string[] {
   return errors;
 }
 
+// --- Structure charts ---------------------------------------------------------
+
+/** Spacing for structure charts, drawn top-down like an org chart. */
+export const CHART_LAYOUT = { columnGap: 250, rowGap: 130 } as const;
+
+/** Each box's parent ("reports to"), from flow connections. */
+export function hierarchyParents(definition: WorkflowDefinition): Map<string, string> {
+  const parents = new Map<string, string>();
+  for (const edge of definition.edges) {
+    if (edgeKind(edge) === 'flow' && !parents.has(edge.to)) parents.set(edge.to, edge.from);
+  }
+  return parents;
+}
+
+/** The boxes directly beneath one box, in the order their connections are listed. */
+export function hierarchyChildren(definition: WorkflowDefinition, id: string): WorkflowNode[] {
+  return definition.edges
+    .filter(edge => edge.from === id && edgeKind(edge) === 'flow')
+    .map(edge => definition.nodes.find(node => node.id === edge.to))
+    .filter((node): node is WorkflowNode => !!node);
+}
+
+/** The line from the top box down to `id`, inclusive. Stops on a loop. */
+export function reportingChain(definition: WorkflowDefinition, id: string): WorkflowNode[] {
+  const parents = hierarchyParents(definition);
+  const chain: WorkflowNode[] = [];
+  const seen = new Set<string>();
+  let current: string | undefined = id;
+  while (current && !seen.has(current)) {
+    seen.add(current);
+    const node = definition.nodes.find(item => item.id === current);
+    if (!node) break;
+    chain.unshift(node);
+    current = parents.get(current);
+  }
+  return chain;
+}
+
+function validateHierarchyShape(definition: WorkflowDefinition, add: (message: string) => void): void {
+  const incoming = new Map<string, number>();
+  for (const edge of definition.edges) {
+    if (edgeKind(edge) === 'flow') incoming.set(edge.to, (incoming.get(edge.to) || 0) + 1);
+  }
+  const roots = definition.nodes.filter(node => !incoming.get(node.id));
+  if (roots.length !== 1) {
+    add(`A structure chart needs exactly one top box; found ${roots.length}${roots.length ? ` (${roots.map(node => node.id).join(', ')})` : ''}.`);
+    return;
+  }
+  for (const node of definition.nodes) {
+    if ((incoming.get(node.id) || 0) > 1) add(`"${node.label}" reports to more than one box. Use a "reads" connection for a dotted line.`);
+  }
+  const reached = new Set([roots[0].id]);
+  const queue = [roots[0].id];
+  while (queue.length) {
+    const current = queue.shift()!;
+    for (const child of hierarchyChildren(definition, current)) {
+      if (reached.has(child.id)) continue;
+      reached.add(child.id);
+      queue.push(child.id);
+    }
+  }
+  for (const node of definition.nodes) {
+    if (!reached.has(node.id)) add(`"${node.label}" is not connected to the top of the chart.`);
+  }
+}
+
+export interface ChartLayout {
+  /** Visible boxes with positions; boxes under a collapsed box are left out. */
+  nodes: WorkflowNode[];
+  /** Connections between visible boxes. */
+  edges: WorkflowEdge[];
+  /** Number of boxes directly beneath each box, collapsed or not. */
+  childCounts: Record<string, number>;
+}
+
+/**
+ * Lays a structure chart out top-down: each box sits centred over the boxes
+ * beneath it, and leaves are spaced evenly. Boxes in `collapsed` keep their
+ * place but hide everything beneath them. Copes with invalid charts (loops,
+ * several tops) so a draft can still be drawn while it is being fixed.
+ */
+export function layoutHierarchy(definition: WorkflowDefinition, collapsed: ReadonlySet<string> = new Set()): ChartLayout {
+  const parents = hierarchyParents(definition);
+  const childCounts: Record<string, number> = {};
+  for (const node of definition.nodes) childCounts[node.id] = hierarchyChildren(definition, node.id).length;
+
+  const positions = new Map<string, { x: number; y: number }>();
+  let leaf = 0;
+  const place = (id: string, depth: number): number => {
+    positions.set(id, { x: 0, y: 0 });
+    const children = collapsed.has(id) ? [] : hierarchyChildren(definition, id).filter(child => !positions.has(child.id));
+    let x: number;
+    if (!children.length) {
+      x = leaf * CHART_LAYOUT.columnGap;
+      leaf += 1;
+    } else {
+      const xs = children.map(child => place(child.id, depth + 1));
+      x = (xs[0] + xs[xs.length - 1]) / 2;
+    }
+    positions.set(id, { x, y: depth * CHART_LAYOUT.rowGap });
+    return x;
+  };
+  for (const node of definition.nodes) {
+    if (!parents.has(node.id) && !positions.has(node.id)) place(node.id, 0);
+  }
+
+  const visible = new Set(positions.keys());
+  // Boxes caught in a loop have no top; draw them in a row below the rest.
+  const stray = definition.nodes.filter(node => !visible.has(node.id) && !isUnderCollapsed(node.id, parents, collapsed));
+  const bottom = Math.max(0, ...[...positions.values()].map(position => position.y)) + CHART_LAYOUT.rowGap;
+  stray.forEach((node, index) => {
+    positions.set(node.id, { x: index * CHART_LAYOUT.columnGap, y: bottom });
+    visible.add(node.id);
+  });
+
+  return {
+    nodes: definition.nodes.filter(node => visible.has(node.id)).map(node => ({ ...node, ...positions.get(node.id)! })),
+    edges: definition.edges.filter(edge => visible.has(edge.from) && visible.has(edge.to)),
+    childCounts,
+  };
+}
+
+function isUnderCollapsed(id: string, parents: Map<string, string>, collapsed: ReadonlySet<string>): boolean {
+  const seen = new Set<string>();
+  let current = parents.get(id);
+  while (current && !seen.has(current)) {
+    if (collapsed.has(current)) return true;
+    seen.add(current);
+    current = parents.get(current);
+  }
+  return false;
+}
+
+/** How many steps or boxes are built, partly built or missing in the app. */
+export function appStatusCounts(definition: WorkflowDefinition): Record<AppStatus, number> | null {
+  const counts: Record<AppStatus, number> = { built: 0, partial: 0, missing: 0 };
+  let any = false;
+  for (const node of definition.nodes) {
+    if (!node.appStatus || node.rank === 'group') continue;
+    counts[node.appStatus] += 1;
+    any = true;
+  }
+  return any ? counts : null;
+}
+
 /**
  * Lays nodes out bottom-up in layers by their longest flow distance from the
  * start, like the V9 canvas. Side and feedback steps sit beside the step they
  * connect to. Nodes that already have positions keep them unless `force`.
+ * Structure charts are laid out top-down instead (see layoutHierarchy).
  */
 export function autoLayout(definition: WorkflowDefinition, force = false): WorkflowDefinition {
+  if (isHierarchy(definition)) {
+    const laidOut = new Map(layoutHierarchy(definition).nodes.map(node => [node.id, node]));
+    return {
+      ...definition,
+      nodes: definition.nodes.map(node =>
+        !force && node.x !== undefined && node.y !== undefined ? node : { ...node, x: laidOut.get(node.id)?.x ?? 0, y: laidOut.get(node.id)?.y ?? 0 }),
+    };
+  }
   const start = startCandidates(definition)[0];
   const depth = new Map<string, number>();
   if (start) {

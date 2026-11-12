@@ -9,7 +9,8 @@
 
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { WorkflowDefinition, WorkflowEdge, WorkflowNode } from '@/workflows/workflowTypes';
+import { appStatusCounts, isHierarchy } from '@/workflows/workflowSchema';
+import type { AppStatus, OrgRank, WorkflowDefinition, WorkflowEdge, WorkflowNode } from '@/workflows/workflowTypes';
 
 export interface CanvasTransfer {
   from: string;
@@ -38,6 +39,18 @@ interface WorkflowCanvasProps {
   onTransferDone?: () => void;
   editing?: boolean;
   onMoveNode?: (nodeId: string, x: number, y: number) => void;
+  /** Structure charts: boxes whose branch is closed. */
+  collapsedIds?: string[];
+  /** Structure charts: how many boxes sit directly beneath each box. */
+  childCounts?: Record<string, number>;
+  onToggleCollapse?: (nodeId: string) => void;
+  /** Target designs: totals for the "In the app / Partly / Not yet" key. Worked out from `definition` when left out. */
+  statusCounts?: Record<AppStatus, number> | null;
+  /**
+   * The canvas refits when this changes. Defaults to the number of steps; a
+   * structure chart passes its own so opening a branch keeps the view.
+   */
+  fitKey?: string;
   className?: string;
 }
 
@@ -45,9 +58,87 @@ const NODE_W = 260;
 const NODE_H = 70;
 const HALF_W = NODE_W / 2;
 const HALF_H = NODE_H / 2;
-const ICONS: Record<WorkflowNode['type'], string> = { input: '▣', auto: '↻', gate: '◇', end: '✓' };
-const TYPE_LABEL: Record<WorkflowNode['type'], string> = { input: 'Input', auto: 'Automatic', gate: 'Decision', end: 'End' };
+/** Boxes in a structure chart are narrower, like an org chart. */
+const CHART_W = 220;
+const CHART_H = 76;
+const ICONS: Record<WorkflowNode['type'], string> = { input: '▣', auto: '↻', gate: '◇', end: '✓', org: '▤' };
+const TYPE_LABEL: Record<WorkflowNode['type'], string> = { input: 'Input', auto: 'Automatic', gate: 'Decision', end: 'End', org: 'Box' };
 const kindOf = (edge: WorkflowEdge) => edge.kind || 'flow';
+
+export const RANK_LABEL: Record<OrgRank, string> = {
+  board: 'Board / governance',
+  executive: 'Chief Executive',
+  office: 'Reports to the CEO',
+  group: 'Grouping only',
+  division: 'Division',
+  director: 'Director',
+  unit: 'Unit',
+  manager: 'Manager',
+  senior: 'Senior Officer',
+  officer: 'Officer',
+};
+
+/** Box colours by rank: maroon shades from the SCPNG brand, darkest at the top. */
+const RANK_STYLE: Record<OrgRank, { box: string; text: string; caption: string }> = {
+  board: { box: 'fill-[#3c1423] stroke-[#3c1423]', text: 'fill-white', caption: 'fill-amber-200' },
+  executive: { box: 'fill-[#67142c] stroke-[#67142c]', text: 'fill-white', caption: 'fill-rose-200' },
+  division: { box: 'fill-[#67142c] stroke-[#67142c]', text: 'fill-white', caption: 'fill-rose-200' },
+  director: { box: 'fill-[#67142c] stroke-[#67142c]', text: 'fill-white', caption: 'fill-rose-200' },
+  office: { box: 'fill-[#85253d] stroke-[#85253d]', text: 'fill-white', caption: 'fill-rose-200' },
+  unit: { box: 'fill-[#85253d] stroke-[#85253d]', text: 'fill-white', caption: 'fill-rose-200' },
+  manager: { box: 'fill-[#a3455c] stroke-[#a3455c]', text: 'fill-white', caption: 'fill-rose-100' },
+  senior: { box: 'fill-[#f2e0e6] stroke-[#ddbec8] dark:fill-rose-950/60 dark:stroke-rose-900', text: 'fill-gray-900 dark:fill-rose-50', caption: 'fill-[#8e2942] dark:fill-rose-300' },
+  officer: { box: 'fill-white stroke-gray-300 dark:fill-gray-900 dark:stroke-gray-600', text: 'fill-gray-900 dark:fill-gray-100', caption: 'fill-gray-500 dark:fill-gray-400' },
+  group: { box: 'fill-transparent stroke-gray-400 dark:stroke-gray-500', text: 'fill-gray-700 dark:fill-gray-200', caption: 'fill-gray-500 dark:fill-gray-400' },
+};
+
+export const APP_STATUS_LABEL: Record<AppStatus, string> = { built: 'In the app', partial: 'Partly built', missing: 'Not built yet' };
+const APP_STATUS_SHORT: Record<AppStatus, string> = { built: 'In app', partial: 'Partly', missing: 'Not yet' };
+const APP_STATUS_STYLE: Record<AppStatus, { pill: string; text: string; dot: string }> = {
+  built: { pill: 'stroke-emerald-500', text: 'fill-emerald-700 dark:fill-emerald-300', dot: 'bg-emerald-500' },
+  partial: { pill: 'stroke-amber-500', text: 'fill-amber-700 dark:fill-amber-300', dot: 'bg-amber-500' },
+  missing: { pill: 'stroke-rose-500', text: 'fill-rose-700 dark:fill-rose-300', dot: 'bg-rose-500' },
+};
+
+/** Splits a label into at most two lines of about `width` characters. */
+function wrapLabel(label: string, width: number): string[] {
+  const words = label.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  for (const word of words) {
+    if (!line) line = word;
+    else if ((line + ' ' + word).length <= width) line += ` ${word}`;
+    else { lines.push(line); line = word; }
+  }
+  if (line) lines.push(line);
+  if (lines.length <= 2) return lines.map(item => (item.length > width + 2 ? `${item.slice(0, width + 1)}…` : item));
+  const second = lines.slice(1).join(' ');
+  return [lines[0], second.length > width ? `${second.slice(0, width - 1)}…` : second];
+}
+
+/** Org-chart connector: down from the parent, across, and down into the child. */
+function chartEdgePath(a: WorkflowNode, b: WorkflowNode, kind: string): string {
+  const ax = a.x ?? 0, ay = a.y ?? 0, bx = b.x ?? 0, by = b.y ?? 0;
+  if (kind === 'reads') {
+    // Dotted line: a gentle curve, so it can't be mistaken for a reporting line.
+    return `M ${ax} ${ay} Q ${(ax + bx) / 2} ${Math.min(ay, by) - 60}, ${bx} ${by}`;
+  }
+  const y1 = ay + CHART_H / 2, y2 = by - CHART_H / 2;
+  const mid = (y1 + y2) / 2;
+  return `M ${ax} ${y1} V ${mid} H ${bx} V ${y2}`;
+}
+
+/** Small "In app / Partly / Not yet" tag on a box's top edge. */
+function AppStatusTag({ status, x, top, align }: { status: AppStatus; x: number; top: number; align: 'left' | 'right' }) {
+  const label = APP_STATUS_SHORT[status];
+  const width = label.length * 6.2 + 16;
+  return (
+    <g transform={`translate(${align === 'right' ? x - width : x} ${top - 9})`} aria-hidden="true">
+      <rect width={width} height={18} rx={9} strokeWidth={1.5} className={cn('fill-white dark:fill-gray-900', APP_STATUS_STYLE[status].pill)} />
+      <text x={width / 2} y={12.5} textAnchor="middle" className={cn('text-[10px] font-bold', APP_STATUS_STYLE[status].text)}>{label}</text>
+    </g>
+  );
+}
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -89,8 +180,17 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   onTransferDone,
   editing = false,
   onMoveNode,
+  collapsedIds = [],
+  childCounts = {},
+  onToggleCollapse,
+  statusCounts,
+  fitKey,
   className,
 }, ref) => {
+  const chart = isHierarchy(definition);
+  const counts = statusCounts === undefined ? appStatusCounts(definition) : statusCounts;
+  const halfW = chart ? CHART_W / 2 : HALF_W;
+  const halfH = chart ? CHART_H / 2 : HALF_H;
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const travelPathRef = useRef<SVGPathElement>(null);
@@ -117,12 +217,13 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     if (!box || !definition.nodes.length) return;
     const xs = definition.nodes.map(node => node.x ?? 0);
     const ys = definition.nodes.map(node => node.y ?? 0);
-    const minX = Math.min(...xs) - HALF_W - 40, maxX = Math.max(...xs) + HALF_W + 40;
-    const minY = Math.min(...ys) - HALF_H - 40, maxY = Math.max(...ys) + HALF_H + 40;
-    const scale = Math.min(1.2, Math.max(0.22, Math.min((box.width - 24) / (maxX - minX), (box.height - 24) / (maxY - minY))));
+    const minX = Math.min(...xs) - halfW - 40, maxX = Math.max(...xs) + halfW + 40;
+    const minY = Math.min(...ys) - halfH - 40, maxY = Math.max(...ys) + halfH + 40;
+    // Large charts may shrink further than flows, so the whole chart fits.
+    const scale = Math.min(1.2, Math.max(chart ? 0.12 : 0.22, Math.min((box.width - 24) / (maxX - minX), (box.height - 24) / (maxY - minY))));
     userMoved.current = false;
     setView({ scale, tx: (box.width - (maxX + minX) * scale) / 2, ty: (box.height - (maxY + minY) * scale) / 2 });
-  }, [definition.nodes]);
+  }, [definition.nodes, chart, halfW, halfH]);
 
   const zoomAt = useCallback((factor: number, cx?: number, cy?: number) => {
     const box = containerRef.current?.getBoundingClientRect();
@@ -130,7 +231,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
     userMoved.current = true;
     const px = cx ?? box.width / 2, py = cy ?? box.height / 2;
     setView(previous => {
-      const scale = Math.min(2.8, Math.max(0.22, previous.scale * factor));
+      const scale = Math.min(2.8, Math.max(0.12, previous.scale * factor));
       return { scale, tx: px - (px - previous.tx) * scale / previous.scale, ty: py - (py - previous.ty) * scale / previous.scale };
     });
   }, []);
@@ -154,7 +255,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
   useImperativeHandle(ref, () => ({ fit, zoomBy: factor => zoomAt(factor), centreOn, focusOn }), [fit, zoomAt, centreOn, focusOn]);
 
   // Fit when a different workflow, or a redrafted one with other steps, is shown.
-  useLayoutEffect(() => { fit(); }, [definition.id, definition.nodes.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => { fit(); }, [definition.id, fitKey ?? definition.nodes.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Refit when the canvas changes size, until the viewer has panned or zoomed.
   useEffect(() => {
@@ -295,6 +396,19 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
             const kind = kindOf(edge);
             const done = completed.has(edge.from) && completed.has(edge.to) && kind === 'flow';
             const travelling = travelEdge === edge;
+            if (chart) {
+              return (
+                <path
+                  key={`${edge.from}-${edge.to}-${index}`}
+                  d={chartEdgePath(placed(from), placed(to), kind)}
+                  fill="none"
+                  strokeWidth={2}
+                  strokeDasharray={kind === 'reads' ? '4 6' : undefined}
+                  strokeLinejoin="round"
+                  className="stroke-gray-400 dark:stroke-gray-500"
+                />
+              );
+            }
             const d = edgePath(placed(from), placed(to), kind);
             return (
               <g key={`${edge.from}-${edge.to}-${index}`}>
@@ -345,8 +459,79 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
             />
           )}
 
+          {/* Structure-chart boxes */}
+          {chart && definition.nodes.map(node => {
+            const { x, y } = position(node);
+            const rank = node.rank || 'officer';
+            const style = RANK_STYLE[rank];
+            const isSelected = selectedId === node.id;
+            const children = childCounts[node.id] || 0;
+            const isCollapsed = collapsedIds.includes(node.id);
+            const lines = wrapLabel(node.label, 27);
+            const titleY = node.sub ? (lines.length > 1 ? -6 : 2) : (lines.length > 1 ? 2 : 8);
+            return (
+              <g
+                key={node.id}
+                data-node-id={node.id}
+                transform={`translate(${x} ${y})`}
+                tabIndex={0}
+                role="button"
+                aria-label={`${RANK_LABEL[rank]}: ${node.label}${node.appStatus ? `. ${APP_STATUS_LABEL[node.appStatus]}` : ''}${children ? `. ${children} beneath${isCollapsed ? ', closed' : ''}` : ''}.`}
+                aria-pressed={isSelected}
+                className="group cursor-pointer outline-none"
+                onClick={() => onSelect?.(node.id)}
+                onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect?.(node.id); } }}
+              >
+                {isSelected && (
+                  <rect x={-CHART_W / 2 - 5} y={-CHART_H / 2 - 5} width={CHART_W + 10} height={CHART_H + 10} rx={15}
+                    fill="none" strokeWidth={3} className="stroke-[#c78c9d] dark:stroke-rose-400" />
+                )}
+                <rect
+                  x={-CHART_W / 2}
+                  y={-CHART_H / 2}
+                  width={CHART_W}
+                  height={CHART_H}
+                  rx={11}
+                  strokeWidth={1.5}
+                  strokeDasharray={rank === 'group' ? '6 5' : undefined}
+                  className={cn(style.box, 'transition-[filter] group-hover:brightness-110 group-focus-visible:stroke-amber-400')}
+                  style={rank === 'group' ? undefined : { filter: 'drop-shadow(0 3px 6px rgba(16, 21, 35, 0.10))' }}
+                />
+                <text y={-CHART_H / 2 + 17} textAnchor="middle" className={cn('text-[10px] font-semibold', style.caption)}>{RANK_LABEL[rank]}</text>
+                <text textAnchor="middle" className={cn('text-[12.5px] font-bold', style.text)}>
+                  <title>{node.label}</title>
+                  {lines.map((line, index) => <tspan key={index} x={0} y={titleY + index * 15}>{line}</tspan>)}
+                </text>
+                {node.sub && (
+                  <text y={CHART_H / 2 - 9} textAnchor="middle" className={cn('text-[10.5px] opacity-80', style.text)}>
+                    {node.sub.length > 31 ? `${node.sub.slice(0, 30)}…` : node.sub}
+                  </text>
+                )}
+                {node.appStatus && <AppStatusTag status={node.appStatus} x={CHART_W / 2 - 8} top={-CHART_H / 2} align="right" />}
+                {children > 0 && (
+                  <g
+                    data-toggle="true"
+                    transform={`translate(${CHART_W / 2 - 14} ${CHART_H / 2})`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={isCollapsed ? `Open the ${children} boxes beneath ${node.label}` : `Close the branch beneath ${node.label}`}
+                    className="cursor-pointer outline-none"
+                    onClick={event => { event.stopPropagation(); onToggleCollapse?.(node.id); }}
+                    onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onToggleCollapse?.(node.id); } }}
+                  >
+                    <rect x={isCollapsed ? -26 : -12} y={-10} width={isCollapsed ? 40 : 24} height={20} rx={10} strokeWidth={1.5}
+                      className="fill-white stroke-[#e4b6c3] hover:stroke-intranet-primary dark:fill-gray-900 dark:stroke-rose-800" />
+                    <text x={isCollapsed ? -6 : 0} y={4.5} textAnchor="middle" className="fill-intranet-primary text-[12px] font-bold dark:fill-rose-300">
+                      {isCollapsed ? `+${children}` : '−'}
+                    </text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+
           {/* Steps */}
-          {definition.nodes.map(node => {
+          {!chart && definition.nodes.map(node => {
             const { x, y } = position(node);
             const isActive = active.has(node.id);
             const isWaiting = waiting.has(node.id);
@@ -402,6 +587,7 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
                     isActive ? 'fill-amber-600 dark:fill-amber-400' : isDone ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-gray-400',
                   )}>{flag}</text>
                 )}
+                {node.appStatus && <AppStatusTag status={node.appStatus} x={-HALF_W + 16} top={-HALF_H} align="left" />}
               </g>
             );
           })}
@@ -412,6 +598,19 @@ const WorkflowCanvas = forwardRef<WorkflowCanvasHandle, WorkflowCanvasProps>(({
           )}
         </g>
       </svg>
+      {counts && !editing && (
+        <div
+          className="pointer-events-none absolute left-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-gray-200 bg-white/90 px-2.5 py-1.5 text-[11px] text-gray-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-gray-900/90 dark:text-gray-200"
+          aria-label="How much of this design the app does today"
+        >
+          {(['built', 'partial', 'missing'] as AppStatus[]).map(status => (
+            <span key={status} className="flex items-center gap-1.5">
+              <span className={cn('h-2 w-2 rounded-full', APP_STATUS_STYLE[status].dot)} aria-hidden="true" />
+              {APP_STATUS_LABEL[status]} <strong>{counts[status]}</strong>
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 });

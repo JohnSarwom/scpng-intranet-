@@ -10,9 +10,9 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Bot, Copy, Download, Expand, Loader2, Move, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose,
-  PanelRightOpen, Play, RotateCcw, Save, Scan, Search, Shrink, Trash2, Upload, Workflow as WorkflowIcon,
-  ZoomIn, ZoomOut, LayoutGrid, X,
+  Bot, ChevronsDownUp, ChevronsUpDown, Copy, Download, Expand, Loader2, Move, PanelLeftClose, PanelLeftOpen,
+  PanelRight, PanelRightClose, PanelRightOpen, Play, RotateCcw, Save, Scan, Search, Shrink, Trash2, Upload,
+  Workflow as WorkflowIcon, ZoomIn, ZoomOut, LayoutGrid, X,
 } from 'lucide-react';
 import PageLayout from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,9 @@ import {
   useCanManageWorkflows, useSavedWorkflows, useWorkflowListReadiness, useWorkflowMutations,
 } from '@/hooks/useWorkflowDefinitions';
 import { BUILT_IN_WORKFLOWS } from '@/workflows/builtInWorkflows';
-import { autoLayout, workflowToJson } from '@/workflows/workflowSchema';
+import {
+  appStatusCounts, autoLayout, isHierarchy, layoutHierarchy, reportingChain, workflowToJson,
+} from '@/workflows/workflowSchema';
 import {
   advanceRun, derivedChoice, exampleValues, startRun, type RunState, type Transfer,
 } from '@/workflows/workflowRun';
@@ -44,6 +46,7 @@ type Confirm = 'prepare' | 'delete' | 'discard' | null;
 
 const STATUS_BADGE: Record<WorkflowStatus, { label: string; className: string }> = {
   implemented: { label: 'As implemented', className: 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' },
+  target: { label: 'Target design', className: 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-300' },
   published: { label: 'Published', className: 'border-sky-300 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300' },
   draft: { label: 'Draft', className: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300' },
 };
@@ -67,6 +70,10 @@ function readPanelPreference(): { library: boolean; panel: boolean } {
     return { library: true, panel: true };
   }
 }
+
+/** "17 steps", or "49 units and posts" for a structure chart. */
+const sizeLabel = (definition: WorkflowDefinition) =>
+  `${definition.nodes.length} ${isHierarchy(definition) ? 'units and posts' : 'steps'}`;
 
 const selectionKey = (selection: Selection) =>
   selection.kind === 'built-in' ? `built-in:${selection.id}` : selection.kind === 'saved' ? `saved:${selection.itemId}` : 'draft';
@@ -111,6 +118,13 @@ const Workflows = () => {
   const [pendingRun, setPendingRun] = useState<RunState | null>(null);
   const transferCounter = useRef(0);
   const canvasRef = useRef<WorkflowCanvasHandle>(null);
+
+  // Structure charts: closed branches, the "find" box, and how to frame the chart once it has redrawn.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [findText, setFindText] = useState('');
+  const [pendingView, setPendingView] = useState<
+    { kind: 'fit' } | { kind: 'centre'; id: string } | { kind: 'focus'; id: string } | null
+  >(null);
 
   // --- Full screen and side panels -------------------------------------------
   // The studio renders into one host element that never changes, so entering or
@@ -184,6 +198,85 @@ const Workflows = () => {
   }, [baseDefinition, positions, key]);
   const layoutChanged = !!positions[key] && Object.keys(positions[key]).length > 0;
 
+  const chart = !!definition && isHierarchy(definition);
+  const chartLayout = useMemo(
+    () => (definition && isHierarchy(definition) ? layoutHierarchy(definition, collapsed) : null),
+    [definition, collapsed],
+  );
+  /** What the canvas draws: for a chart, only the open branches, laid out top-down. */
+  const canvasDefinition = useMemo(
+    () => (definition && chartLayout ? { ...definition, nodes: chartLayout.nodes, edges: chartLayout.edges } : definition),
+    [definition, chartLayout],
+  );
+  const collapsedIds = useMemo(() => [...collapsed], [collapsed]);
+  const statusCounts = useMemo(() => (definition ? appStatusCounts(definition) : null), [definition]);
+
+  /** Opens the branches above a box so it is on the chart, then centres it. */
+  const revealBox = useCallback((nodeId: string) => {
+    if (!definition) return;
+    const above = reportingChain(definition, nodeId).slice(0, -1).map(node => node.id);
+    setCollapsed(previous => {
+      if (!above.some(id => previous.has(id))) return previous;
+      const next = new Set(previous);
+      above.forEach(id => next.delete(id));
+      return next;
+    });
+    setPendingView({ kind: 'focus', id: nodeId });
+  }, [definition]);
+
+  // Frame the chart once it has redrawn: the whole chart, or one box.
+  useEffect(() => {
+    if (!pendingView) return;
+    const timer = setTimeout(() => {
+      if (pendingView.kind === 'fit') canvasRef.current?.fit();
+      else if (pendingView.kind === 'centre') canvasRef.current?.centreOn(pendingView.id);
+      else canvasRef.current?.focusOn(pendingView.id, 0.8);
+      setPendingView(null);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [pendingView, chartLayout]);
+
+  /** Opens or closes one branch; the box stays in the middle of the view. */
+  const toggleBranch = useCallback((nodeId: string) => {
+    setCollapsed(previous => {
+      const next = new Set(previous);
+      if (next.has(nodeId)) next.delete(nodeId); else next.add(nodeId);
+      return next;
+    });
+    setPendingView({ kind: 'centre', id: nodeId });
+  }, []);
+
+  const openAllBranches = () => {
+    setCollapsed(new Set());
+    setPendingView({ kind: 'fit' });
+  };
+
+  /** Keeps the top three levels open (Board, CEO, and what reports to the CEO) and closes the rest. */
+  const closeBranches = () => {
+    if (!definition || !chartLayout) return;
+    setCollapsed(new Set(definition.nodes
+      .filter(node => (chartLayout.childCounts[node.id] || 0) > 0 && reportingChain(definition, node.id).length - 1 >= 3)
+      .map(node => node.id)));
+    setPendingView({ kind: 'fit' });
+  };
+
+  /** Selects the next box whose name or subtitle contains the text, opening its branch. */
+  const findBox = () => {
+    const term = findText.trim().toLowerCase();
+    if (!definition || !term) return;
+    const found = definition.nodes.filter(node =>
+      node.rank !== 'group' && [node.label, node.sub].some(value => (value || '').toLowerCase().includes(term)));
+    if (!found.length) {
+      toast({ title: 'Nothing found', description: `No unit or post on this chart matches “${findText.trim()}”.` });
+      return;
+    }
+    const next = found[(found.findIndex(node => node.id === selectedNode) + 1) % found.length];
+    setSelectedNode(next.id);
+    setPanel('inspector');
+    setShowPanel(true);
+    revealBox(next.id);
+  };
+
   const traveling = !!transfer || queue.length > 0;
 
   const resetRun = useCallback(() => {
@@ -200,6 +293,8 @@ const Workflows = () => {
     resetRun();
     setSelectedNode(null);
     setEditing(false);
+    setCollapsed(new Set());
+    setFindText('');
   }, [key, definition?.id, resetRun]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fall back to the built-in workflow if the selected saved one disappears.
@@ -453,7 +548,7 @@ const Workflows = () => {
           <span className="text-sm font-semibold leading-snug">{item.title}</span>
           <Badge variant="outline" className={cn('shrink-0 text-[10px]', badge.className)}>{badge.label}</Badge>
         </div>
-        <p className="mt-1 text-[11px] text-muted-foreground">{subtitle || `${item.area ? `${item.area} · ` : ''}${item.nodes.length} steps`}</p>
+        <p className="mt-1 text-[11px] text-muted-foreground">{subtitle || `${item.area ? `${item.area} · ` : ''}${sizeLabel(item)}`}</p>
       </button>
     );
   };
@@ -470,7 +565,7 @@ const Workflows = () => {
               </Badge>
               <h1 className="text-3xl font-black tracking-tight md:text-4xl">Workflows</h1>
               <p className="max-w-2xl text-sm text-white/80 md:text-base">
-                See how work moves through the intranet, step by step, and draft new workflows with AI.
+                See how SCPNG is organised and how work moves through the intranet, step by step, and draft new workflows with AI.
               </p>
             </div>
             <Button
@@ -534,7 +629,7 @@ const Workflows = () => {
               {draft && (
                 <section className="space-y-2">
                   <h2 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Unsaved draft</h2>
-                  {libraryItem(draft, { kind: 'draft' }, draftBase ? `Changes to “${draftBase.definition.title}”` : `${draft.nodes.length} steps · not saved`)}
+                  {libraryItem(draft, { kind: 'draft' }, draftBase ? `Changes to “${draftBase.definition.title}”` : `${sizeLabel(draft)} · not saved`)}
                 </section>
               )}
               <section className="space-y-2">
@@ -545,7 +640,7 @@ const Workflows = () => {
                 {listReady && saved.isSuccess && savedWorkflows.length === 0 && <p className="text-xs text-muted-foreground">No saved workflows yet.</p>}
                 {savedWorkflows.filter(item => matches(item.definition)).map(item =>
                   libraryItem(item.definition, { kind: 'saved', itemId: item.itemId },
-                    `${item.definition.nodes.length} steps${item.modifiedBy ? ` · ${item.modifiedBy}` : ''}`))}
+                    `${sizeLabel(item.definition)}${item.modifiedBy ? ` · ${item.modifiedBy}` : ''}`))}
                 {(saved.data?.unreadable || []).map(item => (
                   <div key={item.itemId} className="rounded-xl border border-red-200 bg-red-50 p-2 text-[11px] text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200">
                     <strong>{item.title}</strong> can't be opened: {item.errors[0]}
@@ -571,7 +666,27 @@ const Workflows = () => {
                 {definition?.summary && <p className="line-clamp-1 text-[11px] text-muted-foreground" title={definition.summary}>{definition.summary}</p>}
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                {run ? (
+                {chart ? (
+                  <>
+                    <form role="search" className="relative" onSubmit={event => { event.preventDefault(); findBox(); }}>
+                      <Search className="pointer-events-none absolute left-2 top-2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        value={findText}
+                        onChange={event => setFindText(event.target.value)}
+                        placeholder="Find a post or unit"
+                        aria-label="Find a post or unit on the chart (Enter finds the next match)"
+                        title="Enter finds the next match"
+                        className="h-8 w-40 pl-7 text-xs sm:w-48"
+                      />
+                    </form>
+                    <Button size="sm" variant="outline" onClick={openAllBranches} disabled={collapsed.size === 0} title="Open every branch">
+                      <ChevronsUpDown className="mr-1.5 h-4 w-4" />Open all
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={closeBranches} title="Keep the top levels open and close the teams beneath">
+                      <ChevronsDownUp className="mr-1.5 h-4 w-4" />Close branches
+                    </Button>
+                  </>
+                ) : run ? (
                   <Button size="sm" variant="outline" onClick={resetRun} title="Stop and clear the simulation"><RotateCcw className="mr-1.5 h-4 w-4" />Reset</Button>
                 ) : (
                   <Button size="sm" onClick={startSimulation} disabled={!definition} className="bg-intranet-primary text-white hover:bg-intranet-secondary"><Play className="mr-1.5 h-4 w-4" />Simulate</Button>
@@ -579,9 +694,11 @@ const Workflows = () => {
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(1.2)} title="Zoom in" aria-label="Zoom in"><ZoomIn className="h-4 w-4" /></Button>
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.zoomBy(0.82)} title="Zoom out" aria-label="Zoom out"><ZoomOut className="h-4 w-4" /></Button>
                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => canvasRef.current?.fit()} title="Fit the whole workflow" aria-label="Fit the whole workflow"><Scan className="h-4 w-4" /></Button>
-                <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => { setEditing(value => !value); if (run) resetRun(); }} title="Drag steps to rearrange them" className={editing ? 'bg-intranet-primary text-white hover:bg-intranet-secondary' : undefined}>
-                  <Move className="mr-1.5 h-4 w-4" />{editing ? 'Done' : 'Edit layout'}
-                </Button>
+                {!chart && (
+                  <Button size="sm" variant={editing ? 'default' : 'outline'} onClick={() => { setEditing(value => !value); if (run) resetRun(); }} title="Drag steps to rearrange them" className={editing ? 'bg-intranet-primary text-white hover:bg-intranet-secondary' : undefined}>
+                    <Move className="mr-1.5 h-4 w-4" />{editing ? 'Done' : 'Edit layout'}
+                  </Button>
+                )}
                 <span className="mx-0.5 hidden h-6 w-px bg-gray-200 dark:bg-white/10 sm:block" aria-hidden="true" />
                 <Button
                   size="icon"
@@ -618,10 +735,15 @@ const Workflows = () => {
             </div>
 
             <div className="relative min-h-0 flex-1">
-              {definition ? (
+              {canvasDefinition ? (
                 <WorkflowCanvas
                   ref={canvasRef}
-                  definition={definition}
+                  definition={canvasDefinition}
+                  collapsedIds={collapsedIds}
+                  childCounts={chartLayout?.childCounts}
+                  onToggleCollapse={toggleBranch}
+                  statusCounts={statusCounts}
+                  fitKey={chart && definition ? `${key}:${definition.nodes.length}` : undefined}
                   activeIds={traveling ? [] : run?.active || []}
                   waitingIds={run?.waiting || []}
                   completedIds={run?.completed || []}
@@ -652,7 +774,9 @@ const Workflows = () => {
                 </div>
               )}
               <p className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-2.5 py-1 text-[11px] text-muted-foreground shadow-sm dark:bg-gray-900/90">
-                Scroll to zoom · drag the background to pan · click a step for details
+                {chart
+                  ? 'Scroll to zoom · drag the background to pan · click a box for its reporting line · + / − opens or closes a branch'
+                  : 'Scroll to zoom · drag the background to pan · click a step for details'}
                 {run && !run.finished && (traveling ? ' · data moving…' : inputNodeId ? ` · waiting for: ${definition?.nodes.find(node => node.id === inputNodeId)?.label}` : '')}
               </p>
               {/* With the side panel hidden, a step waiting for input still needs a way in. */}
@@ -739,6 +863,11 @@ const Workflows = () => {
                   onFillExample={fillExample}
                   onStart={startSimulation}
                   error={runError}
+                  onSelectNode={id => {
+                    setSelectedNode(id);
+                    if (chart) revealBox(id);
+                    else { setTab('details'); canvasRef.current?.centreOn(id); }
+                  }}
                 />
               )}
             </div>
