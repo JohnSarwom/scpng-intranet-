@@ -1,10 +1,16 @@
 # SCPNG Intranet Documentation
 > [!NOTE]
-> **Last Updated:** 2026-11-10
+> **Last Updated:** 2026-11-13
 
 Welcome to the SCPNG Intranet documentation repository. This documentation is organized hierarchically to match the application's application architecture and feature sets.
 
 ## 🗺 Documentation Map
+
+### 📝 [Change records](changes/README.md)
+Every change since 11 November 2026, newest first: why it was made, what changed, how it was checked, its status, and how to undo it. Start here to find out where things stand.
+
+### 🧭 Programmes
+- **[Organisation and approvals](programmes/org-and-approvals/README.md)**: the plan, step status, decisions register and data fixes for one org model, approvals, task review, and totals by unit and division.
 
 ### 🏛 [Architecture](architecture/system-overview.md)
 The source of truth for the application's core systems, tech stack, and data flow.
