@@ -88,4 +88,4 @@ No new packages: it uses `framer-motion` and `canvas-confetti`, which were alrea
 - 2026-11-25: owner confirmed the event is December 2026; artwork, settings, list name and card text changed from 2027 to 2026. Record renamed from `2026-11-25-christmas-closing-2027-form.md`.
 - 2026-11-25: committed on `feat/christmas-invitation`, branched from `origin/main`. The index row in `docs/changes/README.md` is still to be added: that index is not on `main` yet (it lives on `feat/strategic-goals-workflow-studio`).
 - 2026-11-25: pushed and opened [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24) into `main`.
-- 2026-11-25: SharePoint list created on production (Automation account). Fixed the clash with the staff announcement pop-up found during that live check; the fix is not yet committed.
+- 2026-11-25: SharePoint list created on production (Automation account). Fixed the clash with the staff announcement pop-up found during that live check (commit 33fb61e, pushed to PR #24).
