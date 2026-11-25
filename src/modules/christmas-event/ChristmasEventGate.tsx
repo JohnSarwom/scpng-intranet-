@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getGraphClient } from '@/services/graphService';
 import { useRoleBasedAuth } from '@/hooks/useRoleBasedAuth';
+import { holdScreenTakeover } from '@/lib/screenTakeover';
 import InvitationOverlay from './InvitationOverlay';
 import { CHRISTMAS_EVENT } from './config';
 import {
@@ -65,6 +66,15 @@ export default function ChristmasEventGate({ demo = false }: Props) {
   const [existing, setExisting] = useState<ChristmasResponse | null>(null);
   const [open, setOpen] = useState(false);
 
+  // While we decide, and while the invitation is up, other welcome pop-ups wait their turn.
+  const releaseRef = useRef<(() => void) | null>(null);
+  const shownRef = useRef(false);
+  const releaseScreen = useCallback(() => {
+    releaseRef.current?.();
+    releaseRef.current = null;
+  }, []);
+  useEffect(() => releaseScreen, [releaseScreen]);
+
   useEffect(() => {
     if (!eligible || open) return;
     if (!demo && !forced) {
@@ -72,6 +82,12 @@ export default function ChristmasEventGate({ demo = false }: Props) {
       if (localStorage.getItem(submittedKey(email)) === '1') return;
     }
     let cancelled = false;
+    releaseRef.current?.();
+    releaseRef.current = holdScreenTakeover('christmas-invitation');
+    // Never keep other pop-ups waiting if SharePoint is slow to answer.
+    const safety = window.setTimeout(() => {
+      if (!shownRef.current) releaseScreen();
+    }, 15000);
     (async () => {
       try {
         let s: ChristmasResponseStore;
@@ -79,27 +95,38 @@ export default function ChristmasEventGate({ demo = false }: Props) {
           s = new ChristmasEventDemoStore();
         } else {
           const client = await getGraphClient(instance);
-          if (!client) return;
+          if (!client) {
+            releaseScreen();
+            return;
+          }
           s = new ChristmasEventSharePointStore(client);
         }
         const mine = await s.getMine(email);
         if (cancelled) return;
         if (mine && !forced && !demo) {
           localStorage.setItem(submittedKey(email), '1');
+          releaseScreen();
           return;
         }
         setStore(s);
         setExisting(mine);
         // Let the page underneath paint first, then bring the curtain down.
-        window.setTimeout(() => !cancelled && setOpen(true), demo ? 300 : 900);
+        window.setTimeout(() => {
+          if (cancelled) return;
+          shownRef.current = true;
+          setOpen(true);
+        }, demo ? 300 : 900);
       } catch (err) {
         // List missing and this user cannot create it, or SharePoint is unreachable:
         // stay out of the way rather than show a form that cannot be saved.
         console.warn('[ChristmasEvent] invitation not shown:', err);
+        releaseScreen();
       }
     })();
     return () => {
       cancelled = true;
+      window.clearTimeout(safety);
+      if (!shownRef.current) releaseScreen();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eligible, email, forced, demo]);
@@ -132,6 +159,8 @@ export default function ChristmasEventGate({ demo = false }: Props) {
     (reason: 'later' | 'done') => {
       if (reason === 'later' && !demo) sessionStorage.setItem(laterKey, '1');
       setOpen(false);
+      shownRef.current = false;
+      releaseScreen();
       if (forced) {
         const params = new URLSearchParams(location.search);
         params.delete(REOPEN_PARAM);
@@ -139,7 +168,7 @@ export default function ChristmasEventGate({ demo = false }: Props) {
         navigate({ pathname: location.pathname, search: qs ? `?${qs}` : '' }, { replace: true });
       }
     },
-    [demo, forced, location.pathname, location.search, navigate],
+    [demo, forced, location.pathname, location.search, navigate, releaseScreen],
   );
 
   return (

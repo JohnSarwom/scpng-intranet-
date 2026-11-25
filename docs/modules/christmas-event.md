@@ -10,6 +10,8 @@ Code: `src/modules/christmas-event/`. Change record: [2026-11-25](../changes/202
 4. The form looks exactly like the committee's artwork. The real SCPNG logo sits in a gold-ringed medallion where the artwork had a placeholder bird. Name and Division / Unit are filled in from the staff member's intranet profile where known.
 5. **Submit response** checks the answers, then saves them to SharePoint. A thank-you card appears with more confetti, and the overlay closes after a few seconds or on **Continue to the intranet**.
 
+While the invitation is deciding or showing, the intranet's "new announcement" pop-up waits, then opens as usual once the invitation closes (`src/lib/screenTakeover.ts`).
+
 **Remind me later**, **Not now**, the close button and Escape all close the invitation for the rest of the browser session. It appears again the next time the intranet is opened, until the person has submitted. Unfinished answers are kept as a draft on that device.
 
 To change an answer later, add `?christmas=open` to any intranet address (for example `/?christmas=open`). The form opens with the saved answers, and the button reads **Update response**.
@@ -39,6 +41,8 @@ SharePoint list **`Christmas_Event_2026_Responses`** on the intranet site, one r
 | Comments | Multi-line text | Additional comments |
 
 The committee can open the list in SharePoint and use **Export to Excel**, or filter and group it there.
+
+**Status:** created on production on 2026-11-25.
 
 **Setup.** The list is created automatically the first time someone allowed to create lists (a site owner or admin) opens the intranet. Until then, staff who cannot create it simply do not see the invitation, so nobody fills in a form that cannot be saved. Staff need permission to add and edit items on the site, which is already required for other intranet lists.
 
