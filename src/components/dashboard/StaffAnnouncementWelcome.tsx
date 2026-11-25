@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { dismissStaffNotices, getUnseenStaffAnnouncements, readDismissedStaffNotices } from '@/lib/staffAnnouncementPopup';
 import type { IAnnouncement } from '@/types';
+import { useScreenTakeoverActive } from '@/lib/screenTakeover';
 
 interface Props {
   announcements: IAnnouncement[];
@@ -30,6 +31,8 @@ export default function StaffAnnouncementWelcome({ announcements, ready, onReadN
   const accountId = accounts[0]?.homeAccountId;
   const checkedAccount = useRef<string>();
   const [offered, setOffered] = useState<{ accountId: string; notices: IAnnouncement[] } | null>(null);
+  // Wait while a full-screen moment (e.g. the Christmas invitation) is up; the notices stay unread meanwhile.
+  const screenTakeover = useScreenTakeoverActive();
 
   useEffect(() => {
     if (!accountId || !ready || checkedAccount.current === accountId) return;
@@ -48,7 +51,7 @@ export default function StaffAnnouncementWelcome({ announcements, ready, onReadN
   };
 
   return (
-    <Dialog open={notices.length > 0} onOpenChange={open => { if (!open) close(); }}>
+    <Dialog open={notices.length > 0 && !screenTakeover} onOpenChange={open => { if (!open) close(); }}>
       <DialogContent className="flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-xl flex-col gap-0 overflow-hidden rounded-2xl border-intranet-primary/15 p-0 [&>button]:text-white [&>button]:ring-offset-intranet-primary">
         <DialogHeader className="shrink-0 bg-intranet-primary px-6 pb-6 pt-7 text-left text-white sm:px-8">
           <div className="mb-4 flex items-center gap-3">

@@ -64,6 +64,11 @@ import { MsalProvider, useMsal, useIsAuthenticated } from '@azure/msal-react';
 import { InteractionStatus } from '@azure/msal-browser';
 import { MsalAuthProvider } from '@/integrations/microsoft/MsalProvider';
 import AppLoadingShell from '@/components/layout/AppLoadingShell';
+import ChristmasEventGate from '@/modules/christmas-event/ChristmasEventGate';
+// Developer-only rehearsal page; left out of production builds entirely.
+const ChristmasEventPreview = import.meta.env.DEV
+  ? React.lazy(() => import('@/modules/christmas-event/ChristmasEventPreview'))
+  : null;
 
 const CACHE_VERSION = 'v1'; // Bump when SharePoint data schema changes
 
@@ -352,6 +357,13 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
 
+      {ChristmasEventPreview && (
+        <Route
+          path="/dev/christmas-event"
+          element={<React.Suspense fallback={null}><ChristmasEventPreview /></React.Suspense>}
+        />
+      )}
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
@@ -385,6 +397,7 @@ const AppContent = () => {
             <Sonner />
             <SlideshowProvider>
               <AppRoutes />
+              <ChristmasEventGate />
             </SlideshowProvider>
           </EmployeesProvider>
         </TooltipProvider>
