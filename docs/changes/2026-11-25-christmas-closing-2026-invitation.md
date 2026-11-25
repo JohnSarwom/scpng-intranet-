@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Date** | 2026-11-25 |
-| **Status** | In review; PR open |
+| **Status** | Live |
 | **Programme step** | None |
-| **Branch / PR / commits** | `feat/christmas-invitation` (from `origin/main` at b53b906), [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24), commit 3d8700f |
+| **Branch / PR / commits** | `feat/christmas-invitation`, [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24), squash-merged into `main` as 1a5dc79 |
 | **Decisions used** | Owner confirmed on 2026-11-25 that the event is 23 December 2026 (the artwork said 2027). |
 
 ## Why
@@ -89,3 +89,4 @@ No new packages: it uses `framer-motion` and `canvas-confetti`, which were alrea
 - 2026-11-25: committed on `feat/christmas-invitation`, branched from `origin/main`. The index row in `docs/changes/README.md` is still to be added: that index is not on `main` yet (it lives on `feat/strategic-goals-workflow-studio`).
 - 2026-11-25: pushed and opened [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24) into `main`.
 - 2026-11-25: SharePoint list created on production (Automation account). Fixed the clash with the staff announcement pop-up found during that live check (commit 33fb61e, pushed to PR #24).
+- 2026-11-25: PR #24 squash-merged into `main` as 1a5dc79 (all checks passed). Vercel production deploy completed, and www.scpngintranet.com serves the new code (checked in the live bundle). Staff see the invitation on their next visit.
