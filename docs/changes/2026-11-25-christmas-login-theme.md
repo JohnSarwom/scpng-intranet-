@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Date** | 2026-11-25 |
-| **Status** | In review |
+| **Status** | Live |
 | **Programme step** | None |
-| **Branch / PR / commits** | `feat/christmas-login-theme` (from `origin/main` at 232f8d9) |
+| **Branch / PR / commits** | `feat/christmas-login-theme`, [PR #26](https://github.com/JohnSarwom/scpng-intranet-/pull/26), squash-merged into `main` as 1066742 |
 | **Decisions used** | None |
 
 ## Why
@@ -59,3 +59,4 @@ None.
 
 - 2026-11-25: record created.
 - 2026-11-25: committed and pushed for review.
+- 2026-11-25: [PR #26](https://github.com/JohnSarwom/scpng-intranet-/pull/26) squash-merged into `main` as 1066742 (all checks passed). The Vercel production deploy completed, and www.scpngintranet.com serves the backdrop and the new theme code (checked in the live bundle; the backdrop image loads).
