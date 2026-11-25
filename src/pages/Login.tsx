@@ -7,6 +7,10 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
 import { loginRequest } from '@/integrations/microsoft/msalConfig';
+import { cn } from '@/lib/utils';
+import ChristmasSnowfall from '@/modules/christmas-event/ChristmasSnowfall';
+import { isChristmasLoginThemeOn } from '@/modules/christmas-event/config';
+import christmasBackdropUrl from '@/modules/christmas-event/assets/login-backdrop.webp';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,6 +18,8 @@ export default function Login() {
   const isAuthenticated = useIsAuthenticated();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Seasonal look: Christmas backdrop with snow that drifts away from the pointer.
+  const festive = isChristmasLoginThemeOn();
 
   // Fallback: if the user lands on /login already authenticated (e.g. MSAL navigated back
   // here after a redirect), send them to the saved target via React Router (no page reload).
@@ -60,8 +66,20 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#400010] p-4">
-      <Card className="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden">
+    <div
+      className={cn(
+        'relative min-h-screen flex items-center justify-center bg-[#400010] p-4 overflow-hidden',
+        festive && 'bg-cover bg-center bg-no-repeat',
+      )}
+      style={festive ? { backgroundImage: `url(${christmasBackdropUrl})` } : undefined}
+    >
+      {festive && <ChristmasSnowfall density={160} effect="repel" interactionRadius={130} opacity={0.85} zIndex={1} />}
+      <Card
+        className={cn(
+          'relative z-10 w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden',
+          festive && 'rounded-2xl shadow-[0_30px_80px_rgba(20,0,5,0.55)]',
+        )}
+      >
         <CardContent className="p-6 sm:p-8">
           <div className="flex flex-col items-center mb-6">
             <img

@@ -18,6 +18,10 @@ To change an answer later, add `?christmas=open` to any intranet address (for ex
 
 People who prefer reduced motion (an operating system setting) get a short fade, with no flight, floating or confetti.
 
+## Sign-in page
+
+Until `loginThemeUntil` (5 January 2027), the sign-in page shows a Christmas backdrop behind the sign-in card, with soft snow that drifts away from the mouse or a finger (`ChristmasSnowfall.tsx`, effect `repel`). The snow sits behind the card and never takes clicks. With reduced motion on, the backdrop shows without snow. Turn it off with `loginTheme: false`. Change record: [2026-11-25](../changes/2026-11-25-christmas-login-theme.md).
+
 ## Rules
 
 - Required: full name, Division / Unit, one attendance tick, one Christmas period arrangement.
@@ -57,6 +61,7 @@ Everything is in `config.ts`:
 - `listName` sets the SharePoint list.
 - `id` names the browser storage keys; change it for a new event so everyone is asked again.
 - `year` and `eventDateLabel` set the text on the invitation card.
+- `loginTheme` and `loginThemeUntil` control the sign-in page decorations.
 - The field positions on the artwork are also in `config.ts`, in artwork pixels (1055 x 1491).
 
 ## Developer preview
@@ -74,5 +79,7 @@ In development builds only, `/dev/christmas-event` plays the whole sequence with
 | `ChristmasEventForm.tsx` | The pixel-exact form over the artwork |
 | `christmasEventService.ts` | SharePoint store (create list, find my row, save) and the in-memory preview store |
 | `christmasEvent.css` | All styles, prefixed `xmas-` |
+| `ChristmasSnowfall.tsx` | Interactive falling snow for the sign-in page (canvas) |
+| `assets/login-backdrop.webp` | Christmas backdrop for the sign-in page |
 | `assets/form-artwork.webp` | The committee's artwork with the placeholder bird removed and the year changed from 2027 to 2026 |
 | `assets/scpng-logo.webp` | The official logo, trimmed and resized from `public/images/SCPNG Original Logo.png` |

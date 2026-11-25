@@ -15,7 +15,22 @@ export const CHRISTMAS_EVENT = {
   venue: 'Hilton Hotel, Port Moresby',
   /** Last day the envelope is shown (inclusive, local time). */
   showUntil: '2026-12-23',
+  /** Christmas backdrop and falling snow on the sign-in page. */
+  loginTheme: true,
+  /** Last day the sign-in page is decorated (inclusive, local time). */
+  loginThemeUntil: '2027-01-05',
 } as const;
+
+/** True up to the end of the given yyyy-mm-dd day, in local time. */
+export function isOnOrBefore(day: string, now: number = Date.now()): boolean {
+  const [y, m, d] = day.split('-').map(Number);
+  return now <= new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+}
+
+/** Whether the sign-in page should wear its Christmas decorations today. */
+export function isChristmasLoginThemeOn(now: number = Date.now()): boolean {
+  return CHRISTMAS_EVENT.loginTheme && isOnOrBefore(CHRISTMAS_EVENT.loginThemeUntil, now);
+}
 
 export const ATTENDANCE_OPTIONS = [
   { value: 'Attending', label: 'Yes, I confirm my attendance.' },
