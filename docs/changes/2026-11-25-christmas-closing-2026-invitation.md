@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Date** | 2026-11-25 |
-| **Status** | In review; committed on its own branch, not pushed |
+| **Status** | In review; PR open |
 | **Programme step** | None |
-| **Branch / PR / commits** | `feat/christmas-invitation` (from `origin/main` at b53b906); no PR yet |
+| **Branch / PR / commits** | `feat/christmas-invitation` (from `origin/main` at b53b906), [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24), commit 3d8700f |
 | **Decisions used** | Owner confirmed on 2026-11-25 that the event is 23 December 2026 (the artwork said 2027). |
 
 ## Why
@@ -82,3 +82,4 @@ No new packages: it uses `framer-motion` and `canvas-confetti`, which were alrea
 - 2026-11-25: record created for the standalone form, then extended to the intranet invitation, SharePoint storage, real logo and envelope intro.
 - 2026-11-25: owner confirmed the event is December 2026; artwork, settings, list name and card text changed from 2027 to 2026. Record renamed from `2026-11-25-christmas-closing-2027-form.md`.
 - 2026-11-25: committed on `feat/christmas-invitation`, branched from `origin/main`. The index row in `docs/changes/README.md` is still to be added: that index is not on `main` yet (it lives on `feat/strategic-goals-workflow-studio`).
+- 2026-11-25: pushed and opened [PR #24](https://github.com/JohnSarwom/scpng-intranet-/pull/24) into `main`.
