@@ -3,9 +3,9 @@
 | | |
 |---|---|
 | **Date** | 2026-11-27 |
-| **Status** | In review. The SharePoint permission fix is already applied on production; the message fix is in review. |
+| **Status** | Live |
 | **Programme step** | None |
-| **Branch / PR / commits** | `fix/christmas-save-errors` (from `origin/main`) |
+| **Branch / PR / commits** | `fix/christmas-save-errors`, [PR #28](https://github.com/JohnSarwom/scpng-intranet-/pull/28), squash-merged into `main` as da81043 |
 | **Decisions used** | Owner approved on 2026-11-27: let all staff add answers to the Christmas list only, each seeing only their own answer; save and delete one test answer; ship clearer error messages. |
 
 ## Why
@@ -65,6 +65,7 @@ All applied on production on 2026-11-27 by the Automation account, with the owne
 ## Follow-ups and open items
 
 - Let the officers who got the error know they can submit again.
+- Documented for future reference as [Troubleshooting: staff can read but not save](../guides/sharepoint-staff-write-permissions.md). It also notes that 96 of the site's 114 lists inherit site permissions, so other staff-facing features may have the same problem.
 - The index row in `docs/changes/README.md` is still to be added on `main` (the index is on `feat/strategic-goals-workflow-studio`).
 
 ## How to undo it
@@ -75,3 +76,4 @@ All applied on production on 2026-11-27 by the Automation account, with the owne
 ## History
 
 - 2026-11-27: SharePoint permission fix applied on production and checked; test answer saved and recycled; record created.
+- 2026-11-27: [PR #28](https://github.com/JohnSarwom/scpng-intranet-/pull/28) squash-merged as da81043 (all checks passed). The Vercel production deploy completed; the live bundle has the new messages and no longer has the old 'check your connection' message.

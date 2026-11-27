@@ -40,6 +40,7 @@ Documentation for global, reusable premium components.
 Developer onboarding and operations manuals.
 - **[Git Workflow](guides/git-workflow.md)**: Standardized process for pushing to production.
 - **[Setup & Deployment](guides/setup.md)**: Local development and CI/CD.
+- **[Troubleshooting: staff can read but not save](guides/sharepoint-staff-write-permissions.md)**: Some staff get errors saving to a SharePoint list while others succeed (read-only site access). How to confirm it, fix it one list at a time, and prevent it.
 
 ## ✍️ Documentation Rules
 

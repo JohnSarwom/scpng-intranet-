@@ -57,6 +57,8 @@ The committee can open the list in SharePoint and use **Export to Excel**, or fi
 
 See the [2026-11-27 change record](../changes/2026-11-27-christmas-save-permissions.md).
 
+If this happens with another list, follow [Troubleshooting: staff can read but not save](../guides/sharepoint-staff-write-permissions.md).
+
 **If a save fails,** the form names the reason (permission, connection, SharePoint busy, expired sign-in or an error code) via `saveErrors.ts`, and reminds the officer that their answers are kept on the computer.
 
 ## Settings
