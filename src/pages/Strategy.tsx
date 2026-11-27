@@ -31,7 +31,7 @@ import { useDivisions } from '@/hooks/useDivisions';
 import { useUnits } from '@/hooks/useUnits';
 import { useOfficerProfiles } from '@/hooks/useOfficerProfiles';
 import { Objective } from '@/types';
-import { calculateGoalProgressFromChildren, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils'; // Import calculation utility
+import { calculateGoalProgressDetail, calculateStrategicProgress, calculateObjectiveStatus } from '@/utils/kpiUtils'; // Import calculation utility
 import { StrategyPageSkeleton } from '@/components/strategy/skeletons/StrategyPageSkeleton';
 import { DivisionHierarchySkeleton } from '@/components/strategy/skeletons/DivisionHierarchySkeleton';
 import { useStrategyDemoMode } from '@/hooks/useStrategyDemoMode';
@@ -210,7 +210,7 @@ const divisionAlignment = [
 ];
 
 const Strategy = () => {
-    const { strategyData, isLoading, updateStrategy, isUpdating } = useStrategySharePoint();
+    const { strategyData, isLive: isStrategyLive, isLoading, updateStrategy, isUpdating } = useStrategySharePoint();
     const [isWizardOpen, setIsWizardOpen] = useState(false);
 
     const { isAdmin } = useRoleBasedAuth();
@@ -413,7 +413,7 @@ const Strategy = () => {
                     vision: effectiveVision,
                 },
                 pillars: effectivePillars,
-                objectives: effectiveObjectives,
+                strategicGoals: effectiveGoals,
                 strategicKRAs: strategyData?.strategicKRAs || [],
                 alignments: effectiveAlignments,
                 hierarchy: (strategyData as any)?.hierarchy || DEFAULT_ORG_STRUCTURE
@@ -463,34 +463,45 @@ const Strategy = () => {
         { name: "Mitigate", description: "Reducing systemic risks within the PNG financial landscape.", icon: "Zap" },
     ]);
 
-    // Strategic Objectives (The implementation cards)
-    // DYNAMIC CALCULATION: Override stored progress with aggregated KRA progress
-    const baseObjectives = objectives && objectives.length > 0 ? objectives : strategicObjectives;
+    // Strategic Goals (the goal cards) come from the Strategic_Goals list, the one
+    // official list of organisational goals. Sample data is never shown as goals.
+    const liveGoals: any[] = isStrategyLive ? ((strategyData as any)?.strategicGoals || []) : [];
 
-    const effectiveObjectives = baseObjectives.map((obj: any) => {
-        // 1. Calculate progress directly from child unit-level objectives
-        const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || [], strategyData?.strategicKRAs || [], strategyData?.strategicInitiatives || []);
+    const effectiveGoals = liveGoals
+        .filter((goal: any) => !goal.isFeatured)
+        .map((goal: any) => {
+            // Progress is calculated from linked work only; a stored value is never substituted.
+            const detail = calculateGoalProgressDetail(
+                goal.id,
+                allUnitObjectives || [],
+                allKras || [],
+                allKpis || [],
+                strategyData?.strategicKRAs || [],
+                strategyData?.strategicInitiatives || []
+            );
 
-        // 2. CORPORATE PLAN 2026-2028: Check if this objective has new Strategic KRAs linked to it
-        const newKRAs = (strategyData?.strategicKRAs || [])
-            .filter((k: any) => String(k.goalId) === String(obj.id))
-            .map((k: any) => k.title)
-            .filter((t: string) => !t.includes("General Execution")); // Filter out migration placeholders
+            // KRAs listed on the card are the Strategic KRAs filed under this goal.
+            const goalKras = (strategyData?.strategicKRAs || [])
+                .filter((k: any) => String(k.goalId) === String(goal.id))
+                .map((k: any) => k.title)
+                .filter((t: string) => t && t.trim().length > 0 && !t.includes("General Execution")); // Filter out migration placeholders
 
-        // Merge legacy and new KRAs, removing duplicates and empty strings
-        const combinedKRAs = Array.from(new Set([...(obj.kras || []), ...newKRAs]))
-            .filter(k => k && k.trim().length > 0);
+            return {
+                ...goal,
+                status: String(goal.status || '').toLowerCase().replace(/\s+/g, '-') || 'on-track',
+                progress: detail.progress,
+                hasLinkedData: detail.hasLinkedData,
+                linkedObjectiveCount: detail.linkedObjectiveCount,
+                kras: Array.from(new Set(goalKras)),
+            };
+        });
 
-        return { 
-            ...obj, 
-            progress: childProgress > 0 ? childProgress : (obj.progress || 0),
-            kras: combinedKRAs 
-        };
-    });
+    // Featured project highlights remain Strategic_Objectives items; they are not goals.
+    const featuredProjects = (objectives || []).filter((o: any) => o.isFeatured);
 
-    // Overall progress across all strategic objectives
-    const totalProgress = effectiveObjectives.reduce((acc: number, obj: any) => acc + (obj.progress || 0), 0);
-    const averageProgress = effectiveObjectives.length > 0 ? Math.round(totalProgress / effectiveObjectives.length) : 0;
+    // Overall progress across all Strategic Goals
+    const totalProgress = effectiveGoals.reduce((acc: number, obj: any) => acc + (obj.progress || 0), 0);
+    const averageProgress = effectiveGoals.length > 0 ? Math.round(totalProgress / effectiveGoals.length) : 0;
 
     // Divisional Alignments (The cascade)
     const effectiveAlignments = alignments && alignments.length > 0 ? alignments : divisionAlignment;
@@ -829,7 +840,12 @@ const Strategy = () => {
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {effectiveObjectives.filter((o: any) => !o.isFeatured).map((objective: any, index: number) => {
+                                {isStrategyLive && effectiveGoals.length === 0 && (
+                                    <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-dashed border-gray-200 dark:border-white/10 p-6 text-center text-sm text-muted-foreground">
+                                        No Strategic Goals found in the Strategic_Goals list.
+                                    </div>
+                                )}
+                                {effectiveGoals.map((objective: any, index: number) => {
                                     const Icon = IconMap[objective.icon] || (typeof objective.icon === 'string' ? Target : objective.icon);
                                     return (
                                         <Card key={objective.id} className="relative group overflow-hidden hover:shadow-lg transition-all duration-300 border-t-4 border-t-intranet-primary hover:border-red-500 dark:bg-gray-800 dark:border-white/10 dark:hover:border-red-500">
@@ -844,7 +860,7 @@ const Strategy = () => {
                                                             setIsEditModalOpen(true);
                                                         }}
                                                         className="p-1.5 rounded-md bg-white border border-gray-200 hover:bg-intranet-primary hover:text-white hover:border-intranet-primary transition-all opacity-0 group-hover:opacity-100 dark:bg-gray-900 dark:border-white/10"
-                                                        title="Edit objective"
+                                                        title="Edit goal"
                                                     >
                                                         <Pencil className="h-3.5 w-3.5" />
                                                     </button>
@@ -871,6 +887,9 @@ const Strategy = () => {
                                                             <Clock className="h-3 w-3" />
                                                         </div>
                                                         <Progress value={objective.progress} className="h-1.5" indicatorClassName="bg-[#c4506a]" />
+                                                        {!objective.hasLinkedData && (
+                                                            <p className="text-[10px] text-muted-foreground italic">No objectives or KRAs linked to this goal yet.</p>
+                                                        )}
                                                     </div>
 
                                                     <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
@@ -891,7 +910,7 @@ const Strategy = () => {
                                 })}
 
                                 {/* Project Execution (Special Highlight Card) */}
-                                {effectiveObjectives.filter((o: any) => o.isFeatured).map((objective: any) => {
+                                {featuredProjects.map((objective: any) => {
                                     const Icon = IconMap[objective.icon] || Rocket;
                                     return (
                                         <Card key={`featured-${objective.id}`} className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 border-dashed border-intranet-primary/30 bg-intranet-primary/5 md:col-span-1 lg:col-span-1 dark:bg-intranet-primary/10 dark:border-intranet-primary/40">
@@ -1104,19 +1123,17 @@ const Strategy = () => {
                                                                                         objs.map(obj => ({ ...obj, _deliverable: del }))
                                                                                     );
 
-                                                                                    // Group by parentGoalId (strategic objective)
+                                                                                    // Group by Strategic Goal: only the StrategicGoal link counts. An objective
+                                                                                    // without a link to an existing Strategic_Goals item is shown as not linked.
                                                                                     const stratGroups: Record<string, { title: string; objectives: (Objective & { _deliverable: string })[] }> = {};
                                                                                     allObjs.forEach(obj => {
-                                                                                        // Prefer linkedDeliverable (set by seed to goal title) — avoids unreliable SP lookup resolution
-                                                                                        const linkedDel = (obj.linkedDeliverable || '').trim();
-                                                                                        const parentId = obj.parentGoalId ? String(obj.parentGoalId) : '';
-                                                                                        const groupKey = linkedDel || parentId || 'unlinked';
+                                                                                        const goalId = obj.strategicGoalId ? String(obj.strategicGoalId) : '';
+                                                                                        const goal = goalId ? liveGoals.find((g: any) => String(g.id) === goalId) : undefined;
+                                                                                        const groupKey = goal ? goalId : 'unlinked';
 
                                                                                         if (!stratGroups[groupKey]) {
-                                                                                            const stratObj = effectiveObjectives.find((so: any) => String(so.id) === parentId)
-                                                                                                || (allUnitObjectives || []).find((so: any) => String(so.id) === parentId);
                                                                                             stratGroups[groupKey] = {
-                                                                                                title: linkedDel || stratObj?.title || obj.parentGoalTitle || 'Unlinked Objectives',
+                                                                                                title: goal?.title || 'Not linked to a Strategic Goal',
                                                                                                 objectives: []
                                                                                             };
                                                                                         }
@@ -1144,8 +1161,7 @@ const Strategy = () => {
                                                                                             ? Math.round(group.objectives.reduce((sum, obj) => sum + (obj.progress || 0), 0) / group.objectives.length)
                                                                                             : 0;
 
-                                                                                        const stratObj = effectiveObjectives.find((so: any) => String(so.id) === stratId)
-                                                                                            || (allUnitObjectives || []).find((so: any) => String(so.id) === stratId);
+                                                                                        const stratObj = liveGoals.find((g: any) => String(g.id) === stratId);
                                                                                         const StratIcon = stratObj?.icon ? (IconMap[stratObj.icon] || (typeof stratObj.icon === 'function' ? stratObj.icon : Layers)) : Layers;
 
                                                                                         return (
@@ -1160,7 +1176,7 @@ const Strategy = () => {
                                                                                                             <div className="flex-1 min-w-0 text-left">
                                                                                                                 <div className="flex items-center gap-2">
                                                                                                                     <span className="text-[9px] font-black uppercase tracking-[0.15em] text-intranet-primary/70">
-                                                                                                                        {stratId === 'unlinked' ? 'Unlinked' : 'Strategic Objective'}
+                                                                                                                        {stratId === 'unlinked' ? 'Unlinked' : 'Strategic Goal'}
                                                                                                                     </span>
                                                                                                                 </div>
                                                                                                                 <p className="text-xs font-bold text-gray-800 dark:text-gray-200 leading-snug mt-0.5">{group.title}</p>
@@ -1385,7 +1401,7 @@ const Strategy = () => {
                                                 </h3>
                                                 <p className="text-xs text-muted-foreground">Individual progress per strategic goal</p>
                                             </div>
-                                            {effectiveObjectives.map((objective: any, index: number) => {
+                                            {effectiveGoals.map((objective: any, index: number) => {
                                                 const Icon = IconMap[objective.icon] || Target;
                                                 const prog = objective.progress || 0;
                                                 const statusColor =
@@ -1413,9 +1429,9 @@ const Strategy = () => {
                                             {/* Summary stats row */}
                                             <div className="grid grid-cols-3 gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-gray-800">
                                                 {[
-                                                    { label: 'Strategic Goals', value: effectiveObjectives.length, icon: Layers },
-                                                    { label: 'On Track (≥40%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 40).length, icon: TrendingUp },
-                                                    { label: 'Completed (≥75%)', value: effectiveObjectives.filter((o: any) => (o.progress || 0) >= 75).length, icon: Award },
+                                                    { label: 'Strategic Goals', value: effectiveGoals.length, icon: Layers },
+                                                    { label: 'On Track (≥40%)', value: effectiveGoals.filter((o: any) => (o.progress || 0) >= 40).length, icon: TrendingUp },
+                                                    { label: 'Completed (≥75%)', value: effectiveGoals.filter((o: any) => (o.progress || 0) >= 75).length, icon: Award },
                                                 ].map(({ label, value, icon: StatIcon }, i) => (
                                                     <div key={i} className="flex flex-col items-center p-3 rounded-xl bg-intranet-primary/5 gap-1">
                                                         <StatIcon className="w-4 h-4 text-intranet-primary" />
@@ -1435,7 +1451,7 @@ const Strategy = () => {
 
                     <TabsContent value="analytics" className="space-y-8 mt-0 outline-none">
                         <StrategyAnalytics
-                            objectives={effectiveObjectives}
+                            objectives={effectiveGoals}
                             milestones={milestones}
                             kras={allKras || []}
                             kpis={allKpis || []}
@@ -1528,7 +1544,7 @@ const Strategy = () => {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {effectiveObjectives.map((row: any, i: number) => (
+                                        {effectiveGoals.map((row: any, i: number) => (
                                             <TableRow key={i} className="hover:bg-muted/30 transition-colors">
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
@@ -1551,32 +1567,13 @@ const Strategy = () => {
                                                 </TableCell>
                                             </TableRow>
                                         ))}
-                                        {effectiveObjectives.length === 0 && [
-                                            { pillar: "Markets & Connectivity", kra: "Trading/Clearing/Settlement Systems", date: "Dec 2026", status: "Active", progress: 45, color: "text-blue-600" },
-                                            { pillar: "Regulatory Reform", kra: "SC Act & Capital Market Act Update", date: "Dec 2026", status: "Drafting", progress: 30, color: "text-orange-600" },
-                                        ].map((row, i) => (
-                                            <TableRow key={i} className="hover:bg-muted/30 transition-colors">
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={`w-1 h-3 rounded-full ${row.color.replace('text', 'bg')}`} />
-                                                        <span className="font-bold text-xs">{row.pillar}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="text-xs text-muted-foreground">{row.kra}</TableCell>
-                                                <TableCell className="text-xs text-center font-mono">{row.date}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="secondary" className="scale-90 font-bold">{row.status}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <span className="text-[10px] font-bold">{row.progress}%</span>
-                                                        <div className="w-24 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                                                            <div className={`h-full ${row.color.replace('text', 'bg')}`} style={{ width: `${row.progress}%` }} />
-                                                        </div>
-                                                    </div>
+                                        {effectiveGoals.length === 0 && (
+                                            <TableRow>
+                                                <TableCell colSpan={5} className="text-center text-xs text-muted-foreground py-6">
+                                                    No Strategic Goals found in the Strategic_Goals list.
                                                 </TableCell>
                                             </TableRow>
-                                        ))}
+                                        )}
                                     </TableBody>
                                 </Table>
                             </CardContent>
@@ -1670,6 +1667,7 @@ const Strategy = () => {
                         refreshStrategy();
                     }}
                     objective={selectedObjective}
+                    mode="goal"
                 />
             </div>
         </PageLayout>

@@ -4,7 +4,11 @@
  * Read-only count of how well each Unit's Tasks, KPIs, KRAs and Unit Objectives
  * are connected to the strategy chain:
  *
- *   Task → KPI → Performance KRA → Unit Objective → strategic parent
+ *   Task → KPI → Performance KRA → Unit Objective → Strategic Goal
+ *
+ * The last hop is the Unit Objective's StrategicGoal link, which must name an
+ * item that exists in Strategic_Goals. A task is "traced" only when every hop
+ * resolves, all the way to the goal.
  *
  * The service is pure: it receives already-fetched list records and returns
  * counts plus a flat list of exception records. It never writes, repairs or
@@ -44,8 +48,13 @@ export interface InventoryObjectiveInput {
   goalType?: string | null;
   unit?: string | null;
   division?: string | null;
-  parentGoalId?: string | number | null;
-  linkedDeliverable?: string | null;
+  /** Item ID in Strategic_Goals (the StrategicGoal lookup). */
+  strategicGoalId?: string | number | null;
+}
+
+export interface InventoryGoalInput {
+  id: string;
+  title?: string;
 }
 
 export interface LinkageInventoryInput {
@@ -56,13 +65,15 @@ export interface LinkageInventoryInput {
   kpis: InventoryKpiInput[];
   kras: InventoryKraInput[];
   objectives: InventoryObjectiveInput[];
+  /** Items in Strategic_Goals, the official organisational goals. */
+  goals: InventoryGoalInput[];
   generatedAt?: string;
 }
 
 export type TaskLinkageState =
-  /** KPI, its KRA and that KRA's Objective all exist. */
+  /** KPI, its KRA, that KRA's Objective and the Objective's Strategic Goal all exist. */
   | 'traced'
-  /** KPI exists but its KRA or Objective is missing. */
+  /** KPI exists but a link above it (KRA, Objective or Strategic Goal) is missing. */
   | 'chain_incomplete'
   /** Linked to a KRA directly, with no KPI. */
   | 'kra_only'
@@ -86,7 +97,8 @@ export type InventoryIssueCode =
   | 'kra_no_objective'
   | 'kra_broken_objective'
   | 'kra_no_kpis'
-  | 'objective_no_parent';
+  | 'objective_no_goal'
+  | 'objective_broken_goal';
 
 export type InventoryRecordType = 'task' | 'kpi' | 'kra' | 'objective';
 
@@ -114,9 +126,10 @@ export interface UnitLinkageSummary {
     operational: number;
     kraConflict: number;
   };
+  /** `traced`: the record reaches a Strategic Goal through every link above it. */
   kpis: { total: number; traced: number; noTasks: number };
   kras: { total: number; traced: number; noObjective: number; brokenObjective: number; noKpis: number };
-  objectives: { total: number; noParent: number };
+  objectives: { total: number; noGoal: number; brokenGoal: number };
 }
 
 /** A KPI in this Division that tasks can be linked to during clean-up. */
@@ -125,7 +138,7 @@ export interface InventoryKpiOption {
   name: string;
   unit: string;
   kraTitle: string;
-  /** False when the KPI's KRA has no Objective, so linked tasks won't fully trace yet. */
+  /** False when the KPI's KRA doesn't reach a Strategic Goal, so linked tasks won't fully trace yet. */
   traced: boolean;
 }
 
@@ -150,7 +163,7 @@ const ISSUE_TEXT: Record<InventoryIssueCode, { severity: 'gap' | 'info'; detail:
   task_kra_only: { severity: 'gap', detail: 'Task is linked to a KRA but not to a KPI.' },
   task_broken_kpi: { severity: 'gap', detail: 'Task points to a KPI that no longer exists or is retired.' },
   task_broken_kra: { severity: 'gap', detail: 'Task points to a KRA that no longer exists or is retired.' },
-  task_chain_incomplete: { severity: 'gap', detail: "Task's KPI does not trace up to a KRA and Objective." },
+  task_chain_incomplete: { severity: 'gap', detail: "Task's KPI does not trace up through a KRA and Objective to a Strategic Goal." },
   task_kra_conflict: { severity: 'gap', detail: "Task's direct KRA differs from its KPI's KRA." },
   kpi_no_kra: { severity: 'gap', detail: 'KPI is not linked to a KRA.' },
   kpi_broken_kra: { severity: 'gap', detail: 'KPI points to a KRA that no longer exists or is retired.' },
@@ -158,7 +171,8 @@ const ISSUE_TEXT: Record<InventoryIssueCode, { severity: 'gap' | 'info'; detail:
   kra_no_objective: { severity: 'gap', detail: 'KRA is not linked to a Unit Objective.' },
   kra_broken_objective: { severity: 'gap', detail: 'KRA points to an Objective that no longer exists or is retired.' },
   kra_no_kpis: { severity: 'info', detail: 'KRA has no KPIs yet.' },
-  objective_no_parent: { severity: 'gap', detail: 'Objective has no strategic parent goal or linked deliverable.' },
+  objective_no_goal: { severity: 'gap', detail: 'Objective is not linked to a Strategic Goal.' },
+  objective_broken_goal: { severity: 'gap', detail: 'Objective points to a Strategic Goal that no longer exists.' },
 };
 
 const clean = (value: unknown): string => (value === null || value === undefined ? '' : String(value).trim());
@@ -179,7 +193,7 @@ function emptySummary(unit: string): UnitLinkageSummary {
     tasks: { total: 0, traced: 0, chainIncomplete: 0, kraOnly: 0, brokenLink: 0, unlinked: 0, operational: 0, kraConflict: 0 },
     kpis: { total: 0, traced: 0, noTasks: 0 },
     kras: { total: 0, traced: 0, noObjective: 0, brokenObjective: 0, noKpis: 0 },
-    objectives: { total: 0, noParent: 0 },
+    objectives: { total: 0, noGoal: 0, brokenGoal: 0 },
   };
 }
 
@@ -210,6 +224,9 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
   const krasById = new Map(input.kras.map(kra => [clean(kra.id), kra]));
   const kpisById = new Map(input.kpis.map(kpi => [clean(kpi.id), kpi]));
   const objectivesById = new Map(input.objectives.map(objective => [clean(objective.id), objective]));
+  const goalIds = new Set((input.goals || []).map(goal => clean(goal.id)).filter(Boolean));
+  const objectiveReachesGoal = (objective: InventoryObjectiveInput | undefined): boolean =>
+    !!objective && goalIds.has(clean(objective.strategicGoalId));
 
   const unitLabel = (raw: unknown): string => {
     const key = normalizeOrgName(raw);
@@ -246,8 +263,9 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     if (kraId) kpiCountByKra.set(kraId, (kpiCountByKra.get(kraId) || 0) + 1);
   }
 
+  /** The KRA's Objective exists and is linked to an existing Strategic Goal. */
   const kraTraced = (kra: InventoryKraInput | undefined): boolean =>
-    !!kra && !!clean(kra.objective_id) && objectivesById.has(clean(kra.objective_id));
+    !!kra && !!clean(kra.objective_id) && objectiveReachesGoal(objectivesById.get(clean(kra.objective_id)));
 
   for (const kra of input.kras) {
     if (!kraInDivision(kra)) continue;
@@ -262,7 +280,7 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     } else if (!objectivesById.has(objectiveId)) {
       summary.kras.brokenObjective += 1;
       pushIssue('kra_broken_objective', 'kra', id, clean(kra.title), unit);
-    } else {
+    } else if (kraTraced(kra)) {
       summary.kras.traced += 1;
     }
     if (!kpiCountByKra.get(id)) {
@@ -364,9 +382,12 @@ export function buildLinkageInventory(input: LinkageInventoryInput): LinkageInve
     const unit = unitLabel(objective.unit);
     const summary = summaryFor(unit);
     summary.objectives.total += 1;
-    if (!clean(objective.parentGoalId) && !clean(objective.linkedDeliverable)) {
-      summary.objectives.noParent += 1;
-      pushIssue('objective_no_parent', 'objective', clean(objective.id), clean(objective.title), unit);
+    if (!clean(objective.strategicGoalId)) {
+      summary.objectives.noGoal += 1;
+      pushIssue('objective_no_goal', 'objective', clean(objective.id), clean(objective.title), unit);
+    } else if (!objectiveReachesGoal(objective)) {
+      summary.objectives.brokenGoal += 1;
+      pushIssue('objective_broken_goal', 'objective', clean(objective.id), clean(objective.title), unit);
     }
   }
 

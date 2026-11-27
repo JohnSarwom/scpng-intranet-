@@ -10,11 +10,11 @@ import { StrategicItem } from '@/mockData/strategyData';
 import { TaskCompletionDonut } from './TaskCompletionDonut';
 import { useSharePointKRAs, useSharePointKPIs, useSharePointObjectives } from '@/hooks/useSharePointOps';
 import { Objective } from '@/types';
-import { calculateGoalProgressFromChildren } from '@/utils/kpiUtils';
+import { calculateGoalProgressDetail } from '@/utils/kpiUtils';
 import { OrganizationalOverviewSkeleton } from './skeletons/OrganizationalOverviewSkeleton';
 
 const OrganizationalOverview = () => {
-  const { strategyData, isLoading } = useStrategySharePoint();
+  const { strategyData, isLive, isLoading } = useStrategySharePoint();
 
   // Fetch ALL KRAs for dynamic progress calculation
   const { data: allKras } = useSharePointKRAs(undefined, 'All', undefined);
@@ -39,20 +39,21 @@ const OrganizationalOverview = () => {
     { name: "Mitigate", color: "text-intranet-primary", bg: "bg-intranet-primary/5", icon: Zap, desc: "Systemic risks" }
   ];
 
-  // Use dynamic objectives or empty array if loading/undefined
-  const baseObjectives = strategyData?.objectives || [];
+  // Strategic Goals come from the Strategic_Goals list, calculated exactly as on the
+  // Strategy page (both tracks, no stored-value fallback). Sample data is never shown.
+  const baseGoals: any[] = isLive ? ((strategyData as any)?.strategicGoals || []).filter((g: any) => !g.isFeatured) : [];
 
-  const objectives = baseObjectives.map((obj: any) => {
-    // Calculate progress directly from child unit-level objectives
-    const childProgress = calculateGoalProgressFromChildren(obj.id, allUnitObjectives || [], allKras || [], allKpis || []);
-
-    if (childProgress > 0) {
-      return { ...obj, progress: childProgress };
-    }
-
-    // Fallback to stored/manual progress
-    return obj;
-  });
+  const objectives = baseGoals.map((goal: any) => ({
+    ...goal,
+    progress: calculateGoalProgressDetail(
+      goal.id,
+      allUnitObjectives || [],
+      allKras || [],
+      allKpis || [],
+      strategyData?.strategicKRAs || [],
+      strategyData?.strategicInitiatives || []
+    ).progress,
+  }));
 
   // Calculate overall progress
   const totalProgress = objectives.reduce((acc, obj) => acc + (obj.progress || 0), 0);
@@ -139,7 +140,7 @@ const OrganizationalOverview = () => {
                     </div>
                   ))}
                   {objectives.length === 0 && (
-                    <p className="text-[11px] italic text-muted-foreground text-center">No strategic objectives found.</p>
+                    <p className="text-[11px] italic text-muted-foreground text-center">No strategic goals found.</p>
                   )}
                 </div>
               </div>

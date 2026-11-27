@@ -110,28 +110,37 @@ export const calculateStrategicProgress = (kras: any[], kpis: Partial<Kpi>[] = [
     return Math.round(totalProgress / kras.length);
 };
 
+export interface GoalProgressDetail {
+    progress: number;
+    /** False when no Unit Objective and no Strategic KRA is linked to the goal, so 0% means "no data", not "no progress". */
+    hasLinkedData: boolean;
+    linkedObjectiveCount: number;
+    linkedStrategicKraCount: number;
+}
+
 /**
- * Calculates the progress of a Strategic Objective by aggregating its linked Unit Objectives (Children).
- * 
- * @param goalId The ID of the Strategic Goal
- * @param childObjectives Array of all Unit Objectives
- * @param allKras Array of all KRAs (optional, for dynamic child progress)
- * @param allKpis Array of all KPIs (optional, for dynamic child progress)
- * @returns The average progress of the linked Unit Objectives as a percentage.
+ * Progress of a Strategic Goal (an item in Strategic_Goals).
+ *
+ * Operational track: Unit Objectives whose StrategicGoal link (`strategicGoalId`)
+ * names this goal. The legacy `parentGoalId` points at a different list and is
+ * deliberately not read. Corporate track: Strategic KRAs under the goal, through
+ * their Initiatives. When both tracks have data they are averaged equally.
  */
-export const calculateGoalProgressFromChildren = (
+export const calculateGoalProgressDetail = (
     goalId: string | number,
-    childObjectives: any[],
+    childObjectives: any[] = [],
     allKras: any[] = [],
     allKpis: any[] = [],
     strategicKRAs: StrategicKRA[] = [],
     strategicInitiatives: StrategicInitiative[] = []
-): number => {
-    if (!childObjectives || childObjectives.length === 0) return 0;
+): GoalProgressDetail => {
+    const goalKey = String(goalId);
 
-    // Operational track: Unit Objectives linked via parentGoalId
-    const linkedChildren = childObjectives.filter(child =>
-        String(child.parentGoalId) === String(goalId)
+    // Operational track: Unit Objectives linked through the StrategicGoal column
+    const linkedChildren = (childObjectives || []).filter(child =>
+        child?.strategicGoalId !== null &&
+        child?.strategicGoalId !== undefined &&
+        String(child.strategicGoalId) === goalKey
     );
 
     let operationalProgress = 0;
@@ -158,9 +167,11 @@ export const calculateGoalProgressFromChildren = (
     // Corporate Plan track: Strategic KRAs → Initiatives linked via goalId
     let corpProgress = 0;
     let hasCorp = false;
+    let corpKraCount = 0;
 
     if (strategicKRAs.length > 0 && strategicInitiatives.length > 0) {
-        const corpKras = strategicKRAs.filter(k => String(k.goalId) === String(goalId));
+        const corpKras = strategicKRAs.filter(k => String(k.goalId) === goalKey);
+        corpKraCount = corpKras.length;
         if (corpKras.length > 0) {
             hasCorp = true;
             const total = corpKras.reduce((sum, kra) => {
@@ -170,15 +181,33 @@ export const calculateGoalProgressFromChildren = (
         }
     }
 
+    let progress = 0;
     if (hasOperational && hasCorp) {
         // Blend both tracks with equal weight (tunable)
-        return Math.round((operationalProgress + corpProgress) / 2);
+        progress = Math.round((operationalProgress + corpProgress) / 2);
+    } else if (hasCorp) {
+        progress = corpProgress;
+    } else if (hasOperational) {
+        progress = operationalProgress;
     }
-    if (hasCorp) return corpProgress;
-    if (hasOperational) return operationalProgress;
 
-    return 0;
+    return {
+        progress,
+        hasLinkedData: hasOperational || hasCorp,
+        linkedObjectiveCount: linkedChildren.length,
+        linkedStrategicKraCount: corpKraCount,
+    };
 };
+
+/** Progress percentage of a Strategic Goal. See calculateGoalProgressDetail. */
+export const calculateGoalProgressFromChildren = (
+    goalId: string | number,
+    childObjectives: any[],
+    allKras: any[] = [],
+    allKpis: any[] = [],
+    strategicKRAs: StrategicKRA[] = [],
+    strategicInitiatives: StrategicInitiative[] = []
+): number => calculateGoalProgressDetail(goalId, childObjectives, allKras, allKpis, strategicKRAs, strategicInitiatives).progress;
 
 /**
  * Calculates the status of an Objective based on its linked KPIs.

@@ -34,6 +34,12 @@ interface EditStrategicObjectiveModalProps {
     onClose: () => void;
     onSuccess: () => void;
     objective: StrategicItem | null;
+    /**
+     * 'goal' edits an item in Strategic_Goals. Its KRAs come from the
+     * Strategic_KRAs list, so they are shown read-only. 'objective' (default)
+     * edits a legacy Strategic_Objectives item.
+     */
+    mode?: 'goal' | 'objective';
 }
 
 const ICON_OPTIONS = [
@@ -53,9 +59,11 @@ const ICON_OPTIONS = [
     { value: 'Layers', label: 'Layers', icon: Layers },
 ];
 
-export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalProps> = ({ isOpen, onClose, onSuccess, objective }) => {
+export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalProps> = ({ isOpen, onClose, onSuccess, objective, mode = 'objective' }) => {
     const { toast } = useToast();
-    const { updateObjective } = useStrategySharePoint();
+    const { updateObjective, updateStrategicGoal } = useStrategySharePoint();
+    const isGoal = mode === 'goal';
+    const itemLabel = isGoal ? 'Strategic Goal' : 'Strategic Objective';
 
     // Form state
     const [title, setTitle] = useState('');
@@ -144,31 +152,41 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
         setIsSubmitting(true);
 
         try {
-            await updateObjective(objective.id, {
-                revision: objective.revision,
-                title,
-                description,
-                // Progress is now auto-calculated from KRAs/KPIs, don't save manual value
-                // progress,
-                status: status as any,
-                icon,
-                // Pass kras as is, service will join them
-                kras: kras
-            } as any);
+            if (isGoal) {
+                // Progress is calculated from linked work; KRAs live in Strategic_KRAs.
+                await updateStrategicGoal(String(objective.id), {
+                    revision: objective.revision,
+                    title,
+                    description,
+                    status,
+                    icon,
+                });
+            } else {
+                await updateObjective(objective.id, {
+                    revision: objective.revision,
+                    title,
+                    description,
+                    // Progress is now auto-calculated from KRAs/KPIs, don't save manual value
+                    // progress,
+                    status: status as any,
+                    icon,
+                    // Pass kras as is, service will join them
+                    kras: kras
+                } as any);
+            }
 
             toast({
                 title: 'Success',
-                description: 'Strategic Objective updated successfully.',
+                description: `${itemLabel} updated successfully.`,
             });
 
             onSuccess();
             onClose();
-        } catch (error) {
-            console.error('Failed to update objective:', error);
-            // Toast is handled by hook/service usually, but safety net here
+        } catch (error: any) {
+            console.error(`Failed to update ${itemLabel}:`, error);
             toast({
                 title: 'Error',
-                description: 'Failed to update objective.',
+                description: error?.message || `Failed to update ${itemLabel}.`,
                 variant: 'destructive',
             });
         } finally {
@@ -185,9 +203,11 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto dark:bg-gray-900 dark:border-white/10">
 
                 <DialogHeader>
-                    <DialogTitle className="dark:text-gray-100">Edit Strategic Objective</DialogTitle>
+                    <DialogTitle className="dark:text-gray-100">Edit {itemLabel}</DialogTitle>
                     <DialogDescription className="dark:text-gray-400">
-                        Update the milestones and progress for this strategic initiative.
+                        {isGoal
+                            ? 'Update how this goal is described. Progress is calculated from the objectives and KRAs linked to it.'
+                            : 'Update the milestones and progress for this strategic initiative.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -196,7 +216,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Title */}
                         <div className="space-y-2 col-span-2">
-                            <Label htmlFor="title">Objective Title</Label>
+                            <Label htmlFor="title">{isGoal ? 'Goal Title' : 'Objective Title'}</Label>
                             <Input
                                 id="title"
                                 value={title}
@@ -261,7 +281,24 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
 
                     </div>
 
+                    {isGoal && (
+                        <div className="space-y-2 pt-2 border-t dark:border-white/10">
+                            <Label className="dark:text-gray-300">Key Result Areas (KRAs)</Label>
+                            <p className="text-xs text-muted-foreground">These come from the Strategic_KRAs list and are edited there.</p>
+                            {kras.length === 0 ? (
+                                <p className="text-sm text-muted-foreground italic">No Strategic KRAs are filed under this goal.</p>
+                            ) : (
+                                <ul className="space-y-1">
+                                    {kras.map((kra, index) => (
+                                        <li key={index} className="p-2 rounded-md bg-muted/50 dark:bg-gray-800/50 text-sm dark:text-gray-300 border dark:border-white/5">{kra}</li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    )}
+
                     {/* Key Deliverables / Goals */}
+                    {!isGoal && (
                     <div className="space-y-3 pt-2 border-t dark:border-white/10">
                         <Label className="dark:text-gray-300">Key Result Areas (KRAs) & Milestones</Label>
 
@@ -360,6 +397,7 @@ export const EditStrategicObjectiveModal: React.FC<EditStrategicObjectiveModalPr
                             </Button>
                         </div>
                     </div>
+                    )}
 
                     <DialogFooter className="gap-2 dark:border-t dark:border-white/10 pt-4">
                         <Button

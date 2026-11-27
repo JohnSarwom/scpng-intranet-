@@ -593,20 +593,17 @@ export function legacyToPerformanceRecords(input: {
   kpis?: Kpi[];
   strategicGoals?: StrategicGoal[];
 }): PerformanceRecord[] {
-  const goalsByTitle = new Map<string, string>();
-  for (const g of input.strategicGoals || []) goalsByTitle.set(titleKey(g.title), idKey(g.id));
-
   const records: PerformanceRecord[] = [];
 
   // Objectives (goalType unit) -> director-level rung under a Strategic Goal.
+  // Only the StrategicGoal link (an item ID in Strategic_Goals) places an
+  // objective under a goal. The legacy ParentGoalId looks up a different list
+  // and LinkedDeliverable is free text, so neither is guessed into a goal link;
+  // an objective without the link lands in the unlinked bucket with a diagnostic.
   for (const o of input.unitObjectives || []) {
     if (['org', 'strategic', 'board'].includes((o.goalType || '').toLowerCase())) continue;
     const { division, unit } = remapDivisionUnit(o.division, o.unit);
-    const goalId =
-      key(o.parentGoalId) ??
-      goalsByTitle.get(titleKey(o.linkedDeliverable)) ??
-      goalsByTitle.get(titleKey(o.parentGoalTitle)) ??
-      null;
+    const goalId = key(o.strategicGoalId) ?? null;
     records.push({
       id: nsObj(o.id),
       title: o.title || 'Untitled Objective',

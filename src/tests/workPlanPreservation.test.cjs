@@ -135,11 +135,16 @@ test('source metadata and execution IDs survive the actual SharePoint GoalsJSON 
 });
 
 test('existing organizational progress contracts remain unchanged (including known legacy differences)', () => {
-  const objectives = [{ id: '42', parentGoalId: 'org-1', progress: 50 }];
+  // Goals are Strategic_Goals items; objectives link to them through strategicGoalId (2026-11-11).
+  const objectives = [{ id: '42', strategicGoalId: 'org-1', progress: 50 }];
   const corporateKras = [{ id: 'corp-kra', goalId: 'org-1' }];
   const initiatives = [{ id: 'initiative', kraId: 'corp-kra', progress: 100, status: 'completed' }];
   assert.equal(progress.calculateGoalProgressFromChildren('org-1', objectives), 50);
   assert.equal(progress.calculateGoalProgressFromChildren('org-1', objectives, [], [], corporateKras, initiatives), 75);
+  // The legacy ParentGoalId points at Strategic_Objectives and is no longer read as a goal link.
+  assert.equal(progress.calculateGoalProgressFromChildren('org-1', [{ id: '43', parentGoalId: 'org-1', progress: 50 }]), 0);
+  // The Corporate Plan track no longer needs a Unit Objective to exist before it counts.
+  assert.equal(progress.calculateGoalProgressFromChildren('org-1', [], [], [], corporateKras, initiatives), 100);
   assert.equal(progress.calculateKpiProgress({ calculationType: 'checklist', checklist: [{ checked: true }, { checked: false }] }), 50);
   assert.equal(progress.calculateKraProgress({ id: '72' }, [{ kra_id: '72', calculationType: 'manual', actual: 50, target: 100 }]), 0);
 });

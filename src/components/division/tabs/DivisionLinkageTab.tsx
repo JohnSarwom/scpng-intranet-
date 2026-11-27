@@ -74,7 +74,7 @@ function UnitRow({ summary, emphasis = false }: { summary: UnitLinkageSummary; e
       <TableCell className="text-right">{summary.kras.total}</TableCell>
       <TableCell className="text-right">{count(summary.kras.noObjective + summary.kras.brokenObjective)}</TableCell>
       <TableCell className="text-right">{summary.objectives.total}</TableCell>
-      <TableCell className="text-right">{count(summary.objectives.noParent)}</TableCell>
+      <TableCell className="text-right">{count(summary.objectives.noGoal + summary.objectives.brokenGoal)}</TableCell>
     </TableRow>
   );
 }
@@ -173,8 +173,8 @@ export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkage
               {!canTriage && <Badge variant="outline" className="gap-1"><ShieldCheck className="h-3 w-3" />Read only</Badge>}
             </div>
             <p className="text-xs text-muted-foreground max-w-2xl">
-              How many of this Division's tasks trace all the way from Task to KPI, KRA and Unit Objective, and which
-              records are missing a link. Counts come straight from SharePoint; nothing is inferred, and records change only when you save a clean-up below.
+              How many of this Division's tasks trace all the way from Task to KPI, KRA, Unit Objective and Strategic Goal,
+              and which records are missing a link. Counts come straight from SharePoint; nothing is inferred, and records change only when you save a clean-up below.
               Generated {new Date(inventory.generatedAt).toLocaleString()}.
             </p>
           </div>
@@ -217,10 +217,10 @@ export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkage
           tone={totals.kras.noObjective + totals.kras.brokenObjective > 0 ? 'warn' : 'default'}
         />
         <StatTile
-          label="Objectives without a strategic parent"
-          value={totals.objectives.noParent}
+          label="Objectives without a Strategic Goal"
+          value={totals.objectives.noGoal + totals.objectives.brokenGoal}
           hint={`of ${totals.objectives.total} Unit Objectives`}
-          tone={totals.objectives.noParent > 0 ? 'warn' : 'default'}
+          tone={totals.objectives.noGoal + totals.objectives.brokenGoal > 0 ? 'warn' : 'default'}
         />
       </div>
 
@@ -244,7 +244,7 @@ export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkage
                 <TableHead className="text-right">KRAs</TableHead>
                 <TableHead className="text-right whitespace-nowrap">No Objective</TableHead>
                 <TableHead className="text-right">Objectives</TableHead>
-                <TableHead className="text-right whitespace-nowrap">No parent</TableHead>
+                <TableHead className="text-right whitespace-nowrap">No goal</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -253,7 +253,7 @@ export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkage
             </TableBody>
           </Table>
           <p className="text-xs text-muted-foreground mt-3">
-            "Broken chain" covers links to deleted or retired records and KPIs whose KRA or Objective is missing.
+            "Broken chain" covers links to deleted or retired records and KPIs whose KRA, Objective or Strategic Goal is missing.
             "KRA conflict" means a task's own KRA differs from its KPI's KRA. "Operational" tasks are day-to-day work
             deliberately not linked to strategy; they don't count against the traced share. Tasks with no unit are counted here only
             when their KPI or KRA belongs to this Division.
@@ -320,7 +320,7 @@ export function DivisionLinkageTab({ data, isAdmin, canTriage }: DivisionLinkage
                   <SelectContent>
                     {inventory.kpiOptions.map(option => (
                       <SelectItem key={option.id} value={option.id} className="text-xs">
-                        {option.unit}: {option.name} (KRA: {option.kraTitle}){option.traced ? '' : ' - KRA has no Objective'}
+                        {option.unit}: {option.name} (KRA: {option.kraTitle}){option.traced ? '' : ' - does not reach a Strategic Goal yet'}
                       </SelectItem>
                     ))}
                   </SelectContent>

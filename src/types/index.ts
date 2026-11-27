@@ -340,8 +340,12 @@ export interface Objective {
   unit?: string;
   owner?: string;
   ownerEmail?: string;
+  /** Legacy lookup into Strategic_Objectives. Not an organisational goal link; see strategicGoalId. */
   parentGoalId?: string | number | null;
   parentGoalTitle?: string;
+  /** The organisational goal this objective serves: an item ID in Strategic_Goals (StrategicGoal lookup). */
+  strategicGoalId?: string | null;
+  strategicGoalTitle?: string;
   icon?: string;
   isFeatured?: boolean;
   deliverables?: string[];

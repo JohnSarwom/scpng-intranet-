@@ -184,7 +184,7 @@ describe('strategyExecutionGraphService (role-recursive)', () => {
   it('legacy adapter maps the 3 lists into a parentId chain', () => {
     const records = legacyToPerformanceRecords({
       strategicGoals: [goal('g1', 'Goal')],
-      unitObjectives: [{ id: 'o1', title: 'Obj', goalType: 'unit', parentGoalId: 'g1', division: 'D', unit: 'U' } as any],
+      unitObjectives: [{ id: 'o1', title: 'Obj', goalType: 'unit', strategicGoalId: 'g1', division: 'D', unit: 'U' } as any],
       performanceKras: [{ id: 'k1', title: 'KRA', objective_id: 'o1' } as any],
       kpis: [{ id: 'p1', name: 'KPI', kra_id: 'k1', target: 100, status: 'in-progress', level: 'staff' } as any],
     });

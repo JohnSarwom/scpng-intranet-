@@ -16,3 +16,19 @@ describe('PNGX announcements navigation access', () => {
     expect(canViewNavItem(item!, null, true)).toBe(true);
   });
 });
+
+describe('Workflow Studio navigation access', () => {
+  const item = mainNavItems.find(entry => entry.path === '/workflows');
+
+  it('follows Strategy read permission and sits next to Strategy', () => {
+    expect(item?.label).toBe('Workflows');
+    expect(item?.resource).toBe('strategy');
+    expect(item?.action).toBe('read');
+    const strategyIndex = mainNavItems.findIndex(entry => entry.path === '/strategy');
+    expect(mainNavItems[strategyIndex + 1]).toBe(item);
+    expect(canViewNavItem(item!, { strategy: ['read'] }, false)).toBe(true);
+    expect(canViewNavItem(item!, { strategy: ['read', 'manage_workflows'] }, false)).toBe(true);
+    expect(canViewNavItem(item!, { units: ['read'] }, false)).toBe(false);
+    expect(canViewNavItem(item!, null, true)).toBe(true);
+  });
+});

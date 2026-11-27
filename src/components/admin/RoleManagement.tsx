@@ -34,7 +34,7 @@ const SYSTEM_RESOURCES: SystemResource[] = [
   { id: 'contacts', label: 'Employee Directory' },
   { id: 'settings', label: 'Settings' },
   { id: 'admin', label: 'Admin Dashboard' },
-  { id: 'strategy', label: 'Strategy' },
+  { id: 'strategy', label: 'Strategy', extraActions: [{ id: 'manage_workflows', label: 'Create and edit workflows (Workflow Studio)' }] },
   { id: 'ai', label: 'AI & Chat' },
   { id: 'market_data', label: 'Market Data' },
   { id: 'apps', label: 'Apps & Tools' },

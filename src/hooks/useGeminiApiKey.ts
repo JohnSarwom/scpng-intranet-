@@ -35,18 +35,18 @@ export interface GeminiApiKeyState {
 export const invalidateGeminiApiKey = (queryClient: QueryClient) =>
   queryClient.invalidateQueries({ queryKey: GEMINI_API_KEY_QUERY_KEY });
 
-export const useGeminiApiKey = (): GeminiApiKeyState => {
+export const useGeminiApiKey = (enabled = true): GeminiApiKeyState => {
   const envKey = (import.meta.env.VITE_GEMINI_API_KEY as string | undefined)?.trim() || null;
   const { isLoading: isAuthLoading } = useSupabaseAuth();
-  const { inProgress: msalInProgress } = useMsal();
+  const { inProgress: msalInProgress, accounts } = useMsal();
   const { getAppSetting } = useMicrosoftGraph();
   const queryClient = useQueryClient();
 
   const authReady = !isAuthLoading && msalInProgress === 'none';
 
   const query = useQuery<string | null>({
-    queryKey: GEMINI_API_KEY_QUERY_KEY,
-    enabled: !envKey && authReady,
+    queryKey: [...GEMINI_API_KEY_QUERY_KEY, accounts[0]?.homeAccountId],
+    enabled: enabled && !envKey && authReady && accounts.length > 0,
     staleTime: 5 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
     retry: 1,
@@ -66,6 +66,7 @@ export const useGeminiApiKey = (): GeminiApiKeyState => {
     await invalidateGeminiApiKey(queryClient);
   }, [queryClient]);
 
+  if (!enabled) return { apiKey: null, isReady: true, isConfigured: false, refresh };
   if (envKey) {
     return { apiKey: envKey, isReady: true, isConfigured: true, refresh };
   }

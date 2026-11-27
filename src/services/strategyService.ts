@@ -298,6 +298,7 @@ export class StrategyService {
 
             return items.map((item: any) => ({
                 id: item.id,
+                revision: item.eTag,
                 title: item.fields.Title,
                 description: item.fields.Description || '',
                 progress: item.fields.Progress || 0,
@@ -361,6 +362,61 @@ export class StrategyService {
             }));
         } catch (error) {
             console.error('❌ [StrategyService] Error fetching Strategic Initiatives:', error);
+            throw error;
+        }
+    }
+
+    /** Every Strategic_Objectives item's ID and title, unfiltered. Used only as crosswalk evidence. */
+    async fetchLegacyObjectiveTitles(): Promise<Array<{ id: string; title: string }>> {
+        if (!this.listIds['OBJECTIVES']) return [];
+        const items = await this.getPagedValues(
+            this.client.api(`/sites/${this.siteId}/lists/${this.listIds['OBJECTIVES']}/items`).expand('fields($select=Title)'),
+            'loading Strategic_Objectives titles'
+        );
+        return items.map((item: any) => ({ id: String(item.id), title: item.fields?.Title || '' }));
+    }
+
+    /** Adds one item to Strategic_Goals. Call only after an administrator has approved it. */
+    async createStrategicGoal(goal: { title: string; description?: string; icon?: string }): Promise<{ id: string; title: string }> {
+        if (!this.listIds['GOALS']) throw new Error('Strategic_Goals list not found.');
+        const created = await this.client.api(`/sites/${this.siteId}/lists/${this.listIds['GOALS']}/items`).post({
+            fields: {
+                Title: goal.title,
+                Description: goal.description || '',
+                Icon: goal.icon || 'Target',
+                Status: 'On Track',
+                Progress: 0,
+            },
+        });
+        return { id: String(created.id), title: goal.title };
+    }
+
+    /** Updates a Strategic_Goals item's display fields. Progress is calculated, never saved from here. */
+    async updateStrategicGoal(id: string, data: { revision?: string; title?: string; description?: string; status?: string; icon?: string }): Promise<void> {
+        if (!this.listIds['GOALS']) throw new Error('Strategic_Goals list not found.');
+        const fields: any = {};
+        if (data.title) fields.Title = data.title;
+        if (data.description !== undefined) fields.Description = data.description;
+        if (data.icon) fields.Icon = data.icon;
+        if (data.status) {
+            const statusMap: Record<string, string> = {
+                'on-track': 'On Track',
+                'at-risk': 'At Risk',
+                'behind': 'Behind',
+                'completed': 'Completed',
+            };
+            fields.Status = statusMap[data.status] || data.status;
+        }
+
+        const itemUrl = `/sites/${this.siteId}/lists/${this.listIds['GOALS']}/items/${id}`;
+        const current = await this.client.api(itemUrl).expand('fields').get();
+        const revision = this.requireCurrentRevision(current, data.revision, `Strategic Goal ${id}`);
+        try {
+            await this.client.api(itemUrl).header('If-Match', revision).patch({ fields });
+        } catch (error: any) {
+            if (this.isStaleWriteError(error)) {
+                throw new Error(`Strategic Goal ${id} changed while it was being saved. Reload and review the latest version.`);
+            }
             throw error;
         }
     }

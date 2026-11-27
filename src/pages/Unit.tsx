@@ -227,16 +227,24 @@ const Unit = () => {
   const objectivesLoading = objectivesState.loading;
   const objectivesError = objectivesState.error;
 
-  // Fetch Strategy Data for Dropdown
-  const { strategyData } = useStrategySharePoint();
-  const strategicObjectives = useMemo(() => {
-    return (strategyData.objectives || []).map(obj => ({
-      id: obj.id,
-      title: obj.title,
-      description: obj.description,
-      deliverables: (obj as any).kras || []
-    }));
-  }, [strategyData.objectives]);
+  // Strategic Goals for the initiative form: items in Strategic_Goals, each with the
+  // Strategic KRAs filed under it. Sample data is never offered as a goal.
+  const { strategyData, isLive: isStrategyLive } = useStrategySharePoint();
+  const strategicGoals = useMemo(() => {
+    if (!isStrategyLive) return [];
+    const strategicKras: any[] = (strategyData as any).strategicKRAs || [];
+    return (((strategyData as any).strategicGoals || []) as any[])
+      .filter(goal => !goal.isFeatured)
+      .map(goal => ({
+        id: goal.id,
+        title: goal.title,
+        description: goal.description,
+        deliverables: strategicKras
+          .filter(kra => String(kra.goalId) === String(goal.id))
+          .map(kra => kra.title)
+          .filter((title: string) => title && !title.includes('General Execution')),
+      }));
+  }, [strategyData, isStrategyLive]);
 
   // --- Permission Logic ---
   // Only Managers and Admins can Add/Edit/Delete KRAs and KPIs
@@ -961,7 +969,7 @@ const Unit = () => {
                 onDeleteKra={handleDeleteKra}
                 onSaveKpi={handleSaveKpi}
                 onDeleteKpi={handleDeleteKpi}
-                strategicObjectives={strategicObjectives}
+                strategicGoals={strategicGoals}
                 canEdit={canEditStrategy}
                 onEditTask={taskState.update}
                 onSubmitForReview={handleSubmitKpiForReview}

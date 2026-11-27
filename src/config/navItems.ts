@@ -24,6 +24,7 @@ import {
     FilePlus,
     ClipboardCheck,
     CalendarClock,
+    Workflow,
     LucideIcon
 } from 'lucide-react';
 
@@ -58,6 +59,7 @@ export const mainNavItems: NavItem[] = [
     { icon: Grid3x3, path: '/apps', label: 'Apps', resource: 'apps' },
     { icon: Bell, path: '/news', label: 'News', resource: null },
     { icon: Layers, path: '/strategy', label: 'Strategy', resource: 'strategy' },
+    { icon: Workflow, path: '/workflows', label: 'Workflows', resource: 'strategy', action: 'read' },
     { icon: TrendingUp, path: '/market-data', label: 'Market Data', resource: 'market_data' },
     { icon: FileText, path: '/pngx-announcements', label: 'PNGX Announcements', resource: 'market_data', action: 'read' },
     { icon: FileText, path: '/documents', label: 'Documents', resource: 'documents' },
