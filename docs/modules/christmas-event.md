@@ -50,7 +50,14 @@ The committee can open the list in SharePoint and use **Export to Excel**, or fi
 
 **Setup.** The list is created automatically the first time someone allowed to create lists (a site owner or admin) opens the intranet. Until then, staff who cannot create it simply do not see the invitation, so nobody fills in a form that cannot be saved. Staff need permission to add and edit items on the site, which is already required for other intranet lists.
 
-**Privacy.** By default anyone with access to the site can read the list. To limit staff to their own rows, open the list settings, go to **Advanced settings**, and set item-level permissions to "Read items that were created by the user" and "Create items and edit items that were created by the user". Site owners and the committee (given Full Control on the list) still see every row.
+**Permissions and privacy (set on 2026-11-27).** Most staff can only read the intranet site, which stopped them saving answers. The list therefore has its own permissions:
+- "Everyone except external users" has Contribute on this list only.
+- Item-level permissions are set so each person reads and edits only their own answer.
+- Site owners and editors still see every row.
+
+See the [2026-11-27 change record](../changes/2026-11-27-christmas-save-permissions.md).
+
+**If a save fails,** the form names the reason (permission, connection, SharePoint busy, expired sign-in or an error code) via `saveErrors.ts`, and reminds the officer that their answers are kept on the computer.
 
 ## Settings
 
