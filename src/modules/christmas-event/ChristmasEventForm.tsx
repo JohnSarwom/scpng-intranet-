@@ -16,6 +16,7 @@ import {
 } from './config';
 import type { ChristmasResponse } from './christmasEventService';
 import { validateChristmasResponse, type ChristmasField } from './validation';
+import { describeSaveError } from './saveErrors';
 
 type Box = { x: number; y: number; w: number; h: number };
 const at = (b: Box) => ({ '--x': b.x, '--y': b.y, '--w': b.w, '--h': b.h }) as React.CSSProperties;
@@ -133,7 +134,7 @@ export default function ChristmasEventForm({ initial, isUpdate, onSubmit, onLate
       }
     } catch (err) {
       console.error('[ChristmasEvent] save failed', err);
-      setStatus({ text: 'Your response could not be saved. Check your connection and try again.', error: true });
+      setStatus({ text: describeSaveError(err), error: true });
       setSaving(false);
     }
   };
